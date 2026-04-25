@@ -37,8 +37,10 @@ const updateCounterText = (element, value) => {
   element.textContent = String(value);
 };
 
-const bumpCounter = async (key) => {
-  const response = await fetch(`https://api.countapi.xyz/hit/${counterNamespace}/${key}`);
+const counterBaseUrl = "https://abacus.jasoncameron.dev";
+
+const readCounterValue = async (url) => {
+  const response = await fetch(url, { cache: "no-store" });
 
   if (!response.ok) {
     throw new Error("counter unavailable");
@@ -48,15 +50,14 @@ const bumpCounter = async (key) => {
   return data.value;
 };
 
-const loadCounter = async (key) => {
-  const response = await fetch(`https://api.countapi.xyz/get/${counterNamespace}/${key}`);
+const bumpCounter = (key) => readCounterValue(`${counterBaseUrl}/hit/${counterNamespace}/${key}`);
 
-  if (!response.ok) {
+const loadCounter = async (key) => {
+  try {
+    return await readCounterValue(`${counterBaseUrl}/get/${counterNamespace}/${key}`);
+  } catch {
     return null;
   }
-
-  const data = await response.json();
-  return data.value;
 };
 
 const setupVisitCounter = async () => {
