@@ -106,46 +106,62 @@ window.addEventListener("pointerdown", unlockAudio, { once: false });
 window.addEventListener("keydown", unlockAudio, { once: false });
 
 const matrixGlyphs = "01/\\|<>[]{}#$%&*+-=ЖИФНТМ";
+const readableElements = new Set();
 
-const scrambleText = (element) => {
+matrixElements.forEach((element) => {
+  element.dataset.originalText = element.textContent;
+  element.classList.add("is-matrixing");
+});
+
+const isStaticChar = (char) => [" ", ".", "-", "—", "/"].includes(char);
+
+const randomGlyph = () =>
+  matrixGlyphs[Math.floor(Math.random() * matrixGlyphs.length)];
+
+const renderMatrixNoise = (element) => {
+  if (readableElements.has(element)) {
+    return;
+  }
+
   const original = element.dataset.originalText || element.textContent;
 
-  element.dataset.originalText = original;
-  element.classList.add("is-scrambling");
+  element.textContent = [...original]
+    .map((char) => {
+      if (isStaticChar(char)) {
+        return char;
+      }
 
-  let frame = 0;
-  const maxFrames = 10;
-  const interval = window.setInterval(() => {
-    element.textContent = [...original]
-      .map((char, index) => {
-        if (char === " " || char === "." || char === "-") {
-          return char;
-        }
-
-        const shouldKeep = index / original.length < frame / maxFrames;
-        if (shouldKeep) {
-          return char;
-        }
-
-        return matrixGlyphs[Math.floor(Math.random() * matrixGlyphs.length)];
-      })
-      .join("");
-
-    frame += 1;
-
-    if (frame > maxFrames) {
-      window.clearInterval(interval);
-      element.textContent = original;
-      element.classList.remove("is-scrambling");
-    }
-  }, 42);
+      // Leave rare real letters so the phrase ghosts through the noise.
+      return Math.random() < 0.16 ? char : randomGlyph();
+    })
+    .join("");
 };
 
-const runMatrixPass = () => {
+const revealText = (element) => {
+  const original = element.dataset.originalText || element.textContent;
+
+  readableElements.add(element);
+  element.classList.remove("is-matrixing");
+  element.classList.add("is-readable");
+  element.textContent = original;
+
+  window.setTimeout(() => {
+    element.classList.remove("is-readable");
+    element.classList.add("is-matrixing");
+    readableElements.delete(element);
+    renderMatrixNoise(element);
+  }, 780);
+};
+
+const runReadableWave = () => {
   matrixElements.forEach((element, index) => {
-    window.setTimeout(() => scrambleText(element), index * 90);
+    window.setTimeout(() => revealText(element), index * 140);
   });
 };
 
-window.setTimeout(runMatrixPass, 900);
-window.setInterval(runMatrixPass, 5200);
+window.setInterval(() => {
+  matrixElements.forEach(renderMatrixNoise);
+}, 95);
+
+window.setTimeout(runReadableWave, 1200);
+window.setInterval(runReadableWave, 6200);
