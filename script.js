@@ -7,6 +7,8 @@ const logoParticles = document.getElementById("logo-particles");
 const releaseCover = document.getElementById("release-cover");
 const coverPreview = document.getElementById("cover-preview");
 const matrixElements = document.querySelectorAll(".matrix-text");
+const uniqueCount = document.getElementById("unique-count");
+const visitCount = document.getElementById("visit-count");
 
 const albumPath = "media/wave-phonk/";
 const tracks = [
@@ -23,6 +25,62 @@ let queue = [];
 let currentTrack = "";
 let isBlocked = false;
 let hasStartedPlayback = false;
+
+const counterNamespace = "inteonmteca.online";
+const uniqueStorageKey = "inteonmteca-unique-visit";
+
+const updateCounterText = (element, value) => {
+  if (!element || value === null || value === undefined) {
+    return;
+  }
+
+  element.textContent = String(value);
+};
+
+const bumpCounter = async (key) => {
+  const response = await fetch(`https://api.countapi.xyz/hit/${counterNamespace}/${key}`);
+
+  if (!response.ok) {
+    throw new Error("counter unavailable");
+  }
+
+  const data = await response.json();
+  return data.value;
+};
+
+const loadCounter = async (key) => {
+  const response = await fetch(`https://api.countapi.xyz/get/${counterNamespace}/${key}`);
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const data = await response.json();
+  return data.value;
+};
+
+const setupVisitCounter = async () => {
+  if (!uniqueCount && !visitCount) {
+    return;
+  }
+
+  try {
+    const visits = await bumpCounter("visits");
+    updateCounterText(visitCount, visits);
+
+    if (localStorage.getItem(uniqueStorageKey)) {
+      updateCounterText(uniqueCount, await loadCounter("unique"));
+      return;
+    }
+
+    const unique = await bumpCounter("unique");
+    localStorage.setItem(uniqueStorageKey, "1");
+    updateCounterText(uniqueCount, unique);
+  } catch {
+    updateCounterText(uniqueCount, "--");
+    updateCounterText(visitCount, "--");
+  }
+};
 
 const shuffle = (items) => {
   const result = [...items];
@@ -111,6 +169,7 @@ if (playButton && player) {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+  setupVisitCounter();
   playNext();
 });
 

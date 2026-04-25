@@ -494,6 +494,26 @@ body.cover-open .native-player {
   filter: invert(1) hue-rotate(45deg) saturate(1.4);
 }
 
+.visit-counter {
+  position: fixed;
+  right: 14px;
+  top: 12px;
+  z-index: 12;
+  display: inline-flex;
+  gap: 10px;
+  color: rgba(246, 243, 236, 0.32);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.visit-counter b {
+  color: rgba(185, 231, 101, 0.42);
+  font-weight: 700;
+}
+
 .matrix-text {
   text-shadow: 0 0 14px rgba(185, 231, 101, 0.16);
 }
