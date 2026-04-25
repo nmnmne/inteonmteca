@@ -107,6 +107,7 @@ img {
   position: relative;
   --bass-glow: 0.1;
   --bass-scale: 1;
+  overflow: hidden;
   max-width: 760px;
   margin: 0 auto 30px;
   padding: 0;
@@ -119,13 +120,176 @@ img {
   animation: logoFloat 7s ease-in-out infinite;
 }
 
+.logo-wrap.is-charging {
+  box-shadow:
+    0 0 70px rgba(185, 231, 101, 0.16),
+    0 0 170px rgba(255, 255, 255, 0.055);
+}
+
+.logo-wrap.is-stable {
+  animation: none;
+  transform: none;
+  filter: none;
+}
+
 .logo-wrap img {
   width: 100%;
   border-radius: 10px;
+  opacity: 0;
+  filter:
+    contrast(1.2)
+    brightness(0.7)
+    drop-shadow(0 0 12px rgba(185, 231, 101, 0.14));
+  transition:
+    opacity 260ms ease,
+    filter 260ms ease;
+}
+
+.logo-wrap.is-assembled img {
+  opacity: 1;
   filter:
     contrast(1.12)
     brightness(1.1)
-    drop-shadow(0 0 12px rgba(185, 231, 101, 0.14));
+    drop-shadow(0 0 18px rgba(185, 231, 101, 0.22));
+}
+
+.logo-particles {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  perspective: 900px;
+}
+
+.logo-particle {
+  position: absolute;
+  left: calc(var(--x) * 1%);
+  top: calc(var(--y) * 1%);
+  width: calc(100% / var(--cols));
+  height: calc(100% / var(--rows));
+  background-image: url("logo.jpg");
+  background-size: calc(var(--cols) * 100%) calc(var(--rows) * 100%);
+  background-position: var(--bg-x) var(--bg-y);
+  opacity: 0.22;
+  filter:
+    contrast(1.08)
+    brightness(0.68);
+  transform:
+    translate3d(var(--scatter-x), var(--scatter-y), var(--scatter-z))
+    rotate(var(--scatter-r))
+    scale(var(--scatter-scale));
+  transition:
+    opacity 1800ms ease,
+    filter 1800ms ease,
+    transform 3200ms cubic-bezier(0.2, 0.72, 0.18, 1);
+  will-change: transform, opacity;
+}
+
+.logo-wrap.is-assembled .logo-particle {
+  opacity: 0;
+  filter:
+    contrast(1.08)
+    brightness(1.02);
+  transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+}
+
+.logo-wrap.is-assembling .logo-particle {
+  transition:
+    opacity 300ms ease,
+    filter 300ms ease,
+    transform 300ms cubic-bezier(0.18, 0.9, 0.24, 1);
+}
+
+.logo-wrap.is-assembling .logo-particle {
+  opacity: 1;
+}
+
+.logo-wrap.is-charging .logo-particle {
+  opacity: 0.76;
+  filter:
+    contrast(1.14)
+    brightness(1.18);
+  transform:
+    translate3d(
+      calc(var(--scatter-x) * 0.28),
+      calc(var(--scatter-y) * 0.28),
+      calc(var(--scatter-z) * 0.18)
+    )
+    rotate(calc(var(--scatter-r) * 0.22))
+    scale(1.04);
+}
+
+.logo-wrap.is-stable .logo-particle {
+  transition: none;
+  opacity: 0;
+  filter:
+    contrast(1.08)
+    brightness(1.02);
+  transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+}
+
+.logo-matrix {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.02rem, 0.45vw, 0.42rem);
+  color: rgba(185, 231, 101, 0.72);
+  font-family: "Inter", monospace;
+  font-size: clamp(1.7rem, 5.6vw, 4.3rem);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  opacity: 0.34;
+  pointer-events: none;
+  text-shadow:
+    0 0 8px rgba(185, 231, 101, 0.34),
+    0 0 22px rgba(185, 231, 101, 0.16);
+  mix-blend-mode: screen;
+  animation: logoMatrixPulse 2.4s ease-in-out infinite;
+}
+
+.logo-wrap.is-stable .logo-matrix {
+  animation: none;
+  opacity: 0.12;
+}
+
+.logo-letter {
+  display: inline-block;
+  min-width: 0.45em;
+  transition:
+    opacity 1100ms ease,
+    transform 2600ms ease,
+    filter 1200ms ease;
+  will-change: transform, opacity;
+}
+
+.logo-letter.is-shuffled {
+  opacity: 0.55;
+  filter: blur(0.8px);
+}
+
+.logo-wrap.is-assembled .logo-matrix {
+  opacity: 0.16;
+}
+
+.logo-wrap.is-assembled .logo-letter {
+  filter: blur(0.35px);
+}
+
+.logo-wrap.is-assembling .logo-letter {
+  transition:
+    opacity 300ms ease,
+    transform 300ms ease,
+    filter 300ms ease;
+}
+
+.logo-wrap.is-stable .logo-letter {
+  transition: none;
+  opacity: 0.2;
+  filter: blur(0.35px);
+  transform: translate3d(0, 0, 0) rotate(0deg);
 }
 
 .label {
@@ -344,6 +508,18 @@ img {
   50% {
     transform: translate3d(0, 5px, 0) rotate(-0.25deg) scale(var(--bass-scale));
     filter: brightness(1.08);
+  }
+}
+
+@keyframes logoMatrixPulse {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: translate3d(-1px, 0, 0);
+  }
+  50% {
+    opacity: 0.38;
+    transform: translate3d(1px, 0, 0);
   }
 }
 
