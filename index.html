@@ -27,7 +27,12 @@
       <p class="label matrix-text">music label</p>
       <p class="text matrix-text">Музыка, люди, вайб. Уже здесь.</p>
       <div class="release">
-        <img class="release-cover" src="media/wave-phonk/cover.png" alt="Матт - Wave Phonk cover">
+        <img
+          class="release-cover"
+          id="release-cover"
+          src="media/wave-phonk/cover.png"
+          alt="Матт - Wave Phonk cover"
+        >
         <div>
           <p class="release-date matrix-text">релиз 9 мая</p>
           <p class="release-title matrix-text">Матт - Wave Phonk</p>
@@ -44,6 +49,9 @@
   </button>
 
   <audio id="album-player" class="native-player" preload="auto" playsinline controls></audio>
+  <div class="cover-preview" id="cover-preview" aria-hidden="true">
+    <img src="media/wave-phonk/cover.png" alt="Матт - Wave Phonk cover full size">
+  </div>
   <script src="script.js"></script>
 </body>
 </html>

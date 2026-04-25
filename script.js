@@ -4,6 +4,8 @@ const nowPlaying = document.getElementById("now-playing");
 const logoMatrix = document.getElementById("logo-matrix");
 const logoWrap = document.querySelector(".logo-wrap");
 const logoParticles = document.getElementById("logo-particles");
+const releaseCover = document.getElementById("release-cover");
+const coverPreview = document.getElementById("cover-preview");
 const matrixElements = document.querySelectorAll(".matrix-text");
 
 const albumPath = "media/wave-phonk/";
@@ -114,6 +116,24 @@ window.addEventListener("DOMContentLoaded", () => {
 
 window.addEventListener("pointerdown", unlockAudio, { once: false });
 window.addEventListener("keydown", unlockAudio, { once: false });
+
+const toggleCoverPreview = () => {
+  if (!coverPreview) {
+    return;
+  }
+
+  const isOpen = coverPreview.classList.toggle("is-open");
+  coverPreview.setAttribute("aria-hidden", String(!isOpen));
+  document.body.classList.toggle("cover-open", isOpen);
+};
+
+releaseCover?.addEventListener("click", toggleCoverPreview);
+coverPreview?.addEventListener("click", toggleCoverPreview);
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && coverPreview?.classList.contains("is-open")) {
+    toggleCoverPreview();
+  }
+});
 
 const matrixGlyphs = "01/\\|<>[]{}#$%&*+-=ЖИФНТМ";
 const readableElements = new Set();
