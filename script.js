@@ -20,6 +20,7 @@ const tracks = [
 let queue = [];
 let currentTrack = "";
 let isBlocked = false;
+let hasStartedPlayback = false;
 
 const shuffle = (items) => {
   const result = [...items];
@@ -69,9 +70,15 @@ const setNextTrack = () => {
 
   if (queue.length === 0) {
     queue = shuffle(tracks);
+
+    if (!hasStartedPlayback && queue[0] === tracks[0]) {
+      const swapIndex = Math.floor(Math.random() * (queue.length - 1)) + 1;
+      [queue[0], queue[swapIndex]] = [queue[swapIndex], queue[0]];
+    }
   }
 
   currentTrack = queue.shift();
+  hasStartedPlayback = true;
   player.src = `${albumPath}${currentTrack.file}`;
   player.load();
 
