@@ -16,18 +16,32 @@
 <body>
   <main class="page">
     <section class="hero">
-      <p class="topline">от всех наших</p>
+      <p class="topline matrix-text">от всех наших</p>
 
       <div class="logo-wrap">
         <img src="logo.jpg" alt="inteonmteca logo">
       </div>
 
-      <p class="label">music label</p>
-      <p class="text">Музыка, люди, вайб. Уже здесь.</p>
-      <p class="ours">from all ours</p>
+      <p class="label matrix-text">music label</p>
+      <p class="text matrix-text">Музыка, люди, вайб. Уже здесь.</p>
+      <div class="release">
+        <img class="release-cover" src="media/wave-phonk/cover.png" alt="Матт - Wave Phonk cover">
+        <div>
+          <p class="release-date matrix-text">релиз 9 мая</p>
+          <p class="release-title matrix-text">Матт - Wave Phonk</p>
+        </div>
+      </div>
+      <p class="ours matrix-text">from all ours</p>
 
-      <p class="contact">contact soon</p>
+      <p class="now-playing matrix-text" id="now-playing">запускаем случайный трек</p>
     </section>
   </main>
+
+  <button class="player-button" type="button" id="play-random" aria-label="Включить альбом">
+    <span class="play-icon">▶</span>
+  </button>
+
+  <audio id="album-player" class="native-player" preload="auto" playsinline controls></audio>
+  <script src="script.js"></script>
 </body>
 </html>

@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Local source audio exports
+*.wav
+Матт - Wave Phonk/
