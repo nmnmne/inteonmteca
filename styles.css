@@ -351,6 +351,9 @@ img {
   position: fixed;
   inset: 0;
   z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 18px;
   background: rgba(0, 0, 0, 0.32);
   opacity: 0;
@@ -364,9 +367,6 @@ img {
 }
 
 .cover-preview img {
-  position: absolute;
-  left: 50%;
-  top: 50%;
   width: auto;
   height: auto;
   max-width: min(92vw, 920px);
@@ -600,11 +600,11 @@ body.cover-open .native-player {
 @keyframes coverBreath {
   0%,
   100% {
-    transform: translate(-50%, -50%) scale(1);
+    transform: scale(1);
     filter: brightness(1) contrast(1.04);
   }
   50% {
-    transform: translate(-50%, -50%) scale(1.035);
+    transform: scale(1.035);
     filter: brightness(1.12) contrast(1.08);
   }
 }
