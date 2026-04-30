@@ -1,5 +1,8 @@
 const player = document.getElementById("album-player");
 const playButton = document.getElementById("play-random");
+const playIcon = playButton?.querySelector(".play-icon");
+const previousButton = document.getElementById("previous-track");
+const nextButton = document.getElementById("next-track");
 const nowPlaying = document.getElementById("now-playing");
 const logoMatrix = document.getElementById("logo-matrix");
 const logoWrap = document.querySelector(".logo-wrap");
@@ -9,6 +12,7 @@ const coverPreview = document.getElementById("cover-preview");
 const matrixElements = document.querySelectorAll(".matrix-text");
 const uniqueCount = document.getElementById("unique-count");
 const visitCount = document.getElementById("visit-count");
+const presaveTitle = document.querySelector(".presave-title");
 
 const albumPath = "media/wave-phonk/";
 const tracks = [
@@ -21,13 +25,32 @@ const tracks = [
   { file: "07-douep.flac", title: "Матт - Douep" },
 ];
 
-let queue = [];
+let playOrder = [];
+let playOrderIndex = 0;
 let currentTrack = "";
+let previousTracks = [];
 let isBlocked = false;
-let hasStartedPlayback = false;
+const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const counterNamespace = "inteonmteca.online";
 const uniqueStorageKey = "inteonmteca-unique-visit";
+const assetVersion = "20260430-1702";
+
+const setupPresaveTitleWave = () => {
+  if (!presaveTitle || prefersReducedMotion) {
+    return;
+  }
+
+  const text = presaveTitle.textContent || "";
+  presaveTitle.textContent = "";
+
+  [...text].forEach((letter, index) => {
+    const span = document.createElement("span");
+    span.textContent = letter === " " ? "\u00a0" : letter;
+    span.style.animationDelay = `${index * 45}ms`;
+    presaveTitle.append(span);
+  });
+};
 
 const updateCounterText = (element, value) => {
   if (!element || value === null || value === undefined) {
@@ -94,6 +117,21 @@ const shuffle = (items) => {
   return result;
 };
 
+const createPlaybackOrder = () => {
+  const order = shuffle(tracks);
+  const forbiddenFirstTracks = new Set([tracks[0], tracks[3]]);
+
+  if (forbiddenFirstTracks.has(order[0])) {
+    const swapIndex = order.findIndex((track) => !forbiddenFirstTracks.has(track));
+
+    if (swapIndex > 0) {
+      [order[0], order[swapIndex]] = [order[swapIndex], order[0]];
+    }
+  }
+
+  return order;
+};
+
 const setNowPlaying = (text) => {
   if (!nowPlaying) {
     return;
@@ -103,6 +141,45 @@ const setNowPlaying = (text) => {
   nowPlaying.dataset.originalText = text;
 };
 
+const updateTransportButtons = () => {
+  if (!previousButton) {
+    return;
+  }
+
+  const hasPreviousTrack = previousTracks.length > 0;
+  previousButton.disabled = !hasPreviousTrack;
+  previousButton.classList.toggle("is-disabled", !hasPreviousTrack);
+};
+
+const setPlaybackActive = () => {
+  isBlocked = false;
+  document.body.classList.add("is-playback-active");
+  playButton?.classList.add("is-playing");
+  playButton?.setAttribute("aria-hidden", "true");
+  if (playIcon) {
+    playIcon.textContent = "▶";
+  }
+
+  if (currentTrack) {
+    setNowPlaying(`сейчас: ${currentTrack.title}`);
+  }
+
+  updateTransportButtons();
+};
+
+const setPlaybackBlocked = () => {
+  isBlocked = true;
+  document.body.classList.remove("is-playback-active");
+  playButton?.classList.remove("is-playing");
+  playButton?.removeAttribute("aria-hidden");
+  playButton?.setAttribute("aria-label", "Включить альбом");
+  if (playIcon) {
+    playIcon.textContent = "▶";
+  }
+  setNowPlaying("нажми в любое место, чтобы включить звук");
+  updateTransportButtons();
+};
+
 const startCurrentTrack = async () => {
   if (!player) {
     return;
@@ -110,16 +187,9 @@ const startCurrentTrack = async () => {
 
   try {
     await player.play();
-    isBlocked = false;
-    playButton?.classList.add("is-playing");
-
-    playButton?.setAttribute("aria-label", "Следующий трек");
+    setPlaybackActive();
   } catch {
-    isBlocked = true;
-    playButton?.classList.remove("is-playing");
-    playButton?.setAttribute("aria-label", "Включить альбом");
-
-    setNowPlaying("нажми в любое место, чтобы включить звук");
+    setPlaybackBlocked();
     return;
   }
 };
@@ -129,25 +199,47 @@ const setNextTrack = () => {
     return;
   }
 
-  if (queue.length === 0) {
-    queue = shuffle(tracks);
-
-    if (!hasStartedPlayback && queue[0] === tracks[0]) {
-      const swapIndex = Math.floor(Math.random() * (queue.length - 1)) + 1;
-      [queue[0], queue[swapIndex]] = [queue[swapIndex], queue[0]];
-    }
+  if (currentTrack) {
+    previousTracks.push(currentTrack);
   }
 
-  currentTrack = queue.shift();
-  hasStartedPlayback = true;
-  player.src = `${albumPath}${currentTrack.file}`;
+  if (playOrder.length === 0) {
+    playOrder = createPlaybackOrder();
+    playOrderIndex = 0;
+  }
+
+  currentTrack = playOrder[playOrderIndex];
+  playOrderIndex = (playOrderIndex + 1) % playOrder.length;
+  player.src = `${albumPath}${currentTrack.file}?v=${assetVersion}`;
   player.load();
 
   setNowPlaying(`сейчас: ${currentTrack.title}`);
+  updateTransportButtons();
 };
 
 const playNext = async () => {
   setNextTrack();
+  await startCurrentTrack();
+};
+
+const playPrevious = async () => {
+  if (!player || previousTracks.length === 0) {
+    return;
+  }
+
+  if (currentTrack && playOrder.length > 0) {
+    const currentIndex = playOrder.indexOf(currentTrack);
+
+    if (currentIndex >= 0) {
+      playOrderIndex = currentIndex;
+    }
+  }
+
+  currentTrack = previousTracks.pop();
+  player.src = `${albumPath}${currentTrack.file}?v=${assetVersion}`;
+  player.load();
+  setNowPlaying(`сейчас: ${currentTrack.title}`);
+  updateTransportButtons();
   await startCurrentTrack();
 };
 
@@ -158,6 +250,13 @@ const unlockAudio = () => {
 };
 
 if (playButton && player) {
+  player.playbackRate = 1;
+  player.addEventListener("ratechange", () => {
+    if (player.playbackRate !== 1) {
+      player.playbackRate = 1;
+    }
+  });
+
   playButton.addEventListener("click", () => {
     if (isBlocked && currentTrack) {
       startCurrentTrack();
@@ -167,14 +266,22 @@ if (playButton && player) {
     playNext();
   });
   player.addEventListener("ended", playNext);
+  player.addEventListener("playing", setPlaybackActive);
+  player.addEventListener("play", setPlaybackActive);
 }
+
+previousButton?.addEventListener("click", playPrevious);
+nextButton?.addEventListener("click", playNext);
 
 window.addEventListener("DOMContentLoaded", () => {
   setupVisitCounter();
+  updateTransportButtons();
   playNext();
 });
 
 window.addEventListener("pointerdown", unlockAudio, { once: false });
+window.addEventListener("touchend", unlockAudio, { once: false });
+window.addEventListener("click", unlockAudio, { once: false });
 window.addEventListener("keydown", unlockAudio, { once: false });
 
 const toggleCoverPreview = () => {
@@ -195,15 +302,17 @@ window.addEventListener("keydown", (event) => {
   }
 });
 
-const matrixGlyphs = "01/\\|<>[]{}#$%&*+-=ЖИФНТМ";
+const matrixGlyphs = "01/\\|<>[]{}#$%&*+-=abcdefghijklmnopqrstuvwxyz";
 const readableElements = new Set();
 const logoText = "inteonmteca";
 const logoLetters = [];
 const particleGrid = { cols: 18, rows: 6 };
 let fullReadableMode = false;
 let logoLocked = false;
+let logoChaosActive = false;
 let logoChargeTimeout;
 let logoCycleTimeout;
+let logoChaosCountdown = 0;
 
 matrixElements.forEach((element) => {
   element.dataset.originalText = element.textContent;
@@ -233,6 +342,7 @@ const setupLogoLetters = () => {
 };
 
 const randomRange = (min, max) => Math.random() * (max - min) + min;
+const randomInteger = (min, max) => Math.floor(randomRange(min, max + 1));
 
 const scatterLogoParticles = () => {
   if (!logoParticles) {
@@ -281,16 +391,48 @@ const setupLogoParticles = () => {
       particle.style.setProperty("--rows", rows);
       particle.style.setProperty("--x", ((col / cols) * 100).toFixed(4));
       particle.style.setProperty("--y", ((row / rows) * 100).toFixed(4));
+      particle.dataset.col = String(col);
+      particle.dataset.row = String(row);
       particle.dataset.bgX = cols === 1 ? "0%" : `${((col / (cols - 1)) * 100).toFixed(4)}%`;
       particle.dataset.bgY = rows === 1 ? "0%" : `${((row / (rows - 1)) * 100).toFixed(4)}%`;
       particle.style.setProperty("--bg-x", particle.dataset.bgX);
       particle.style.setProperty("--bg-y", particle.dataset.bgY);
+      particle.style.setProperty("--tile-x", "0%");
+      particle.style.setProperty("--tile-y", "0%");
 
       logoParticles.appendChild(particle);
     }
   }
 
   scatterLogoParticles();
+};
+
+const restoreLogoTileOrder = () => {
+  logoParticles?.querySelectorAll(".logo-particle").forEach((particle) => {
+    particle.style.setProperty("--bg-x", particle.dataset.bgX || "0%");
+    particle.style.setProperty("--bg-y", particle.dataset.bgY || "0%");
+    particle.style.setProperty("--tile-x", "0%");
+    particle.style.setProperty("--tile-y", "0%");
+  });
+};
+
+const shuffleLogoTiles = () => {
+  const particles = [...(logoParticles?.querySelectorAll(".logo-particle") || [])];
+  const shuffledTiles = shuffle(
+    particles.map((particle) => ({
+      bgX: particle.dataset.bgX || "0%",
+      bgY: particle.dataset.bgY || "0%",
+    }))
+  );
+
+  particles.forEach((particle, index) => {
+    const tile = shuffledTiles[index];
+
+    particle.style.setProperty("--bg-x", tile.bgX);
+    particle.style.setProperty("--bg-y", tile.bgY);
+    particle.style.setProperty("--tile-x", "0%");
+    particle.style.setProperty("--tile-y", "0%");
+  });
 };
 
 const renderLogoMatrix = (readable = false) => {
@@ -312,10 +454,7 @@ const renderLogoMatrix = (readable = false) => {
   if (!readable) {
     scatterLogoParticles();
   } else {
-    logoParticles?.querySelectorAll(".logo-particle").forEach((particle) => {
-      particle.style.setProperty("--bg-x", particle.dataset.bgX || "0%");
-      particle.style.setProperty("--bg-y", particle.dataset.bgY || "0%");
-    });
+    restoreLogoTileOrder();
   }
 
   const shuffledIndexes = shuffle([...logoLetters.keys()]);
@@ -401,6 +540,10 @@ const setAllTextReadable = (isReadable) => {
 };
 
 const runLongReadableMoment = () => {
+  if (logoChaosActive) {
+    return;
+  }
+
   logoLocked = true;
   logoWrap?.classList.add("is-stable");
   renderLogoMatrix(true);
@@ -415,7 +558,7 @@ const runLongReadableMoment = () => {
 
 window.setInterval(() => {
   matrixElements.forEach(renderMatrixNoise);
-}, 95);
+}, prefersReducedMotion ? 360 : 95);
 
 window.setTimeout(runReadableWave, 1200);
 window.setInterval(runReadableWave, 6200);
@@ -426,10 +569,74 @@ setupLogoLetters();
 setupLogoParticles();
 renderLogoMatrix(true);
 
+const resetLogoChaosCountdown = () => {
+  logoChaosCountdown = randomInteger(5, 10);
+};
+
+resetLogoChaosCountdown();
+
+const runLongLogoChaos = () => {
+  if (logoChaosActive) {
+    return;
+  }
+
+  if (logoCycleTimeout) {
+    window.clearTimeout(logoCycleTimeout);
+  }
+
+  logoLocked = false;
+  fullReadableMode = false;
+  logoChaosActive = true;
+  logoWrap?.classList.remove("is-stable", "is-assembled", "is-charging", "is-assembling");
+  restoreLogoTileOrder();
+  logoWrap?.classList.add("is-long-chaos");
+  shuffleLogoTiles();
+
+  const chaosDuration = randomRange(20000, 30000);
+  const jitterInterval = window.setInterval(() => {
+    shuffleLogoTiles();
+  }, 90);
+
+  window.setTimeout(() => {
+    window.clearInterval(jitterInterval);
+    logoChaosActive = false;
+    logoWrap?.classList.remove("is-long-chaos");
+    restoreLogoTileOrder();
+    logoWrap?.classList.add("is-assembling");
+    renderLogoMatrix(true);
+    resetLogoChaosCountdown();
+
+    window.setTimeout(() => {
+      logoWrap?.classList.remove("is-assembling");
+      logoCycleTimeout = window.setTimeout(runLogoCycle, randomRange(1000, 10000));
+    }, 320);
+  }, chaosDuration);
+};
+
+logoWrap?.addEventListener("click", runLongLogoChaos);
+logoWrap?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    runLongLogoChaos();
+  }
+});
+
 const runLogoCycle = () => {
+  if (logoChaosActive) {
+    logoCycleTimeout = window.setTimeout(runLogoCycle, 1200);
+    return;
+  }
+
   if (fullReadableMode || logoLocked) {
     renderLogoMatrix(true);
     logoCycleTimeout = window.setTimeout(runLogoCycle, 1200);
+    return;
+  }
+
+  logoChaosCountdown -= 1;
+
+  if (logoChaosCountdown <= 0) {
+    runLongLogoChaos();
     return;
   }
 
@@ -437,9 +644,17 @@ const runLogoCycle = () => {
   const chaosDuration = randomRange(2000, 16000);
   const assemblyLeadTime = Math.min(randomRange(10, 300), chaosDuration - 20);
   window.setTimeout(() => {
+    if (logoChaosActive) {
+      return;
+    }
+
     logoWrap?.classList.add("is-charging");
   }, Math.max(0, chaosDuration - assemblyLeadTime));
   window.setTimeout(() => {
+    if (logoChaosActive) {
+      return;
+    }
+
     logoWrap?.classList.add("is-assembling");
     renderLogoMatrix(true);
     window.setTimeout(() => {
@@ -449,4 +664,5 @@ const runLogoCycle = () => {
   }, chaosDuration);
 };
 
+setupPresaveTitleWave();
 logoCycleTimeout = window.setTimeout(runLogoCycle, randomRange(1000, 10000));
