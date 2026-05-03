@@ -304,6 +304,9 @@ window.addEventListener("keydown", (event) => {
 
 const matrixGlyphs = "01/\\|<>[]{}#$%&*+-=abcdefghijklmnopqrstuvwxyz";
 const readableElements = new Set();
+const matrixHoldStates = new WeakMap();
+const matrixHoldRatio = 0.15;
+const matrixHoldDuration = 1000;
 const logoText = "inteonmteca";
 const logoLetters = [];
 const particleGrid = { cols: 18, rows: 6 };
@@ -323,6 +326,36 @@ const isStaticChar = (char) => [" ", ".", "-", "—", "/"].includes(char);
 
 const randomGlyph = () =>
   matrixGlyphs[Math.floor(Math.random() * matrixGlyphs.length)];
+
+const getMatrixHoldState = (element, original) => {
+  let state = matrixHoldStates.get(element);
+
+  if (!state || state.length !== original.length) {
+    state = {
+      heldIndexes: new Set(),
+      length: original.length,
+      nextShuffleAt: 0,
+      rendered: "",
+    };
+    matrixHoldStates.set(element, state);
+  }
+
+  return state;
+};
+
+const shuffleMatrixHoldIndexes = (state, original, now) => {
+  if (now < state.nextShuffleAt) {
+    return;
+  }
+
+  const indexes = [...original]
+    .map((char, index) => (isStaticChar(char) ? null : index))
+    .filter((index) => index !== null);
+  const holdCount = Math.max(1, Math.round(indexes.length * matrixHoldRatio));
+
+  state.heldIndexes = new Set(shuffle(indexes).slice(0, holdCount));
+  state.nextShuffleAt = now + matrixHoldDuration;
+};
 
 const setupLogoLetters = () => {
   if (!logoMatrix) {
@@ -479,17 +512,28 @@ const renderMatrixNoise = (element) => {
   }
 
   const original = element.dataset.originalText || element.textContent;
+  const state = getMatrixHoldState(element, original);
+  const now = Date.now();
 
-  element.textContent = [...original]
-    .map((char) => {
+  shuffleMatrixHoldIndexes(state, original, now);
+
+  const nextText = [...original]
+    .map((char, index) => {
       if (isStaticChar(char)) {
         return char;
+      }
+
+      if (state.heldIndexes.has(index) && state.rendered[index]) {
+        return state.rendered[index];
       }
 
       // Leave rare real letters so the phrase ghosts through the noise.
       return Math.random() < 0.16 ? char : randomGlyph();
     })
     .join("");
+
+  state.rendered = nextText;
+  element.textContent = nextText;
 };
 
 const revealText = (element) => {

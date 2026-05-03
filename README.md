@@ -1,6 +1,6 @@
 # inteonmteca
 
-Minimal mysterious landing page for the `inteonmteca` music label.
+Minimal mysterious landing page for the `inteonmteca` music label — [inteonmteca.online](https://inteonmteca.online).
 
 ## Structure
 
