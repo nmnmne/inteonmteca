@@ -134,3 +134,6 @@ desktop.ini
 # Local source audio exports
 *.wav
 Матт - Wave Phonk/
+
+# Local auth/chat database
+server/data/

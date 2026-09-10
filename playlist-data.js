@@ -1,0 +1,68 @@
+window.INTEONMTECA_PLAYLIST = [
+  {
+    "id": "media/God Is Dead/Матт - God Is Dead.flac",
+    "artist": "Матт",
+    "title": "God Is Dead",
+    "audio": "media/God Is Dead/Матт - God Is Dead.flac"
+  },
+  {
+    "id": "media/Heavenly  Melody/Sonyx - Heavenly  Melody.flac",
+    "artist": "Sonyx",
+    "title": "Heavenly  Melody",
+    "audio": "media/Heavenly  Melody/Sonyx - Heavenly  Melody.flac"
+  },
+  {
+    "id": "media/inteonmteca_/Матт - Inteonmteca_.flac",
+    "artist": "Матт",
+    "title": "Inteonmteca_",
+    "audio": "media/inteonmteca_/Матт - Inteonmteca_.flac",
+    "cover": "assets/inteonmteca_/inteonmteca_.png"
+  },
+  {
+    "id": "media/inteonmteca_/ыьек - Inteonmteca_.flac",
+    "artist": "ыьек",
+    "title": "Inteonmteca_",
+    "audio": "media/inteonmteca_/ыьек - Inteonmteca_.flac",
+    "cover": "assets/inteonmteca_/inteonmteca_.png"
+  },
+  {
+    "id": "media/Kimpintyau/Матт- Высоко до предела.flac",
+    "artist": "Матт",
+    "title": "Высоко до предела",
+    "audio": "media/Kimpintyau/Матт- Высоко до предела.flac",
+    "cover": "assets/kimpintyau/Cover.png"
+  },
+  {
+    "id": "media/Last_Eclipse/Матт - Last Eclipse (Negative Space Resonance).flac",
+    "artist": "Матт",
+    "title": "Last Eclipse (Negative Space Resonance)",
+    "audio": "media/Last_Eclipse/Матт - Last Eclipse (Negative Space Resonance).flac",
+    "cover": "assets/Last_Eclipse/last eclipse.png"
+  },
+  {
+    "id": "media/Light Of The Night/Sonyx - Light Of The Night [Матт remix].flac",
+    "artist": "Sonyx",
+    "title": "Light Of The Night [Матт remix]",
+    "audio": "media/Light Of The Night/Sonyx - Light Of The Night [Матт remix].flac",
+    "cover": "assets/Light Of The Night/Sonyx - Light Of The Night.jpg"
+  },
+  {
+    "id": "media/Light Of The Night/Sonyx - Light Of The Night.flac",
+    "artist": "Sonyx",
+    "title": "Light Of The Night",
+    "audio": "media/Light Of The Night/Sonyx - Light Of The Night.flac",
+    "cover": "assets/Light Of The Night/Sonyx - Light Of The Night.jpg"
+  },
+  {
+    "id": "media/M/ыьек - M.flac",
+    "artist": "ыьек",
+    "title": "M",
+    "audio": "media/M/ыьек - M.flac"
+  },
+  {
+    "id": "media/Random Spiral/Матт - Random Spiral.flac",
+    "artist": "Матт",
+    "title": "Random Spiral",
+    "audio": "media/Random Spiral/Матт - Random Spiral.flac"
+  }
+];

@@ -28,14 +28,25 @@ $version = Get-Date -Format "yyyyMMdd-HHmmss"
 $indexPath = Join-Path $root "index.html"
 $stylesPath = Join-Path $root "styles.css"
 $scriptPath = Join-Path $root "script.js"
+$playlistPath = Join-Path $root "playlist.json"
+$playlistGeneratorPath = Join-Path $root "tools\generate_playlist.py"
 $versionedStylesName = "styles.$version.css"
 $versionedScriptName = "script.$version.js"
 $deployIndexPath = Join-Path $env:TEMP "inteonmteca-index-$version.html"
+$python = Get-Command python -ErrorAction SilentlyContinue
+if (-not $python -or -not (Test-Path $playlistGeneratorPath)) {
+  throw "Python and tools\generate_playlist.py are required for the shared playlist."
+}
+& $python.Source $playlistGeneratorPath --root $root
+if ($LASTEXITCODE -ne 0) { throw "Playlist generation failed." }
+
 $syncArgs = @(
   "--exclude", "*",
   "--include", "index.html",
   "--include", "styles.css",
   "--include", "script.js",
+  "--include", "playlist.json",
+  "--include", "playlist-data.js",
   "--include", "assets/*",
   "--include", "assets/*/*",
   "--include", "assets/*/*/*",
@@ -74,6 +85,11 @@ foreach ($key in $staleKeys) {
 & $aws --endpoint-url $endpoint s3 sync $root "$bucketUrl/" --delete @syncArgs --cache-control $noCache | Out-Host
 
 # 3) Force the entry files to get the exact headers/content-types even if their contents did not change.
+& $aws --endpoint-url $endpoint s3 cp $playlistPath "$bucketUrl/playlist.json" `
+  --content-type "application/json; charset=utf-8" `
+  --cache-control $noCache `
+  --metadata-directive REPLACE | Out-Host
+
 & $aws --endpoint-url $endpoint s3 cp $deployIndexPath "$bucketUrl/index.html" `
   --content-type "text/html; charset=utf-8" `
   --cache-control $noCache `
