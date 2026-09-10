@@ -222,7 +222,7 @@ class Store:
             )
             self._db.commit()
             message_id = int(cursor.lastrowid)
-        return {"id": message_id, "email": email, "text": text, "created_at": created}
+        return {"id": message_id, "email": email.split("@", 1)[0] or "гость", "text": text, "created_at": created}
 
     def close(self) -> None:
         with self._lock:
@@ -235,7 +235,7 @@ class Store:
                 (limit,),
             ).fetchall()
         items = [
-            {"id": int(row["id"]), "email": str(row["email"]), "text": str(row["text"]), "created_at": int(row["created_at"])}
+            {"id": int(row["id"]), "email": str(row["email"]).split("@", 1)[0] or "гость", "text": str(row["text"]), "created_at": int(row["created_at"])}
             for row in rows
         ]
         items.reverse()
@@ -401,7 +401,7 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
         def _request_code(self, body: dict[str, Any]) -> None:
             email = str(body.get("email", "")).strip().lower()
             if not EMAIL_RE.match(email):
-                return self._json(HTTPStatus.BAD_REQUEST, {"error": "нужна настоящая почта"})
+                return self._json(HTTPStatus.BAD_REQUEST, {"error": "нужна почта: имя@example.com"})
             if not store.allow(f"email:{email}", 5, 3600) or not store.allow(f"ip:{self._client()}", 12, 3600):
                 return self._json(HTTPStatus.TOO_MANY_REQUESTS, {"error": "слишком часто, подожди"})
             store.upsert_user(email)

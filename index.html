@@ -17,17 +17,17 @@
   <meta property="og:title" content="inteonmteca">
   <meta property="og:description" content="Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри.">
   <meta property="og:url" content="https://inteonmteca.online/">
-  <meta property="og:image" content="https://inteonmteca.online/assets/kimpintyau/Cover.png">
+  <meta property="og:image" content="https://inteonmteca.online/assets/og-image.png">
   <meta property="og:image:alt" content="inteonmteca">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="inteonmteca">
   <meta name="twitter:description" content="Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри.">
-  <meta name="twitter:image" content="https://inteonmteca.online/assets/kimpintyau/Cover.png">
+  <meta name="twitter:image" content="https://inteonmteca.online/assets/og-image.png">
   <meta name="twitter:image:alt" content="inteonmteca">
   <link rel="icon" href="assets/favicon.ico" sizes="any">
   <link rel="icon" href="assets/logo-inteonmteca.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=20260910-2040">
+  <link rel="stylesheet" href="styles.css?v=20260911-0250">
 </head>
 <body class="perception-interface">
   <div class="perception-field" aria-hidden="true"></div>
@@ -37,6 +37,7 @@
     <span class="theme-light theme-light-c"></span>
   </div>
   <canvas id="perception-visual" class="perception-visual" aria-hidden="true"></canvas>
+  <div class="logo-atmosphere" aria-hidden="true"></div>
   <div class="depth-floor" aria-hidden="true"></div>
   <main class="page">
     <section class="hero">
@@ -118,10 +119,10 @@
             <div class="playlist-shell" id="playlist-shell">
               <div class="track-viewport" id="track-viewport">
                 <ol class="track-list" id="track-list" aria-label="Треки">
-                  <li class="track-item" data-track-title="Light Of The Night"><button class="track-select" type="button"><span class="track-meta"><span class="track-title" data-ink="Light Of The Night">Light Of The Night</span><span class="track-artist">Sonyx</span></span></button></li>
-                  <li class="track-item" data-track-title="Inteonmteca_"><button class="track-select" type="button"><span class="track-meta"><span class="track-title" data-ink="Inteonmteca_">Inteonmteca_</span><span class="track-artist">ыьек</span></span></button></li>
-                  <li class="track-item" data-track-title="Высоко до предела"><button class="track-select" type="button"><span class="track-meta"><span class="track-title" data-ink="Высоко до предела">Высоко до предела</span><span class="track-artist">Матт</span></span></button></li>
-                  <li class="track-item" data-track-title="Last Eclipse"><button class="track-select" type="button"><span class="track-meta"><span class="track-title" data-ink="Last Eclipse">Last Eclipse</span><span class="track-artist">Матт</span></span></button></li>
+                  <li class="track-item" data-track-title="Light Of The Night"><button class="track-select" type="button" onclick="window.inteonPick && window.inteonPick(event)"><span class="track-fold"><span class="track-meta"><span class="track-title" data-ink="Light Of The Night">Light Of The Night</span><span class="track-artist">Sonyx</span></span></span></button></li>
+                  <li class="track-item" data-track-title="Inteonmteca_"><button class="track-select" type="button" onclick="window.inteonPick && window.inteonPick(event)"><span class="track-fold"><span class="track-meta"><span class="track-title" data-ink="Inteonmteca_">Inteonmteca_</span><span class="track-artist">ыьек</span></span></span></button></li>
+                  <li class="track-item" data-track-title="Высоко до предела"><button class="track-select" type="button" onclick="window.inteonPick && window.inteonPick(event)"><span class="track-fold"><span class="track-meta"><span class="track-title" data-ink="Высоко до предела">Высоко до предела</span><span class="track-artist">Матт</span></span></span></button></li>
+                  <li class="track-item" data-track-title="Last Eclipse"><button class="track-select" type="button" onclick="window.inteonPick && window.inteonPick(event)"><span class="track-fold"><span class="track-meta"><span class="track-title" data-ink="Last Eclipse">Last Eclipse</span><span class="track-artist">Матт</span></span></span></button></li>
                 </ol>
                 <div class="track-scrollbar" id="track-scrollbar" hidden>
                   <span class="track-scrollbar-glow" aria-hidden="true"></span>
@@ -147,20 +148,21 @@
       <p class="immersive-artist" id="immersive-artist"></p>
       <p class="playback-status" id="playback-status" aria-live="polite"></p>
       <div class="transport" aria-label="Управление воспроизведением">
-        <div class="transport-buttons">
-          <button class="transport-button" id="previous-track" type="button" aria-label="Предыдущий трек">←</button>
-          <button class="transport-button transport-play" id="immersive-play" type="button" aria-label="Пауза"><span id="immersive-play-icon">Ⅱ</span></button>
-          <button class="transport-button" id="next-track" type="button" aria-label="Следующий трек">→</button>
+        <div class="now-playing">
+          <button class="transport-skip" id="previous-track" type="button" aria-label="Предыдущий трек">&lt;</button>
+          <p class="now-playing-title" id="now-playing-title"></p>
+          <button class="transport-skip" id="next-track" type="button" aria-label="Следующий трек">&gt;</button>
         </div>
         <div class="transport-timeline">
+          <button class="transport-play" id="immersive-play" type="button" aria-label="Пауза"><span id="immersive-play-icon">Ⅱ</span></button>
           <span class="transport-time" id="current-time">0:00</span>
           <div class="transport-seek-field">
             <span class="transport-seek-volume" aria-hidden="true"></span>
             <input class="transport-progress" id="track-progress" type="range" min="0" max="1000" value="0" step="1" aria-label="Позиция трека">
           </div>
           <span class="transport-time" id="duration-time">0:00</span>
+          <label class="transport-volume"><span aria-hidden="true">∿</span><input id="track-volume" type="range" min="0" max="1" value="0.86" step="0.01" aria-label="Громкость"></label>
         </div>
-        <label class="transport-volume"><span aria-hidden="true">∿</span><input id="track-volume" type="range" min="0" max="1" value="0.86" step="0.01" aria-label="Громкость"></label>
       </div>
       <button class="immersive-back" id="immersive-back" type="button">закрыть поле</button>
     </div>
@@ -173,11 +175,11 @@
     <p class="auth-kicker">виртуальный пропуск</p>
     <form class="auth-form" id="auth-email-form">
       <label class="auth-label" for="auth-email">почта</label>
-      <input class="auth-input" id="auth-email" name="email" type="email" autocomplete="email" required placeholder="you@mail">
+      <input class="auth-input" id="auth-email" name="email" type="email" autocomplete="email" required placeholder="твоя почта">
       <button class="auth-submit" type="submit">получить код</button>
     </form>
     <form class="auth-form" id="auth-code-form" hidden>
-      <label class="auth-label" for="auth-code">код из письма</label>
+      <label class="auth-label" for="auth-code" id="auth-code-label">код входа</label>
       <input class="auth-input" id="auth-code" name="code" inputmode="numeric" autocomplete="one-time-code" required maxlength="6" placeholder="000000">
       <button class="auth-submit" type="submit">войти</button>
     </form>
@@ -186,13 +188,16 @@
     <button class="auth-close" id="auth-close" type="button">закрыть</button>
   </section>
   <button class="chat-hint" id="chat-hint" type="button">чат</button>
+  <div class="chat-sign" id="chat-sign" aria-hidden="true">
+    <span class="chat-sign-word">чат</span>
+  </div>
   <section class="chat-panel" id="chat-panel" aria-hidden="true" hidden>
     <div class="chat-aura" aria-hidden="true"></div>
     <div class="chat-stream" id="chat-stream" aria-live="polite"></div>
     <form class="chat-compose" id="chat-form">
       <label class="visually-hidden" for="chat-input">сообщение</label>
       <input class="chat-input" id="chat-input" name="text" maxlength="280" autocomplete="off" placeholder="написать в воздух">
-      <button class="chat-send" type="submit">↑</button>
+      <button class="chat-send" type="submit" aria-label="отправить сообщение">↑</button>
     </form>
     <button class="chat-close" id="chat-close" type="button">свернуть</button>
   </section>
@@ -204,24 +209,20 @@
     </div>
     <label class="theme-label" for="theme-select">палитра</label>
     <select class="theme-select" id="theme-select">
+      <!-- Complete grouped options come from the embedded script.js registry. -->
       <option value="desert">пустынная ртуть</option>
-      <option value="sunset">перегретый закат</option>
-      <option value="abyss">ультрамариновая глубина</option>
-      <option value="moss">радиоактивный мох</option>
-      <option value="infrared">инфракрасный сон</option>
-      <option value="amethyst">аметистовый мираж</option>
-      <option value="glacier">ледяная память</option>
     </select>
     <label class="theme-label" for="theme-duration">случайная смена через</label>
-    <input class="theme-duration" id="theme-duration" type="range" min="0" max="1000" value="275" step="1" data-min-seconds="4" data-max-seconds="604800">
-    <output class="theme-duration-output" id="theme-duration-output" for="theme-duration">30 минут</output>
+    <input class="theme-duration" id="theme-duration" type="range" min="0" max="1000" value="58" step="1" data-min-seconds="4" data-max-seconds="604800">
+    <output class="theme-duration-output" id="theme-duration-output" for="theme-duration">8 секунд</output>
     <div class="theme-actions">
       <button class="theme-action" id="theme-random" type="button">другая сейчас</button>
       <button class="theme-action" id="refresh-media" type="button">обновить media</button>
     </div>
     <p class="theme-status" id="theme-status" aria-live="polite"></p>
   </section>
-  <script src="playlist-data.js?v=20260910-2040"></script>
-  <script src="script.js?v=20260910-2040"></script>
+  <script src="playlist-data.js?v=20260910-2345"></script>
+  <script src="track-play.js?v=20260911-0230"></script>
+  <script src="script.js?v=20260911-0245"></script>
 </body>
 </html>

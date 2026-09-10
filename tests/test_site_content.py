@@ -198,11 +198,13 @@ class SiteContentTests(unittest.TestCase):
         self.assertNotIn("open-space", html)
         self.assertIn('id="album-player"', html)
         self.assertIn("playTrack", script)
+        self.assertIn("let playbackRequestId = 0", script)
         self.assertIn("immersive-mode", html)
         self.assertNotIn('window.addEventListener("DOMContentLoaded", () => {\n  setupVisitCounter();\n  updateTransportButtons();\n  playNext();', script)
         self.assertIn('button.className = "track-select"', script)
         self.assertIn("meta.append(title, artist)", script)
         self.assertIn('playlistList?.addEventListener("click"', script)
+        self.assertIn("track-play.js", html)
         self.assertIn("track-viewport", html)
         self.assertIn("--track-row", styles)
         self.assertIn("track-scrollbar", html)
@@ -234,7 +236,7 @@ class SiteContentTests(unittest.TestCase):
         styles = (ROOT / "styles.css").read_text(encoding="utf-8")
         script = (ROOT / "script.js").read_text(encoding="utf-8")
 
-        self.assertIn("calc(var(--track-row) * 4)", styles)
+        self.assertIn("calc(var(--track-row) * 5)", styles)
         self.assertIn("updateTrackFold", script)
         self.assertIn("updateScrollbar", script)
         self.assertIn("is-departing", styles)
@@ -259,6 +261,8 @@ class SiteContentTests(unittest.TestCase):
         self.assertNotIn("playlist-count", html)
         self.assertNotIn("perception-glow", styles)
         self.assertIn("length > TRACK_VIEW", script)
+        self.assertIn("balanceInfiniteWheel", script)
+        self.assertIn("fillInfiniteWheel", script)
 
     def test_random_playlist_theme_rotation_and_adaptive_rendering_are_wired(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
@@ -269,7 +273,13 @@ class SiteContentTests(unittest.TestCase):
         self.assertIn("playRelativeTrack", script)
         self.assertIn("schedulePlaylistRefresh", script)
         self.assertIn('id="refresh-media"', html)
-        self.assertEqual(html.count('<option value="'), 7)
+        self.assertIn('value="desert"', html)
+        registry = script.split("const themeRegistry = Object.freeze([", 1)[1].split("].map", 1)[0]
+        self.assertEqual(len(re.findall(r'^  "[a-z-]+\|', registry, re.MULTILINE)), 99)
+        self.assertIn("populateThemeSelect();", script)
+        self.assertIn("themeCoreFilters", script)
+        self.assertNotIn('grayscale(1)', script)
+        self.assertNotIn('"--theme-fog-blur": "32px"', script)
         self.assertIn('data-min-seconds="4"', html)
         self.assertIn('data-max-seconds="604800"', html)
         self.assertIn("THEME_MIN_MS = 4 * 1000", script)
@@ -279,6 +289,9 @@ class SiteContentTests(unittest.TestCase):
         self.assertIn('html[data-theme="sunset"]', styles)
         self.assertIn('html[data-theme="glacier"]', styles)
         self.assertIn("setAnimationQuality", script)
+        self.assertIn("tickVisuals", script)
+        self.assertIn("drawWindField", script)
+        self.assertIn("windDigits", script)
         self.assertIn("recordFramePacing", script)
         self.assertIn('data-animation-quality="low"', styles)
 
@@ -317,6 +330,8 @@ class SiteContentTests(unittest.TestCase):
         self.assertIn("INTEONMTECA_PLAYLIST", script)
         self.assertIn("chat-glyph", styles)
         self.assertIn("chatFloat", styles)
+        self.assertIn("chatNeonFlicker", styles)
+        self.assertIn('id="chat-sign"', html)
         self.assertIn("animateChatGlyphs", script)
 
     def test_immersive_background_uses_analog_smoke_electricity_and_grid(self):

@@ -9,6 +9,7 @@ const playbackStatus = document.getElementById("playback-status");
 const immersiveBack = document.getElementById("immersive-back");
 const immersivePlay = document.getElementById("immersive-play");
 const immersivePlayIcon = document.getElementById("immersive-play-icon");
+const nowPlayingTitle = document.getElementById("now-playing-title");
 const previousTrack = document.getElementById("previous-track");
 const nextTrack = document.getElementById("next-track");
 const trackProgress = document.getElementById("track-progress");
@@ -29,6 +30,7 @@ const lowPowerDevice = isMobileViewport
   || (navigator.deviceMemory && navigator.deviceMemory <= 4);
 let animationQuality = lowPowerDevice ? "low" : "high";
 document.documentElement.dataset.animationQuality = animationQuality;
+let particleGrid = animationQuality === "low" ? { cols: 12, rows: 4 } : { cols: 18, rows: 6 };
 const logoWrap = document.querySelector(".logo-wrap");
 const reactiveLogo = document.getElementById("reactive-logo");
 const logoVector = document.getElementById("logo-vector");
@@ -48,6 +50,7 @@ const authEmailForm = document.getElementById("auth-email-form");
 const authCodeForm = document.getElementById("auth-code-form");
 const authEmail = document.getElementById("auth-email");
 const authCode = document.getElementById("auth-code");
+const authCodeLabel = document.getElementById("auth-code-label");
 const authStatus = document.getElementById("auth-status");
 const authClose = document.getElementById("auth-close");
 const authLogout = document.getElementById("auth-logout");
@@ -87,7 +90,6 @@ const spectrumState = { at: -Infinity, bass: 0, mid: 0, high: 0, avg: 0, flux: 0
 const logoReactiveState = { x: 0, y: 0, hoverX: 0, hoverY: 0, proximity: 0, bass: 0, mid: 0, high: 0, energy: 0 };
 const matrixElements = document.querySelectorAll(".matrix-text");
 const prefersDynamicMotion = !prefersReducedMotion;
-const particleGrid = animationQuality === "low" ? { cols: 12, rows: 4 } : { cols: 18, rows: 6 };
 const logoText = "inteonmteca";
 const logoLetters = [];
 const matrixGlyphs = "01/\\|<>[]{}#$%&*+-=abcdefghijklmnopqrstuvwxyz";
@@ -99,11 +101,189 @@ const matrixHoldDuration = 1000;
 const counterNamespace = "inteonmteca.online";
 const uniqueStorageKey = "inteonmteca-unique-visit";
 const counterBaseUrl = "https://abacus.jasoncameron.dev";
-const TRACK_VIEW = 4;
+const TRACK_VIEW = 5;
 const THEME_MIN_MS = 4 * 1000;
 const THEME_MAX_MS = 7 * 24 * 60 * 60 * 1000;
-const THEME_DEFAULT_MS = 30 * 60 * 1000;
-const themeNames = ["desert", "sunset", "abyss", "moss", "infrared", "amethyst", "glacier"];
+const THEME_DEFAULT_MS = 8 * 1000;
+// Single file://-safe source of truth. First ten are the core collection;
+// the remaining material studies are deliberately composed, not hue rotations.
+// Row: id | Russian label | background panel light-a light-b light-c accent text.
+const themeCoreFilters = Object.freeze({
+  desert: { canvas: "none", logo: "none", fog: "18px", opacity: ".82" },
+  sunset: { canvas: "hue-rotate(22deg) saturate(1.28)", logo: "hue-rotate(23deg) saturate(1.24)", fog: "22px", opacity: "1" },
+  abyss: { canvas: "hue-rotate(165deg) saturate(1.42)", logo: "hue-rotate(162deg) saturate(1.48)", fog: "20px", opacity: ".82" },
+  moss: { canvas: "hue-rotate(58deg) saturate(1.28)", logo: "hue-rotate(57deg) saturate(1.4)", fog: "16px", opacity: ".82" },
+  infrared: { canvas: "hue-rotate(-22deg) saturate(1.7) contrast(1.08)", logo: "hue-rotate(-25deg) saturate(1.65)", fog: "18px", opacity: ".82" },
+  amethyst: { canvas: "hue-rotate(226deg) saturate(1.5)", logo: "hue-rotate(224deg) saturate(1.55)", fog: "22px", opacity: ".82" },
+  glacier: { canvas: "hue-rotate(148deg) saturate(.92) brightness(1.08)", logo: "hue-rotate(150deg) saturate(.82) brightness(1.1)", fog: "22px", opacity: ".8" },
+  porcelain: { canvas: "hue-rotate(8deg) saturate(.95)", logo: "hue-rotate(10deg) saturate(.9)", fog: "18px", opacity: ".8" },
+  graphite: { canvas: "hue-rotate(200deg) saturate(.62)", logo: "hue-rotate(198deg) saturate(.58)", fog: "18px", opacity: ".78" },
+  oxblood: { canvas: "hue-rotate(-18deg) saturate(1.2)", logo: "hue-rotate(-16deg) saturate(1.16)", fog: "18px", opacity: ".84" },
+});
+const themeRegistry = Object.freeze([
+  // основные — seven original IDs stay vivid; three more complete the core ten
+  "desert|пустынная ртуть|070605 070605 e07d49 893a2d 6b415b d3ff69 f4eee8",
+  "sunset|перегретый закат|0d0802 0d0802 ff741a ffbe41 68ae37 bcff63 fff1dc",
+  "abyss|ультрамариновая глубина|020810 020810 14a8ff 1945dc 7e32ff 68ffe6 e0f5ff",
+  "moss|радиоактивный мох|050804 050804 9df330 347025 d2a326 d5ff66 edf5db",
+  "infrared|инфракрасный сон|0a0103 0a0103 ff261e 8b002d ff5c12 ff704e ffe6de",
+  "amethyst|аметистовый мираж|080410 080410 be48ff 4948e6 ff5bb5 e29dff f7e8ff",
+  "glacier|ледяная память|02090d 02090d 97eeff 2689eb cdffe8 c6fff9 e8fbff",
+  "porcelain|тёплый фарфор|14120f 26231c c9bc9e 92806b a9aaa0 e8dbbb f6f0e5",
+  "graphite|мягкий графит|0c0e10 1b1e21 929b9e 59666c 898078 c2cdce eff1f0",
+  "oxblood|воловья кожа|160b0b 291818 a97263 794452 9a825f d9b19b f5e8df",
+  // глины и земли
+  "kaolin|сырой каолин|14110e 27221c bcb09c 928675 847f6c d9c8aa f4ecdf",
+  "terracotta|пыльная терракота|190e0a 302019 c08364 914e42 aa946f e2ba91 f8eadb",
+  "umber|жжёная умбра|110e09 231d13 9c8159 685c44 948478 d2bc90 f0e9db",
+  "sienna|сырая сиена|171107 2b2112 b69a5d 8a684c 8f9170 e3ce9b f6eed7",
+  "ochre|золотая охра|151107 292314 c3a856 847344 a58b70 e7d69d f9f0d9",
+  "bentonite|серая глина|121211 232522 a4aaa0 727d79 978e7d ced1bb f0f0e5",
+  "brick-dust|кирпичная пыль|170d0d 2b1a19 b67569 885e58 8f856d dcb8a7 f6e9e0",
+  "adobe|саманный дом|15120c 282418 b4a37a 837552 9b8e7d d9cba7 f3eddf",
+  "red-earth|красная земля|170c08 2c1b12 b77247 874d3e 998058 ddb18a f5e8d9",
+  // волокна и ткани
+  "linen|небелёный лён|12130f 24271e aeb49a 80876d a19783 d5d9bd f1f2e5",
+  "hemp|конопляное полотно|13110a 272217 ada17a 777853 978765 d8cfa3 f2efda",
+  "raw-silk|шёлк экрю|151110 2b2220 c4aea3 95847d a4a291 e5d5bf f8eee7",
+  "cashmere|серый кашемир|111214 242529 a1a3b1 777a8c a39189 d0cbd8 f0eff5",
+  "felt|войлок и шалфей|0e1210 202722 98a897 617a70 a2967d c8d4b9 ebf2e8",
+  "velvet|табачный бархат|14100b 281f17 ab9065 79604b 928378 d6bd94 f4eada",
+  "denim|выцветший деним|0c1117 1a2632 829bb7 4e6b8a 9d9690 bdceda e9f0f7",
+  "corduroy|вельвет корицы|160e0b 2c1d17 b28b6b 88664f 968976 dbbd9c f5eadd",
+  "muslin|розовый муслин|171113 2b2127 c0a1b0 907b8d ada190 e6c9d5 faedf2",
+  // садовая зелень
+  "sage|серебряный шалфей|0f1410 202b23 9caf98 6d8b7b b0a184 cdddba eff5e8",
+  "olive|оливковая косточка|131409 272b18 a4a76c 737b45 9b8964 d1d49e f1f2dc",
+  "eucalyptus|кора эвкалипта|0d1413 1b2b29 7fa79c 537e79 a7927d bad8c9 e9f5ef",
+  "fern|тенистый папоротник|09130d 17291c 739c6c 466c54 938e62 b6d7a6 e8f4e4",
+  "juniper|сухой можжевельник|0d1214 1b282b 83a4a9 53747c 9d9b85 c0d8d1 ebf4f1",
+  "pistachio|скорлупа фисташки|14150e 292c20 b2bb85 7d9167 b0a081 d9e0b1 f3f5e3",
+  "nettle|крапивный настой|101307 222918 8f9a55 5e753c a39560 c4d393 eff3d9",
+  "lichen|лишайник на камне|131512 272c26 a1ae8b 748472 a5a290 d2d7b8 f0f3e6",
+  "artichoke|лист артишока|13120f 29271f a3a083 73785e 958a9a d1cdb0 f3eee3",
+  // вода и минеральные синие
+  "petrol|петролевая эмаль|081415 152b2d 589a9e 37696e a59877 abd6cb e4f4f0",
+  "slate|мокрый сланец|101216 222730 8897ad 5e708b a39c96 c5cfdb eff2f7",
+  "celadon|селадоновая глазурь|101612 222e26 a1beb0 6e9285 b6af8e d5e7ce f0f8ed",
+  "sea-glass|матовое стекло|0e1616 1d2d2e 8fb9b6 648e99 a8b19b c8e3d7 ecf7f2",
+  "verdigris|медная патина|0b1511 182d25 6cae95 487967 b09a68 bbe0b8 e7f5e9",
+  "ink-blue|синие чернила|0c101b 1b2335 718bad 4c597e 9d8f9f bdc9df eaf0fc",
+  "storm-blue|грозовой лён|10141a 232b36 93a6bc 637c94 a8a390 ccdbe0 f0f4f8",
+  "ceramic-blue|синяя керамика|0b121a 192936 759eb5 486f93 b5a184 bed7e3 eaf4fa",
+  "river-silt|речной ил|111512 242d26 9fac98 697f76 a59a88 d0dac1 eff5e8",
+  // плоды и настои
+  "quince|айвовый мёд|181307 302715 c7ac62 937343 a19a6e e9d8a1 f9f1d9",
+  "fig|кожица инжира|170e18 2d1e2e ad87a9 735e7c a19c77 d9bed2 f8edf6",
+  "plum|сливовый налёт|130e19 271e31 9e8bb0 655777 ab8e8b cfbeda f2eaf9",
+  "mulberry|сок шелковицы|180b13 301922 b17894 7f4968 a88c71 e0b1c6 fae6ef",
+  "blackcurrant|смородиновый лист|130e16 261e2c 97798d 625470 8f9e76 cdb8c7 f4eaf1",
+  "rosehip|сухой шиповник|1a0e0b 321e18 c08770 92594d a59b77 e9bea1 fbeddf",
+  "pomegranate|гранатовая корка|190b0f 30181f b57279 803e58 ae8868 e3b2ae fae7e7",
+  "apricot|абрикосовая замша|19130e 30261e c7a17a 937957 a7a18b edd0a9 faf1e4",
+  "persimmon|вяленая хурма|191006 302115 c58f50 956344 9a976e ebc28e f9ebd6",
+  // древесина и смолы
+  "walnut|ореховый шпон|120e0c 261e1a a58b7a 71584f 97947a d4bba3 f1e7dd",
+  "cedar|кедровая стружка|17110c 2d231a b69b79 8b6d55 9d9f80 e1c9a5 f6eddf",
+  "ebony|чёрное дерево|0c0c0a 1e1d17 8b8971 5b6355 928076 c4bf9e eceade",
+  "birch|берёзовая кора|141413 292a26 b9b9aa 858d82 a59a87 e0dfc9 f4f4e9",
+  "cork|португальская пробка|18130e 2e261b b8a080 8c775e a59687 e4cfae f8efdf",
+  "rosewood|розовое дерево|180f11 2f2022 b58a89 845e69 a5927c e0bebe f9eaeb",
+  "smoked-oak|копчёный дуб|11100e 25241d 96957d 676b58 988577 c7c2a4 f0ede0",
+  "amber-resin|янтарная смола|171005 2d2210 bd984c 86672f a28760 e7ce8e f7edcf",
+  "pine-bark|сосновая кора|13100b 292219 a48b62 726a48 8d9b83 d1c294 f0ebda",
+  // металл и камень
+  "pewter|оловянная чашка|121416 262b2e a9b2b4 76868e a69c8a d5ded9 f1f5f2",
+  "brass|старая латунь|151309 2b2817 b9ab69 887b43 a69b7f dfdaa5 f6f3dd",
+  "copper|травлёная медь|180e0c 2f1f1b b98772 86594e 80a293 e1bba7 f8eade",
+  "basalt|тёплый базальт|101110 232522 90998f 616e69 9a8d81 c6cfc1 edf1e8",
+  "travertine|римский травертин|17140f 2e281e c1b091 948366 a9a18c e7d9b7 f8f1e1",
+  "soapstone|мыльный камень|111614 252e28 a8b8aa 728e7f aca88f d6e2cd f1f7eb",
+  "malachite|матовый малахит|091611 172e24 6ca68a 3e725f b1a37e b9d9ba e6f6e9",
+  "rhodonite|пыльный родонит|180f15 301f2a ba92aa 805f7a 9e9c88 e5c1d4 f9edf4",
+  "fluorite|зелёный флюорит|101515 222d2f 9fb5ad 778b9e ac94b3 d4ddd0 f1f6f1",
+  // чай и пряности
+  "matcha|маття в тени|14170c 292e1b a9b77c 7a9058 b2a179 dce3ac f5f7e0",
+  "oolong|дымный улун|17130b 2d281b ac9c76 7a704e 9b9e84 d9cda2 f4efdc",
+  "hibiscus|чай каркаде|190d16 311c2b b17e9b 7f4f73 a88d81 e1b8d0 f9eaf3",
+  "saffron|нить шафрана|191406 302911 c1a345 947531 a28e67 e9d485 faf1d2",
+  "cardamom|зелёный кардамон|15170f 2c3020 aeb891 7e906b b5aa8c dde4bd f5f7e7",
+  "cinnamon|палочка корицы|180f0a 301f16 b98d69 885e44 a29676 e3c09a f8ead9",
+  "clove|сухая гвоздика|140e10 291e21 9e7f82 70585f 9a9179 d1b6b5 f2e7e6",
+  "vanilla|стручок ванили|17150f 2e2b1f c0b598 908767 a9a293 e9ddbb f9f3e3",
+  "cacao|горькое какао|120d0b 271c17 9e8069 705549 9b8b78 d2b398 f1e5d8",
+  // пигменты и бумага
+  "parchment|старый пергамент|18160f 302d20 bdb58d 91845f aba28a e5dfb6 f9f5e0",
+  "sepia|сепия на бумаге|151008 2b2316 ab9164 786345 a1997e dac498 f4ecda",
+  "indigo|потёртый индиго|10101b 232338 8c8ead 5c608b a39d8e c8cce0 f0f0fb",
+  "madder|мареновый краситель|1a0e11 321e23 ba8287 894d63 b69b81 e8bdbb fbeaec",
+  "weld|резеда красильная|17170c 2f301b b6b777 818c4e a79c76 e0e2a9 f7f7df",
+  "wisteria|сухая глициния|141019 292333 ac9dbb 79708d b2a191 dfd1e5 f6effa",
+  "dusty-rose|пепельная роза|181215 30262a c0a3ad 917b87 afa18d ead0d7 fbF0f3",
+  "chalk|цветной мел|151718 2b3031 b4c0bc 83959d b5aa9c e0e9dd f5faf3",
+  "charcoal|угольный набросок|0e1012 21262b 929fa8 647580 9e9588 c6d4d9 ecf3f6",
+  // необычные сочетания
+  "salt-plum|соль и слива|15121a 2c2733 b0a3c1 7c718e a6b7ab e0d4eb f7f1fc",
+  "pear-smoke|груша в дыму|17180e 2f3220 b9bf87 879759 b3a094 e6e9ba f8f9e5",
+  "tea-rose|чайная роза|1a1310 332820 c6a48d 947e68 a9ae93 eed2b8 fcf1e5",
+  "lavender-clay|лавандовая глина|17111a 2f2534 b29db4 7d708b b4a082 e3cfe1 f8eff9",
+  "mint-copper|мята и медь|101915 21332b 9ebbaa 6c9388 bb987b d9ead0 f1faed",
+  "mustard-ink|горчица и тушь|151510 2b2d23 b5ad75 657e80 a28b76 e0d7a6 f6f3e0",
+  "aubergine-linen|баклажан и лён|191019 312330 b69cad 806177 b5af8e e4d2c0 faf0ec",
+  "oyster|устричный перламутр|151617 2d3030 b7bdbc 858e9a b8a69f e5e6da f8f8f1"
+].map((row, index) => {
+  const [id, name, palette] = row.split("|");
+  const [bg, panel, a, b, c, accent, text] = palette.toLowerCase().split(" ");
+  const rgb = (hex) => hex.match(/.{2}/g).map((channel) => parseInt(channel, 16)).join(", ");
+  const hueOf = (hex) => {
+    const [red, green, blue] = hex.match(/.{2}/g).map((channel) => parseInt(channel, 16) / 255);
+    const max = Math.max(red, green, blue);
+    const min = Math.min(red, green, blue);
+    if (max === min) return 22;
+    const delta = max - min;
+    let hue = max === red
+      ? (green - blue) / delta + (green < blue ? 6 : 0)
+      : max === green ? (blue - red) / delta + 2 : (red - green) / delta + 4;
+    return hue * 60;
+  };
+  const rotate = Math.round((hueOf(a) - 22 + 360) % 360);
+  const core = themeCoreFilters[id];
+  return Object.freeze({
+    id,
+    name,
+    group: index < 10 ? "основные" : "оттенки",
+    tokens: Object.freeze({
+      "--theme-bg": `#${bg}`,
+      "--theme-panel-rgb": rgb(panel),
+      "--theme-a-rgb": rgb(a),
+      "--theme-b-rgb": rgb(b),
+      "--theme-c-rgb": rgb(c),
+      "--theme-accent-rgb": rgb(accent),
+      "--theme-text-rgb": rgb(text),
+      "--theme-canvas-filter": core?.canvas || `hue-rotate(${rotate}deg) saturate(1.22)`,
+      "--theme-logo-filter": core?.logo || `hue-rotate(${rotate}deg) saturate(1.18)`,
+      "--theme-fog-blur": core?.fog || "18px",
+      "--theme-light-opacity": core?.opacity || ".8",
+    }),
+  });
+}));
+const themeNames = themeRegistry.map((theme) => theme.id);
+const themesById = new Map(themeRegistry.map((theme) => [theme.id, theme]));
+
+const populateThemeSelect = () => {
+  if (!themeSelect) return;
+  themeSelect.replaceChildren();
+  const groups = { "основные": document.createElement("optgroup"), "оттенки": document.createElement("optgroup") };
+  groups["основные"].label = "основные";
+  groups["оттенки"].label = "оттенки";
+  for (const theme of themeRegistry) {
+    const option = document.createElement("option");
+    option.value = theme.id;
+    option.textContent = theme.name;
+    groups[theme.group].append(option);
+  }
+  themeSelect.append(groups["основные"], groups["оттенки"]);
+};
 const themeStorageKey = "inteonmteca-theme";
 const themeDurationStorageKey = "inteonmteca-theme-duration";
 const localSessionStorageKey = "inteonmteca-local-session";
@@ -118,6 +298,10 @@ let playlistRaf = 0;
 let playlistScrollRaf = 0;
 let playlistScrollTarget = 0;
 let playlistScrollVelocity = 0;
+let wheelBalancing = false;
+let playLockAt = 0;
+let trackPlayBlend = 0;
+let playbackRequestId = 0;
 let fullReadableMode = false;
 let logoLocked = false;
 let logoChaosActive = false;
@@ -146,20 +330,41 @@ let themeRotationTimer = 0;
 let themeShiftTimer = 0;
 let slowFrameScore = 0;
 let motionLastFrame = performance.now();
-let playbackRequestId = 0;
+let trackItemNodes = [];
+let trackTitleNodes = [];
+let sceneRaf = 0;
+let lastVisualTick = 0;
+let logoCanvasBounds = { width: 0, height: 0 };
+const lastMotionCss = { x: "", y: "", strength: "", tiltX: "", tiltY: "" };
+const lastLogoVars = new Map();
 
 const apiUrl = (path) => `${API_BASE}${path}`;
 
+const refreshTrackNodes = () => {
+  trackItemNodes = playlistList ? [...playlistList.querySelectorAll(".track-item")] : [];
+  trackTitleNodes = trackItemNodes.map((item) => item.querySelector(".track-title")).filter(Boolean);
+};
+
 const renderInterval = () => animationQuality === "low" ? 52 : 34;
+
+const rebuildQualityDependentState = () => {
+  particleGrid = animationQuality === "low" ? { cols: 12, rows: 4 } : { cols: 18, rows: 6 };
+  setupSmokeEmitters();
+  setupPerceptionField();
+  setupWindField();
+  setupLogoFilaments();
+  setupLogoSlices();
+  setupLogoParticles();
+  resizeInkField();
+  resizeLogoCanvas();
+  sizeCanvas(immersiveVisual);
+};
 
 const setAnimationQuality = (quality) => {
   if (animationQuality === quality) return;
   animationQuality = quality;
   document.documentElement.dataset.animationQuality = quality;
-  setupPerceptionField();
-  resizeInkField();
-  resizeLogoCanvas();
-  sizeCanvas(immersiveVisual);
+  rebuildQualityDependentState();
 };
 
 const recordFramePacing = (delta) => {
@@ -190,12 +395,17 @@ const renderWeightedMotion = (now) => {
   motionState.x += motionVelocity.x * delta;
   motionState.y += motionVelocity.y * delta;
   motionState.strength += (motionTarget.strength - motionState.strength) * (.055 * delta);
-  document.documentElement.style.setProperty("--motion-x", motionState.x.toFixed(3));
-  document.documentElement.style.setProperty("--motion-y", motionState.y.toFixed(3));
-  document.documentElement.style.setProperty("--motion-strength", motionState.strength.toFixed(3));
-  document.documentElement.style.setProperty("--hero-tilt-x", `${(motionState.x * 1.8).toFixed(2)}deg`);
-  document.documentElement.style.setProperty("--hero-tilt-y", `${(-motionState.y * 1.2).toFixed(2)}deg`);
-  requestAnimationFrame(renderWeightedMotion);
+  const x = motionState.x.toFixed(3);
+  const y = motionState.y.toFixed(3);
+  const strength = motionState.strength.toFixed(3);
+  const tiltX = `${(motionState.x * 1.8).toFixed(2)}deg`;
+  const tiltY = `${(-motionState.y * 1.2).toFixed(2)}deg`;
+  const root = document.documentElement.style;
+  if (lastMotionCss.x !== x) { lastMotionCss.x = x; root.setProperty("--motion-x", x); }
+  if (lastMotionCss.y !== y) { lastMotionCss.y = y; root.setProperty("--motion-y", y); }
+  if (lastMotionCss.strength !== strength) { lastMotionCss.strength = strength; root.setProperty("--motion-strength", strength); }
+  if (lastMotionCss.tiltX !== tiltX) { lastMotionCss.tiltX = tiltX; root.setProperty("--hero-tilt-x", tiltX); }
+  if (lastMotionCss.tiltY !== tiltY) { lastMotionCss.tiltY = tiltY; root.setProperty("--hero-tilt-y", tiltY); }
 };
 
 const setPointerMotion = (event) => {
@@ -214,7 +424,6 @@ document.documentElement.addEventListener("pointerleave", () => {
   pointerState.active = false;
   setMotion(0, 0, 0);
 }, { passive: true });
-requestAnimationFrame(renderWeightedMotion);
 
 const handleDeviceMotion = (event) => {
   const a = event.accelerationIncludingGravity;
@@ -241,27 +450,39 @@ const canvasScale = () => Math.min(devicePixelRatio || 1, animationQuality === "
 
 const sizeCanvas = (canvas) => {
   if (!canvas) return;
-  canvas.width = innerWidth * canvasScale();
-  canvas.height = innerHeight * canvasScale();
+  const scale = canvasScale();
+  const nextWidth = Math.max(1, Math.round(innerWidth * scale));
+  const nextHeight = Math.max(1, Math.round(innerHeight * scale));
+  if (canvas.width === nextWidth && canvas.height === nextHeight) return;
+  canvas.width = nextWidth;
+  canvas.height = nextHeight;
 };
 
 const fractalLayer = document.createElement("canvas");
-const fractalContext = fractalLayer.getContext("2d");
+const fractalContext = fractalLayer.getContext("2d", { alpha: true });
 const smokeMaskLayer = document.createElement("canvas");
-const smokeMaskContext = smokeMaskLayer.getContext("2d");
+const smokeMaskContext = smokeMaskLayer.getContext("2d", { alpha: true });
 const hashUnit = (value) => {
-  const raw = Math.sin(value * 91.721 + 17.17) * 43758.5453;
-  return raw - Math.floor(raw);
+  let n = Math.imul((value * 4096) | 0 ^ 0x9e3779b9, 0x85ebca6b);
+  n = Math.imul(n ^ (n >>> 13), 0xc2b2ae35);
+  return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
 };
-const smokeEmitters = Array.from({ length: animationQuality === "low" ? 5 : 8 }, (_, index) => ({
-  x: .08 + hashUnit(index + 1.2) * .84,
-  y: .12 + hashUnit(index + 4.7) * .72,
-  radius: .13 + hashUnit(index + 8.1) * .17,
-  phase: hashUnit(index + 12.4) * Math.PI * 2,
-  speed: .055 + hashUnit(index + 16.8) * .11,
-  orbitX: .025 + hashUnit(index + 20.1) * .095,
-  orbitY: .025 + hashUnit(index + 24.9) * .08,
-}));
+let smokeEmitters = [];
+let smokeClouds = [];
+const setupSmokeEmitters = () => {
+  const count = animationQuality === "low" ? 5 : 8;
+  smokeEmitters = Array.from({ length: count }, (_, index) => ({
+    x: .08 + hashUnit(index + 1.2) * .84,
+    y: .12 + hashUnit(index + 4.7) * .72,
+    radius: .13 + hashUnit(index + 8.1) * .17,
+    phase: hashUnit(index + 12.4) * Math.PI * 2,
+    speed: .055 + hashUnit(index + 16.8) * .11,
+    orbitX: .025 + hashUnit(index + 20.1) * .095,
+    orbitY: .025 + hashUnit(index + 24.9) * .08,
+  }));
+  smokeClouds = smokeEmitters.map((_, index) => ({ x: 0, y: 0, radius: 0, life: 0, phase: 0, index }));
+};
+setupSmokeEmitters();
 
 const setupPerceptionField = () => {
   if (!perceptionVisual || !perceptionContext) return;
@@ -282,11 +503,7 @@ const setupPerceptionField = () => {
 const renderPerceptionField = (now) => {
   if (!perceptionVisual || !perceptionContext) return;
   const elapsed = now - perceptionLastFrame;
-  if (document.hidden || elapsed < renderInterval()) {
-    requestAnimationFrame(renderPerceptionField);
-    return;
-  }
-  recordFramePacing(elapsed);
+  if (elapsed < renderInterval()) return;
   perceptionLastFrame = now;
   sceneClock.now = now;
   const energy = audioEnergy(now);
@@ -294,21 +511,158 @@ const renderPerceptionField = (now) => {
   perceptionContext.setTransform(scale, 0, 0, scale, 0, 0);
   perceptionContext.fillStyle = "rgba(7,6,6,.16)";
   perceptionContext.fillRect(0, 0, innerWidth, innerHeight);
-  drawSmoke(perceptionContext, innerWidth, innerHeight, energy, now, immersiveState.active ? .55 : .3);
+  if (!immersiveState.active) {
+    drawSmoke(perceptionContext, innerWidth, innerHeight, energy, now, .3);
+  }
+  drawWindField(perceptionContext, innerWidth, innerHeight, energy, now);
   perceptionContext.font = "11px ui-monospace, monospace";
-  perceptionField.forEach((node, index) => {
+  const live = immersiveState.active;
+  for (let index = 0; index < perceptionField.length; index += 1) {
+    const node = perceptionField[index];
     const breath = Math.max(0, Math.sin(now * .00018 + node.seed));
-    const x = node.x * innerWidth + motionState.x * (8 + index * 1.3);
-    const y = node.y * innerHeight + motionState.y * (6 + index);
-    perceptionContext.fillStyle = `rgba(214,165,104,${(immersiveState.active ? .03 : .018) + breath * (immersiveState.active ? .09 : .055)})`;
+    const x = node.x * innerWidth + motionState.x * (8 + index * 1.3) + windState.x * (10 + index);
+    const y = node.y * innerHeight + motionState.y * (6 + index) + windState.y * (8 + index * .6);
+    perceptionContext.fillStyle = `rgba(214,165,104,${(live ? .03 : .018) + breath * (live ? .09 : .055)})`;
     perceptionContext.fillText(node.glyph, x, y);
-  });
-  requestAnimationFrame(renderPerceptionField);
+  }
 };
 
 setupPerceptionField();
-requestAnimationFrame(renderPerceptionField);
 window.addEventListener("resize", setupPerceptionField, { passive: true });
+
+const windState = { x: .55, y: -.14, gust: .4, angle: -.22 };
+const windMotes = [];
+const windDigits = [];
+let windDigitAt = 0;
+let windLastTick = 0;
+
+const spawnWindMote = (anywhere = false) => {
+  const fromLeft = windState.x >= 0;
+  const fromTop = windState.y >= 0;
+  let x;
+  let y;
+  if (anywhere) {
+    x = Math.random() * innerWidth;
+    y = Math.random() * innerHeight;
+  } else if (Math.abs(windState.x) > Math.abs(windState.y)) {
+    x = fromLeft ? -16 - Math.random() * 40 : innerWidth + 16 + Math.random() * 40;
+    y = Math.random() * innerHeight;
+  } else {
+    x = Math.random() * innerWidth;
+    y = fromTop ? -16 - Math.random() * 40 : innerHeight + 16 + Math.random() * 40;
+  }
+  return {
+    x,
+    y,
+    z: .4 + Math.random() * .9,
+    size: .5 + Math.random() * 1.9,
+    wobble: Math.random() * Math.PI * 2,
+    ember: Math.random() > .82,
+  };
+};
+
+const spawnWindDigit = () => {
+  const fromLeft = windState.x >= 0;
+  return {
+    x: fromLeft ? -28 : innerWidth + 28,
+    y: innerHeight * (.1 + Math.random() * .78),
+    z: .55 + Math.random() * .7,
+    size: 10 + Math.random() * 20,
+    rot: (Math.random() - .5) * .8,
+    spin: (Math.random() - .5) * .035,
+    glyph: perceptionChars[Math.floor(Math.random() * perceptionChars.length)],
+    age: 0,
+    ttl: 3.8 + Math.random() * 3.2,
+  };
+};
+
+const setupWindField = () => {
+  windMotes.length = 0;
+  windDigits.length = 0;
+  const count = prefersReducedMotion ? 10 : animationQuality === "low" ? 32 : 64;
+  for (let index = 0; index < count; index += 1) windMotes.push(spawnWindMote(true));
+};
+
+const updateWind = (now, energy, delta) => {
+  const time = now * .00012;
+  const sway = Math.sin(time * 1.7) * .18 + Math.sin(time * .43) * .12;
+  windState.angle += (sway + motionState.x * .04) * .018 * delta;
+  const targetGust = .28 + energy.avg * .85 + energy.bass * .45 + motionState.strength * .35;
+  windState.gust += (targetGust - windState.gust) * .045 * delta;
+  windState.x = Math.cos(windState.angle) * (1.15 + windState.gust);
+  windState.y = Math.sin(windState.angle) * (.32 + windState.gust * .28) - .12;
+};
+
+const recycleWindMote = (mote) => {
+  const next = spawnWindMote(false);
+  mote.x = next.x;
+  mote.y = next.y;
+  mote.z = next.z;
+  mote.size = next.size;
+  mote.wobble = next.wobble;
+  mote.ember = next.ember;
+};
+
+const drawWindField = (ctx, width, height, energy, now) => {
+  if (!ctx || prefersReducedMotion && !windMotes.length) return;
+  const delta = Math.min(2.2, Math.max(.25, (now - (windLastTick || now)) / 16.67));
+  windLastTick = now;
+  updateWind(now, energy, delta);
+  if (!windMotes.length) setupWindField();
+
+  const live = .7 + energy.avg * .9;
+  for (let index = 0; index < windMotes.length; index += 1) {
+    const mote = windMotes[index];
+    const speed = (1.1 + mote.z * 1.8) * live;
+    mote.wobble += .04 * delta;
+    mote.x += (windState.x * 1.8 + Math.sin(mote.wobble) * .35) * speed * delta;
+    mote.y += (windState.y * 1.4 + Math.cos(mote.wobble * .7) * .22) * speed * delta;
+    if (mote.x < -48 || mote.x > width + 48 || mote.y < -48 || mote.y > height + 48) recycleWindMote(mote);
+    const alpha = (.045 + mote.z * .07) * (immersiveState.active ? 1.15 : 1);
+    ctx.fillStyle = mote.ember
+      ? `rgba(232,156,92,${alpha * 1.6})`
+      : `rgba(236,214,176,${alpha})`;
+    ctx.fillRect(mote.x, mote.y, mote.size * mote.z, mote.size * .45);
+  }
+
+  const digitGap = prefersReducedMotion ? 6400 : animationQuality === "low" ? 2200 : 1400;
+  const wantDigit = now - windDigitAt > digitGap
+    && windDigits.length < (animationQuality === "low" ? 3 : 6)
+    && (energy.flux > .12 || hashUnit(now * .0013) > .72);
+  if (wantDigit) {
+    windDigits.push(spawnWindDigit());
+    windDigitAt = now;
+  }
+
+  ctx.save();
+  ctx.font = "500 14px ui-monospace, SFMono-Regular, Consolas, monospace";
+  for (let index = windDigits.length - 1; index >= 0; index -= 1) {
+    const digit = windDigits[index];
+    const speed = (1.2 + digit.z * 1.6) * live;
+    digit.age += delta * .016;
+    digit.x += windState.x * 2.4 * speed * delta;
+    digit.y += (windState.y * 1.6 + Math.sin(digit.age * 2.2) * .18) * speed * delta;
+    digit.rot += digit.spin * delta;
+    const fade = Math.min(1, digit.age * 1.8, (digit.ttl - digit.age) * 1.1);
+    if (digit.age > digit.ttl || digit.x < -80 || digit.x > width + 80 || digit.y < -80 || digit.y > height + 80) {
+      windDigits.splice(index, 1);
+      continue;
+    }
+    ctx.save();
+    ctx.translate(digit.x, digit.y);
+    ctx.rotate(digit.rot);
+    ctx.globalAlpha = Math.max(0, fade) * (.22 + energy.high * .28);
+    ctx.fillStyle = digit.glyph === "0" || digit.glyph === "1"
+      ? "rgba(211,255,105,.95)"
+      : "rgba(244,214,168,.95)";
+    ctx.font = `${Math.round(digit.size)}px ui-monospace, monospace`;
+    ctx.fillText(digit.glyph, 0, 0);
+    ctx.restore();
+  }
+  ctx.restore();
+};
+setupWindField();
+window.addEventListener("resize", setupWindField, { passive: true });
 
 const ensureAudioContext = async () => {
   if (!audioContext || isFileMode || !canUseNetwork) return null;
@@ -367,16 +721,12 @@ const audioEnergy = (now = performance.now()) => {
   let mid = 0;
   let high = 0;
   let avg = 0;
-  const peaks = [];
   if (node?.analyser && node.data && player && !player.paused) {
     node.analyser.getByteFrequencyData(node.data);
     bass = averageBand(node.data, 0, .14);
     mid = averageBand(node.data, .14, .52);
     high = averageBand(node.data, .52, 1);
     avg = averageBand(node.data, 0, 1);
-    node.data.forEach((value, index) => {
-      if (value > 186 && index % 3 === 0) peaks.push(index);
-    });
   }
   const flux = Math.min(1, Math.abs(avg - spectrumState.previous) * 8.5);
   spectrumState.previous = avg;
@@ -385,7 +735,6 @@ const audioEnergy = (now = performance.now()) => {
   spectrumState.high += (high - spectrumState.high) * .18;
   spectrumState.avg += (avg - spectrumState.avg) * .2;
   spectrumState.flux += (flux - spectrumState.flux) * .3;
-  spectrumState.peaks = peaks;
   return spectrumState;
 };
 
@@ -405,18 +754,18 @@ const smokeCloudsAt = (width, height, energy, now) => {
   const pointerX = immersiveState.active ? immersiveState.pointerX : motionState.x;
   const pointerY = immersiveState.active ? immersiveState.pointerY : motionState.y;
   const size = Math.min(width, height);
-  return smokeEmitters.map((emitter, index) => {
+  for (let index = 0; index < smokeEmitters.length; index += 1) {
+    const emitter = smokeEmitters[index];
+    const cloud = smokeClouds[index];
     const lifeWave = (Math.sin(time * emitter.speed * Math.PI * 2 + emitter.phase) + 1) * .5;
-    const life = .12 + Math.pow(lifeWave, 1.7) * .88;
-    return {
-      x: (emitter.x + Math.sin(time * emitter.speed + emitter.phase) * emitter.orbitX) * width + pointerX * (9 + index * 1.8),
-      y: (emitter.y + Math.cos(time * emitter.speed * .77 + emitter.phase) * emitter.orbitY) * height + pointerY * (7 + index * 1.4),
-      radius: size * emitter.radius * (.62 + life * .52 + energy.bass * .3),
-      life,
-      phase: emitter.phase,
-      index,
-    };
-  });
+    cloud.x = (emitter.x + Math.sin(time * emitter.speed + emitter.phase) * emitter.orbitX) * width + pointerX * (9 + index * 1.8);
+    cloud.y = (emitter.y + Math.cos(time * emitter.speed * .77 + emitter.phase) * emitter.orbitY) * height + pointerY * (7 + index * 1.4);
+    cloud.life = .12 + Math.pow(lifeWave, 1.7) * .88;
+    cloud.radius = size * emitter.radius * (.62 + cloud.life * .52 + energy.bass * .3);
+    cloud.phase = emitter.phase;
+    cloud.index = index;
+  }
+  return smokeClouds;
 };
 
 const traceFractalBranch = (ctx, x, y, length, angle, depth, seed, now, energy) => {
@@ -493,9 +842,9 @@ const paintFractalLattice = (ctx, width, height, energy, now) => {
   ctx.lineJoin = "round";
   ctx.lineWidth = .42 + energy.high * .8;
   ctx.strokeStyle = `rgba(231,176,111,${.28 + energy.mid * .42})`;
-  ctx.shadowBlur = 4 + energy.bass * 15;
-  ctx.shadowColor = `rgba(190,73,40,${.3 + energy.bass * .38})`;
-  const depth = animationQuality === "low" ? 2 : 3;
+  ctx.shadowBlur = animationQuality === "low" ? 0 : 2 + energy.bass * 6;
+  ctx.shadowColor = `rgba(190,73,40,${.22 + energy.bass * .28})`;
+  const depth = animationQuality === "low" ? 1 : 2;
   perceptionField.forEach((field, index) => {
     const parallax = .3 + index / Math.max(1, perceptionField.length);
     const x = field.x * width + motionState.x * 24 * parallax;
@@ -522,7 +871,7 @@ const paintSmokeMask = (ctx, width, height, clouds, energy, now) => {
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   clouds.forEach((cloud) => {
-    const lobes = 4;
+    const lobes = animationQuality === "low" ? 2 : 3;
     for (let lobe = 0; lobe < lobes; lobe += 1) {
       const angle = cloud.phase + lobe * 1.73 + now * .00008;
       const x = cloud.x + Math.cos(angle) * cloud.radius * .22;
@@ -542,10 +891,13 @@ const paintSmokeMask = (ctx, width, height, clouds, energy, now) => {
 
 const drawSmokeRevealedFractal = (ctx, width, height, energy, now, intensity = 1) => {
   if (!fractalContext || !smokeMaskContext || !perceptionField.length) return;
-  ensureEffectLayers(width, height);
-  const clouds = smokeCloudsAt(width, height, energy, now);
-  paintFractalLattice(fractalContext, width, height, energy, now);
-  paintSmokeMask(smokeMaskContext, width, height, clouds, energy, now);
+  const layerScale = animationQuality === "low" ? .32 : .46;
+  const layerW = Math.max(1, Math.round(width * layerScale));
+  const layerH = Math.max(1, Math.round(height * layerScale));
+  ensureEffectLayers(layerW, layerH);
+  const clouds = smokeCloudsAt(layerW, layerH, energy, now);
+  paintFractalLattice(fractalContext, layerW, layerH, energy, now);
+  paintSmokeMask(smokeMaskContext, layerW, layerH, clouds, energy, now);
   fractalContext.save();
   fractalContext.globalCompositeOperation = "destination-in";
   fractalContext.drawImage(smokeMaskLayer, 0, 0);
@@ -553,9 +905,9 @@ const drawSmokeRevealedFractal = (ctx, width, height, energy, now, intensity = 1
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   ctx.globalAlpha = intensity * (.48 + energy.avg * .65);
-  ctx.drawImage(fractalLayer, -motionState.x * 1.6, -motionState.y * 1.2);
+  ctx.drawImage(fractalLayer, -motionState.x * 1.6, -motionState.y * 1.2, width, height);
   ctx.globalAlpha = intensity * (.12 + energy.high * .25);
-  ctx.drawImage(fractalLayer, motionState.x * 4 + 2, motionState.y * 3 - 1);
+  ctx.drawImage(fractalLayer, motionState.x * 4 + 2, motionState.y * 3 - 1, width, height);
   ctx.restore();
 };
 
@@ -566,7 +918,8 @@ const drawSmoke = (ctx, width, height, energy, now, intensity = 1) => {
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   clouds.forEach((cloud) => {
-    for (let lobe = 0; lobe < 5; lobe += 1) {
+    const lobes = animationQuality === "low" ? 2 : 3;
+    for (let lobe = 0; lobe < lobes; lobe += 1) {
       const angle = cloud.phase + lobe * 1.37 + now * .00011;
       const x = cloud.x + Math.cos(angle) * cloud.radius * .3;
       const y = cloud.y + Math.sin(angle * .83) * cloud.radius * .23;
@@ -606,35 +959,30 @@ const drawElectricity = (ctx, width, height, energy, now) => {
     }
     ctx.strokeStyle = `rgba(232,255,178,${.12 + impulse * .55})`;
     ctx.lineWidth = .65 + energy.high * 2.4;
-    ctx.shadowBlur = 10 + energy.bass * 24;
+    ctx.shadowBlur = animationQuality === "low" ? 0 : 6 + energy.bass * 12;
     ctx.shadowColor = "rgba(224,108,61,.85)";
     ctx.stroke();
   }
   ctx.restore();
 };
 
+const immersiveContext = immersiveVisual?.getContext("2d");
+
 const drawImmersiveScene = (now) => {
-  if (!immersiveState.active || !immersiveVisual) return;
+  if (!immersiveState.active || !immersiveVisual || !immersiveContext) return;
   const elapsed = now - immersiveState.lastDraw;
-  if (document.hidden || elapsed < renderInterval()) {
-    immersiveState.raf = requestAnimationFrame(drawImmersiveScene);
-    return;
-  }
-  recordFramePacing(elapsed);
+  if (elapsed < renderInterval()) return;
   immersiveState.lastDraw = now;
-  const ctx = immersiveVisual.getContext("2d");
-  if (!ctx) return;
   const energy = audioEnergy(now);
   sceneClock.now = now;
   sceneClock.energy = energy.avg;
   sceneClock.bass = energy.bass;
   const scale = canvasScale();
-  ctx.setTransform(scale, 0, 0, scale, 0, 0);
-  ctx.clearRect(0, 0, innerWidth, innerHeight);
-  drawSmoke(ctx, innerWidth, innerHeight, energy, now, 1.28);
-  drawSmokeRevealedFractal(ctx, innerWidth, innerHeight, energy, now, 1.22);
-  drawElectricity(ctx, innerWidth, innerHeight, energy, now);
-  immersiveState.raf = requestAnimationFrame(drawImmersiveScene);
+  immersiveContext.setTransform(scale, 0, 0, scale, 0, 0);
+  immersiveContext.clearRect(0, 0, innerWidth, innerHeight);
+  drawSmoke(immersiveContext, innerWidth, innerHeight, energy, now, 1.28);
+  drawSmokeRevealedFractal(immersiveContext, innerWidth, innerHeight, energy, now, 1.22);
+  drawElectricity(immersiveContext, innerWidth, innerHeight, energy, now);
 };
 
 const drawLiquid = drawImmersiveScene;
@@ -642,21 +990,26 @@ const drawLiquid = drawImmersiveScene;
 const resizeInkField = () => {
   if (!inkField || !inkContext) return;
   inkFieldBounds = inkField.getBoundingClientRect();
-  const scale = Math.min(devicePixelRatio || 1, 1.5);
-  inkField.width = Math.max(1, Math.round(inkFieldBounds.width * scale));
-  inkField.height = Math.max(1, Math.round(inkFieldBounds.height * scale));
+  const scale = Math.min(devicePixelRatio || 1, animationQuality === "low" ? 1 : 1.25);
+  const nextWidth = Math.max(1, Math.round(inkFieldBounds.width * scale));
+  const nextHeight = Math.max(1, Math.round(inkFieldBounds.height * scale));
+  if (inkField.width !== nextWidth || inkField.height !== nextHeight) {
+    inkField.width = nextWidth;
+    inkField.height = nextHeight;
+  }
   inkParticles = [];
 };
 
 const emitTitleInk = (now, energy) => {
   if (!inkField || !inkFieldBounds) return;
-  const titles = [...document.querySelectorAll(".track-title")];
-  const limit = animationQuality === "low" ? 150 : 320;
-  titles.forEach((title, titleIndex) => {
-    const rect = title.getBoundingClientRect();
-    if (rect.bottom < 0 || rect.top > innerHeight || rect.width < 2) return;
+  const titles = trackTitleNodes.length ? trackTitleNodes : document.querySelectorAll(".track-title");
+  const limit = animationQuality === "low" ? 90 : 180;
+  for (let titleIndex = 0; titleIndex < titles.length; titleIndex += 1) {
+    const title = titles[titleIndex];
     const item = title.closest(".track-item");
-    if (!item || Number.parseFloat(getComputedStyle(item).opacity || "1") < .18) return;
+    if (!item || item.classList.contains("is-departing")) continue;
+    const rect = title.getBoundingClientRect();
+    if (rect.bottom < 0 || rect.top > innerHeight || rect.width < 2) continue;
     const amount = 1 + (energy.bass > .24 && (titleIndex + Math.floor(now / 120)) % 2 === 0 ? 1 : 0);
     for (let count = 0; count < amount && inkParticles.length < limit; count += 1) {
       const x = rect.left - inkFieldBounds.left + Math.random() * rect.width;
@@ -677,7 +1030,7 @@ const emitTitleInk = (now, energy) => {
         trail: [],
       });
     }
-  });
+  }
 };
 
 const updateInkParticle = (particle, now, delta) => {
@@ -703,8 +1056,10 @@ const updateInkParticle = (particle, now, delta) => {
     }
   }
 
-  particle.vx *= Math.pow(.986, delta);
-  particle.vy *= Math.pow(.988, delta);
+  particle.vx += windState.x * .11 * delta;
+  particle.vy += windState.y * .08 * delta;
+  particle.vx *= 1 - .014 * delta;
+  particle.vy *= 1 - .012 * delta;
   particle.x += particle.vx * delta;
   particle.y += particle.vy * delta;
   particle.age += particle.decay * delta;
@@ -720,7 +1075,9 @@ const drawInkParticle = (ctx, particle) => {
   if (particle.trail.length > 1) {
     ctx.beginPath();
     ctx.moveTo(particle.trail[0].x, particle.trail[0].y);
-    particle.trail.slice(1).forEach((point) => ctx.lineTo(point.x, point.y));
+    for (let index = 1; index < particle.trail.length; index += 1) {
+      ctx.lineTo(particle.trail[index].x, particle.trail[index].y);
+    }
     ctx.strokeStyle = `rgba(0,0,0,${alpha * .42})`;
     ctx.lineWidth = particle.size * (1.3 + particle.age * 2.2);
     ctx.lineCap = "round";
@@ -750,10 +1107,7 @@ const drawInkParticle = (ctx, particle) => {
 const renderInkField = (now) => {
   if (!inkField || !inkContext) return;
   if (!inkFieldBounds?.width) resizeInkField();
-  if (now - inkLastFrame < renderInterval()) {
-    requestAnimationFrame(renderInkField);
-    return;
-  }
+  if (now - inkLastFrame < renderInterval()) return;
   const scale = inkField.width / Math.max(1, inkFieldBounds?.width || 1);
   const delta = Math.min(2.3, Math.max(.25, (now - inkLastFrame) / 16.67));
   inkLastFrame = now;
@@ -765,38 +1119,46 @@ const renderInkField = (now) => {
     emitTitleInk(now, energy);
     inkLastEmission = now;
   }
-  inkContext.save();
-  inkContext.filter = `blur(${(.4 + energy.mid * 1.7).toFixed(2)}px)`;
-  inkParticles.forEach((particle) => {
+  for (let index = 0; index < inkParticles.length; index += 1) {
+    const particle = inkParticles[index];
     updateInkParticle(particle, now, delta);
     drawInkParticle(inkContext, particle);
-  });
-  inkContext.restore();
-  inkParticles = inkParticles.filter((particle) => (
-    particle.age < 1
-    && particle.x > -120
-    && particle.x < inkFieldBounds.width + 120
-    && particle.y > -120
-    && particle.y < inkFieldBounds.height + 120
-  ));
-  requestAnimationFrame(renderInkField);
+  }
+  let write = 0;
+  const maxX = inkFieldBounds.width + 120;
+  const maxY = inkFieldBounds.height + 120;
+  for (let index = 0; index < inkParticles.length; index += 1) {
+    const particle = inkParticles[index];
+    if (particle.age < 1 && particle.x > -120 && particle.x < maxX && particle.y > -120 && particle.y < maxY) {
+      inkParticles[write] = particle;
+      write += 1;
+    }
+  }
+  inkParticles.length = write;
 };
 
-const mutateGlyphString = (text, intensity, frame, seed = 0) => [...text].map((character, index) => {
-  if (/\s/.test(character)) return character;
-  const gate = hashUnit(frame * .83 + index * 7.19 + seed * 13.7);
-  if (gate > intensity) return character;
-  return titleGlyphs[Math.floor(hashUnit(frame * 2.17 + index * 11.3 + seed) * titleGlyphs.length)];
-}).join("");
+const mutateGlyphString = (text, intensity, frame, seed = 0) => {
+  let result = "";
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    if (character === " ") {
+      result += character;
+      continue;
+    }
+    const gate = hashUnit(frame * .83 + index * 7.19 + seed * 13.7);
+    result += gate > intensity
+      ? character
+      : titleGlyphs[Math.floor(hashUnit(frame * 2.17 + index * 11.3 + seed) * titleGlyphs.length)];
+  }
+  return result;
+};
 
 const renderTitleMutation = (now) => {
-  if (document.hidden || now - titleLastFrame < (animationQuality === "low" ? 120 : 68)) {
-    requestAnimationFrame(renderTitleMutation);
-    return;
-  }
+  if (now - titleLastFrame < (animationQuality === "low" ? 120 : 68)) return;
   titleLastFrame = now;
   const frame = Math.floor(now / (prefersReducedMotion ? 210 : 76));
-  document.querySelectorAll(".track-title, .immersive-title").forEach((element, index) => {
+  const titles = trackTitleNodes.length ? trackTitleNodes : document.querySelectorAll(".track-title");
+  const mutateTitle = (element, index) => {
     const original = element.dataset.originalText || element.textContent || "";
     if (!element.dataset.originalText) element.dataset.originalText = original;
     const hovering = Boolean(element.closest(".track-item")?.matches(":hover, :focus-within"));
@@ -807,8 +1169,9 @@ const renderTitleMutation = (now) => {
     element.textContent = intensity > .05
       ? mutateGlyphString(original, intensity, frame, index + 1)
       : original;
-  });
-  requestAnimationFrame(renderTitleMutation);
+  };
+  for (let index = 0; index < titles.length; index += 1) mutateTitle(titles[index], index);
+  if (immersiveTitle) mutateTitle(immersiveTitle, titles.length);
 };
 
 const renderLogoSymbolEcho = (now, energy) => {
@@ -828,49 +1191,55 @@ const renderLogoSymbolEcho = (now, energy) => {
 
 const updateTrackFold = () => {
   if (!playlistList) return;
-  if (immersiveState.active) {
-    [...playlistList.querySelectorAll(".track-item")].forEach((item) => {
-      if (!item.classList.contains("is-kept")) return;
-      item.style.transform = "translate3d(0, 0, 28px) scale(1)";
-      item.style.opacity = "1";
-      item.style.filter = "none";
-    });
-    return;
-  }
-  const items = [...playlistList.querySelectorAll(".track-item")];
+  const items = trackItemNodes.length ? trackItemNodes : [...playlistList.querySelectorAll(".track-item")];
   const overflowing = items.length > TRACK_VIEW;
   const bounds = playlistList.getBoundingClientRect();
   const mid = bounds.top + bounds.height / 2;
   const half = Math.max(1, bounds.height / 2);
-  items.forEach((item) => {
-    if (item.classList.contains("is-departing")) return;
+  const live = Boolean((currentTrack || immersiveState.active) && player && !player.paused);
+  const energy = live ? audioEnergy() : spectrumState;
+  trackPlayBlend += ((live ? 1 : 0) - trackPlayBlend) * 0.055;
+  if (Math.abs(trackPlayBlend - (live ? 1 : 0)) < 0.008) trackPlayBlend = live ? 1 : 0;
+  const pulse = energy.bass * 10 + energy.flux * 6;
+  const spread = 1.12 + trackPlayBlend * 0.42;
+  for (let index = 0; index < items.length; index += 1) {
+    const item = items[index];
+    const card = item.querySelector(".track-fold") || item.querySelector(".track-meta") || item;
+    item.style.transform = "";
+    const button = item.querySelector(".track-select");
+    if (button) button.style.transform = "";
     if (item.classList.contains("is-kept")) {
-      item.style.transform = "translate3d(0, 0, 12px) scale(1)";
+      const lift = 10 + trackPlayBlend * (6 + energy.bass * 8);
+      card.style.transform = `translate3d(0, 0, ${lift}px) scale(${1 + trackPlayBlend * energy.avg * .02})`;
       item.style.opacity = "1";
       item.style.filter = "none";
-      return;
+      continue;
     }
     const rect = item.getBoundingClientRect();
-    const offset = (rect.top + rect.height / 2 - mid) / half;
+    if (rect.bottom < bounds.top - 80 || rect.top > bounds.bottom + 80) {
+      card.style.transform = "translate3d(0, 0, -180px) rotateX(0deg) scale(.62)";
+      item.style.opacity = "0.28";
+      item.style.filter = "blur(8px)";
+      continue;
+    }
+    const hovered = item.matches(":hover, :focus-within");
+    const offset = ((rect.top + rect.height / 2 - mid) / half) * spread;
     const fold = Math.min(1, Math.abs(offset));
-    const stretch = 1 - fold;
-    const rotateX = offset * (overflowing ? 34 : 21);
-    const bend = offset * (overflowing ? 9 : 4);
-    const scaleY = overflowing ? 0.6 + stretch * .48 : 0.76 + stretch * .27;
-    const scaleX = overflowing ? 0.84 + stretch * .2 : 0.88 + stretch * .13;
-    const z = stretch * (overflowing ? 72 : 46) - fold * (overflowing ? 44 : 18);
-    const melt = overflowing ? Math.max(0, Math.abs(offset) - .72) : 0;
-    item.style.transform = `translate3d(0, ${offset * -8}px, ${z}px) rotateX(${rotateX}deg) rotateY(${bend}deg) scale(${scaleX}, ${scaleY})`;
-    item.style.opacity = overflowing
-      ? String(Math.max(0, 1 - melt * 2.15))
-      : String(.78 + stretch * .22);
-    item.style.filter = `blur(${(melt * 10).toFixed(2)}px)`;
-  });
+    const depth = fold * (128 + trackPlayBlend * 36) + pulse * fold * trackPlayBlend;
+    const rotateX = Math.max(-28, Math.min(28, offset * (20 + trackPlayBlend * 6)));
+    const scale = Math.max(0.62, 1 - fold * (0.2 + trackPlayBlend * 0.08) + trackPlayBlend * energy.high * .02 * (1 - fold));
+    const blur = hovered
+      ? Math.min(1.6, fold * 2.2)
+      : Math.min(9, (fold ** 1.2) * (7.2 + trackPlayBlend * 1.8) + pulse * .03 * fold * trackPlayBlend);
+    card.style.transform = `translate3d(0, ${offset * -5}px, ${-depth}px) rotateX(${rotateX}deg) scale(${scale})`;
+    item.style.opacity = hovered ? "1" : String(Math.max(0.38, 1 - fold * 0.36));
+    item.style.filter = `blur(${blur.toFixed(2)}px)`;
+  }
 };
 
 const updateScrollbar = () => {
   if (!playlistList || !scrollbar || !scrollbarThumb) return;
-  const overflow = playlistList.querySelectorAll(".track-item").length > TRACK_VIEW;
+  const overflow = (trackItemNodes.length || playlistList.querySelectorAll(".track-item").length) > TRACK_VIEW;
   playlistList.classList.toggle("has-overflow", overflow);
   scrollbar.hidden = !overflow;
   if (!overflow) {
@@ -885,16 +1254,11 @@ const updateScrollbar = () => {
   scrollbarThumb.style.transform = `translateY(${top}px)`;
 };
 
-const loopPlaylistMotion = () => {
-  const now = performance.now();
-  if (document.hidden || now - playlistLastFrame < (animationQuality === "low" ? 90 : 50)) {
-    playlistRaf = requestAnimationFrame(loopPlaylistMotion);
-    return;
-  }
+const loopPlaylistMotion = (now) => {
+  if (now - playlistLastFrame < (animationQuality === "low" ? 90 : 50)) return;
   playlistLastFrame = now;
   updateTrackFold();
   updateScrollbar();
-  playlistRaf = requestAnimationFrame(loopPlaylistMotion);
 };
 
 const shuffle = (items) => {
@@ -915,7 +1279,6 @@ const setPlaybackStatus = (text = "", state = "") => {
 const resolveTrackUrl = (track) => {
   const source = String(track?.audio || track?.file || "").replace(/\\/g, "/");
   if (!source) return "";
-  if (isFileMode || !canUseNetwork) return encodeURI(source);
   try {
     return new URL(source, document.baseURI).href;
   } catch {
@@ -925,21 +1288,182 @@ const resolveTrackUrl = (track) => {
 
 const findTrackForItem = (item) => {
   if (!item) return null;
-  const indexedTrack = tracks[Number(item.dataset.trackIndex)];
-  const title = item.dataset.trackTitle || "";
+  const index = Number(item.dataset.trackIndex);
+  if (Number.isInteger(index) && tracks[index]) return tracks[index];
+  const title = item.dataset.trackTitle
+    || item.querySelector(".track-title")?.dataset.originalText
+    || item.querySelector(".track-title")?.textContent?.trim()
+    || "";
   const bundled = Array.isArray(window.INTEONMTECA_PLAYLIST) ? window.INTEONMTECA_PLAYLIST : [];
-  return indexedTrack
-    || tracks.find((candidate) => candidate.title === title)
-    || bundled.find((candidate) => candidate.title === title)
-    || tracks.find((candidate) => candidate.title.includes(title))
-    || bundled.find((candidate) => candidate.title.includes(title))
-    || null;
+  const matchTitle = (candidate) => candidate?.title === title
+    || (title && typeof candidate?.title === "string" && candidate.title.includes(title));
+  return tracks.find(matchTitle) || bundled.find(matchTitle) || null;
 };
 
-const playTrack = (track, sourceItem = null) => {
-  if (!player || !track) return;
+const trackRowHeight = () => {
+  const measured = playlistList?.querySelector(".track-item")?.offsetHeight || 0;
+  if (measured > 1) return measured;
+  return 72;
+};
+
+const bindTrackItem = (item, track) => {
+  const button = item.querySelector(".track-select");
+  if (!button || button.dataset.bound === "1") return;
+  button.dataset.bound = "1";
+  const play = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const resolved = track || findTrackForItem(item);
+    if (resolved) playTrack(resolved, item);
+  };
+  button.addEventListener("click", play);
+};
+
+const createTrackItem = (track, index) => {
+  const item = document.createElement("li");
+  item.className = "track-item";
+  item.dataset.trackTitle = track.title;
+  item.dataset.trackIndex = String(index);
+  const playing = currentTrack && (track === currentTrack || (track.audio || track.file) === (currentTrack.audio || currentTrack.file));
+  if (playing) item.classList.add("is-playing");
+  const button = document.createElement("button");
+  button.className = "track-select";
+  button.type = "button";
+  button.setAttribute("aria-label", `Воспроизвести ${track.title}`);
+  const meta = document.createElement("span");
+  meta.className = "track-meta";
+  const title = document.createElement("span");
+  title.className = "track-title";
+  title.dataset.originalText = track.title;
+  title.dataset.ink = track.title;
+  title.textContent = track.title;
+  const artist = document.createElement("span");
+  artist.className = "track-artist";
+  artist.textContent = track.artist || "inteonmteca";
+  meta.append(title, artist);
+  const fold = document.createElement("span");
+  fold.className = "track-fold";
+  fold.append(meta);
+  button.append(fold);
+  item.append(button);
+  bindTrackItem(item, track);
+  return item;
+};
+
+const shuffledTrackIndexes = () => shuffle(tracks.map((_, index) => index));
+
+const appendWheelCycle = () => {
+  if (!playlistList || !tracks.length) return 0;
+  const before = playlistList.scrollHeight;
+  shuffledTrackIndexes().forEach((index) => playlistList.append(createTrackItem(tracks[index], index)));
+  return playlistList.scrollHeight - before;
+};
+
+const prependWheelCycle = () => {
+  if (!playlistList || !tracks.length) return 0;
+  const before = playlistList.scrollHeight;
+  const fragment = document.createDocumentFragment();
+  shuffledTrackIndexes().forEach((index) => fragment.append(createTrackItem(tracks[index], index)));
+  playlistList.prepend(fragment);
+  const added = playlistList.scrollHeight - before;
+  playlistList.scrollTop += added;
+  playlistScrollTarget += added;
+  return added;
+};
+
+const trimInfiniteWheel = () => {
+  if (!playlistList || !tracks.length) return;
+  const cycle = tracks.length;
+  const limit = cycle * 8;
+  if (playlistList.children.length <= limit) return;
+  const cycleH = cycle * trackRowHeight();
+  if (playlistList.scrollTop > cycleH * 2.4) {
+    for (let index = 0; index < cycle; index += 1) playlistList.firstElementChild?.remove();
+    playlistList.scrollTop = Math.max(0, playlistList.scrollTop - cycleH);
+    playlistScrollTarget = Math.max(0, playlistScrollTarget - cycleH);
+  } else if (playlistList.scrollHeight - playlistList.scrollTop - playlistList.clientHeight > cycleH * 2.4) {
+    for (let index = 0; index < cycle; index += 1) playlistList.lastElementChild?.remove();
+  }
+};
+
+const balanceInfiniteWheel = () => {
+  if (wheelBalancing || !playlistList || !tracks.length) return;
+  wheelBalancing = true;
+  const cycleH = Math.max(trackRowHeight(), tracks.length * trackRowHeight());
+  let guard = 0;
+  while (guard < 6 && playlistScrollTarget < cycleH * 0.8) {
+    prependWheelCycle();
+    guard += 1;
+  }
+  guard = 0;
+  while (guard < 6 && playlistScrollTarget + playlistList.clientHeight > playlistList.scrollHeight - cycleH * 0.8) {
+    appendWheelCycle();
+    guard += 1;
+  }
+  trimInfiniteWheel();
+  refreshTrackNodes();
+  wheelBalancing = false;
+};
+
+const fillInfiniteWheel = () => {
+  if (!playlistList || !tracks.length) return;
+  wheelBalancing = true;
+  try {
+    playlistList.replaceChildren();
+    appendWheelCycle();
+    appendWheelCycle();
+    appendWheelCycle();
+    let extra = 0;
+    while (
+      extra < 8
+      && playlistList.scrollHeight > 0
+      && playlistList.clientHeight > 0
+      && (playlistList.children.length <= TRACK_VIEW
+        || playlistList.scrollHeight <= playlistList.clientHeight + trackRowHeight())
+    ) {
+      appendWheelCycle();
+      extra += 1;
+    }
+    refreshTrackNodes();
+    const cycleH = tracks.length * trackRowHeight();
+    playlistList.scrollTop = cycleH;
+    playlistScrollTarget = playlistList.scrollTop;
+    playlistScrollVelocity = 0;
+  } catch {
+    playlistList.replaceChildren(...tracks.map((track, index) => createTrackItem(track, index)));
+    refreshTrackNodes();
+  }
+  wheelBalancing = false;
+};
+
+const nearestItemForTrackIndex = (index) => {
+  const items = [...(playlistList?.querySelectorAll(`[data-track-index="${index}"]`) || [])];
+  if (!items.length) return null;
+  const bounds = playlistList.getBoundingClientRect();
+  const mid = bounds.top + bounds.height / 2;
+  return items.reduce((best, item) => {
+    const y = item.getBoundingClientRect().top + item.getBoundingClientRect().height / 2;
+    const dist = Math.abs(y - mid);
+    if (!best || dist < best.dist) return { item, dist };
+    return best;
+  }, null)?.item || items[0];
+};
+
+const centerWheelItem = (item) => {
+  if (!item || !playlistList) return;
+  const top = item.offsetTop - (playlistList.clientHeight - item.offsetHeight) / 2;
+  playlistList.scrollTop = top;
+  playlistScrollTarget = top;
+  playlistScrollVelocity = 0;
+  balanceInfiniteWheel();
+};
+
+const playTrack = (track, sourceItem = null, options = {}) => {
+  if (!track) return;
+  const now = performance.now();
+  if (now - playLockAt < 220 && currentTrack === track) return;
+  playLockAt = now;
   const requestId = ++playbackRequestId;
-  const wasImmersive = immersiveState.active;
   currentTrack = track;
   setPlaybackStatus("", "");
   document.body.classList.add("is-track-diving");
@@ -955,60 +1479,58 @@ const playTrack = (track, sourceItem = null) => {
     ));
   }
   if (!sourceItem && currentTrackIndex >= 0) {
-    sourceItem = playlistList?.querySelector(`[data-track-index="${currentTrackIndex}"]`) || null;
+    sourceItem = nearestItemForTrackIndex(currentTrackIndex);
+  }
+  const src = resolveTrackUrl(track);
+  const assigned = player ? (player.getAttribute("src") || player.src || "") : "";
+  if (player && src && assigned !== src && player.src !== src) player.src = src;
+  if (player && src && !options.audioStarted) {
+    const attempt = player.play();
+    if (attempt && typeof attempt.then === "function") {
+      attempt.then(() => {
+        if (requestId !== playbackRequestId) return;
+        setPlaybackStatus();
+        attachPlaybackAnalysis();
+        syncTransport();
+      }).catch((error) => {
+        if (requestId !== playbackRequestId) return;
+        if (error?.name === "AbortError") {
+          player.play().catch(() => {});
+          return;
+        }
+        const message = error?.name === "NotAllowedError"
+          ? "нажми ▶ чтобы пустить звук"
+          : error?.name === "NotSupportedError"
+            ? "этот файл браузер не играет"
+            : "звук не открылся — нажми ▶";
+        setPlaybackStatus(message, "error");
+        syncTransport();
+      });
+    } else {
+      attachPlaybackAnalysis();
+      syncTransport();
+    }
+  } else if (player && src && options.audioStarted) {
+    attachPlaybackAnalysis();
+    syncTransport();
+  } else if (!src) {
+    setPlaybackStatus("нет аудиофайла", "error");
   }
   [...(playlistList?.querySelectorAll(".track-item") || [])].forEach((item) => {
-    const keep = sourceItem ? item === sourceItem : Number(item.dataset.trackIndex) === currentTrackIndex;
-    item.classList.toggle("is-kept", keep);
-    item.classList.toggle("is-playing", keep);
+    const same = Number(item.dataset.trackIndex) === currentTrackIndex;
+    item.classList.toggle("is-kept", Boolean(sourceItem) && item === sourceItem);
+    item.classList.toggle("is-playing", same);
     item.classList.remove("is-departing");
-    if (keep) {
+    if (sourceItem && item === sourceItem) {
       item.style.opacity = "1";
       item.style.filter = "none";
-      return;
     }
-    if (wasImmersive) return;
-    const dx = (Math.random() - 0.5) * 920;
-    const dy = (Math.random() < 0.5 ? -1 : 1) * (220 + Math.random() * 480);
-    const dz = -120 - Math.random() * 280;
-    item.classList.add("is-departing");
-    const fly = `translate3d(${dx}px, ${dy}px, ${dz}px) rotateX(${dy / 28}deg) rotateY(${dx / 36}deg) scale(.42)`;
-    window.requestAnimationFrame(() => {
-      item.style.transform = fly;
-      item.style.opacity = "0";
-      item.style.filter = "blur(8px)";
-    });
   });
-  const src = resolveTrackUrl(track);
-  if (player.getAttribute("src") !== src) player.src = src;
-  const startSound = () => {
-    if (requestId !== playbackRequestId) return;
-    const attempt = player.play();
-    if (!attempt || typeof attempt.then !== "function") {
-      attachPlaybackAnalysis();
-      syncTransport();
-      return;
-    }
-    attempt.then(() => {
-      if (requestId !== playbackRequestId) return;
-      setPlaybackStatus();
-      attachPlaybackAnalysis();
-      syncTransport();
-    }).catch((error) => {
-      if (requestId !== playbackRequestId || error?.name === "AbortError") return;
-      const message = error?.name === "NotAllowedError"
-        ? "нажми ▶ чтобы пустить звук"
-        : error?.name === "NotSupportedError"
-          ? "этот файл браузер не играет"
-          : "звук не открылся — нажми ▶";
-      setPlaybackStatus(message, "error");
-      syncTransport();
-    });
-  };
-  startSound();
+  updateTrackFold();
   window.setTimeout(() => {
+    if (sourceItem) centerWheelItem(sourceItem);
     if (currentTrack === track) enterImmersiveMode(player, track);
-  }, wasImmersive || prefersReducedMotion ? 0 : 280);
+  }, immersiveState.active || prefersReducedMotion ? 0 : 280);
 };
 
 const renderPlaylist = (playlist, { force = false } = {}) => {
@@ -1029,6 +1551,7 @@ const renderPlaylist = (playlist, { force = false } = {}) => {
     playlistList.replaceChildren(emptyState);
     playlistScrollTarget = 0;
     playlistScrollVelocity = 0;
+    refreshTrackNodes();
     updateScrollbar();
     return true;
   }
@@ -1039,37 +1562,19 @@ const renderPlaylist = (playlist, { force = false } = {}) => {
     ? tracks.findIndex((track) => (track.audio || track.file) === activeAudio)
     : -1;
   if (currentTrackIndex >= 0) currentTrack = tracks[currentTrackIndex];
-  playlistList.replaceChildren(...tracks.map((track, index) => {
-    const item = document.createElement("li");
-    item.className = "track-item";
-    item.dataset.trackTitle = track.title;
-    item.dataset.trackIndex = String(index);
-    const button = document.createElement("button");
-    button.className = "track-select";
-    button.type = "button";
-    button.setAttribute("aria-label", `Воспроизвести ${track.title}`);
-    const meta = document.createElement("span");
-    meta.className = "track-meta";
-    const title = document.createElement("span");
-    title.className = "track-title";
-    title.dataset.originalText = track.title;
-    title.dataset.ink = track.title;
-    title.textContent = track.title;
-    const artist = document.createElement("span");
-    artist.className = "track-artist";
-    artist.textContent = track.artist || "inteonmteca";
-    meta.append(title, artist);
-    button.append(meta);
-    item.append(button);
-    return item;
-  }));
   cancelAnimationFrame(playlistScrollRaf);
   playlistScrollRaf = 0;
-  playlistScrollTarget = 0;
-  playlistScrollVelocity = 0;
-  playlistList.scrollTop = 0;
+  fillInfiniteWheel();
+  if (currentTrackIndex >= 0) {
+    const kept = nearestItemForTrackIndex(currentTrackIndex);
+    if (kept) {
+      kept.classList.add("is-kept", "is-playing");
+      centerWheelItem(kept);
+    }
+  }
   updateTrackFold();
   updateScrollbar();
+  refreshTrackNodes();
   return true;
 };
 
@@ -1103,8 +1608,8 @@ const loadPlaylist = async ({ force = false, announce = false } = {}) => {
 };
 
 const bindFallbackTracks = () => {
-  const randomizedItems = shuffle([...(playlistList?.querySelectorAll(".track-item") || [])]);
-  playlistList?.replaceChildren(...randomizedItems);
+  if (tracks.length || !playlistList) return;
+  const randomizedItems = shuffle([...(playlistList.querySelectorAll(".track-item") || [])]);
   randomizedItems.forEach((item, index) => {
     item.dataset.trackIndex = String(index);
     const titleElement = item.querySelector(".track-title");
@@ -1113,16 +1618,44 @@ const bindFallbackTracks = () => {
       titleElement.dataset.ink = titleElement.textContent;
     }
   });
+  playlistList.replaceChildren(...randomizedItems);
+  randomizedItems.forEach((item) => bindTrackItem(item, findTrackForItem(item)));
+  refreshTrackNodes();
 };
 
-playlistList?.addEventListener("click", (event) => {
-  const button = event.target.closest(".track-select");
-  if (!button || !playlistList.contains(button)) return;
-  event.preventDefault();
-  const item = button.closest(".track-item");
+const pickItemAtPoint = (clientX, clientY) => {
+  if (!playlistList || !trackViewport) return null;
+  const box = trackViewport.getBoundingClientRect();
+  if (clientX < box.left || clientX > box.right || clientY < box.top || clientY > box.bottom) return null;
+  const items = [...playlistList.querySelectorAll(".track-item")];
+  let best = null;
+  let bestDist = Infinity;
+  for (let index = 0; index < items.length; index += 1) {
+    const item = items[index];
+    if (item.classList.contains("track-empty")) continue;
+    const rect = item.getBoundingClientRect();
+    if (rect.height < 2) continue;
+    const dist = Math.abs(clientY - (rect.top + rect.height / 2));
+    if (dist < bestDist) {
+      best = item;
+      bestDist = dist;
+    }
+  }
+  return best;
+};
+
+const pickTrackFromEvent = (event) => {
+  if (event.button != null && event.button !== 0) return;
+  if (event.target.closest?.(".auth-panel, .chat-panel, .theme-panel, .transport, .auth-hint, .chat-hint, .theme-hint")) return;
+  const item = event.target.closest?.(".track-item") || pickItemAtPoint(event.clientX, event.clientY);
+  if (!item || !playlistList?.contains(item) || item.classList.contains("track-empty")) return;
   const track = findTrackForItem(item);
-  if (track) playTrack(track, item);
-});
+  if (!track) return;
+  event.preventDefault();
+  playTrack(track, item);
+};
+window.inteonPlayTrack = playTrack;
+playlistList?.addEventListener("click", pickTrackFromEvent);
 
 const restoreTrackStage = () => {
   [...(playlistList?.querySelectorAll(".track-item") || [])].forEach((item) => {
@@ -1130,6 +1663,10 @@ const restoreTrackStage = () => {
     item.style.transform = "";
     item.style.opacity = "";
     item.style.filter = "";
+    const card = item.querySelector(".track-select");
+    const fold = item.querySelector(".track-fold");
+    if (card) card.style.transform = "";
+    if (fold) fold.style.transform = "";
   });
   updateTrackFold();
 };
@@ -1158,8 +1695,6 @@ const enterImmersiveMode = (audio, track = null) => {
   document.body.classList.add("is-immersive");
   sizeCanvas(immersiveVisual);
   syncTransport();
-  cancelAnimationFrame(immersiveState.raf);
-  immersiveState.raf = requestAnimationFrame(drawImmersiveScene);
 };
 
 const exitImmersiveMode = () => {
@@ -1197,6 +1732,13 @@ const syncTransport = () => {
   if (durationTime) durationTime.textContent = formatTime(duration);
   if (immersivePlayIcon) immersivePlayIcon.textContent = player.paused ? "▶" : "Ⅱ";
   if (immersivePlay) immersivePlay.setAttribute("aria-label", player.paused ? "Воспроизвести" : "Пауза");
+  if (nowPlayingTitle) {
+    const title = currentTrack?.title || immersiveTitle?.textContent || "";
+    if (nowPlayingTitle.dataset.track !== title) {
+      nowPlayingTitle.textContent = title;
+      nowPlayingTitle.dataset.track = title;
+    }
+  }
 };
 
 const togglePlayback = () => {
@@ -1218,7 +1760,7 @@ const playRelativeTrack = (offset) => {
   if (!tracks.length) return;
   const start = currentTrackIndex >= 0 ? currentTrackIndex : 0;
   const nextIndex = (start + offset + tracks.length) % tracks.length;
-  playTrack(tracks[nextIndex], playlistList?.querySelector(`[data-track-index="${nextIndex}"]`) || null);
+  playTrack(tracks[nextIndex], nearestItemForTrackIndex(nextIndex));
 };
 
 immersiveBack?.addEventListener("click", exitImmersiveMode);
@@ -1275,6 +1817,7 @@ resizeInkField();
 
 const animatePlaylistScroll = () => {
   if (!playlistList) return;
+  balanceInfiniteWheel();
   const max = Math.max(0, playlistList.scrollHeight - playlistList.clientHeight);
   playlistScrollTarget = Math.max(0, Math.min(max, playlistScrollTarget));
   const distance = playlistScrollTarget - playlistList.scrollTop;
@@ -1292,21 +1835,23 @@ const animatePlaylistScroll = () => {
 
 trackViewport?.addEventListener("wheel", (event) => {
   if (!playlistList) return;
-  const max = playlistList.scrollHeight - playlistList.clientHeight;
-  if (max <= 0) return;
   event.preventDefault();
   const lineScale = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 20 : 1;
   const pageScale = event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? playlistList.clientHeight : 1;
   const rawDelta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
   const delta = rawDelta * lineScale * pageScale;
   if (!playlistScrollRaf) playlistScrollTarget = playlistList.scrollTop;
-  playlistScrollTarget = Math.max(0, Math.min(max, playlistScrollTarget + delta * .92));
+  playlistScrollTarget += delta * .92;
   playlistScrollVelocity += Math.max(-18, Math.min(18, delta * .035));
+  balanceInfiniteWheel();
+  const max = Math.max(0, playlistList.scrollHeight - playlistList.clientHeight);
+  playlistScrollTarget = Math.max(0, Math.min(max, playlistScrollTarget));
   if (!playlistScrollRaf) playlistScrollRaf = requestAnimationFrame(animatePlaylistScroll);
 }, { passive: false });
 
 playlistList?.addEventListener("scroll", () => {
   if (!playlistScrollRaf) playlistScrollTarget = playlistList.scrollTop;
+  if (!wheelBalancing) balanceInfiniteWheel();
   updateTrackFold();
   updateScrollbar();
 }, { passive: true });
@@ -1393,13 +1938,19 @@ const themeDurationToSlider = (duration) => {
 };
 
 const formatThemeDuration = (duration) => {
-  if (duration < 60000) return `${Math.round(duration / 1000)} секунд`;
+  const ruCount = (value, one, few, many) => {
+    const n = Math.abs(value) % 100;
+    const last = n % 10;
+    const word = n > 10 && n < 20 ? many : last === 1 ? one : last >= 2 && last <= 4 ? few : many;
+    return `${value} ${word}`;
+  };
+  if (duration < 60000) return ruCount(Math.round(duration / 1000), "секунда", "секунды", "секунд");
   const minutes = Math.round(duration / 60000);
-  if (minutes < 90) return `${minutes} минут`;
+  if (minutes < 90) return ruCount(minutes, "минута", "минуты", "минут");
   const hours = Math.round(minutes / 60);
-  if (hours < 36) return `${hours} часов`;
+  if (hours < 36) return ruCount(hours, "час", "часа", "часов");
   const days = Math.max(2, Math.round(hours / 24));
-  return days >= 7 ? "1 неделя" : `${days} дней`;
+  return days >= 7 ? "1 неделя" : ruCount(days, "день", "дня", "дней");
 };
 
 const currentThemeDuration = () => themeSliderToDuration(themeDuration?.value || themeDurationToSlider(THEME_DEFAULT_MS));
@@ -1411,7 +1962,7 @@ const updateThemeDurationLabel = () => {
 };
 
 const setTheme = (name, { animate = true, persist = true } = {}) => {
-  const nextTheme = themeNames.includes(name) ? name : "desert";
+  const nextTheme = themesById.has(name) ? name : "desert";
   const root = document.documentElement;
   const changed = root.dataset.theme !== nextTheme;
   if (changed && animate && !prefersReducedMotion) {
@@ -1422,10 +1973,13 @@ const setTheme = (name, { animate = true, persist = true } = {}) => {
     themeShiftTimer = window.setTimeout(() => root.classList.remove("is-theme-shifting"), 1650);
   }
   root.dataset.theme = nextTheme;
+  for (const [property, value] of Object.entries(themesById.get(nextTheme).tokens)) {
+    root.style.setProperty(property, value);
+  }
   if (themeSelect) themeSelect.value = nextTheme;
   if (persist) storeValue(themeStorageKey, nextTheme);
   if (changed && themeStatus) {
-    themeStatus.textContent = themeSelect?.selectedOptions[0]?.textContent || nextTheme;
+    themeStatus.textContent = themesById.get(nextTheme).name;
   }
 };
 
@@ -1446,6 +2000,7 @@ const scheduleThemeRotation = () => {
 };
 
 const initializeThemeSystem = () => {
+  populateThemeSelect();
   const storedTheme = readStoredValue(themeStorageKey);
   const storedDuration = Number(readStoredValue(themeDurationStorageKey)) || THEME_DEFAULT_MS;
   if (themeDuration) themeDuration.value = String(themeDurationToSlider(storedDuration));
@@ -1485,6 +2040,8 @@ document.addEventListener("visibilitychange", () => {
   perceptionLastFrame = performance.now();
   inkLastFrame = performance.now();
   logoLastFrame = performance.now();
+  lastVisualTick = 0;
+  windLastTick = 0;
   if (canUseNetwork) loadPlaylist();
 });
 
@@ -1568,13 +2125,14 @@ authEmailForm?.addEventListener("submit", async (event) => {
   const submit = event.submitter;
   if (submit) submit.disabled = true;
   pendingEmail = authEmail?.value.trim().toLowerCase() || "";
-  setAuthStatus("отправляем код…");
+  setAuthStatus("готовим код…");
   try {
     if (isFileMode) {
-      if (!emailFormat.test(pendingEmail)) throw new Error("нужна почта в обычном формате");
+      if (!emailFormat.test(pendingEmail)) throw new Error("нужна почта: имя@example.com");
       rememberLocalAccount(pendingEmail);
       localLoginCode = createLoginCode();
       authCodeForm.hidden = false;
+      if (authCodeLabel) authCodeLabel.textContent = "код с экрана";
       setAuthStatus(`код входа: ${localLoginCode}`);
       authCode?.focus();
       return;
@@ -1585,7 +2143,8 @@ authEmailForm?.addEventListener("submit", async (event) => {
     });
     authCodeForm.hidden = false;
     const directCode = data.login_code || data.dev_code;
-    setAuthStatus(directCode ? `код входа: ${directCode}` : "письмо отправлено — проверь почту");
+    if (authCodeLabel) authCodeLabel.textContent = directCode ? "код с экрана" : "код из письма";
+    setAuthStatus(directCode ? `код входа: ${directCode}` : `код отправлен на ${pendingEmail}`);
     authCode?.focus();
   } catch (error) {
     setAuthStatus(error.message === "request failed" ? "сервер входа недоступен" : error.message);
@@ -1685,7 +2244,7 @@ const openChat = async () => {
     return;
   }
   setPanelOpen(chatPanel, true);
-  chatHint.style.opacity = "0";
+  document.body.classList.add("is-chat-open");
   await loadChat();
   chatInput?.focus();
   window.clearInterval(chatTimer);
@@ -1694,7 +2253,7 @@ const openChat = async () => {
 
 const closeChat = () => {
   setPanelOpen(chatPanel, false);
-  if (chatHint) chatHint.style.opacity = "";
+  document.body.classList.remove("is-chat-open");
   window.clearInterval(chatTimer);
 };
 
@@ -1833,13 +2392,17 @@ const runReadableWave = () => {
 };
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
-const logoFilamentSeeds = Array.from({ length: animationQuality === "low" ? 28 : 52 }, (_, index) => ({
-  x: .08 + hashUnit(index + 101.3) * .84,
-  y: .32 + hashUnit(index + 141.8) * .36,
-  phase: hashUnit(index + 181.4) * Math.PI * 2,
-  size: .35 + hashUnit(index + 221.9) * 1.45,
-  band: index % 3,
-}));
+let logoFilamentSeeds = [];
+const setupLogoFilaments = () => {
+  logoFilamentSeeds = Array.from({ length: animationQuality === "low" ? 28 : 52 }, (_, index) => ({
+    x: .08 + hashUnit(index + 101.3) * .84,
+    y: .32 + hashUnit(index + 141.8) * .36,
+    phase: hashUnit(index + 181.4) * Math.PI * 2,
+    size: .35 + hashUnit(index + 221.9) * 1.45,
+    band: index % 3,
+  }));
+};
+setupLogoFilaments();
 
 const setupLogoSlices = () => {
   if (!logoVector || !logoSliceContainer) return;
@@ -1981,10 +2544,7 @@ const setLogoCssVariable = (name, value) => {
 };
 
 const renderReactiveLogo = (now) => {
-  if (document.hidden || now - logoLastFrame < renderInterval()) {
-    requestAnimationFrame(renderReactiveLogo);
-    return;
-  }
+  if (now - logoLastFrame < renderInterval()) return;
   logoLastFrame = now;
   const profile = audioEnergy(now);
   renderLogoSymbolEcho(now, profile);
@@ -2048,7 +2608,6 @@ const renderReactiveLogo = (now) => {
   });
 
   drawLogoFilaments(now, profile);
-  requestAnimationFrame(renderReactiveLogo);
 };
 
 const scatterLogoParticles = () => {
@@ -2225,26 +2784,41 @@ window.setTimeout(runReadableWave, 1200);
 window.setInterval(runReadableWave, 6200);
 window.setTimeout(runLongReadableMoment, 3200);
 window.setInterval(runLongReadableMoment, 9500);
+const tickVisuals = (now) => {
+  sceneRaf = requestAnimationFrame(tickVisuals);
+  if (document.hidden) return;
+  if (lastVisualTick) recordFramePacing(now - lastVisualTick);
+  lastVisualTick = now;
+  renderWeightedMotion(now);
+  renderPerceptionField(now);
+  if (immersiveState.active) drawImmersiveScene(now);
+  renderInkField(now);
+  renderTitleMutation(now);
+  loopPlaylistMotion(now);
+  renderReactiveLogo(now);
+};
+
 setupLogoSlices();
 setupLogoParticles();
 resizeLogoCanvas();
 renderLogoMatrix(true);
 resetLogoChaosCountdown();
 logoCycleTimeout = window.setTimeout(runLogoCycle, randomRange(1000, 10000));
-requestAnimationFrame(renderReactiveLogo);
-requestAnimationFrame(renderInkField);
-requestAnimationFrame(renderTitleMutation);
+requestAnimationFrame(tickVisuals);
 window.addEventListener("resize", resizeLogoCanvas, { passive: true });
 
-bindFallbackTracks();
-if (Array.isArray(window.INTEONMTECA_PLAYLIST) && window.INTEONMTECA_PLAYLIST.length) {
-  renderPlaylist(window.INTEONMTECA_PLAYLIST);
-}
-initializeThemeSystem();
-loadPlaylist();
-schedulePlaylistRefresh();
+try { initializeThemeSystem(); } catch {}
+window.setTimeout(() => {
+  try {
+    bindFallbackTracks();
+    if (Array.isArray(window.INTEONMTECA_PLAYLIST) && window.INTEONMTECA_PLAYLIST.length) {
+      renderPlaylist(window.INTEONMTECA_PLAYLIST);
+    }
+    loadPlaylist();
+    schedulePlaylistRefresh();
+  } catch {}
+}, 0);
 loadSession();
-loopPlaylistMotion();
 
 window.addEventListener("DOMContentLoaded", () => {
   setupVisitCounter();
