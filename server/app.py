@@ -228,18 +228,22 @@ class Store:
         with self._lock:
             self._db.close()
 
-    def messages(self, limit: int = 80) -> list[dict[str, Any]]:
+    def messages(self, limit: int | None = None) -> list[dict[str, Any]]:
         with self._lock:
-            rows = self._db.execute(
-                "SELECT id, email, text, created_at FROM messages ORDER BY id DESC LIMIT ?",
-                (limit,),
-            ).fetchall()
-        items = [
+            if limit is None:
+                rows = self._db.execute(
+                    "SELECT id, email, text, created_at FROM messages ORDER BY id ASC"
+                ).fetchall()
+            else:
+                rows = self._db.execute(
+                    "SELECT id, email, text, created_at FROM messages ORDER BY id DESC LIMIT ?",
+                    (limit,),
+                ).fetchall()
+                rows = list(reversed(rows))
+        return [
             {"id": int(row["id"]), "email": str(row["email"]).split("@", 1)[0] or "гость", "text": str(row["text"]), "created_at": int(row["created_at"])}
             for row in rows
         ]
-        items.reverse()
-        return items
 
 
 def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_dev_code: bool = False):

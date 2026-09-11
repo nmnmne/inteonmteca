@@ -76,6 +76,22 @@ class AuthChatServerTests(unittest.TestCase):
         self.assertEqual(status, 401)
         self.assertIn("войди", body["error"])
 
+    def test_chat_history_stays_and_is_visible_without_login(self):
+        status, body = self._json("POST", "/api/auth/request-code", {"email": "keep@example.com"})
+        self.assertEqual(status, 200)
+        code = body.get("login_code") or body.get("dev_code")
+        status, _ = self._json("POST", "/api/auth/verify", {"email": "keep@example.com", "code": code})
+        self.assertEqual(status, 200)
+        for text in ("первый след", "второй след"):
+            status, _ = self._json("POST", "/api/chat", {"text": text})
+            self.assertEqual(status, 200)
+        public = request.build_opener()
+        with public.open(self.base + "/api/chat") as response:
+            chat = json.loads(response.read().decode("utf-8"))
+        texts = [item["text"] for item in chat["messages"]]
+        self.assertIn("первый след", texts)
+        self.assertIn("второй след", texts)
+
     def test_invalid_email_is_rejected(self):
         status, body = self._json("POST", "/api/auth/request-code", {"email": "not-mail"})
         self.assertEqual(status, 400)

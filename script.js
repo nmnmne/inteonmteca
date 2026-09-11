@@ -298,6 +298,8 @@ let playlistRaf = 0;
 let playlistScrollRaf = 0;
 let playlistScrollTarget = 0;
 let playlistScrollVelocity = 0;
+let playlistPointerLockUntil = 0;
+let playlistPointerCarry = 0;
 let wheelBalancing = false;
 let playLockAt = 0;
 let trackPlayBlend = 0;
@@ -1254,9 +1256,27 @@ const updateScrollbar = () => {
   scrollbarThumb.style.transform = `translateY(${top}px)`;
 };
 
+const pointerPlaylistNudge = () => {
+  if (!playlistList || !trackViewport || draggingScroll) return 0;
+  if (!pointerState.active || performance.now() < playlistPointerLockUntil) return 0;
+  const box = trackViewport.getBoundingClientRect();
+  if (pointerState.x < box.left - 56 || pointerState.x > box.right + 56) return 0;
+  if (pointerState.y < box.top - 36 || pointerState.y > box.bottom + 36) return 0;
+  const half = Math.max(1, box.height / 2);
+  const norm = (pointerState.y - (box.top + half)) / half;
+  const dead = 0.14;
+  if (Math.abs(norm) <= dead) return 0;
+  const falloff = Math.min(1, (Math.abs(norm) - dead) / (1 - dead));
+  return Math.sign(norm) * (0.85 + falloff * 1.15);
+};
+
 const loopPlaylistMotion = (now) => {
   if (now - playlistLastFrame < (animationQuality === "low" ? 90 : 50)) return;
   playlistLastFrame = now;
+  if (pointerPlaylistNudge() && !playlistScrollRaf && playlistList) {
+    playlistScrollTarget = playlistList.scrollTop;
+    playlistScrollRaf = requestAnimationFrame(animatePlaylistScroll);
+  }
   updateTrackFold();
   updateScrollbar();
 };
@@ -1528,7 +1548,10 @@ const playTrack = (track, sourceItem = null, options = {}) => {
   });
   updateTrackFold();
   window.setTimeout(() => {
-    if (sourceItem) centerWheelItem(sourceItem);
+    if (sourceItem) {
+      playlistPointerLockUntil = performance.now() + 720;
+      centerWheelItem(sourceItem);
+    }
     if (currentTrack === track) enterImmersiveMode(player, track);
   }, immersiveState.active || prefersReducedMotion ? 0 : 280);
 };
@@ -1818,13 +1841,25 @@ resizeInkField();
 const animatePlaylistScroll = () => {
   if (!playlistList) return;
   balanceInfiniteWheel();
+  const nudge = pointerPlaylistNudge();
   const max = Math.max(0, playlistList.scrollHeight - playlistList.clientHeight);
+  if (nudge) {
+    playlistPointerCarry += nudge;
+    const step = playlistPointerCarry > 0 ? Math.floor(playlistPointerCarry) : Math.ceil(playlistPointerCarry);
+    if (step) {
+      playlistList.scrollTop = Math.max(0, Math.min(max, playlistList.scrollTop + step));
+      playlistPointerCarry -= step;
+      playlistScrollTarget = playlistList.scrollTop;
+    }
+  } else {
+    playlistPointerCarry *= .8;
+  }
   playlistScrollTarget = Math.max(0, Math.min(max, playlistScrollTarget));
   const distance = playlistScrollTarget - playlistList.scrollTop;
   playlistScrollVelocity = (playlistScrollVelocity + distance * .075) * .8;
   const nextPosition = Math.max(0, Math.min(max, playlistList.scrollTop + playlistScrollVelocity));
   playlistList.scrollTop = nextPosition;
-  if (Math.abs(distance) < .35 && Math.abs(playlistScrollVelocity) < .12) {
+  if (!nudge && Math.abs(distance) < .35 && Math.abs(playlistScrollVelocity) < .12) {
     playlistList.scrollTop = playlistScrollTarget;
     playlistScrollVelocity = 0;
     playlistScrollRaf = 0;
@@ -1832,6 +1867,12 @@ const animatePlaylistScroll = () => {
   }
   playlistScrollRaf = requestAnimationFrame(animatePlaylistScroll);
 };
+
+window.addEventListener("pointermove", () => {
+  if (!playlistList || playlistScrollRaf || !pointerPlaylistNudge()) return;
+  playlistScrollTarget = playlistList.scrollTop;
+  playlistScrollRaf = requestAnimationFrame(animatePlaylistScroll);
+}, { passive: true });
 
 trackViewport?.addEventListener("wheel", (event) => {
   if (!playlistList) return;
@@ -2055,6 +2096,10 @@ const refreshAuthHint = () => {
   if (authLogout) authLogout.hidden = !sessionEmail;
   if (authEmailForm) authEmailForm.hidden = Boolean(sessionEmail);
   if (sessionEmail && authCodeForm) authCodeForm.hidden = true;
+  if (chatInput) {
+    chatInput.readOnly = !sessionEmail;
+    chatInput.placeholder = sessionEmail ? "написать в воздух" : "войди, чтобы написать";
+  }
 };
 
 const requestJson = async (path, options = {}) => {
@@ -2203,22 +2248,32 @@ const renderChatMessages = (messages) => {
   if (!chatStream) return;
   chatStream.replaceChildren();
   chatGlyphs = [];
-  (messages || []).slice(-12).forEach((message) => {
+  const all = messages || [];
+  all.forEach((message, index) => {
     const line = document.createElement("div");
     line.className = "chat-line";
     const meta = document.createElement("div");
     meta.className = "chat-meta";
     meta.textContent = (message.email || "").split("@")[0] || "гость";
     line.append(meta);
-    [...String(message.text || "")].forEach((char) => {
-      const glyph = document.createElement("span");
-      glyph.className = "chat-glyph";
-      glyph.textContent = char === " " ? "\u00a0" : char;
-      line.append(glyph);
-      chatGlyphs.push(glyph);
-    });
+    const recent = index >= all.length - 8;
+    if (recent) {
+      [...String(message.text || "")].forEach((char) => {
+        const glyph = document.createElement("span");
+        glyph.className = "chat-glyph";
+        glyph.textContent = char === " " ? "\u00a0" : char;
+        line.append(glyph);
+        chatGlyphs.push(glyph);
+      });
+    } else {
+      const body = document.createElement("span");
+      body.className = "chat-text";
+      body.textContent = message.text || "";
+      line.append(body);
+    }
     chatStream.append(line);
   });
+  chatStream.scrollTop = chatStream.scrollHeight;
   requestAnimationFrame(animateChatGlyphs);
 };
 
@@ -2238,13 +2293,12 @@ const loadChat = async () => {
 };
 
 const openChat = async () => {
-  if (!sessionEmail) {
-    setPanelOpen(authPanel, true);
-    setAuthStatus("сначала почта");
-    return;
-  }
   setPanelOpen(chatPanel, true);
   document.body.classList.add("is-chat-open");
+  if (chatInput) {
+    chatInput.placeholder = sessionEmail ? "написать в воздух" : "войди, чтобы написать";
+    chatInput.readOnly = !sessionEmail;
+  }
   await loadChat();
   chatInput?.focus();
   window.clearInterval(chatTimer);
@@ -2261,6 +2315,11 @@ chatHint?.addEventListener("click", openChat);
 chatClose?.addEventListener("click", closeChat);
 chatForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (!sessionEmail) {
+    setPanelOpen(authPanel, true);
+    setAuthStatus("сначала почта");
+    return;
+  }
   const text = chatInput?.value.trim();
   if (!text) return;
   try {
@@ -2272,7 +2331,7 @@ chatForm?.addEventListener("submit", async (event) => {
         text,
         created_at: Math.floor(Date.now() / 1000),
       });
-      storeValue(localChatStorageKey, JSON.stringify(messages.slice(-80)));
+      storeValue(localChatStorageKey, JSON.stringify(messages));
       chatInput.value = "";
       renderChatMessages(messages);
       return;
