@@ -12,6 +12,7 @@ const immersiveBack = document.getElementById("immersive-back");
 const immersivePlay = document.getElementById("immersive-play");
 const immersivePlayIcon = document.getElementById("immersive-play-icon");
 const nowPlayingTitle = document.getElementById("now-playing-title");
+const closeTrack = document.getElementById("close-track");
 const previousTrack = document.getElementById("previous-track");
 const nextTrack = document.getElementById("next-track");
 const trackProgress = document.getElementById("track-progress");
@@ -26,7 +27,7 @@ const scrollbarThumb = document.getElementById("track-scrollbar-thumb");
 const inkField = document.getElementById("ink-field");
 const inkContext = inkField?.getContext("2d");
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-const isMobileViewport = window.matchMedia("(max-width: 640px)").matches;
+const isMobileViewport = window.matchMedia("(max-width: 800px), (pointer: coarse)").matches;
 const lowPowerDevice = isMobileViewport
   || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
   || (navigator.deviceMemory && navigator.deviceMemory <= 4);
@@ -62,6 +63,7 @@ const chatStream = document.getElementById("chat-stream");
 const chatForm = document.getElementById("chat-form");
 const chatInput = document.getElementById("chat-input");
 const chatClose = document.getElementById("chat-close");
+const compactChatViewport = window.matchMedia("(max-width: 1100px), (max-height: 540px)");
 const themeHint = document.getElementById("theme-hint");
 const themePanel = document.getElementById("theme-panel");
 const themeClose = document.getElementById("theme-close");
@@ -306,6 +308,7 @@ let wheelBalancing = false;
 let playLockAt = 0;
 let trackPlayBlend = 0;
 let playbackRequestId = 0;
+let pendingPlaybackSeek = null;
 let fullReadableMode = false;
 let logoLocked = false;
 let logoChaosActive = false;
@@ -314,8 +317,10 @@ let logoCycleTimeout;
 let logoChaosCountdown = 0;
 let pendingEmail = "";
 let localLoginCode = "";
+let passIsLocal = false;
 let sessionEmail = "";
 let chatTimer = 0;
+let chatAnimationFrame = 0;
 let chatGlyphs = [];
 let draggingScroll = null;
 let activeAudioNode = null;
@@ -1545,20 +1550,57 @@ const centerWheelItem = (item) => {
   balanceInfiniteWheel();
 };
 
+let trackFlight = null;
+const launchTrackFlight = (sourceRect, sourceFontSize, track) => {
+  trackFlight?.remove();
+  trackFlight = null;
+  if (!sourceRect || prefersReducedMotion || !activePlayer) return;
+  activePlayer.classList.add("is-arrival-target");
+  const targetCopy = activePlayer.querySelector(".active-track-copy");
+  const targetTitle = activePlayer.querySelector(".now-playing-title");
+  const target = targetCopy?.getBoundingClientRect();
+  const targetFontSize = targetTitle ? Number.parseFloat(getComputedStyle(targetTitle).fontSize) || sourceFontSize : sourceFontSize;
+  activePlayer.classList.remove("is-arrival-target");
+  if (!target?.width) return;
+  const flight = document.createElement("div");
+  flight.className = "track-flight";
+  const title = document.createElement("span");
+  title.className = "track-flight-title";
+  title.textContent = track.title || "track";
+  const artist = document.createElement("span");
+  artist.className = "track-flight-artist";
+  artist.textContent = track.artist || "inteonmteca";
+  flight.append(title, artist);
+  flight.style.left = sourceRect.left + "px";
+  flight.style.top = sourceRect.top + "px";
+  flight.style.width = sourceRect.width + "px";
+  flight.style.setProperty("--flight-x", (target.left + target.width / 2 - sourceRect.left - sourceRect.width / 2) + "px");
+  flight.style.setProperty("--flight-y", (target.top - sourceRect.top) + "px");
+  flight.style.setProperty("--flight-scale", String(Math.max(1, Math.min(2.6, targetFontSize / Math.max(1, sourceFontSize)))));
+  document.body.append(flight);
+  trackFlight = flight;
+  requestAnimationFrame(() => requestAnimationFrame(() => flight.classList.add("is-flying")));
+  window.setTimeout(() => {
+    if (trackFlight === flight) trackFlight = null;
+    flight.remove();
+  }, 680);
+};
+
 const playTrack = (track, sourceItem = null, options = {}) => {
   if (!track) return;
   const now = performance.now();
   if (now - playLockAt < 220 && currentTrack === track) return;
   playLockAt = now;
   const requestId = ++playbackRequestId;
+  if (pendingPlaybackSeek) player?.removeEventListener("loadedmetadata", pendingPlaybackSeek.place);
+  pendingPlaybackSeek = null;
   currentTrack = track;
   setPlaybackStatus("", "");
-  document.body.classList.add("is-track-diving");
   activePlayer?.classList.toggle("is-swapping", activePlayer.classList.contains("is-visible"));
   currentTrackIndex = tracks.findIndex((candidate) => (
     candidate === track
-    || candidate.audio === track.audio
-    || candidate.file === track.file
+    || (track.audio && candidate.audio === track.audio)
+    || (track.file && candidate.file === track.file)
   ));
   if (currentTrackIndex < 0 && Array.isArray(window.INTEONMTECA_PLAYLIST)) {
     tracks = tracks.length ? tracks : shuffle(window.INTEONMTECA_PLAYLIST.filter((item) => item?.audio));
@@ -1569,10 +1611,34 @@ const playTrack = (track, sourceItem = null, options = {}) => {
   if (!sourceItem && currentTrackIndex >= 0) {
     sourceItem = nearestItemForTrackIndex(currentTrackIndex);
   }
+  const sourceMeta = sourceItem?.querySelector(".track-meta");
+  const sourceTitle = sourceItem?.querySelector(".track-title");
+  const sourceRect = sourceMeta?.getBoundingClientRect() || null;
+  const sourceFontSize = sourceTitle ? Number.parseFloat(getComputedStyle(sourceTitle).fontSize) || 24 : 24;
+  if (nowPlayingTitle) {
+    nowPlayingTitle.textContent = track.title || "track";
+    nowPlayingTitle.dataset.track = track.title || "track";
+  }
+  if (activeTrackArtist) activeTrackArtist.textContent = track.artist || "inteonmteca";
+  document.body.classList.add("is-track-diving", "is-player-arranging");
+  launchTrackFlight(sourceRect, sourceFontSize, track);
   const src = resolveTrackUrl(track);
   const assigned = player ? (player.getAttribute("src") || player.src || "") : "";
   if (player && src && assigned !== src && player.src !== src) player.src = src;
-  if (player && src && !options.audioStarted) {
+  if (player && options.shared) {
+    const place = () => {
+      if (requestId !== playbackRequestId) return;
+      const time = Number(options.shared.time);
+      if (Number.isFinite(time) && time > 0) player.currentTime = Number.isFinite(player.duration) ? Math.min(time, player.duration) : time;
+      pendingPlaybackSeek = null;
+    };
+    pendingPlaybackSeek = { requestId, place };
+    if (player.readyState >= 1) place();
+    else player.addEventListener("loadedmetadata", place, { once: true });
+  }
+  if (player && src && options.shared?.paused) {
+    syncTransport();
+  } else if (player && src && !options.audioStarted) {
     const attempt = player.play();
     if (attempt && typeof attempt.then === "function") {
       attempt.then(() => {
@@ -1622,7 +1688,7 @@ const playTrack = (track, sourceItem = null, options = {}) => {
     updateTrackFold();
     updateScrollbar();
     enterImmersiveMode(player, track);
-  }, prefersReducedMotion ? 0 : 400);
+  }, prefersReducedMotion ? 0 : 620);
 };
 
 const renderPlaylist = (playlist, { force = false } = {}) => {
@@ -1759,6 +1825,7 @@ const enterImmersiveMode = (audio, track = null) => {
   requestAnimationFrame(() => activePlayer?.classList.remove("is-swapping"));
   document.body.classList.remove("is-track-diving", "is-immersive");
   document.body.classList.add("is-inline-playing");
+  document.body.classList.remove("is-player-arranging");
   immersiveMode?.classList.remove("is-active");
   immersiveMode?.setAttribute("aria-hidden", "true");
   syncTransport();
@@ -1768,12 +1835,15 @@ const exitImmersiveMode = () => {
   playbackRequestId += 1;
   immersiveState.active = false;
   immersiveState.audio?.pause();
+  window.inteonPlayback?.clear?.();
   immersiveState.audio = null;
   immersiveMode?.classList.remove("is-active");
   immersiveMode?.setAttribute("aria-hidden", "true");
   activePlayer?.classList.remove("is-visible", "is-swapping");
   activePlayer?.setAttribute("aria-hidden", "true");
-  document.body.classList.remove("is-track-diving", "is-immersive", "is-inline-playing", "is-signal");
+  document.body.classList.remove("is-track-diving", "is-immersive", "is-inline-playing", "is-player-arranging", "is-signal");
+  trackFlight?.remove();
+  trackFlight = null;
   currentTrack = null;
   currentTrackIndex = -1;
   cancelAnimationFrame(immersiveState.raf);
@@ -1814,6 +1884,26 @@ const syncTransport = () => {
       nowPlayingTitle.dataset.track = title;
     }
   }
+  rememberPlayback();
+};
+
+let playbackStamp = "";
+const rememberPlayback = () => {
+  if (!window.inteonPlayback || !currentTrack || !player) return;
+  if (pendingPlaybackSeek?.requestId === playbackRequestId) return;
+  const stamp = `${currentTrack.audio || currentTrack.file}|${player.paused}|${Math.floor(player.currentTime || 0)}`;
+  if (stamp === playbackStamp) return;
+  playbackStamp = stamp;
+  window.inteonPlayback.save(player, currentTrack);
+};
+
+const restoreSharedPlayback = () => {
+  const saved = window.inteonPlayback?.read?.();
+  if (!saved?.audio || currentTrack) return;
+  const wanted = saved.audio;
+  const track = tracks.find((item) => String(item.audio || item.file || "").replace(/\\/g, "/") === wanted);
+  if (!track) return;
+  playTrack(track, null, { shared: saved });
 };
 
 const togglePlayback = () => {
@@ -1839,6 +1929,7 @@ const playRelativeTrack = (offset) => {
 };
 
 immersiveBack?.addEventListener("click", exitImmersiveMode);
+closeTrack?.addEventListener("click", exitImmersiveMode);
 immersivePlay?.addEventListener("click", togglePlayback);
 previousTrack?.addEventListener("click", () => playRelativeTrack(-1));
 nextTrack?.addEventListener("click", () => playRelativeTrack(1));
@@ -1976,6 +2067,7 @@ const openPanels = [];
 const panelOpeners = new WeakMap();
 const setPanelOpen = (panel, open, { focus = true } = {}) => {
   if (!panel || panel.hidden === !open) return;
+  if (open && panel !== chatPanel && compactChatViewport.matches && !chatPanel?.hidden) closeChat();
   const trigger = document.getElementById(panel.id.replace("-panel", "-hint"));
   if (open) panelOpeners.set(panel, document.activeElement);
   const index = openPanels.indexOf(panel);
@@ -2171,7 +2263,7 @@ const requestJson = async (path, options = {}) => {
       ...options,
     });
   } catch {
-    throw new Error("сервер входа не запущен — открой сайт через start-site.cmd");
+    throw new Error("сервер входа недоступен — попробуй позже");
   }
   if (!response.headers.get("content-type")?.includes("application/json")) {
     throw new Error("API входа не подключён к этому адресу сайта");
@@ -2181,16 +2273,41 @@ const requestJson = async (path, options = {}) => {
   return data;
 };
 
+const useLocalPass = () => isFileMode || passIsLocal;
+
+const showLocalCode = () => {
+  if (!emailFormat.test(pendingEmail)) throw new Error("нужна почта: имя@example.com");
+  rememberLocalAccount(pendingEmail);
+  localLoginCode = createLoginCode();
+  passIsLocal = true;
+  authCodeForm.hidden = false;
+  if (authCodeLabel) authCodeLabel.textContent = "код с экрана";
+  setAuthStatus(`код входа: ${localLoginCode}`);
+  authCode?.focus();
+};
+
+const acceptLocalCode = () => {
+  if (authCode?.value.trim() !== localLoginCode) throw new Error("код не подошёл");
+  sessionEmail = pendingEmail;
+  storeValue(localSessionStorageKey, sessionEmail);
+  refreshAuthHint();
+  setPanelOpen(authPanel, false);
+  setAuthStatus("");
+};
+
 const loadSession = async () => {
   if (isFileMode) {
     sessionEmail = readStoredValue(localSessionStorageKey) || "";
+    passIsLocal = true;
     refreshAuthHint();
     return;
   }
   try {
     const data = await requestJson("/api/auth/me");
     sessionEmail = data.email || "";
+    passIsLocal = false;
   } catch {
+    passIsLocal = false;
     sessionEmail = "";
   }
   refreshAuthHint();
@@ -2206,7 +2323,7 @@ authHint?.addEventListener("click", () => {
 });
 
 authLogout?.addEventListener("click", async () => {
-  if (isFileMode) {
+  if (useLocalPass()) {
     try {
       localStorage.removeItem(localSessionStorageKey);
     } catch {}
@@ -2231,14 +2348,8 @@ authEmailForm?.addEventListener("submit", async (event) => {
   pendingEmail = authEmail?.value.trim().toLowerCase() || "";
   setAuthStatus("готовим код…");
   try {
-    if (isFileMode) {
-      if (!emailFormat.test(pendingEmail)) throw new Error("нужна почта: имя@example.com");
-      rememberLocalAccount(pendingEmail);
-      localLoginCode = createLoginCode();
-      authCodeForm.hidden = false;
-      if (authCodeLabel) authCodeLabel.textContent = "код с экрана";
-      setAuthStatus(`код входа: ${localLoginCode}`);
-      authCode?.focus();
+    if (useLocalPass()) {
+      showLocalCode();
       return;
     }
     const data = await requestJson("/api/auth/request-code", {
@@ -2263,13 +2374,8 @@ authCodeForm?.addEventListener("submit", async (event) => {
   if (submit) submit.disabled = true;
   setAuthStatus("проверяем…");
   try {
-    if (isFileMode) {
-      if (authCode?.value.trim() !== localLoginCode) throw new Error("код не подошёл");
-      sessionEmail = pendingEmail;
-      storeValue(localSessionStorageKey, sessionEmail);
-      refreshAuthHint();
-      setPanelOpen(authPanel, false);
-      setAuthStatus("");
+    if (useLocalPass()) {
+      acceptLocalCode();
       return;
     }
     const data = await requestJson("/api/auth/verify", {
@@ -2288,6 +2394,8 @@ authCodeForm?.addEventListener("submit", async (event) => {
 });
 
 const animateChatGlyphs = (now) => {
+  chatAnimationFrame = 0;
+  if (chatPanel?.hidden || document.hidden || animationQuality === "low" || prefersReducedMotion) return;
   const t = now * 0.001;
   const beat = (Math.sin(t * 1.45) + 1) / 2;
   chatGlyphs.forEach((glyph, index) => {
@@ -2300,14 +2408,28 @@ const animateChatGlyphs = (now) => {
     const scale = 1 + Math.sin(t * 2.2 + index * 0.3) * 0.09;
     glyph.style.transform = `translate3d(${helixX}px, ${wave}px, ${helixZ}px) rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(${rotZ}deg) scale(${scale})`;
   });
-  if (!chatPanel?.hidden) requestAnimationFrame(animateChatGlyphs);
+  chatAnimationFrame = requestAnimationFrame(animateChatGlyphs);
 };
 
+let chatSnapshot = "";
+let chatLoading = false;
 const renderChatMessages = (messages) => {
   if (!chatStream) return;
+  const all = Array.isArray(messages) ? messages : [];
+  const animateGlyphs = animationQuality !== "low" && !prefersReducedMotion && !compactChatViewport.matches;
+  const snapshot = JSON.stringify([animateGlyphs, all]);
+  if (snapshot === chatSnapshot) {
+    if (chatGlyphs.length && !chatAnimationFrame && !chatPanel?.hidden && !document.hidden) chatAnimationFrame = requestAnimationFrame(animateChatGlyphs);
+    return;
+  }
+  const scrollTop = chatStream.scrollTop;
+  const atBottom = !chatStream.childElementCount || chatStream.scrollHeight - chatStream.clientHeight - scrollTop < 48;
+  chatSnapshot = snapshot;
+  cancelAnimationFrame(chatAnimationFrame);
+  chatAnimationFrame = 0;
   chatStream.replaceChildren();
   chatGlyphs = [];
-  const all = messages || [];
+
   all.forEach((message, index) => {
     const line = document.createElement("div");
     line.className = "chat-line";
@@ -2315,7 +2437,7 @@ const renderChatMessages = (messages) => {
     meta.className = "chat-meta";
     meta.textContent = (message.email || "").split("@")[0] || "гость";
     line.append(meta);
-    const recent = index >= all.length - 8;
+    const recent = animateGlyphs && index >= all.length - 8 && chatGlyphs.length + String(message.text || "").length <= 320;
     if (recent) {
       [...String(message.text || "")].forEach((char) => {
         const glyph = document.createElement("span");
@@ -2332,33 +2454,43 @@ const renderChatMessages = (messages) => {
     }
     chatStream.append(line);
   });
-  chatStream.scrollTop = chatStream.scrollHeight;
-  requestAnimationFrame(animateChatGlyphs);
+  chatStream.scrollTop = atBottom ? chatStream.scrollHeight : scrollTop;
+  if (chatGlyphs.length) chatAnimationFrame = requestAnimationFrame(animateChatGlyphs);
 };
 
 const loadChat = async () => {
-  if (isFileMode) {
+  if (chatLoading || chatPanel?.hidden || document.hidden) return;
+  if (useLocalPass()) {
     renderChatMessages(readStoredJson(localChatStorageKey, []));
     return;
   }
+  chatLoading = true;
   try {
     const data = await requestJson("/api/chat");
     renderChatMessages(data.messages || data);
   } catch {
     if (!chatStream.childElementCount) {
-      renderChatMessages([{ email: "inteonmteca", text: "воздух молчит" }]);
+      renderChatMessages([{ email: "inteonmteca", text: "чат временно недоступен — нет связи с сервером" }]);
     }
+  } finally {
+    chatLoading = false;
   }
 };
 
 const openChat = async ({ focus = false } = {}) => {
+  if (compactChatViewport.matches) {
+    setPanelOpen(authPanel, false);
+    setPanelOpen(themePanel, false);
+  }
   setPanelOpen(chatPanel, true, { focus: false });
   document.body.classList.add("is-chat-open");
+  syncChatViewport();
   if (chatInput) {
     chatInput.placeholder = sessionEmail ? "написать в воздух" : "войди, чтобы написать";
     chatInput.readOnly = !sessionEmail;
   }
-  if (focus) chatInput?.focus({ preventScroll: true });
+  if (compactChatViewport.matches) chatClose?.focus({ preventScroll: true });
+  else if (focus) chatInput?.focus({ preventScroll: true });
   await loadChat();
   if (chatPanel?.hidden) return;
   window.clearInterval(chatTimer);
@@ -2367,12 +2499,31 @@ const openChat = async ({ focus = false } = {}) => {
 
 const closeChat = () => {
   window.clearInterval(chatTimer);
+  cancelAnimationFrame(chatAnimationFrame);
+  chatAnimationFrame = 0;
   setPanelOpen(chatPanel, false);
   document.body.classList.remove("is-chat-open");
+  syncChatViewport();
   chatHint?.focus();
 };
 
-chatHint?.addEventListener("click", () => openChat({ focus: true }));
+const syncChatViewport = () => {
+  const modal = compactChatViewport.matches && !chatPanel?.hidden;
+  chatPanel?.setAttribute("aria-modal", String(modal));
+  document.querySelectorAll('.page, .street-return, .auth-hint, .theme-hint').forEach((element) => { element.inert = modal; });
+  const viewport = window.visualViewport;
+  if (chatPanel && viewport) {
+    chatPanel.style.setProperty("--chat-height", `${viewport.height}px`);
+    chatPanel.style.setProperty("--chat-top", `${viewport.offsetTop}px`);
+  }
+};
+compactChatViewport.addEventListener("change", (event) => {
+  if (event.matches && !chatPanel?.hidden) closeChat();
+  syncChatViewport();
+});
+window.visualViewport?.addEventListener("resize", syncChatViewport, { passive: true });
+window.visualViewport?.addEventListener("scroll", syncChatViewport, { passive: true });
+chatHint?.addEventListener("click", () => openChat({ focus: !compactChatViewport.matches }));
 chatClose?.addEventListener("click", closeChat);
 chatForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -2384,7 +2535,7 @@ chatForm?.addEventListener("submit", async (event) => {
   const text = chatInput?.value.trim();
   if (!text) return;
   try {
-    if (isFileMode) {
+    if (useLocalPass()) {
       const messages = readStoredJson(localChatStorageKey, []);
       messages.push({
         id: Date.now(),
@@ -2406,6 +2557,18 @@ chatForm?.addEventListener("submit", async (event) => {
 });
 
 const handlePanelKeydown = (event) => {
+  if (event.key === "Tab" && compactChatViewport.matches && !chatPanel?.hidden) {
+    const controls = [...chatPanel.querySelectorAll('input:not([disabled]), button:not([disabled])')];
+    const first = controls[0];
+    const last = controls[controls.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first?.focus();
+    }
+  }
   if (event.key !== "Escape" || event.defaultPrevented) return;
   const topPanel = openPanels[openPanels.length - 1];
   if (topPanel) {
@@ -2863,7 +3026,7 @@ matrixElements.forEach((element) => {
 
 window.setInterval(() => {
   if (!document.hidden) matrixElements.forEach(renderMatrixNoise);
-}, prefersReducedMotion ? 360 : 95);
+}, prefersReducedMotion ? 360 : animationQuality === "low" ? 180 : 95);
 window.setTimeout(runReadableWave, 1200);
 window.setInterval(runReadableWave, 6200);
 window.setTimeout(runLongReadableMoment, 3200);
@@ -2873,6 +3036,7 @@ const tickVisuals = (now) => {
   if (document.hidden) return;
   if (lastVisualTick) recordFramePacing(now - lastVisualTick);
   lastVisualTick = now;
+  if (isMobileViewport && !chatPanel?.hidden) return;
   renderWeightedMotion(now);
   renderPerceptionField(now);
   if (immersiveState.active) drawImmersiveScene(now);
@@ -2898,6 +3062,9 @@ window.setTimeout(() => {
     bindFallbackTracks();
     if (Array.isArray(window.INTEONMTECA_PLAYLIST) && window.INTEONMTECA_PLAYLIST.length) {
       renderPlaylist(window.INTEONMTECA_PLAYLIST);
+      const navigation = performance.getEntriesByType?.("navigation")?.[0];
+      if (navigation?.type === "reload") window.inteonPlayback?.clear?.();
+      else restoreSharedPlayback();
     }
   } catch {}
 }, 0);
@@ -2906,9 +3073,9 @@ loadSession();
 streetLink?.addEventListener("click", () => {
   window.inteonStreet?.noteExit();
 });
+window.addEventListener("pagehide", () => rememberPlayback());
 
 window.addEventListener("DOMContentLoaded", () => {
   setupVisitCounter();
   updateScrollbar();
-  openChat();
 });

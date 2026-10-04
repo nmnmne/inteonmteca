@@ -36,7 +36,7 @@
   <link rel="icon" href="assets/favicon.ico" sizes="any">
   <link rel="icon" href="assets/logo-inteonmteca.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=20261004-1814">
+  <link rel="stylesheet" href="styles.css?v=20261004-2310">
 </head>
 <body class="perception-interface">
   <div class="perception-field" aria-hidden="true"></div>
@@ -128,19 +128,18 @@
           <div class="release-content player-dock">
             <section class="active-player" id="active-player" aria-label="Сейчас играет" aria-hidden="true">
               <div class="active-track-copy">
-                <p class="now-playing-title" id="now-playing-title"></p>
+                <div class="active-track-heading">
+                  <p class="now-playing-title" id="now-playing-title"></p>
+                  <button class="close-track" id="close-track" type="button" aria-label="Закрыть трек">×</button>
+                </div>
                 <p class="active-track-artist" id="active-track-artist"></p>
               </div>
               <div class="transport" aria-label="Управление воспроизведением">
-                <button class="transport-skip" id="previous-track" type="button" aria-label="Предыдущий трек">&#8592;</button>
                 <button class="transport-play" id="immersive-play" type="button" aria-label="Пауза"><span id="immersive-play-icon">&#8545;</span></button>
-                <button class="transport-skip" id="next-track" type="button" aria-label="Следующий трек">&#8594;</button>
-                <span class="transport-time" id="current-time">0:00</span>
                 <div class="transport-seek-field">
                   <span class="transport-seek-volume" aria-hidden="true"></span>
                   <input class="transport-progress" id="track-progress" type="range" min="0" max="1000" value="0" step="1" aria-label="Позиция трека">
                 </div>
-                <span class="transport-time" id="duration-time">0:00</span>
               </div>
               <p class="playback-status" id="playback-status" aria-live="polite"></p>
             </section>
@@ -204,7 +203,7 @@
   <div class="chat-sign" id="chat-sign" aria-hidden="true">
     <span class="chat-sign-word">чат</span>
   </div>
-  <section class="chat-panel" id="chat-panel" aria-hidden="true" hidden>
+  <section class="chat-panel" id="chat-panel" role="dialog" aria-label="Чат" aria-hidden="true" hidden>
     <div class="chat-aura" aria-hidden="true"></div>
     <div class="chat-stream" id="chat-stream" aria-live="polite"></div>
     <form class="chat-compose" id="chat-form">
@@ -235,7 +234,8 @@
   </section>
   <script src="playlist-data.js?v=20260910-2345"></script>
   <script src="track-play.js?v=20260911-0230"></script>
-  <script src="street-return.js?v=20261004-1430"></script>
-  <script src="script.js?v=20261004-1812"></script>
+  <script src="street-return.js?v=20261004-2205"></script>
+  <script src="playback-link.js?v=20261004-2145"></script>
+  <script src="script.js?v=20261004-2335"></script>
 </body>
 </html>

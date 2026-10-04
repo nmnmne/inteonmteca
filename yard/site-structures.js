@@ -114,3 +114,77 @@ export function addUtilityStructures(scene, materials, structures = []) {
     scene.add(group);
   }
 }
+
+function utilityBeam(group, from, to, radius, material, segments = 8) {
+  const start = new THREE.Vector3(from.x, from.y, from.z);
+  const end = new THREE.Vector3(to.x, to.y, to.z);
+  const vector = end.clone().sub(start);
+  const length = vector.length();
+  if (length < 0.02) return null;
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, segments), material);
+  mesh.position.copy(start).add(end).multiplyScalar(0.5);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), vector.normalize());
+  group.add(mesh);
+  return mesh;
+}
+
+export function addReferenceUtilities(scene, materials) {
+  const group = new THREE.Group();
+  group.name = "reference-utility-forms";
+  const concrete = materials.flat(0x777872);
+  const metal = new THREE.MeshLambertMaterial({ color: 0x4f5653 });
+  const pipeMaterial = new THREE.MeshLambertMaterial({ color: 0xb9b8aa });
+  // Photo layout: a heavy concrete service pole just right of the kiosk
+  // and a slimmer street light farther left. Wires are intentionally omitted.
+  const servicePole = { x: -9.2, z: -10.4, height: 8.7 };
+  const serviceShaft = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.14, 0.24, servicePole.height, 8),
+    concrete,
+  );
+  serviceShaft.position.set(servicePole.x, servicePole.height / 2, servicePole.z);
+  group.add(serviceShaft);
+  const serviceBox = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.5, 0.2), metal);
+  serviceBox.position.set(servicePole.x + 0.12, 4.8, servicePole.z - 0.14);
+  serviceBox.rotation.y = -0.42;
+  group.add(serviceBox);
+
+  const streetPole = { x: -39.5, z: 1.8, height: 7.1 };
+  const streetShaft = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.075, 0.13, streetPole.height, 8),
+    metal,
+  );
+  streetShaft.position.set(streetPole.x, streetPole.height / 2, streetPole.z);
+  group.add(streetShaft);
+  utilityBeam(
+    group,
+    { x: streetPole.x, y: streetPole.height - 0.06, z: streetPole.z },
+    { x: streetPole.x + 1.35, y: streetPole.height + 0.48, z: streetPole.z - 0.22 },
+    0.055,
+    metal,
+    8,
+  );
+  const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.16, 0.28), metal);
+  lamp.position.set(streetPole.x + 1.55, streetPole.height + 0.45, streetPole.z - 0.25);
+  lamp.rotation.z = -0.08;
+  group.add(lamp);
+  const pipePoints = [
+    { x: -2, y: 2.25, z: 3 },
+    { x: -15, y: 2.25, z: 10 },
+    { x: -30, y: 2.25, z: 18 },
+    { x: -45, y: 2.25, z: 26 },
+  ];
+  for (let index = 1; index < pipePoints.length; index += 1) {
+    utilityBeam(group, pipePoints[index - 1], pipePoints[index], 0.075, pipeMaterial, 10);
+  }
+  pipePoints.forEach((point, index) => {
+    if (index === 0 || index === pipePoints.length - 1 || index % 2 === 0) {
+      utilityBeam(group, { ...point, y: 0 }, point, 0.055, metal, 7);
+      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.12, 0.42), concrete);
+      foot.position.set(point.x, 0.06, point.z);
+      group.add(foot);
+    }
+  });
+
+  scene.add(group);
+  return group;
+}

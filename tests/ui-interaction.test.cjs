@@ -20,7 +20,7 @@ test('panels move focus in, restore opener and expose expanded state', () => {
   const input = { focus: () => { focused = input; } };
   const panel = { id: 'theme-panel', hidden: true, style: {}, setAttribute() {}, querySelector: () => input, contains: el => el === input };
   const document = { activeElement: opener, getElementById: () => opener };
-  const context = { document, panel, openPanels: [], panelOpeners: new WeakMap() };
+  const context = { document, panel, openPanels: [], panelOpeners: new WeakMap(), chatPanel: {hidden:true}, compactChatViewport: {matches:false} };
   vm.runInNewContext(functionSource('setPanelOpen') + '\nsetPanelOpen(panel, true);', context);
   assert.equal(focused, input);
   assert.equal(opener['aria-expanded'], 'true');

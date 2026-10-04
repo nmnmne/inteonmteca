@@ -3,9 +3,11 @@
   const secondsKey = "inteonmteca-street-return-sec";
   const visitsKey = "inteonmteca-street-visits";
   const poseKey = "inteonmteca-street-pose";
+  const directionKey = "inteonmteca-street-dir";
   const ruleKey = "inteonmteca-street-rule";
-  const rule = "10+5";
+  const rule = "10..65";
   const baseSeconds = 10;
+  const peakSeconds = 65;
   const stepSeconds = 5;
 
   const read = (key) => {
@@ -36,6 +38,7 @@
     write(secondsKey, "");
     write(visitsKey, "");
     write(poseKey, "");
+    write(directionKey, "");
   };
 
   const visits = () => {
@@ -85,9 +88,14 @@
     noteExit() {
       resetIfNewDay();
       const previous = storedSeconds();
-      const next = previous === null ? baseSeconds : previous + stepSeconds;
+      const direction = read(directionKey) === "down" ? -1 : 1;
+      let next = previous === null ? baseSeconds : previous + direction * stepSeconds;
+      if (next > peakSeconds) next = peakSeconds;
+      if (next < baseSeconds) next = baseSeconds;
+      const turn = next >= peakSeconds ? "down" : next <= baseSeconds ? "up" : direction < 0 ? "down" : "up";
       write(dayKey, today());
       write(ruleKey, rule);
+      write(directionKey, turn);
       write(secondsKey, String(next));
       write(visitsKey, String(visits() + 1));
       return next;
@@ -102,7 +110,7 @@
       }));
     },
     resumePose() {
-      if (visits() === 0 || visits() % 2 !== 0) return null;
+      if (visits() === 0 || visits() % 10 === 0) return null;
       return recall();
     },
     armReturn(locationObject, protocol, onTick, remember) {

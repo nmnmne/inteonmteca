@@ -4,7 +4,7 @@ import { createYardMaterials } from "./materials.js";
 import { facadeSpec, openingsForFacade } from "./models.js";
 import { addHruDetails } from "./hru-details.js";
 import { addRoadDetails } from "./road-details.js";
-import { addUtilityStructures } from "./site-structures.js";
+import { addReferenceUtilities, addUtilityStructures } from "./site-structures.js";
 import { addGasPipes, addSiteEntrances } from "./site-details.js";
 import { addBakedLighting, fixedSunForLayout } from "./baked-lighting.js";
 
@@ -312,6 +312,97 @@ function addTree(scene, materials, circle) {
   scene.add(sideCrown);
 }
 
+function pointInsideBoundary(x, z, ring) {
+  let inside = false;
+  for (let index = 0, previous = ring.length - 1; index < ring.length; previous = index, index += 1) {
+    const a = ring[index];
+    const b = ring[previous];
+    const crosses = (a[1] > z) !== (b[1] > z);
+    if (crosses && x < ((b[0] - a[0]) * (z - a[1])) / (b[1] - a[1]) + a[0]) inside = !inside;
+  }
+  return inside;
+}
+function distanceToBoundary(x, z, ring) {
+  let nearest = Infinity;
+  for (let index = 0; index < ring.length; index += 1) {
+    const a = ring[index];
+    const b = ring[(index + 1) % ring.length];
+    const abx = b[0] - a[0];
+    const abz = b[1] - a[1];
+    const lengthSq = abx * abx + abz * abz;
+    const t = lengthSq > 0
+      ? Math.max(0, Math.min(1, ((x - a[0]) * abx + (z - a[1]) * abz) / lengthSq))
+      : 0;
+    nearest = Math.min(nearest, Math.hypot(x - (a[0] + abx * t), z - (a[1] + abz * t)));
+  }
+  return nearest;
+}
+
+function addMatrixBoundary(scene, layout, fixedSun, outsidePlane, groundMaterials) {
+  const bounds = layout.walkable.reduce((result, point) => ({
+    minX: Math.min(result.minX, point[0]),
+    maxX: Math.max(result.maxX, point[0]),
+    minZ: Math.min(result.minZ, point[1]),
+    maxZ: Math.max(result.maxZ, point[1]),
+  }), { minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity });
+  const centerX = (bounds.minX + bounds.maxX) / 2;
+  const centerZ = (bounds.minZ + bounds.maxZ) / 2;
+  const span = Math.max(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ) + 120;
+
+  const groundGrid = new THREE.GridHelper(span, 72, 0x6f8e85, 0x314942);
+  groundGrid.position.set(centerX, 0.055, centerZ);
+  groundGrid.material.transparent = true;
+  groundGrid.material.opacity = 0;
+  groundGrid.material.depthWrite = false;
+  scene.add(groundGrid);
+
+  const skyMaterial = new THREE.MeshBasicMaterial({
+    color: 0x38564f,
+    wireframe: true,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    side: THREE.BackSide,
+    fog: false,
+  });
+  const skyGrid = new THREE.Mesh(new THREE.SphereGeometry(span * 0.62, 32, 14), skyMaterial);
+  skyGrid.position.set(centerX, 18, centerZ);
+  scene.add(skyGrid);
+
+  const baseSky = new THREE.Color(fixedSun.skyColor);
+  const edgeSky = new THREE.Color(0x050908);
+  const baseFog = new THREE.Color(fixedSun.fogColor);
+  const edgeFog = new THREE.Color(0x07100e);
+  let current = -1;
+
+  return {
+    update(x, z) {
+      const outsideBoundary = !pointInsideBoundary(x, z, layout.walkable);
+      const distance = distanceToBoundary(x, z, layout.walkable);
+      const target = outsideBoundary ? 1 : THREE.MathUtils.smoothstep(34 - distance, 0, 34);
+      const amount = Math.round(target * 1000) / 1000;
+      const cell = span / 72;
+      const followX = outsideBoundary ? Math.round(x / cell) * cell : centerX;
+      const followZ = outsideBoundary ? Math.round(z / cell) * cell : centerZ;
+      groundGrid.position.x = followX;
+      groundGrid.position.z = followZ;
+      skyGrid.position.x = x;
+      skyGrid.position.z = z;
+      outsidePlane.position.x = outsideBoundary ? Math.round(x / 240) * 240 : 0;
+      outsidePlane.position.z = outsideBoundary ? Math.round(z / 240) * 240 : 0;
+      if (amount === current) return;
+      current = amount;
+      groundGrid.material.opacity = amount * 0.72;
+      skyMaterial.opacity = amount * 0.5;
+      scene.background.copy(baseSky).lerp(edgeSky, amount * 0.92);
+      scene.fog.color.copy(baseFog).lerp(edgeFog, amount * 0.92);
+      scene.fog.near = THREE.MathUtils.lerp(90, 26, amount);
+      scene.fog.far = THREE.MathUtils.lerp(260, 118, amount);
+      const shade = THREE.MathUtils.lerp(1, 0.3, amount);
+      groundMaterials.forEach((material) => material.color.setRGB(shade, shade, shade));
+    },
+  };
+}
 export function createYardScene(layout) {
   const fixedSun = fixedSunForLayout(layout);
   const scene = new THREE.Scene();
@@ -320,7 +411,7 @@ export function createYardScene(layout) {
   const materials = createYardMaterials();
   const solids = [];
 
-  const outside = new THREE.Mesh(new THREE.PlaneGeometry(420, 420), materials.soil(420, 420));
+  const outside = new THREE.Mesh(new THREE.PlaneGeometry(1200, 1200), materials.soil(1200, 1200));
   outside.rotation.x = -Math.PI / 2;
   outside.position.y = -0.05;
   scene.add(outside);
@@ -334,6 +425,8 @@ export function createYardScene(layout) {
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = 0;
   scene.add(ground);
+
+  const edgeEffect = addMatrixBoundary(scene, layout, fixedSun, outside, [outside.material, ground.material]);
 
   for (const surface of layout.surfaces || []) {
     const shape = new THREE.Shape();
@@ -360,13 +453,8 @@ export function createYardScene(layout) {
       const mesh = addWall(scene, solids, a, b, building.heightM, facade, { facadeId });
       const same = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]) < 0.2;
       const music = layout.musicWall;
-      const isMusic = building.id === music.buildingId && (
-        (same(a, music.segment[0]) && same(b, music.segment[1]))
-        || (same(a, music.segment[1]) && same(b, music.segment[0]))
-        || (same(a, music.blank[0]) && same(b, music.blank[1]))
-        || (same(a, music.blank[1]) && same(b, music.blank[0]))
-      );
       const onSegment = (same(a, music.segment[0]) && same(b, music.segment[1])) || (same(a, music.segment[1]) && same(b, music.segment[0]));
+      const isMusic = building.id === music.buildingId && onSegment;
       if (building.id === music.buildingId && onSegment) mesh.name = "music-wall";
       if (!isMusic) collectOpenings(openings, a, b, building, index);
     }
@@ -375,6 +463,7 @@ export function createYardScene(layout) {
   addOpeningMeshes(scene, materials, openings);
   addHruDetails(scene, materials, openings);
   addUtilityStructures(scene, materials, layout.utilityStructures || []);
+  addReferenceUtilities(scene, materials);
   addSiteEntrances(scene, materials, layout);
   addGasPipes(scene, layout);
 
@@ -416,11 +505,13 @@ export function createYardScene(layout) {
   );
   scene.add(sun);
 
-  return { scene, solids, logo };
+  return { scene, solids, logo, edgeEffect };
 }
 
 export function drawScheme(canvas, layout) {
-  const context = canvas.getContext("2d");
+  const view = canvas.getContext("2d");
+  const base = document.createElement("canvas");
+  const context = base.getContext("2d");
   const points = [
     ...layout.walkable,
     ...layout.buildings.flatMap((building) => building.footprint),
@@ -433,7 +524,11 @@ export function drawScheme(canvas, layout) {
   const maxX = Math.max(...xs) + 12;
   const minZ = Math.min(...zs) - 12;
   const maxZ = Math.max(...zs) + 12;
-  const scale = Math.min(canvas.width / (maxX - minX), canvas.height / (maxZ - minZ));
+  // Bake once at a bounded resolution, then crop the player's neighbourhood.
+  const radiusM = 45;
+  const scale = Math.min(4, 2048 / Math.max(maxX - minX, maxZ - minZ));
+  base.width = Math.ceil((maxX - minX) * scale);
+  base.height = Math.ceil((maxZ - minZ) * scale);
   const mapX = (x) => (x - minX) * scale;
   const mapZ = (z) => (z - minZ) * scale;
   const trace = (ring) => {
@@ -446,9 +541,8 @@ export function drawScheme(canvas, layout) {
     });
     context.closePath();
   };
-  context.clearRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = "rgba(109, 116, 122, 0.55)";
-  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = "#50574c";
+  context.fillRect(0, 0, base.width, base.height);
   trace(layout.walkable);
   context.fillStyle = "rgba(141, 112, 72, 0.72)";
   context.fill();
@@ -479,32 +573,34 @@ export function drawScheme(canvas, layout) {
   context.lineWidth = 2;
   trace(layout.walkable);
   context.stroke();
-  const base = document.createElement("canvas");
-  base.width = canvas.width;
-  base.height = canvas.height;
-  base.getContext("2d").drawImage(canvas, 0, 0);
   const drawMarker = (x, z, yaw) => {
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(base, 0, 0);
-    const px = mapX(x);
-    const py = mapZ(z);
-    const dirX = Math.sin(yaw);
-    const dirY = -Math.cos(yaw);
-    const sideX = -dirY;
-    const sideY = dirX;
-    const reach = 34;
-    const spread = Math.tan(Math.PI / 6) * reach;
-    context.beginPath();
-    context.moveTo(px, py);
-    context.lineTo(px + dirX * reach + sideX * spread, py + dirY * reach + sideY * spread);
-    context.lineTo(px + dirX * reach - sideX * spread, py + dirY * reach - sideY * spread);
-    context.closePath();
-    context.fillStyle = "rgba(255, 255, 255, 0.38)";
-    context.fill();
-    context.fillStyle = "#fff";
-    context.beginPath();
-    context.arc(px, py, 4.5, 0, Math.PI * 2);
-    context.fill();
+    const size = radiusM * 2 * scale;
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    view.clearRect(0, 0, canvas.width, canvas.height);
+    view.save();
+    view.beginPath();
+    view.arc(cx, cy, Math.min(cx, cy), 0, Math.PI * 2);
+    view.clip();
+    view.fillStyle = "#50574c";
+    view.fillRect(0, 0, canvas.width, canvas.height);
+    view.drawImage(base, mapX(x) - size / 2, mapZ(z) - size / 2, size, size, 0, 0, canvas.width, canvas.height);
+    // North stays up; the arrow shows viewing direction without spinning labels.
+    view.translate(cx, cy);
+    view.rotate(yaw);
+    const marker = canvas.width * .032;
+    view.beginPath();
+    view.moveTo(0, -marker * 1.4);
+    view.lineTo(marker, marker);
+    view.lineTo(0, marker * .45);
+    view.lineTo(-marker, marker);
+    view.closePath();
+    view.lineWidth = canvas.width * .009;
+    view.strokeStyle = "rgba(15, 20, 18, .9)";
+    view.stroke();
+    view.fillStyle = "#fff";
+    view.fill();
+    view.restore();
   };
   return { drawMarker };
 }

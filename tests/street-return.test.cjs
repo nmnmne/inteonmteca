@@ -59,17 +59,23 @@ assert.equal(day.street.seconds(), 10);
 assert.equal(day.street.noteExit(), 10, "the first exit of the day waits 10 seconds");
 assert.equal(day.street.noteExit(), 15, "each later exit adds 5 seconds");
 assert.equal(day.street.noteExit(), 20);
+while (day.street.seconds() < 65) day.street.noteExit();
+assert.equal(day.street.seconds(), 65, "the walk grows to 1:05");
+assert.equal(day.street.noteExit(), 60, "after the peak the walk gets shorter");
+while (day.street.seconds() > 10) day.street.noteExit();
+assert.equal(day.street.seconds(), 10, "the walk shrinks back to 10 seconds");
+assert.equal(day.street.noteExit(), 15, "the next walk starts growing again");
 
 const memory = new Map();
 const morning = load(memory, "2026-10-04T12:00:00");
 assert.equal(morning.street.noteExit(), 10);
 morning.street.savePose({ x: 3, z: -4, yaw: 1.2, pitch: 0.1 });
-assert.equal(morning.street.resumePose(), null, "the first visit starts at the usual place");
-assert.equal(morning.street.noteExit(), 15);
-assert.equal(morning.street.resumePose().x, 3, "every second visit returns to the saved place");
+assert.equal(morning.street.resumePose().x, 3, "visits before the tenth keep the saved place");
 assert.equal(morning.street.resumePose().z, -4);
+assert.equal(morning.street.noteExit(), 15);
+assert.equal(morning.street.resumePose().x, 3);
 morning.street.noteExit();
-assert.equal(morning.street.resumePose(), null, "the third visit starts fresh again");
+assert.equal(morning.street.resumePose().x, 3, "the third visit still returns to the saved place");
 
 const evening = load(memory, "2026-10-04T21:00:00");
 assert.equal(evening.street.seconds(), 20, "the same day keeps the grown duration");
@@ -77,12 +83,21 @@ evening.street.armReturn({ replace() {} }, "https:", null, () => ({ x: 8, z: 2, 
 assert.equal(evening.scheduled[0].ms, 20000);
 assert.equal(evening.intervals[0].ms, 1000);
 evening.scheduled[0].fn();
-assert.equal(evening.street.resumePose(), null);
+assert.equal(evening.street.resumePose().x, 8, "a visit before the tenth keeps the place saved on the way home");
 
 const tomorrow = load(memory, "2026-10-05T08:00:00");
 assert.equal(tomorrow.street.seconds(), 10, "the next day starts again at 10 seconds");
 assert.equal(tomorrow.street.noteExit(), 10);
 assert.equal(tomorrow.street.resumePose(), null, "a new day forgets yesterday's place");
+
+const tenth = load(new Map(), "2026-10-04T12:00:00");
+for (let visit = 0; visit < 9; visit += 1) tenth.street.noteExit();
+tenth.street.savePose({ x: 6, z: 1, yaw: 0, pitch: 0 });
+assert.equal(tenth.street.visits(), 9);
+assert.equal(tenth.street.resumePose().x, 6);
+tenth.street.noteExit();
+assert.equal(tenth.street.visits(), 10);
+assert.equal(tenth.street.resumePose(), null, "the tenth visit starts at the beginning");
 
 let shown = "";
 const first = load(new Map(), "2026-10-04T12:00:00");

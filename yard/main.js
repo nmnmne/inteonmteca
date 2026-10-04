@@ -13,6 +13,8 @@ const schemeCanvas = document.querySelector("#scheme-canvas");
 const walkButton = document.querySelector("#enter-walk");
 const player = createWallPlayer(document);
 const meter = createQualityMeter();
+// Keep the ordinary player reachable if graphics or scene loading is unavailable.
+try {
 let layout = null;
 if (location.protocol !== "file:") {
   layout = await fetch(new URL("./data/site-layout.json", import.meta.url)).then((response) => {
@@ -27,7 +29,7 @@ if (location.protocol === "file:") {
 } else {
   const schemeMap = drawScheme(schemeCanvas, layout);
   await player.load();
-  const { scene, solids } = createYardScene(layout);
+  const { scene, solids, edgeEffect } = createYardScene(layout);
   const camera = new THREE.PerspectiveCamera(60, 1, 0.08, 400);
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
   renderer.setPixelRatio(pixelRatioCap());
@@ -52,10 +54,13 @@ if (location.protocol === "file:") {
     sprintSpeed: layout.movement.sprintMps || 3.8,
   });
   const raycaster = new THREE.Raycaster();
+  const coarsePointer = matchMedia("(pointer: coarse)").matches;
+  if (coarsePointer) input.setMode("walking");
   let nearWall = false;
   let reading = false;
   let last = performance.now();
   let frameHandle = null;
+  let lastMapDraw = 0;
   let appliedLook = { yaw: 0, pitch: 0 };
   const syncLook = (next) => {
     body.yaw += next.yaw - appliedLook.yaw;
@@ -92,7 +97,7 @@ if (location.protocol === "file:") {
     reading = next;
     player.setOpen(next);
     document.body.classList.toggle("is-reading", next);
-    input.setMode(next ? "interacting" : "paused");
+    input.setMode(next ? "interacting" : coarsePointer ? "walking" : "paused");
     if (next && document.pointerLockElement) document.exitPointerLock();
     if (prompt) prompt.hidden = true;
   };
@@ -141,6 +146,7 @@ if (location.protocol === "file:") {
   const nub = document.querySelector("#stick-nub");
   stickEl.addEventListener("pointerdown", (event) => {
     if (!input.beginStick(event.pointerId, event.clientX, event.clientY)) return;
+    document.body.classList.add("has-touch-input");
     stickEl.setPointerCapture(event.pointerId);
     event.preventDefault();
   });
@@ -159,7 +165,11 @@ if (location.protocol === "file:") {
   canvas.addEventListener("pointerdown", (event) => {
     if (event.pointerType === "mouse" || reading) return;
     if (event.clientX < window.innerWidth * 0.45) return;
-    if (input.beginLook(event.pointerId, event.clientX, event.clientY)) canvas.setPointerCapture(event.pointerId);
+    if (input.beginLook(event.pointerId, event.clientX, event.clientY)) {
+      document.body.classList.add("has-touch-input");
+      canvas.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    }
   });
   canvas.addEventListener("pointermove", (event) => {
     if (reading || input.lookPointer.id !== event.pointerId) return;
@@ -196,15 +206,19 @@ if (location.protocol === "file:") {
       }
     }
     placeCamera();
+    edgeEffect?.update(body.x, body.z);
     updateNear();
-    if (!marked || marked.x !== body.x || marked.z !== body.z || marked.yaw !== body.yaw) {
+    const mapInterval = coarsePointer ? 120 : 48;
+    if (now - lastMapDraw >= mapInterval && (!marked || marked.x !== body.x || marked.z !== body.z || marked.yaw !== body.yaw)) {
       marked = { x: body.x, z: body.z, yaw: body.yaw };
       schemeMap.drawMarker(body.x, body.z, body.yaw);
+      lastMapDraw = now;
     }
     if (!document.hidden) renderer.render(scene, camera);
     scheduleFrame();
   };
   placeCamera();
+  edgeEffect?.update(body.x, body.z);
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
       last = performance.now();
@@ -223,4 +237,11 @@ if (location.protocol === "file:") {
     reading: () => reading,
     openPlayer: () => setReading(true),
   };
+}
+} catch (error) {
+  fallback.querySelector("p").textContent = "Двор не удалось открыть на этом устройстве. Музыку можно слушать в обычном плеере.";
+  fallback.hidden = false;
+  canvas.hidden = true;
+  document.body.classList.add("yard-unavailable");
+  console.warn("Yard unavailable:", error);
 }

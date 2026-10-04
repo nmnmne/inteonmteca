@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>inteonmteca — двор</title>
   <link rel="icon" href="../assets/logo-inteonmteca.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./yard.css">
+  <link rel="stylesheet" href="./yard.css?v=20261004-2310">
 </head>
 <body>
   <canvas id="yard-view" aria-label="Серый прототип двора"></canvas>
@@ -23,25 +23,27 @@
     </div>
   </div>
   <section class="scheme" id="scheme">
-    <canvas id="scheme-canvas" width="560" height="440" aria-label="Схема предполагаемой зоны"></canvas>
+    <canvas id="scheme-canvas" width="384" height="384" aria-label="Мини-карта: ближайшие окрестности, север сверху"></canvas>
   </section>
-  <div class="stick" id="stick" aria-hidden="true"><span id="stick-nub"></span></div>
-  <section id="player-panel" aria-label="Плеер на стене" hidden>
-    <img class="wall-logo" src="../assets/logo-wordmark.svg" alt="inteonmteca">
-    <div class="transport-mini">
-      <button id="yard-prev" type="button" aria-label="Предыдущий трек">&lt;</button>
-      <button id="yard-play" type="button" aria-label="Воспроизвести">▶</button>
-      <button id="yard-next" type="button" aria-label="Следующий трек">&gt;</button>
-      <span id="yard-clock">0:00 / 0:00</span>
-    </div>
+  <div class="touch-guide" id="touch-guide" aria-hidden="true">
+    <span>слева — идти</span>
+    <span>справа — смотреть</span>
+  </div>
+  <div class="stick" id="stick" aria-hidden="true">
+    <span id="stick-nub"></span>
+    <span class="control-label">движение</span>
+  </div>
+  <div class="look-pad" aria-hidden="true"><span class="control-label">обзор</span></div>
+  <section class="yard-player" aria-label="Трек">
+    <button id="yard-prev" type="button" aria-label="Предыдущий трек" title="[">←</button>
+    <button id="yard-play" type="button" aria-label="Воспроизвести" title="пробел">▶</button>
+    <button id="yard-next" type="button" aria-label="Следующий трек" title="]">→</button>
     <p id="yard-now"></p>
-    <p id="yard-status" data-state="idle"></p>
-    <ol class="yard-tracks" id="yard-tracks"></ol>
-    <button class="player-close" id="close-player" type="button">вернуться во двор</button>
   </section>
   <audio id="album-player" preload="none" playsinline></audio>
   <script src="../playlist-data.js"></script>
-  <script src="../street-return.js?v=20261004-1430"></script>
+  <script src="../playback-link.js?v=20261004-1910"></script>
+  <script src="../street-return.js?v=20261004-2205"></script>
   <script>
     window.inteonStreet?.armReturn(location, location.protocol, (left) => {
       const watch = document.getElementById("street-watch");
@@ -62,6 +64,6 @@
       document.getElementById("yard-view").hidden = true;
     }
   </script>
-  <script type="module" src="./main.js"></script>
+  <script type="module" src="./main.js?v=20261004-2310"></script>
 </body>
 </html>

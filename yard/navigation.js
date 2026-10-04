@@ -57,11 +57,9 @@ function solidBlocks(layout, x, z, radius) {
 
 export function isWalkable(layout, x, z, radius) {
   const ring = layout.walkable;
-  if (!ring?.length) return false;
-  if (!pointInRing(x, z, ring)) return false;
-  if (!ringClearance(x, z, radius, ring)) return false;
-  if (solidBlocks(layout, x, z, radius)) return false;
-  return true;
+  if (!ring?.length) return true;
+  if (!pointInRing(x, z, ring)) return true;
+  return !solidBlocks(layout, x, z, radius);
 }
 
 export function moveCircle(layout, x, z, dx, dz, radius, maxStep = 0.2) {

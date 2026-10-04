@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import json
 import os
 import re
@@ -229,17 +230,13 @@ class Store:
             self._db.close()
 
     def messages(self, limit: int | None = None) -> list[dict[str, Any]]:
+        limit = 100 if limit is None or limit < 0 else min(limit, 100)
         with self._lock:
-            if limit is None:
-                rows = self._db.execute(
-                    "SELECT id, email, text, created_at FROM messages ORDER BY id ASC"
-                ).fetchall()
-            else:
-                rows = self._db.execute(
-                    "SELECT id, email, text, created_at FROM messages ORDER BY id DESC LIMIT ?",
-                    (limit,),
-                ).fetchall()
-                rows = list(reversed(rows))
+            rows = self._db.execute(
+                "SELECT id, email, text, created_at FROM messages ORDER BY id DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+            rows = list(reversed(rows))
         return [
             {"id": int(row["id"]), "email": str(row["email"]).split("@", 1)[0] or "гость", "text": str(row["text"]), "created_at": int(row["created_at"])}
             for row in rows
@@ -259,11 +256,7 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
             super().log_message(format, *args)
 
         def end_headers(self) -> None:
-            origin = self.headers.get("Origin", "")
-            if origin:
-                self.send_header("Access-Control-Allow-Origin", origin)
-                self.send_header("Access-Control-Allow-Credentials", "true")
-                self.send_header("Vary", "Origin")
+            # API and frontend are same-origin; never reflect untrusted origins.
             if unquote(urlparse(self.path).path).startswith("/media/"):
                 self.send_header("Accept-Ranges", "bytes")
             self.send_header("Cache-Control", "no-store")
@@ -275,8 +268,17 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.end_headers()
 
+        def do_HEAD(self) -> None:  # noqa: N802
+            if self._forbidden(urlparse(self.path).path):
+                self.send_error(HTTPStatus.NOT_FOUND, "Not found")
+                return
+            super().do_HEAD()
+
         def do_GET(self) -> None:  # noqa: N802
             parsed = urlparse(self.path)
+            if self._forbidden(parsed.path):
+                self.send_error(HTTPStatus.NOT_FOUND, "Not found")
+                return
             if parsed.path.startswith("/media/") and self.headers.get("Range"):
                 return self._serve_media_range(parsed.path, self.headers["Range"])
             if parsed.path == "/api/auth/me":
@@ -297,10 +299,13 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
             super().do_GET()
 
         def _serve_media_range(self, url_path: str, range_header: str) -> None:
+            if self._forbidden(url_path):
+                self.send_error(HTTPStatus.NOT_FOUND, "Not found")
+                return
             relative = unquote(url_path).lstrip("/")
             try:
                 path = (root / relative).resolve()
-                path.relative_to(root)
+                path.relative_to(root / "media")
             except Exception:
                 self.send_error(HTTPStatus.NOT_FOUND, "Not found")
                 return
@@ -353,6 +358,15 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
 
         def do_POST(self) -> None:  # noqa: N802
             parsed = urlparse(self.path)
+            try:
+                length = int(self.headers.get("Content-Length", "0") or 0)
+            except ValueError:
+                return self._json(HTTPStatus.BAD_REQUEST, {"error": "неверная длина запроса"})
+            if length < 0 or self.headers.get("Transfer-Encoding") or len(self.headers.get_all("Content-Length", [])) > 1:
+                return self._json(HTTPStatus.BAD_REQUEST, {"error": "неверная длина запроса"})
+            if length > 16 * 1024:
+                self.close_connection = True
+                return self._json(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, {"error": "запрос слишком большой"})
             body = self._body()
             if parsed.path == "/api/auth/request-code":
                 return self._request_code(body)
@@ -397,23 +411,33 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
             return morsel.value if morsel else None
 
         def _client(self) -> str:
-            forwarded = self.headers.get("X-Forwarded-For", "")
-            if forwarded:
-                return forwarded.split(",")[0].strip()
-            return self.client_address[0]
+            # Only explicitly named proxy peers may supply forwarding metadata.
+            trusted = {value.strip() for value in os.environ.get("INTEONMTECA_TRUSTED_PROXIES", "").split(",") if value.strip()}
+            client = self.client_address[0]
+            if client in trusted:
+                for forwarded in reversed(self.headers.get("X-Forwarded-For", "").split(",")):
+                    if client not in trusted:
+                        break
+                    try:
+                        client = str(ipaddress.ip_address(forwarded.strip()))
+                    except ValueError:
+                        return self.client_address[0]
+            return client
 
         def _request_code(self, body: dict[str, Any]) -> None:
             email = str(body.get("email", "")).strip().lower()
             if not EMAIL_RE.match(email):
                 return self._json(HTTPStatus.BAD_REQUEST, {"error": "нужна почта: имя@example.com"})
+            direct_code = force_dev_code or os.environ.get("INTEONMTECA_DIRECT_CODE") == "1"
+            if not smtp and not direct_code:
+                return self._json(HTTPStatus.SERVICE_UNAVAILABLE, {"error": "вход временно недоступен"})
             if not store.allow(f"email:{email}", 5, 3600) or not store.allow(f"ip:{self._client()}", 12, 3600):
                 return self._json(HTTPStatus.TOO_MANY_REQUESTS, {"error": "слишком часто, подожди"})
             store.upsert_user(email)
             code = f"{secrets.randbelow(1_000_000):06d}"
             store.save_code(email, code)
             payload: dict[str, Any] = {"ok": True}
-            direct_code = os.environ.get("INTEONMTECA_DIRECT_CODE", "1") != "0"
-            if smtp and not force_dev_code and not direct_code:
+            if smtp and not direct_code:
                 try:
                     send_login_email(smtp, email, code)
                 except Exception:
@@ -427,6 +451,8 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
             code = str(body.get("code", "")).strip()
             if not EMAIL_RE.match(email) or len(code) != 6 or not code.isdigit():
                 return self._json(HTTPStatus.BAD_REQUEST, {"error": "неверный код"})
+            if not store.allow(f"verify-ip:{self._client()}", 30, CODE_TTL_SEC) or not store.allow(f"verify-email:{email}", 5, CODE_TTL_SEC):
+                return self._json(HTTPStatus.TOO_MANY_REQUESTS, {"error": "слишком часто, подожди"})
             if not store.check_code(email, code):
                 return self._json(HTTPStatus.UNAUTHORIZED, {"error": "код не подошёл"})
             store.upsert_user(email)
@@ -442,6 +468,8 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
                 return self._json(HTTPStatus.BAD_REQUEST, {"error": "пусто"})
             if len(text) > MAX_CHAT_LEN:
                 return self._json(HTTPStatus.BAD_REQUEST, {"error": "слишком длинно"})
+            if not store.allow(f"chat-ip:{self._client()}", 30, 60) or not store.allow(f"chat-email:{email}", 10, 60):
+                return self._json(HTTPStatus.TOO_MANY_REQUESTS, {"error": "слишком часто, подожди"})
             message = store.add_message(email, text)
             return self._json(HTTPStatus.OK, {"message": message, "messages": store.messages()})
 

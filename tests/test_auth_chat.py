@@ -8,7 +8,11 @@ from http.server import ThreadingHTTPServer
 from urllib import request
 from urllib.error import HTTPError
 
-from server.app import Store, make_handler
+from unittest.mock import patch
+
+# Never load workstation dotenv files when importing the backend in tests.
+with patch.object(Path, "exists", return_value=False):
+    from server.app import Store, make_handler
 
 
 class AuthChatServerTests(unittest.TestCase):

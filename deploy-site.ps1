@@ -21,6 +21,14 @@ if (-not $aws) {
   throw "AWS CLI (aws) not found. Install AWS CLI v2 or add aws.exe to PATH, then run update-site.cmd again."
 }
 
+function Invoke-Aws {
+  & $aws @args | Out-Host
+  $exitCode = $LASTEXITCODE
+  if ($exitCode -ne 0) {
+    throw "AWS CLI failed with exit code $exitCode. Release stopped; entry files may not have been published."
+  }
+}
+
 $root = $PSScriptRoot
 $bucketUrl = "s3://$bucket"
 $noCache = "no-store, no-cache, max-age=0, s-maxage=0, must-revalidate, proxy-revalidate"
@@ -33,6 +41,8 @@ $playlistGeneratorPath = Join-Path $root "tools\generate_playlist.py"
 $versionedStylesName = "styles.$version.css"
 $versionedScriptName = "script.$version.js"
 $deployIndexPath = Join-Path $env:TEMP "inteonmteca-index-$version.html"
+$deployYardIndexPath = Join-Path $env:TEMP "inteonmteca-yard-index-$version.html"
+$yardIndexPath = Join-Path $root "yard\index.html"
 $python = Get-Command python -ErrorAction SilentlyContinue
 if (-not $python -or -not (Test-Path $playlistGeneratorPath)) {
   throw "Python and tools\generate_playlist.py are required for the shared playlist."
@@ -45,14 +55,23 @@ $syncArgs = @(
   "--include", "index.html",
   "--include", "styles.css",
   "--include", "script.js",
+  "--include", "track-play.js",
+  "--include", "street-return.js",
+  "--include", "playback-link.js",
   "--include", "playlist.json",
   "--include", "playlist-data.js",
+  "--include", "robots.txt",
+  "--include", "sitemap.xml",
   "--include", "assets/*",
   "--include", "assets/*/*",
   "--include", "assets/*/*/*",
   "--include", "media/*",
   "--include", "media/*/*",
-  "--include", "media/*/*/*"
+  "--include", "media/*/*/*",
+  "--include", "yard/*",
+  "--include", "yard/*/*",
+  "--include", "yard/*/*/*",
+  "--exclude", "*.html"
 )
 $staleKeys = @(
   ".gitignore",
@@ -64,7 +83,7 @@ $staleKeys = @(
   "update-site.cmd"
 )
 
-Get-ChildItem -Path $root -File -Include "styles.*.css", "script.*.js" | Remove-Item -Force
+# Keep local versioned assets: deployment must not clean the working tree.
 
 Write-Host "Updating asset version to $version..." -ForegroundColor Yellow
 $indexHtml = [System.IO.File]::ReadAllText($indexPath, [System.Text.Encoding]::UTF8)
@@ -72,48 +91,83 @@ $deployIndexHtml = $indexHtml -replace 'href="styles(?:\.[0-9]{8}-[0-9]{6})?\.cs
 $deployIndexHtml = $deployIndexHtml -replace 'src="script(?:\.[0-9]{8}-[0-9]{6})?\.js(?:\?v=[^"]*)?"', "src=`"$versionedScriptName`""
 $deployIndexHtml = $deployIndexHtml -replace '\?v=[0-9A-Za-z._-]+', "?v=$version"
 [System.IO.File]::WriteAllText($deployIndexPath, $deployIndexHtml, [System.Text.UTF8Encoding]::new($false))
+if (Test-Path $yardIndexPath) {
+  $yardHtml = [System.IO.File]::ReadAllText($yardIndexPath, [System.Text.Encoding]::UTF8)
+  $yardHtml = $yardHtml -replace '\?v=[0-9A-Za-z._-]+', "?v=$version"
+  [System.IO.File]::WriteAllText($deployYardIndexPath, $yardHtml, [System.Text.UTF8Encoding]::new($false))
+}
 
 # 1) Remove known non-public root files that may have been uploaded before.
 foreach ($key in $staleKeys) {
-  & $aws --endpoint-url $endpoint s3 rm "$bucketUrl/$key" | Out-Host
+  Invoke-Aws --endpoint-url $endpoint s3 rm "$bucketUrl/$key" | Out-Host
 }
 
-& $aws --endpoint-url $endpoint s3 rm $bucketUrl --recursive --exclude "*" --include "styles.*.css" --include "script.*.js" | Out-Host
+# Retain old versioned objects for cached pages and in-flight users.
 
 # 2) Sync only public site files. This cannot upload .git, scripts, or local project metadata.
 # During active development everything is uploaded with no-cache so devices revalidate files.
-& $aws --endpoint-url $endpoint s3 sync $root "$bucketUrl/" --delete @syncArgs --cache-control $noCache | Out-Host
+Invoke-Aws --endpoint-url $endpoint s3 sync $root "$bucketUrl/" @syncArgs --cache-control $noCache | Out-Host
 
 # 3) Force the entry files to get the exact headers/content-types even if their contents did not change.
-& $aws --endpoint-url $endpoint s3 cp $playlistPath "$bucketUrl/playlist.json" `
+Invoke-Aws --endpoint-url $endpoint s3 cp $playlistPath "$bucketUrl/playlist.json" `
   --content-type "application/json; charset=utf-8" `
   --cache-control $noCache `
   --metadata-directive REPLACE | Out-Host
 
-& $aws --endpoint-url $endpoint s3 cp $deployIndexPath "$bucketUrl/index.html" `
+
+
+Invoke-Aws --endpoint-url $endpoint s3 cp $stylesPath "$bucketUrl/styles.css" `
+  --content-type "text/css; charset=utf-8" `
+  --cache-control $noCache `
+  --metadata-directive REPLACE | Out-Host
+
+Invoke-Aws --endpoint-url $endpoint s3 cp $stylesPath "$bucketUrl/$versionedStylesName" `
+  --content-type "text/css; charset=utf-8" `
+  --cache-control $noCache `
+  --metadata-directive REPLACE | Out-Host
+
+Invoke-Aws --endpoint-url $endpoint s3 cp $scriptPath "$bucketUrl/script.js" `
+  --content-type "application/javascript; charset=utf-8" `
+  --cache-control $noCache `
+  --metadata-directive REPLACE | Out-Host
+
+Invoke-Aws --endpoint-url $endpoint s3 cp $scriptPath "$bucketUrl/$versionedScriptName" `
+  --content-type "application/javascript; charset=utf-8" `
+  --cache-control $noCache `
+  --metadata-directive REPLACE | Out-Host
+
+foreach ($scriptName in @("track-play.js", "street-return.js", "playback-link.js", "playlist-data.js")) {
+  $scriptFile = Join-Path $root $scriptName
+  if (-not (Test-Path $scriptFile)) { continue }
+  Invoke-Aws --endpoint-url $endpoint s3 cp $scriptFile "$bucketUrl/$scriptName" `
+    --content-type "application/javascript; charset=utf-8" `
+    --cache-control $noCache `
+    --metadata-directive REPLACE | Out-Host
+}
+
+
+$yardCss = Join-Path $root "yard\yard.css"
+if (Test-Path $yardCss) {
+  Invoke-Aws --endpoint-url $endpoint s3 cp $yardCss "$bucketUrl/yard/yard.css" `
+    --content-type "text/css; charset=utf-8" `
+    --cache-control $noCache `
+    --metadata-directive REPLACE | Out-Host
+}
+
+Write-Host ""
+# Publish entry points only after every dependency upload has succeeded.
+if (Test-Path $deployYardIndexPath) {
+  Invoke-Aws --endpoint-url $endpoint s3 cp $deployYardIndexPath "$bucketUrl/yard/index.html" `
+    --content-type "text/html; charset=utf-8" `
+    --cache-control $noCache `
+    --metadata-directive REPLACE | Out-Host
+}
+
+Invoke-Aws --endpoint-url $endpoint s3 cp $deployIndexPath "$bucketUrl/index.html" `
   --content-type "text/html; charset=utf-8" `
   --cache-control $noCache `
   --metadata-directive REPLACE | Out-Host
 
-& $aws --endpoint-url $endpoint s3 cp $stylesPath "$bucketUrl/styles.css" `
-  --content-type "text/css; charset=utf-8" `
-  --cache-control $noCache `
-  --metadata-directive REPLACE | Out-Host
-
-& $aws --endpoint-url $endpoint s3 cp $stylesPath "$bucketUrl/$versionedStylesName" `
-  --content-type "text/css; charset=utf-8" `
-  --cache-control $noCache `
-  --metadata-directive REPLACE | Out-Host
-
-& $aws --endpoint-url $endpoint s3 cp $scriptPath "$bucketUrl/script.js" `
-  --content-type "application/javascript; charset=utf-8" `
-  --cache-control $noCache `
-  --metadata-directive REPLACE | Out-Host
-
-& $aws --endpoint-url $endpoint s3 cp $scriptPath "$bucketUrl/$versionedScriptName" `
-  --content-type "application/javascript; charset=utf-8" `
-  --cache-control $noCache `
-  --metadata-directive REPLACE | Out-Host
-
-Write-Host ""
 Write-Host "Done." -ForegroundColor Green
+Write-Host "Static site: https://inteonmteca.online/" -ForegroundColor Green
+Write-Host "Chat and login need the Python server. Object storage only keeps the pages and media." -ForegroundColor Yellow
