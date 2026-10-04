@@ -96,6 +96,8 @@ class SiteContentTests(unittest.TestCase):
         self.assertIn('<meta name="description" content="' + description + '">', html)
         self.assertIn('<meta property="og:title" content="inteonmteca">', html)
         self.assertIn('<meta name="twitter:title" content="inteonmteca">', html)
+        self.assertIn('<p class="visually-hidden">' + description + '</p>', html)
+        self.assertIn('"description": "' + description + '"', html)
         self.assertNotIn("sound / matter / motion", html)
         self.assertNotIn("live field 001", html)
         self.assertNotIn("different music", html)
@@ -142,15 +144,16 @@ class SiteContentTests(unittest.TestCase):
         self.assertIn("body.is-immersive", styles)
         self.assertIn(".perception-visual", styles)
 
-    def test_playlist_is_loaded_dynamically_from_the_media_manifest(self):
+    def test_playlist_is_loaded_from_the_manual_embedded_manifest(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         script = (ROOT / "script.js").read_text(encoding="utf-8")
 
         self.assertIn('id="track-list"', html)
-        self.assertIn("playlist.json", script)
+        self.assertIn("window.INTEONMTECA_PLAYLIST", script)
         self.assertIn("renderPlaylist", script)
         self.assertIn("shuffle", script)
-        self.assertIn("/api/playlist", script)
+        self.assertNotIn("/api/playlist", script)
+        self.assertNotIn("loadPlaylist", script)
 
     def test_playlist_manifest_is_generated_and_deployed(self):
         manifest = json.loads((ROOT / "playlist.json").read_text(encoding="utf-8"))
@@ -271,8 +274,8 @@ class SiteContentTests(unittest.TestCase):
 
         self.assertIn("tracks = shuffle(discovered)", script)
         self.assertIn("playRelativeTrack", script)
-        self.assertIn("schedulePlaylistRefresh", script)
-        self.assertIn('id="refresh-media"', html)
+        self.assertNotIn("schedulePlaylistRefresh", script)
+        self.assertNotIn('id="refresh-media"', html)
         self.assertIn('value="desert"', html)
         registry = script.split("const themeRegistry = Object.freeze([", 1)[1].split("].map", 1)[0]
         self.assertEqual(len(re.findall(r'^  "[a-z-]+\|', registry, re.MULTILINE)), 99)

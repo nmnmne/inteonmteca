@@ -1,0 +1,718 @@
+{
+  "origin": {
+    "lat": 51.230186,
+    "lon": 51.439256,
+    "note": "Точка GPS пользователя. На плане OSM это (0, 0)."
+  },
+  "scale": {
+    "status": "osm-plan",
+    "unit": "meter",
+    "note": "Контуры сняты с yard-stage-3-osm-plan.svg: 76 px = 20 м, начало в красной точке. Это не геодезический обмер. Зелёная граница и проходы на чертеже не заданы."
+  },
+  "axes": {
+    "x": "east",
+    "y": "up",
+    "z": "south",
+    "status": "as-drawn-on-osm-plan"
+  },
+  "movement": {
+    "eyeM": 1.65,
+    "speedMps": 2.6,
+    "radiusM": 0.3,
+    "maxStepM": 0.2,
+    "maxDeltaSec": 0.05,
+    "sprintMps": 3.8
+  },
+  "approach": {
+    "enterM": 5,
+    "exitM": 7
+  },
+  "spawn": {
+    "x": 4,
+    "z": 0,
+    "yaw": -1.5707963267948966,
+    "pitch": 0.08
+  },
+  "photoView": {
+    "x": 2,
+    "z": -10,
+    "yaw": -1.89,
+    "pitch": 0.12
+  },
+  "musicWall": {
+    "buildingId": "house-14",
+    "segment": [
+      [
+        -10.92,
+        -5.67
+      ],
+      [
+        -4.32,
+        5.72
+      ]
+    ],
+    "blank": [
+      [
+        -10.92,
+        -5.67
+      ],
+      [
+        -52.79,
+        19.16
+      ]
+    ],
+    "normal": [
+      1,
+      0
+    ],
+    "status": "short-end-nearest-gps"
+  },
+  "walkable": [
+    [
+      -92,
+      -55
+    ],
+    [
+      42,
+      -55
+    ],
+    [
+      62,
+      30
+    ],
+    [
+      62,
+      110
+    ],
+    [
+      26,
+      145
+    ],
+    [
+      -92,
+      145
+    ]
+  ],
+  "surfaces": [],
+  "parking": [],
+  "roads": [
+    {
+      "id": "zhandova-courtyard-drive",
+      "osmWay": "229651920",
+      "kind": "asphalt",
+      "surface": "asphalt",
+      "widthM": 4.4,
+      "widthStatus": "satellite-image estimate; OSM has no width tag",
+      "source": "OSM way 229651920 (highway=service, surface=asphalt), aligned against supplied satellite map",
+      "confidence": "mapped-and-imagery-aligned",
+      "centerline": [[108.55, -42.13], [25, 10.57], [10.91, 19.73], [23.11, 40.83], [-34.78, 74.65]]
+    },
+    {
+      "id": "house14-inner-drive",
+      "render": false,
+      "reviewStatus": "user-rejected alignment; retained as a non-rendered map candidate, not a reconstructed road",
+      "osmWay": "251168367",
+      "kind": "asphalt",
+      "surface": "asphalt",
+      "widthM": 4.2,
+      "widthStatus": "satellite-image estimate; OSM has no width tag",
+      "source": "OSM way 251168367 (highway=service, surface=asphalt), aligned against supplied satellite map",
+      "confidence": "mapped-and-imagery-aligned",
+      "centerline": [[25, 10.57], [18.63, 6.09], [-36.08, 39.34], [-34.78, 74.65], [-33.46, 110.35]]
+    }
+  ],
+  "roadsStatus": "two paved service ways are mapped and imagery-aligned; widths remain visual estimates",
+  "utilityStructures": [
+    {
+      "id": "electric-kiosk",
+      "role": "electric-kiosk",
+      "osmWay": "402910822",
+      "heightM": 3,
+      "heightStatus": "low utility-building height estimated from panorama",
+      "source": "OSM way 402910822 (building=service, building:levels=1); user confirmed this is the electrical kiosk between house 14 and tower 34",
+      "confidence": "user-confirmed-purpose-osm-footprint",
+      "footprint": [[-25.22, -12.46], [-14.17, -17.98], [-11.16, -11.96], [-22.21, -6.44]]
+    }
+  ],
+  "lighting": {
+    "fixedSun": {
+      "localMoment": "20 April 16:20",
+      "timeZone": "Asia/Oral",
+      "referenceYear": 2026,
+      "calculation": "NOAA-style solar position for the fixed visual reference; shadows are baked phantom decals, not realtime shadow maps",
+      "altitudeDeg": 37.629,
+      "azimuthDegFromNorth": 235.451,
+      "sunVectorXYZ": [-0.65231, 0.61055, 0.44914],
+      "shadowDirectionXZ": [0.65231, -0.44914],
+      "skyColor": "#a4bec9",
+      "fogColor": "#a4bec9",
+      "ambientIntensity": 0.56,
+      "hemisphereIntensity": 0.4,
+      "sunIntensity": 1.18,
+      "phantomLengthScale": 0.47
+    }
+  },
+  "entrances": [
+    {
+      "id": "tower-34-main-entrance",
+      "buildingId": "tower-34",
+      "osmNode": "4053107516",
+      "edgeIndex": 4,
+      "alongM": 0,
+      "widthM": 1.65,
+      "heightM": 2.15,
+      "style": "tower-vestibule",
+      "source": "OSM node 4053107516 (entrance=main) on the tower footprint",
+      "confidence": "mapped-entrance-node"
+    },
+    {
+      "id": "house-46-2-courtyard-entrance-a",
+      "buildingId": "house-46-2",
+      "edgeIndex": 0,
+      "alongM": 17.2,
+      "widthM": 1.5,
+      "heightM": 2.1,
+      "style": "five-storey-vestibule",
+      "source": "user panorama image_df69aa: visible ground-level entry zone on the long 46/2 facade; along-distance is photo-relative, not surveyed",
+      "confidence": "photo-relative"
+    },
+    {
+      "id": "house-46-2-courtyard-entrance-b",
+      "buildingId": "house-46-2",
+      "edgeIndex": 0,
+      "alongM": 39.4,
+      "widthM": 1.5,
+      "heightM": 2.1,
+      "style": "five-storey-vestibule",
+      "source": "user panorama image_df69aa: second visible ground-level entry zone on the long 46/2 facade; along-distance is photo-relative, not surveyed",
+      "confidence": "photo-relative"
+    }
+  ],
+  "gasPipes": [
+    {
+      "id": "house-14-yellow-gas-pipe",
+      "buildingId": "house-14",
+      "diameterM": 0.12,
+      "color": "#e2c04a",
+      "supportColor": "#665c46",
+      "source": "user ground photo image_d6ffa6: yellow wall run, lowered corner connector and freestanding supported span",
+      "confidence": "photo-anchored-route; exact metres are visual estimates",
+      "path": [
+        { "edgeIndex": 10, "alongM": 0.8, "heightM": 3.05, "offsetM": 0.85 },
+        { "edgeIndex": 10, "alongM": 12.15, "heightM": 3.05, "offsetM": 0.85 },
+        { "edgeIndex": 0, "alongM": 0.3, "heightM": 3.05, "offsetM": 0.85 },
+        { "edgeIndex": 0, "alongM": 0.3, "heightM": 3.05, "offsetM": 4.8 },
+        { "edgeIndex": 0, "alongM": 0.3, "heightM": 3.05, "offsetM": 5.4 }
+      ],
+      "supports": [
+        { "pathIndex": 3, "floorY": 0 },
+        { "pathIndex": 4, "floorY": 0 }
+      ]
+    },
+    {
+      "id": "house-14-lower-gas-branch",
+      "buildingId": "house-14",
+      "diameterM": 0.07,
+      "color": "#e2c04a",
+      "source": "image_d6ffa6: lower wall branch separates before corner; dimensions are visual estimates",
+      "confidence": "photo-relative-estimate",
+      "path": [
+        { "edgeIndex": 10, "alongM": 11.6, "heightM": 3.05, "offsetM": 0.85 },
+        { "edgeIndex": 10, "alongM": 11.6, "heightM": 2.4, "offsetM": 0.85 },
+        { "edgeIndex": 0, "alongM": 0.3, "heightM": 2.4, "offsetM": 0.85 },
+        { "edgeIndex": 0, "alongM": 14.8, "heightM": 2.4, "offsetM": 0.85 }
+      ],
+      "supports": []
+    }
+  ],
+  "buildings": [
+    {
+      "id": "house-14",
+      "osm": "14",
+      "role": "music-wall",
+      "roof": "unknown-flat-gray",
+      "floors": 9,
+      "heightM": 25.2,
+      "heightStatus": "osm-9-floors-times-2.8-estimated",
+      "footprint": [
+        [
+          -10.92,
+          -5.67
+        ],
+        [
+          -52.79,
+          19.16
+        ],
+        [
+          -56.33,
+          22.64
+        ],
+        [
+          -59.67,
+          26.34
+        ],
+        [
+          -61,
+          29.68
+        ],
+        [
+          -62.25,
+          34.13
+        ],
+        [
+          -63,
+          109.81
+        ],
+        [
+          -49.94,
+          109.97
+        ],
+        [
+          -48.52,
+          33.72
+        ],
+        [
+          -46.91,
+          30
+        ],
+        [
+          -4.32,
+          5.72
+        ]
+      ],
+      "facadeMaterialId": "house14-brick-light",
+      "plinthMaterialId": "house14-plinth",
+      "roofMaterialId": "unknown-flat-gray",
+      "source": "osm-plan-svg",
+      "confidence": "photo-facade",
+      "facadeProject": {
+        "kind": "nine-storey",
+        "balconyEdges": [7, 9],
+        "balconyEvery": 1,
+        "balconyMode": "mixed",
+        "source": "user panorama confirms courtyard balcony rhythm; the two music-wall edges remain the separately confirmed blank facade"
+      }
+    },
+    {
+      "id": "house-46-1",
+      "osm": "46/1",
+      "role": "residential",
+      "roof": "red",
+      "floors": 5,
+      "heightM": 14,
+      "heightStatus": "osm-5-floors-times-2.8-estimated",
+      "footprint": [
+        [
+          17.87,
+          22.09
+        ],
+        [
+          98.64,
+          -23.44
+        ],
+        [
+          104.87,
+          -12.45
+        ],
+        [
+          24.1,
+          33.1
+        ]
+      ],
+      "facadeMaterialId": "house46-1-patchwork",
+      "facadeProject": {
+        "kind": "five-storey",
+        "longFacesOnly": true,
+        "minBalconyWallM": 18,
+        "source": "five floors and red roof from OSM/map; balcony rhythm restricted to long elevations"
+      },
+      "plinthMaterialId": "unknown-plinth",
+      "roofMaterialId": "red",
+      "source": "osm-plan-svg",
+      "confidence": "osm-footprint-facade-unknown"
+    },
+    {
+      "id": "house-46-2",
+      "osm": "46/2",
+      "role": "residential",
+      "roof": "red",
+      "floors": 5,
+      "heightM": 14,
+      "heightStatus": "osm-5-floors-times-2.8-estimated",
+      "footprint": [
+        [
+          -14.15,
+          78.14
+        ],
+        [
+          35.04,
+          50.78
+        ],
+        [
+          40.94,
+          61.31
+        ],
+        [
+          -8.25,
+          88.69
+        ]
+      ],
+      "facadeMaterialId": "house46-2-pink",
+      "facadeProject": {
+        "kind": "five-storey",
+        "longFacesOnly": true,
+        "minBalconyWallM": 18,
+        "source": "user panorama confirms five-storey red-roof block with mixed balcony glazing"
+      },
+      "plinthMaterialId": "unknown-plinth",
+      "roofMaterialId": "red",
+      "source": "osm-plan-svg",
+      "confidence": "osm-footprint-facade-unknown"
+    },
+    {
+      "id": "house-26",
+      "osm": "26",
+      "role": "residential",
+      "roof": "red",
+      "floors": 5,
+      "heightM": 14,
+      "heightStatus": "osm-5-floors-times-2.8-estimated",
+      "footprint": [
+        [
+          18.15,
+          -45.09
+        ],
+        [
+          67.98,
+          -73.02
+        ],
+        [
+          73.67,
+          -62.9
+        ],
+        [
+          23.84,
+          -34.99
+        ]
+      ],
+      "facadeMaterialId": "house26-pale",
+      "plinthMaterialId": "unknown-plinth",
+      "roofMaterialId": "red",
+      "source": "osm-plan-svg",
+      "confidence": "osm-footprint-facade-unknown"
+    },
+    {
+      "id": "house-36",
+      "osm": "36",
+      "role": "residential",
+      "roof": "red",
+      "floors": 5,
+      "heightM": 14,
+      "heightStatus": "osm-5-floors-times-2.8-estimated",
+      "footprint": [
+        [
+          -24.94,
+          -76.24
+        ],
+        [
+          55.57,
+          -121.61
+        ],
+        [
+          61.36,
+          -111.39
+        ],
+        [
+          -19.15,
+          -66.02
+        ]
+      ],
+      "facadeMaterialId": "house36-warm-gray",
+      "plinthMaterialId": "unknown-plinth",
+      "roofMaterialId": "red",
+      "source": "osm-plan-svg",
+      "confidence": "osm-footprint-facade-unknown"
+    },
+    {
+      "id": "house-46-a",
+      "osm": "46",
+      "role": "residential",
+      "roof": "red",
+      "floors": 5,
+      "heightM": 14,
+      "heightStatus": "osm-5-floors-times-2.8-estimated",
+      "footprint": [
+        [
+          66.21,
+          -128.59
+        ],
+        [
+          72.03,
+          -131.67
+        ],
+        [
+          77.18,
+          -134.54
+        ],
+        [
+          80.5,
+          -128.61
+        ],
+        [
+          105.72,
+          -80.69
+        ],
+        [
+          95.25,
+          -74.7
+        ]
+      ],
+      "facadeMaterialId": "house46-a-gray",
+      "plinthMaterialId": "unknown-plinth",
+      "roofMaterialId": "red",
+      "source": "osm-plan-svg",
+      "confidence": "osm-footprint-facade-unknown"
+    },
+    {
+      "id": "house-46-b",
+      "osm": "46",
+      "role": "residential",
+      "roof": "red",
+      "floors": 5,
+      "heightM": 14,
+      "heightStatus": "osm-5-floors-times-2.8-estimated",
+      "footprint": [
+        [
+          135.92,
+          -27.54
+        ],
+        [
+          147.24,
+          -33.93
+        ],
+        [
+          117.03,
+          -87.09
+        ],
+        [
+          105.72,
+          -80.69
+        ]
+      ],
+      "facadeMaterialId": "house46-b-sand",
+      "plinthMaterialId": "unknown-plinth",
+      "roofMaterialId": "red",
+      "source": "osm-plan-svg",
+      "confidence": "osm-footprint-facade-unknown"
+    },
+    {
+      "id": "tower-34",
+      "osm": "34",
+      "osmWay": "228135825",
+      "role": "tower",
+      "roof": "unknown-flat-gray",
+      "floors": 14,
+      "heightM": 39.2,
+      "heightStatus": "osm-14-floors-times-2.8-estimated",
+      "facadeMaterialId": "tower34-panel",
+      "plinthMaterialId": "unknown-plinth",
+      "roofMaterialId": "unknown-flat-gray",
+      "source": "osm-way-228135825",
+      "confidence": "footprint-confirmed-facade-unknown",
+      "facadeProject": {
+        "kind": "tower",
+        "balconyEdges": [0, 6, 9, 12, 15],
+        "balconyEvery": 2,
+        "source": "14-storey count and stepped footprint from OSM; balcony stacks are a restrained visual estimate"
+      },
+      "footprint": [
+        [
+          -62.43,
+          -34.33
+        ],
+        [
+          -54.04,
+          -38.91
+        ],
+        [
+          -51.44,
+          -34.29
+        ],
+        [
+          -48.82,
+          -35.83
+        ],
+        [
+          -47.18,
+          -32.76
+        ],
+        [
+          -45.19,
+          -29.04
+        ],
+        [
+          -50.81,
+          -25.87
+        ],
+        [
+          -44.37,
+          -14.76
+        ],
+        [
+          -48.18,
+          -12.23
+        ],
+        [
+          -45.43,
+          -7.39
+        ],
+        [
+          -53.25,
+          -2.69
+        ],
+        [
+          -56.97,
+          -9.19
+        ],
+        [
+          -59.43,
+          -7.74
+        ],
+        [
+          -65.85,
+          -18.78
+        ],
+        [
+          -63.36,
+          -20.26
+        ],
+        [
+          -66.44,
+          -25.53
+        ],
+        [
+          -59.43,
+          -29.6
+        ]
+      ]
+    }
+  ],
+  "circles": [
+    {
+      "id": "tree-a",
+      "x": 8,
+      "z": -8,
+      "radius": 0.35
+    },
+    {
+      "id": "tree-b",
+      "x": 12,
+      "z": 8,
+      "radius": 0.35
+    },
+    {
+      "id": "bar-a",
+      "x": -26,
+      "z": 46,
+      "radius": 0.12
+    },
+    {
+      "id": "bar-b",
+      "x": -24.9,
+      "z": 46,
+      "radius": 0.12
+    },
+    {
+      "id": "bar-c",
+      "x": -23.8,
+      "z": 46,
+      "radius": 0.12
+    }
+  ],
+  "assumptions": [
+    "Контуры домов взяты с плана OpenStreetMap, 76 px = 20 м. Это не кадастр.",
+    "Ходить можно по двору между домами. Зелёная граница с карты возвращена как широкий контур, не как обмер штриха.",
+    "Дом 14 — 9 этажей по OSM, высота 25.2 м как 9 × 2.8. Остальные показанные жилые — 5 этажей, высота 14 м. Скаты крыш неизвестны.",
+    "Короткий торец дома 14 у точки GPS принят ближней стеной с окном. Длинная грань — глухая стена с трубой.",
+    "© OpenStreetMap contributors, ODbL."
+  ],
+  "playground": {
+    "source": "user-confirmed-presence",
+    "confidence": "photo-green-zone",
+    "note": "Положение восстановлено относительно зелёной отметки на фото: площадка на грунтовой полосе между домом 14, парковкой и пятиэтажками. Метры ориентировочные, не геодезический обмер.",
+    "sandbox": {
+      "x": -26,
+      "z": 44,
+      "size": 3.4,
+      "height": 0.25
+    },
+    "bars": {
+      "x": -34,
+      "z": 45,
+      "span": 4.2,
+      "depth": 1.2,
+      "heights": [
+        1.5,
+        2,
+        2.3
+      ]
+    },
+    "slide": {
+      "x": -19,
+      "z": 38,
+      "width": 1.5,
+      "length": 4,
+      "platform": 1.5
+    },
+    "view": {
+      "x": -29,
+      "z": 58,
+      "yaw": 0,
+      "pitch": 0.08
+    }
+  },
+  "obstacles": [
+    {
+      "id": "sandbox",
+      "footprint": [
+        [
+          -27.7,
+          42.3
+        ],
+        [
+          -24.3,
+          42.3
+        ],
+        [
+          -24.3,
+          45.7
+        ],
+        [
+          -27.7,
+          45.7
+        ]
+      ]
+    },
+    {
+      "id": "slide",
+      "footprint": [
+        [
+          -19.8,
+          36
+        ],
+        [
+          -18.2,
+          36
+        ],
+        [
+          -18.2,
+          40
+        ],
+        [
+          -19.8,
+          40
+        ]
+      ]
+    }
+  ]
+}

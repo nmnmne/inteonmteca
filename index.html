@@ -24,10 +24,19 @@
   <meta name="twitter:description" content="Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри.">
   <meta name="twitter:image" content="https://inteonmteca.online/assets/og-image.png">
   <meta name="twitter:image:alt" content="inteonmteca">
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "MusicGroup",
+      "name": "inteonmteca",
+      "url": "https://inteonmteca.online/",
+      "description": "Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри."
+    }
+  </script>
   <link rel="icon" href="assets/favicon.ico" sizes="any">
   <link rel="icon" href="assets/logo-inteonmteca.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=20260911-0310">
+  <link rel="stylesheet" href="styles.css?v=20261004-1814">
 </head>
 <body class="perception-interface">
   <div class="perception-field" aria-hidden="true"></div>
@@ -40,6 +49,7 @@
   <div class="logo-atmosphere" aria-hidden="true"></div>
   <div class="depth-floor" aria-hidden="true"></div>
   <main class="page">
+    <p class="visually-hidden">Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри.</p>
     <section class="hero">
       <canvas class="ink-field" id="ink-field" aria-hidden="true"></canvas>
       <header class="hero-header" aria-hidden="true"></header>
@@ -116,6 +126,24 @@
             <div class="logo-particles" id="logo-particles" aria-hidden="true"></div>
           </div>
           <div class="release-content player-dock">
+            <section class="active-player" id="active-player" aria-label="Сейчас играет" aria-hidden="true">
+              <div class="active-track-copy">
+                <p class="now-playing-title" id="now-playing-title"></p>
+                <p class="active-track-artist" id="active-track-artist"></p>
+              </div>
+              <div class="transport" aria-label="Управление воспроизведением">
+                <button class="transport-skip" id="previous-track" type="button" aria-label="Предыдущий трек">&#8592;</button>
+                <button class="transport-play" id="immersive-play" type="button" aria-label="Пауза"><span id="immersive-play-icon">&#8545;</span></button>
+                <button class="transport-skip" id="next-track" type="button" aria-label="Следующий трек">&#8594;</button>
+                <span class="transport-time" id="current-time">0:00</span>
+                <div class="transport-seek-field">
+                  <span class="transport-seek-volume" aria-hidden="true"></span>
+                  <input class="transport-progress" id="track-progress" type="range" min="0" max="1000" value="0" step="1" aria-label="Позиция трека">
+                </div>
+                <span class="transport-time" id="duration-time">0:00</span>
+              </div>
+              <p class="playback-status" id="playback-status" aria-live="polite"></p>
+            </section>
             <div class="playlist-shell" id="playlist-shell">
               <div class="track-viewport" id="track-viewport">
                 <ol class="track-list" id="track-list" aria-label="Треки">
@@ -146,31 +174,13 @@
     <div class="immersive-content">
       <h1 class="immersive-title" id="immersive-title"></h1>
       <p class="immersive-artist" id="immersive-artist"></p>
-      <p class="playback-status" id="playback-status" aria-live="polite"></p>
-      <div class="transport" aria-label="Управление воспроизведением">
-        <div class="now-playing">
-          <button class="transport-skip" id="previous-track" type="button" aria-label="Предыдущий трек">&lt;</button>
-          <p class="now-playing-title" id="now-playing-title"></p>
-          <button class="transport-skip" id="next-track" type="button" aria-label="Следующий трек">&gt;</button>
-        </div>
-        <div class="transport-timeline">
-          <button class="transport-play" id="immersive-play" type="button" aria-label="Пауза"><span id="immersive-play-icon">Ⅱ</span></button>
-          <span class="transport-time" id="current-time">0:00</span>
-          <div class="transport-seek-field">
-            <span class="transport-seek-volume" aria-hidden="true"></span>
-            <input class="transport-progress" id="track-progress" type="range" min="0" max="1000" value="0" step="1" aria-label="Позиция трека">
-          </div>
-          <span class="transport-time" id="duration-time">0:00</span>
-          <label class="transport-volume"><span aria-hidden="true">∿</span><input id="track-volume" type="range" min="0" max="1" value="0.86" step="0.01" aria-label="Громкость"></label>
-        </div>
-      </div>
-      <button class="immersive-back" id="immersive-back" type="button">закрыть поле</button>
+      <button class="immersive-back" id="immersive-back" type="button" hidden aria-hidden="true">закрыть поле</button>
     </div>
   </section>
   <audio id="album-player" preload="metadata" playsinline></audio>
   <div class="vr-reticle" aria-hidden="true"></div>
   <div class="visit-counter" aria-label="site visits"><span>u:<b id="unique-count">--</b></span><span>v:<b id="visit-count">--</b></span></div>
-  <button class="auth-hint" id="auth-hint" type="button">вход</button>
+  <button class="auth-hint" id="auth-hint" type="button" aria-controls="auth-panel" aria-expanded="false">вход</button>
   <section class="auth-panel" id="auth-panel" aria-hidden="true" hidden>
     <p class="auth-kicker">виртуальный пропуск</p>
     <form class="auth-form" id="auth-email-form">
@@ -187,7 +197,10 @@
     <button class="auth-logout" id="auth-logout" type="button" hidden>выйти</button>
     <button class="auth-close" id="auth-close" type="button">закрыть</button>
   </section>
-  <button class="chat-hint" id="chat-hint" type="button">чат</button>
+  <div class="street-return">
+    <a class="street-link" id="street-link" href="yard/">на улицу</a>
+  </div>
+  <button class="chat-hint" id="chat-hint" type="button" aria-controls="chat-panel" aria-expanded="false">чат</button>
   <div class="chat-sign" id="chat-sign" aria-hidden="true">
     <span class="chat-sign-word">чат</span>
   </div>
@@ -201,7 +214,7 @@
     </form>
     <button class="chat-close" id="chat-close" type="button">свернуть</button>
   </section>
-  <button class="theme-hint" id="theme-hint" type="button"><span aria-hidden="true">◈</span> тема</button>
+  <button class="theme-hint" id="theme-hint" type="button" aria-controls="theme-panel" aria-expanded="false"><span aria-hidden="true">◈</span> тема</button>
   <section class="theme-panel" id="theme-panel" aria-hidden="true" hidden>
     <div class="theme-panel-head">
       <p class="theme-kicker">состояние среды</p>
@@ -217,12 +230,12 @@
     <output class="theme-duration-output" id="theme-duration-output" for="theme-duration">8 секунд</output>
     <div class="theme-actions">
       <button class="theme-action" id="theme-random" type="button">другая сейчас</button>
-      <button class="theme-action" id="refresh-media" type="button">обновить media</button>
     </div>
     <p class="theme-status" id="theme-status" aria-live="polite"></p>
   </section>
   <script src="playlist-data.js?v=20260910-2345"></script>
   <script src="track-play.js?v=20260911-0230"></script>
-  <script src="script.js?v=20260911-0310"></script>
+  <script src="street-return.js?v=20261004-1430"></script>
+  <script src="script.js?v=20261004-1812"></script>
 </body>
 </html>

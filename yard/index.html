@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>inteonmteca — двор</title>
+  <link rel="icon" href="../assets/logo-inteonmteca.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./yard.css">
+</head>
+<body>
+  <canvas id="yard-view" aria-label="Серый прототип двора"></canvas>
+  <section class="file-fallback" id="file-fallback" hidden>
+    <p>Трёхмерный двор открывается через локальный сервер. Обычный плеер работает и отсюда.</p>
+    <p><a href="../index.html">домой</a></p>
+  </section>
+  <div class="yard-corner">
+    <a class="home-link" href="../index.html">домой</a>
+    <div class="montana" id="street-watch" hidden>
+      <div class="montana-screen">
+        <span class="montana-ghost" aria-hidden="true">88:88</span>
+        <time class="montana-face" id="street-watch-face">00:20</time>
+      </div>
+    </div>
+  </div>
+  <section class="scheme" id="scheme">
+    <canvas id="scheme-canvas" width="560" height="440" aria-label="Схема предполагаемой зоны"></canvas>
+  </section>
+  <div class="stick" id="stick" aria-hidden="true"><span id="stick-nub"></span></div>
+  <section id="player-panel" aria-label="Плеер на стене" hidden>
+    <img class="wall-logo" src="../assets/logo-wordmark.svg" alt="inteonmteca">
+    <div class="transport-mini">
+      <button id="yard-prev" type="button" aria-label="Предыдущий трек">&lt;</button>
+      <button id="yard-play" type="button" aria-label="Воспроизвести">▶</button>
+      <button id="yard-next" type="button" aria-label="Следующий трек">&gt;</button>
+      <span id="yard-clock">0:00 / 0:00</span>
+    </div>
+    <p id="yard-now"></p>
+    <p id="yard-status" data-state="idle"></p>
+    <ol class="yard-tracks" id="yard-tracks"></ol>
+    <button class="player-close" id="close-player" type="button">вернуться во двор</button>
+  </section>
+  <audio id="album-player" preload="none" playsinline></audio>
+  <script src="../playlist-data.js"></script>
+  <script src="../street-return.js?v=20261004-1430"></script>
+  <script>
+    window.inteonStreet?.armReturn(location, location.protocol, (left) => {
+      const watch = document.getElementById("street-watch");
+      const face = document.getElementById("street-watch-face");
+      if (!watch || !face) return;
+      watch.hidden = false;
+      const text = window.inteonStreet.formatWatch(left);
+      if (face.textContent !== text) face.textContent = text;
+    }, () => {
+      const body = window.__yard?.body;
+      if (!body) return null;
+      return { x: body.x, z: body.z, yaw: body.yaw, pitch: body.pitch };
+    });
+  </script>
+  <script>
+    if (location.protocol === "file:") {
+      document.getElementById("file-fallback").hidden = false;
+      document.getElementById("yard-view").hidden = true;
+    }
+  </script>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

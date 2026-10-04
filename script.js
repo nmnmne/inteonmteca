@@ -6,6 +6,8 @@ const immersiveVisual = document.getElementById("immersive-visual");
 const immersiveTitle = document.getElementById("immersive-title");
 const immersiveArtist = document.getElementById("immersive-artist");
 const playbackStatus = document.getElementById("playback-status");
+const activePlayer = document.getElementById("active-player");
+const activeTrackArtist = document.getElementById("active-track-artist");
 const immersiveBack = document.getElementById("immersive-back");
 const immersivePlay = document.getElementById("immersive-play");
 const immersivePlayIcon = document.getElementById("immersive-play-icon");
@@ -67,8 +69,8 @@ const themeSelect = document.getElementById("theme-select");
 const themeDuration = document.getElementById("theme-duration");
 const themeDurationOutput = document.getElementById("theme-duration-output");
 const themeRandom = document.getElementById("theme-random");
-const refreshMedia = document.getElementById("refresh-media");
 const themeStatus = document.getElementById("theme-status");
+const streetLink = document.getElementById("street-link");
 const apiMeta = document.querySelector('meta[name="inteonmteca-api"]');
 const isFileMode = location.protocol === "file:";
 const canUseNetwork = location.protocol === "http:" || location.protocol === "https:";
@@ -88,7 +90,7 @@ let sharedAudioContext = null;
 const immersiveState = { active: false, audio: null, analyser: null, data: null, raf: 0, lastDraw: 0, pointerX: 0, pointerY: 0 };
 const spectrumState = { at: -Infinity, bass: 0, mid: 0, high: 0, avg: 0, flux: 0, previous: 0, peaks: [] };
 const logoReactiveState = { x: 0, y: 0, hoverX: 0, hoverY: 0, proximity: 0, bass: 0, mid: 0, high: 0, energy: 0 };
-const matrixElements = document.querySelectorAll(".matrix-text");
+const matrixElements = document.querySelectorAll(".matrix-text[data-matrix-noise]");
 const prefersDynamicMotion = !prefersReducedMotion;
 const logoText = "inteonmteca";
 const logoLetters = [];
@@ -327,7 +329,6 @@ let logoLastFrame = 0;
 let titleLastFrame = 0;
 let playlistLastFrame = 0;
 let playlistSignature = "";
-let playlistRefreshTimer = 0;
 let themeRotationTimer = 0;
 let themeShiftTimer = 0;
 let slowFrameScore = 0;
@@ -511,8 +512,7 @@ const renderPerceptionField = (now) => {
   const energy = audioEnergy(now);
   const scale = canvasScale();
   perceptionContext.setTransform(scale, 0, 0, scale, 0, 0);
-  perceptionContext.fillStyle = "rgba(7,6,6,.16)";
-  perceptionContext.fillRect(0, 0, innerWidth, innerHeight);
+  perceptionContext.clearRect(0, 0, innerWidth, innerHeight);
   if (!immersiveState.active) {
     drawSmoke(perceptionContext, innerWidth, innerHeight, energy, now, .3);
   }
@@ -920,18 +920,17 @@ const drawSmoke = (ctx, width, height, energy, now, intensity = 1) => {
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   clouds.forEach((cloud) => {
-    const lobes = animationQuality === "low" ? 2 : 3;
+    const lobes = 2;
     for (let lobe = 0; lobe < lobes; lobe += 1) {
-      const angle = cloud.phase + lobe * 1.37 + now * .00011;
-      const x = cloud.x + Math.cos(angle) * cloud.radius * .3;
-      const y = cloud.y + Math.sin(angle * .83) * cloud.radius * .23;
-      const radius = cloud.radius * (.38 + hashUnit(cloud.index * 7 + lobe) * .38);
-      const alpha = intensity * cloud.life * (.014 + energy.avg * .035);
-      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-      gradient.addColorStop(0, `rgba(235,173,111,${alpha * 1.3})`);
-      gradient.addColorStop(.26, `rgba(139,57,37,${alpha})`);
-      gradient.addColorStop(.68, `rgba(48,24,17,${alpha * .5})`);
-      gradient.addColorStop(1, "rgba(8,6,5,0)");
+      const angle = cloud.phase + lobe * 2.15 + now * .00011;
+      const x = cloud.x + Math.cos(angle) * cloud.radius * .08;
+      const y = cloud.y + Math.sin(angle * .83) * cloud.radius * .06;
+      const radius = cloud.radius * (.2 + hashUnit(cloud.index * 7 + lobe) * .12);
+      const alpha = intensity * cloud.life * (.018 + energy.avg * .03);
+      const gradient = ctx.createRadialGradient(x, y, radius * .08, x, y, radius);
+      gradient.addColorStop(0, `rgba(236,214,176,${alpha})`);
+      gradient.addColorStop(.45, `rgba(168,112,74,${alpha * .45})`);
+      gradient.addColorStop(1, "rgba(20,16,12,0)");
       ctx.fillStyle = gradient;
       ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
     }
@@ -1005,7 +1004,7 @@ const resizeInkField = () => {
 const emitTitleInk = (now, energy) => {
   if (!inkField || !inkFieldBounds) return;
   const titles = trackTitleNodes.length ? trackTitleNodes : document.querySelectorAll(".track-title");
-  const limit = animationQuality === "low" ? 90 : 180;
+  const limit = animationQuality === "low" ? 60 : 110;
   for (let titleIndex = 0; titleIndex < titles.length; titleIndex += 1) {
     const title = titles[titleIndex];
     const item = title.closest(".track-item");
@@ -1029,7 +1028,6 @@ const emitTitleInk = (now, energy) => {
         decay: .0026 + Math.random() * .0024,
         seed: Math.random() * Math.PI * 2,
         spin: direction * (.18 + Math.random() * .45),
-        trail: [],
       });
     }
   }
@@ -1065,44 +1063,32 @@ const updateInkParticle = (particle, now, delta) => {
   particle.x += particle.vx * delta;
   particle.y += particle.vy * delta;
   particle.age += particle.decay * delta;
-  particle.size += (.02 + particle.age * .06) * delta;
-  if (Math.floor(particle.age * 180) % 3 === 0) {
-    particle.trail.unshift({ x: particle.x, y: particle.y });
-    if (particle.trail.length > 7) particle.trail.pop();
-  }
+  if (particle.size < 8) particle.size += .012 * delta;
 };
+
+const inkSprite = document.createElement("canvas");
+inkSprite.width = 48;
+inkSprite.height = 48;
+{
+  const spriteContext = inkSprite.getContext("2d");
+  const gradient = spriteContext.createRadialGradient(24, 24, 0, 24, 24, 24);
+  gradient.addColorStop(0, "rgba(42,22,16,.85)");
+  gradient.addColorStop(.42, "rgba(92,48,32,.38)");
+  gradient.addColorStop(1, "rgba(0,0,0,0)");
+  spriteContext.fillStyle = gradient;
+  spriteContext.fillRect(0, 0, 48, 48);
+}
 
 const drawInkParticle = (ctx, particle) => {
   const alpha = Math.max(0, 1 - particle.age);
-  if (particle.trail.length > 1) {
-    ctx.beginPath();
-    ctx.moveTo(particle.trail[0].x, particle.trail[0].y);
-    for (let index = 1; index < particle.trail.length; index += 1) {
-      ctx.lineTo(particle.trail[index].x, particle.trail[index].y);
-    }
-    ctx.strokeStyle = `rgba(0,0,0,${alpha * .42})`;
-    ctx.lineWidth = particle.size * (1.3 + particle.age * 2.2);
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.stroke();
-  }
-
+  if (alpha <= 0) return;
+  const length = particle.size * (1.05 + particle.age * .85);
+  const breadth = particle.size * (.62 + particle.age * .15);
   ctx.save();
   ctx.translate(particle.x, particle.y);
-  ctx.rotate(particle.spin + Math.atan2(particle.vy, particle.vx || .001));
-  ctx.scale(1.7 + particle.age * 3.8, .68 + particle.age * .55);
-  const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, particle.size * 1.8);
-  gradient.addColorStop(0, `rgba(0,0,0,${alpha * .94})`);
-  gradient.addColorStop(.45, `rgba(1,1,1,${alpha * .74})`);
-  gradient.addColorStop(.78, `rgba(9,5,4,${alpha * .3})`);
-  gradient.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = gradient;
-  ctx.beginPath();
-  ctx.arc(0, 0, particle.size * 1.8, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = `rgba(191,105,72,${alpha * .1})`;
-  ctx.lineWidth = .45;
-  ctx.stroke();
+  ctx.rotate(Math.atan2(particle.vy, particle.vx || .001));
+  ctx.globalAlpha = alpha * .62;
+  ctx.drawImage(inkSprite, -length, -breadth * .5, length * 2, breadth);
   ctx.restore();
 };
 
@@ -1155,6 +1141,95 @@ const mutateGlyphString = (text, intensity, frame, seed = 0) => {
   return result;
 };
 
+let playingLetterMode = "rest";
+let playingLetterUntil = 0;
+let playingLetterNext = 0;
+let playingLetterTitle = "";
+
+const playingLetters = () => (nowPlayingTitle ? [...nowPlayingTitle.querySelectorAll(".play-letter")] : []);
+
+const paintPlayingTitle = (title) => {
+  if (!nowPlayingTitle) return [];
+  const existing = playingLetters();
+  if (playingLetterTitle === title && existing.length) return existing;
+  playingLetterTitle = title;
+  playingLetterMode = "rest";
+  playingLetterUntil = 0;
+  playingLetterNext = 0;
+  nowPlayingTitle.replaceChildren(...[...title].map((char) => {
+    const letter = document.createElement("span");
+    letter.className = "play-letter";
+    letter.dataset.char = char;
+    letter.textContent = char === " " ? "\u00a0" : char;
+    return letter;
+  }));
+  return playingLetters();
+};
+
+const restorePlayingLetters = (letters) => {
+  letters.forEach((letter) => {
+    const char = letter.dataset.char || "";
+    letter.textContent = char === " " ? "\u00a0" : char;
+    letter.style.transform = "";
+  });
+};
+
+const renderPlayingLetters = (now) => {
+  if (!nowPlayingTitle) return;
+  const playing = Boolean(currentTrack && player && !player.paused);
+  if (!playing || prefersReducedMotion) {
+    if (playingLetterTitle) {
+      nowPlayingTitle.textContent = currentTrack?.title || playingLetterTitle;
+      playingLetterTitle = "";
+      playingLetterMode = "rest";
+    }
+    return;
+  }
+  const letters = paintPlayingTitle(currentTrack.title || "");
+  if (!letters.length) return;
+  if (playingLetterMode === "rest") {
+    if (!playingLetterNext) playingLetterNext = now + 3200 + Math.random() * 4800;
+    if (now < playingLetterNext) return;
+    playingLetterMode = Math.random() < 0.5 ? "stair" : "glyphs";
+    playingLetterUntil = now + (playingLetterMode === "stair" ? 1680 : 1280);
+    return;
+  }
+  if (now >= playingLetterUntil) {
+    restorePlayingLetters(letters);
+    playingLetterMode = "rest";
+    playingLetterNext = now + 8000 + Math.random() * 7000;
+    return;
+  }
+  const duration = playingLetterMode === "stair" ? 1680 : 1280;
+  const progress = 1 - Math.max(0, (playingLetterUntil - now) / duration);
+  if (playingLetterMode === "stair") {
+    const shift = Math.floor(progress * 5);
+    const scales = [0.78, 0.92, 1.08, 1.26];
+    letters.forEach((letter, index) => {
+      if (letter.dataset.char === " ") {
+        letter.style.transform = "";
+        return;
+      }
+      letter.textContent = letter.dataset.char;
+      letter.style.transform = `scale(${scales[(index + shift) % scales.length]})`;
+    });
+    return;
+  }
+  const head = Math.floor(progress * (letters.length + 2));
+  letters.forEach((letter, index) => {
+    letter.style.transform = "";
+    const char = letter.dataset.char || "";
+    if (char === " ") {
+      letter.textContent = "\u00a0";
+      return;
+    }
+    const passing = head - index;
+    letter.textContent = passing >= 0 && passing < 3
+      ? titleGlyphs[Math.floor(hashUnit(Math.floor(now / 70) + index * 9.1) * titleGlyphs.length)]
+      : char;
+  });
+};
+
 const renderTitleMutation = (now) => {
   if (now - titleLastFrame < (animationQuality === "low" ? 120 : 68)) return;
   titleLastFrame = now;
@@ -1166,7 +1241,7 @@ const renderTitleMutation = (now) => {
     const hovering = Boolean(element.closest(".track-item")?.matches(":hover, :focus-within"));
     const phase = (now * .001 + index * 1.31) % 7.4;
     const wave = phase < .88 ? Math.sin((phase / .88) * Math.PI) : 0;
-    const intensity = Math.min(.82, wave * .64 + (hovering ? .16 : 0));
+    const intensity = Math.min(.34, wave * .24 + (hovering ? .1 : 0));
     element.classList.toggle("is-scrambling", intensity > .05);
     element.textContent = intensity > .05
       ? mutateGlyphString(original, intensity, frame, index + 1)
@@ -1229,12 +1304,11 @@ const updateTrackFold = () => {
     const fold = Math.min(1, Math.abs(offset));
     const depth = fold * (128 + trackPlayBlend * 36) + pulse * fold * trackPlayBlend;
     const rotateX = Math.max(-28, Math.min(28, offset * (20 + trackPlayBlend * 6)));
-    const scale = Math.max(0.62, 1 - fold * (0.2 + trackPlayBlend * 0.08) + trackPlayBlend * energy.high * .02 * (1 - fold));
-    const blur = hovered
-      ? Math.min(1.6, fold * 2.2)
-      : Math.min(9, (fold ** 1.2) * (7.2 + trackPlayBlend * 1.8) + pulse * .03 * fold * trackPlayBlend);
+    const scale = Math.max(0.76, 1 - fold * (0.13 + trackPlayBlend * 0.05) + trackPlayBlend * energy.high * .02 * (1 - fold));
+    // Keep the wheel's depth, not optical blur on readable track labels.
+    const blur = 0;
     card.style.transform = `translate3d(0, ${offset * -5}px, ${-depth}px) rotateX(${rotateX}deg) scale(${scale})`;
-    item.style.opacity = hovered ? "1" : String(Math.max(0.38, 1 - fold * 0.36));
+    item.style.opacity = hovered ? "1" : String(Math.max(0.56, 1 - fold * 0.22));
     item.style.filter = `blur(${blur.toFixed(2)}px)`;
   }
 };
@@ -1257,17 +1331,8 @@ const updateScrollbar = () => {
 };
 
 const pointerPlaylistNudge = () => {
-  if (!playlistList || !trackViewport || draggingScroll) return 0;
-  if (!pointerState.active || performance.now() < playlistPointerLockUntil) return 0;
-  const box = trackViewport.getBoundingClientRect();
-  if (pointerState.x < box.left - 56 || pointerState.x > box.right + 56) return 0;
-  if (pointerState.y < box.top - 36 || pointerState.y > box.bottom + 36) return 0;
-  const half = Math.max(1, box.height / 2);
-  const norm = (pointerState.y - (box.top + half)) / half;
-  const dead = 0.14;
-  if (Math.abs(norm) <= dead) return 0;
-  const falloff = Math.min(1, (Math.abs(norm) - dead) / (1 - dead));
-  return Math.sign(norm) * (0.85 + falloff * 1.15);
+  // Hover is for choosing a track. Only wheel, touch or drag may scroll.
+  return 0;
 };
 
 const loopPlaylistMotion = (now) => {
@@ -1370,7 +1435,9 @@ const createTrackItem = (track, index) => {
   return item;
 };
 
-const shuffledTrackIndexes = () => shuffle(tracks.map((_, index) => index));
+const visibleTrackIndexes = () => tracks.map((_, index) => index).filter((index) => index !== currentTrackIndex);
+const visibleTrackCount = () => Math.max(1, visibleTrackIndexes().length);
+const shuffledTrackIndexes = () => shuffle(visibleTrackIndexes());
 
 const appendWheelCycle = () => {
   if (!playlistList || !tracks.length) return 0;
@@ -1393,7 +1460,7 @@ const prependWheelCycle = () => {
 
 const trimInfiniteWheel = () => {
   if (!playlistList || !tracks.length) return;
-  const cycle = tracks.length;
+  const cycle = visibleTrackCount();
   const limit = cycle * 8;
   if (playlistList.children.length <= limit) return;
   const cycleH = cycle * trackRowHeight();
@@ -1409,7 +1476,7 @@ const trimInfiniteWheel = () => {
 const balanceInfiniteWheel = () => {
   if (wheelBalancing || !playlistList || !tracks.length) return;
   wheelBalancing = true;
-  const cycleH = Math.max(trackRowHeight(), tracks.length * trackRowHeight());
+  const cycleH = Math.max(trackRowHeight(), visibleTrackCount() * trackRowHeight());
   let guard = 0;
   while (guard < 6 && playlistScrollTarget < cycleH * 0.8) {
     prependWheelCycle();
@@ -1445,7 +1512,7 @@ const fillInfiniteWheel = () => {
       extra += 1;
     }
     refreshTrackNodes();
-    const cycleH = tracks.length * trackRowHeight();
+    const cycleH = visibleTrackCount() * trackRowHeight();
     playlistList.scrollTop = cycleH;
     playlistScrollTarget = playlistList.scrollTop;
     playlistScrollVelocity = 0;
@@ -1487,6 +1554,7 @@ const playTrack = (track, sourceItem = null, options = {}) => {
   currentTrack = track;
   setPlaybackStatus("", "");
   document.body.classList.add("is-track-diving");
+  activePlayer?.classList.toggle("is-swapping", activePlayer.classList.contains("is-visible"));
   currentTrackIndex = tracks.findIndex((candidate) => (
     candidate === track
     || candidate.audio === track.audio
@@ -1544,16 +1612,17 @@ const playTrack = (track, sourceItem = null, options = {}) => {
     if (sourceItem && item === sourceItem) {
       item.style.opacity = "1";
       item.style.filter = "none";
+      item.classList.add("is-departing");
     }
   });
   updateTrackFold();
   window.setTimeout(() => {
-    if (sourceItem) {
-      playlistPointerLockUntil = performance.now() + 720;
-      centerWheelItem(sourceItem);
-    }
-    if (currentTrack === track) enterImmersiveMode(player, track);
-  }, immersiveState.active || prefersReducedMotion ? 0 : 280);
+    if (currentTrack !== track) return;
+    fillInfiniteWheel();
+    updateTrackFold();
+    updateScrollbar();
+    enterImmersiveMode(player, track);
+  }, prefersReducedMotion ? 0 : 400);
 };
 
 const renderPlaylist = (playlist, { force = false } = {}) => {
@@ -1599,35 +1668,6 @@ const renderPlaylist = (playlist, { force = false } = {}) => {
   updateScrollbar();
   refreshTrackNodes();
   return true;
-};
-
-const loadPlaylist = async ({ force = false, announce = false } = {}) => {
-  if (!canUseNetwork) {
-    if (Array.isArray(window.INTEONMTECA_PLAYLIST) && window.INTEONMTECA_PLAYLIST.length) {
-      const changed = renderPlaylist(window.INTEONMTECA_PLAYLIST, { force });
-      if (announce && themeStatus) themeStatus.textContent = changed ? "media из локального списка" : "media уже актуальна";
-      return changed;
-    }
-    if (announce && themeStatus) themeStatus.textContent = "открой сайт через start-site.cmd";
-    return false;
-  }
-  const sources = ["/api/playlist", `playlist.json?v=${Date.now()}`];
-  for (const source of sources) {
-    try {
-      const response = await fetch(apiUrl(source), { cache: "no-store" });
-      if (!response.ok) continue;
-      const playlist = await response.json();
-      if (Array.isArray(playlist)) {
-        const changed = renderPlaylist(playlist, { force });
-        if (announce && themeStatus) {
-          themeStatus.textContent = changed ? "media обновлена" : "media уже актуальна";
-        }
-        return changed;
-      }
-    } catch {}
-  }
-  if (announce && themeStatus) themeStatus.textContent = "не удалось прочитать media";
-  return false;
 };
 
 const bindFallbackTracks = () => {
@@ -1711,12 +1751,16 @@ const enterImmersiveMode = (audio, track = null) => {
   immersiveTitle.textContent = title;
   immersiveTitle.dataset.originalText = title;
   immersiveTitle.dataset.ink = title;
-  immersiveArtist.textContent = track?.artist || item?.querySelector(".track-artist")?.textContent.trim() || "inteonmteca";
-  immersiveMode.setAttribute("aria-hidden", "false");
-  immersiveMode.classList.add("is-active");
-  document.body.classList.remove("is-track-diving");
-  document.body.classList.add("is-immersive");
-  sizeCanvas(immersiveVisual);
+  const artist = track?.artist || item?.querySelector(".track-artist")?.textContent.trim() || "inteonmteca";
+  immersiveArtist.textContent = artist;
+  if (activeTrackArtist) activeTrackArtist.textContent = artist;
+  activePlayer?.setAttribute("aria-hidden", "false");
+  activePlayer?.classList.add("is-visible");
+  requestAnimationFrame(() => activePlayer?.classList.remove("is-swapping"));
+  document.body.classList.remove("is-track-diving", "is-immersive");
+  document.body.classList.add("is-inline-playing");
+  immersiveMode?.classList.remove("is-active");
+  immersiveMode?.setAttribute("aria-hidden", "true");
   syncTransport();
 };
 
@@ -1727,10 +1771,14 @@ const exitImmersiveMode = () => {
   immersiveState.audio = null;
   immersiveMode?.classList.remove("is-active");
   immersiveMode?.setAttribute("aria-hidden", "true");
-  document.body.classList.remove("is-track-diving");
-  document.body.classList.remove("is-immersive");
+  activePlayer?.classList.remove("is-visible", "is-swapping");
+  activePlayer?.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("is-track-diving", "is-immersive", "is-inline-playing", "is-signal");
+  currentTrack = null;
+  currentTrackIndex = -1;
   cancelAnimationFrame(immersiveState.raf);
   setPlaybackStatus();
+  fillInfiniteWheel();
   restoreTrackStage();
 };
 
@@ -1755,6 +1803,10 @@ const syncTransport = () => {
   if (durationTime) durationTime.textContent = formatTime(duration);
   if (immersivePlayIcon) immersivePlayIcon.textContent = player.paused ? "▶" : "Ⅱ";
   if (immersivePlay) immersivePlay.setAttribute("aria-label", player.paused ? "Воспроизвести" : "Пауза");
+  const signal = Boolean(currentTrack) && !player.paused;
+  if (document.body.classList.contains("is-signal") !== signal) {
+    document.body.classList.toggle("is-signal", signal);
+  }
   if (nowPlayingTitle) {
     const title = currentTrack?.title || immersiveTitle?.textContent || "";
     if (nowPlayingTitle.dataset.track !== title) {
@@ -1820,8 +1872,8 @@ player?.addEventListener("ended", () => {
   else exitImmersiveMode();
 });
 window.addEventListener("keydown", (event) => {
-  if (!immersiveState.active || /^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName || "")) return;
-  if (event.key === "Escape") exitImmersiveMode();
+  if (!immersiveState.active || openPanels.length || document.activeElement?.isContentEditable
+      || /^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(document.activeElement?.tagName || "")) return;
   if (event.key === " ") {
     event.preventDefault();
     togglePlayback();
@@ -1920,10 +1972,29 @@ scrollbarThumb?.addEventListener("pointerup", () => {
   draggingScroll = null;
 });
 
-const setPanelOpen = (panel, open) => {
-  if (!panel) return;
+const openPanels = [];
+const panelOpeners = new WeakMap();
+const setPanelOpen = (panel, open, { focus = true } = {}) => {
+  if (!panel || panel.hidden === !open) return;
+  const trigger = document.getElementById(panel.id.replace("-panel", "-hint"));
+  if (open) panelOpeners.set(panel, document.activeElement);
+  const index = openPanels.indexOf(panel);
+  if (index !== -1) openPanels.splice(index, 1);
   panel.hidden = !open;
   panel.setAttribute("aria-hidden", String(!open));
+  trigger?.setAttribute("aria-expanded", String(open));
+  if (open) {
+    openPanels.push(panel);
+    openPanels.forEach((entry, order) => { entry.style.zIndex = String(40 + order); });
+    if (focus) panel.querySelector('input:not([hidden]), select, button')?.focus({ preventScroll: true });
+  } else {
+    panel.style.zIndex = "";
+    const opener = panelOpeners.get(panel);
+    if (panel.contains(document.activeElement)) {
+      (opener?.isConnected ? opener : trigger)?.focus({ preventScroll: true });
+    }
+    panelOpeners.delete(panel);
+  }
 };
 
 const readStoredValue = (key) => {
@@ -2065,17 +2136,6 @@ themeRandom?.addEventListener("click", () => {
   randomizeTheme();
   scheduleThemeRotation();
 });
-refreshMedia?.addEventListener("click", () => loadPlaylist({ force: true, announce: true }));
-
-const schedulePlaylistRefresh = () => {
-  window.clearTimeout(playlistRefreshTimer);
-  if (!canUseNetwork) return;
-  playlistRefreshTimer = window.setTimeout(async () => {
-    if (!document.hidden) await loadPlaylist();
-    schedulePlaylistRefresh();
-  }, 30000);
-};
-
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) return;
   perceptionLastFrame = performance.now();
@@ -2083,7 +2143,6 @@ document.addEventListener("visibilitychange", () => {
   logoLastFrame = performance.now();
   lastVisualTick = 0;
   windLastTick = 0;
-  if (canUseNetwork) loadPlaylist();
 });
 
 const setAuthStatus = (text) => {
@@ -2292,26 +2351,28 @@ const loadChat = async () => {
   }
 };
 
-const openChat = async () => {
-  setPanelOpen(chatPanel, true);
+const openChat = async ({ focus = false } = {}) => {
+  setPanelOpen(chatPanel, true, { focus: false });
   document.body.classList.add("is-chat-open");
   if (chatInput) {
     chatInput.placeholder = sessionEmail ? "написать в воздух" : "войди, чтобы написать";
     chatInput.readOnly = !sessionEmail;
   }
+  if (focus) chatInput?.focus({ preventScroll: true });
   await loadChat();
-  chatInput?.focus();
+  if (chatPanel?.hidden) return;
   window.clearInterval(chatTimer);
   chatTimer = window.setInterval(loadChat, 2500);
 };
 
 const closeChat = () => {
+  window.clearInterval(chatTimer);
   setPanelOpen(chatPanel, false);
   document.body.classList.remove("is-chat-open");
-  window.clearInterval(chatTimer);
+  chatHint?.focus();
 };
 
-chatHint?.addEventListener("click", openChat);
+chatHint?.addEventListener("click", () => openChat({ focus: true }));
 chatClose?.addEventListener("click", closeChat);
 chatForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -2344,15 +2405,21 @@ chatForm?.addEventListener("submit", async (event) => {
   }
 });
 
-window.addEventListener("keydown", (event) => {
-  if (event.key !== "Escape") return;
-  if (immersiveState.active) {
-    exitImmersiveMode();
+const handlePanelKeydown = (event) => {
+  if (event.key !== "Escape" || event.defaultPrevented) return;
+  const topPanel = openPanels[openPanels.length - 1];
+  if (topPanel) {
+    event.preventDefault();
+    if (topPanel === chatPanel) closeChat();
+    else setPanelOpen(topPanel, false);
     return;
   }
-  setPanelOpen(authPanel, false);
-  closeChat();
-});
+  if (immersiveState.active) {
+    event.preventDefault();
+    exitImmersiveMode();
+  }
+};
+window.addEventListener("keydown", handlePanelKeydown);
 
 const updateCounterText = (element, value) => {
   if (!element || value === null || value === undefined) return;
@@ -2717,18 +2784,6 @@ const restoreLogoTileOrder = () => {
   });
 };
 
-const shuffleLogoTiles = () => {
-  const particles = [...(logoParticles?.querySelectorAll(".logo-particle") || [])];
-  const shuffledTiles = shuffle(particles.map((particle) => ({
-    bgX: particle.dataset.bgX || "0%",
-    bgY: particle.dataset.bgY || "0%",
-  })));
-  particles.forEach((particle, index) => {
-    particle.style.setProperty("--bg-x", shuffledTiles[index].bgX);
-    particle.style.setProperty("--bg-y", shuffledTiles[index].bgY);
-  });
-};
-
 const renderLogoMatrix = (readable = false) => {
   logoWrap?.classList.toggle("is-assembled", readable);
   logoWrap?.classList.toggle("is-charging", readable);
@@ -2778,33 +2833,6 @@ const resetLogoChaosCountdown = () => {
   logoChaosCountdown = randomInteger(5, 10);
 };
 
-const runLongLogoChaos = () => {
-  if (logoChaosActive) return;
-  if (logoCycleTimeout) window.clearTimeout(logoCycleTimeout);
-  logoLocked = false;
-  fullReadableMode = false;
-  logoChaosActive = true;
-  logoWrap?.classList.remove("is-stable", "is-assembled", "is-charging", "is-assembling");
-  restoreLogoTileOrder();
-  logoWrap?.classList.add("is-long-chaos");
-  shuffleLogoTiles();
-  const chaosDuration = randomRange(20000, 30000);
-  const jitterInterval = window.setInterval(() => shuffleLogoTiles(), 90);
-  window.setTimeout(() => {
-    window.clearInterval(jitterInterval);
-    logoChaosActive = false;
-    logoWrap?.classList.remove("is-long-chaos");
-    restoreLogoTileOrder();
-    logoWrap?.classList.add("is-assembling");
-    renderLogoMatrix(true);
-    resetLogoChaosCountdown();
-    window.setTimeout(() => {
-      logoWrap?.classList.remove("is-assembling");
-      logoCycleTimeout = window.setTimeout(runLogoCycle, randomRange(1000, 10000));
-    }, 320);
-  }, chaosDuration);
-};
-
 const runLogoCycle = () => {
   if (logoChaosActive) {
     logoCycleTimeout = window.setTimeout(runLogoCycle, 1200);
@@ -2816,10 +2844,7 @@ const runLogoCycle = () => {
     return;
   }
   logoChaosCountdown -= 1;
-  if (logoChaosCountdown <= 0) {
-    runLongLogoChaos();
-    return;
-  }
+  if (logoChaosCountdown <= 0) resetLogoChaosCountdown();
   renderLogoMatrix(false);
   const chaosDuration = randomRange(2000, 16000);
   window.setTimeout(() => {
@@ -2853,6 +2878,7 @@ const tickVisuals = (now) => {
   if (immersiveState.active) drawImmersiveScene(now);
   renderInkField(now);
   renderTitleMutation(now);
+  renderPlayingLetters(now);
   loopPlaylistMotion(now);
   renderReactiveLogo(now);
 };
@@ -2873,13 +2899,16 @@ window.setTimeout(() => {
     if (Array.isArray(window.INTEONMTECA_PLAYLIST) && window.INTEONMTECA_PLAYLIST.length) {
       renderPlaylist(window.INTEONMTECA_PLAYLIST);
     }
-    loadPlaylist();
-    schedulePlaylistRefresh();
   } catch {}
 }, 0);
 loadSession();
 
+streetLink?.addEventListener("click", () => {
+  window.inteonStreet?.noteExit();
+});
+
 window.addEventListener("DOMContentLoaded", () => {
   setupVisitCounter();
   updateScrollbar();
+  openChat();
 });
