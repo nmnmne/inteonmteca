@@ -137,3 +137,6 @@ desktop.ini
 
 # Local auth/chat database
 server/data/
+
+# Local Hermes files
+/.hermes/
