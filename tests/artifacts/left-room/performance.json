@@ -1,0 +1,12 @@
+{
+  "1": {
+    "TaskDuration": 1.947,
+    "ScriptDuration": 0.0505,
+    "RecalcStyleDuration": 1.259
+  },
+  "4": {
+    "TaskDuration": 2.8441,
+    "ScriptDuration": 0.2124,
+    "RecalcStyleDuration": 0.7783
+  }
+}

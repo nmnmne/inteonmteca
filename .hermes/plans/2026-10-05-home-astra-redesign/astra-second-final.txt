@@ -1,0 +1,6 @@
+Восстановлены `room-scene`, тема `slate` и прозрачное стекло; логотип уменьшен, широкий каталог сохранён. Мои правки — только `index.html` и `home-player.css`.
+
+Сняты и визуально проверены: [1440×900](/C:/Users/user/AppData/Local/Temp/inteon-astra-correction-y27hsmtq/corrected-1440x900.png), [390×844](/C:/Users/user/AppData/Local/Temp/inteon-astra-correction-y27hsmtq/corrected-390x844.png). Шесть точечных проверок прошли; полный набор тестов не запускался.
+
+Обнаружено параллельное изменение `script.js`; я его не трогал.
+

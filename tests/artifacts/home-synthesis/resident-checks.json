@@ -1,0 +1,225 @@
+{
+  "approachFrom": {
+    "x": 155.6999969482422,
+    "y": 576.4000244140625
+  },
+  "cursor": {
+    "x": 305.6999969482422,
+    "y": 576.4000244140625
+  },
+  "sniffAt": {
+    "x": 217.6999969482422,
+    "y": 576.4000244140625,
+    "state": "sniffing",
+    "overlap": false
+  },
+  "retreatFrom": {
+    "x": 217.6999969482422,
+    "y": 576.4000244140625
+  },
+  "retreatTo": {
+    "x": 289.70001220703125,
+    "y": 550.4000244140625,
+    "width": 48,
+    "height": 52
+  },
+  "movementSamples": [
+    {
+      "x": 155.6999969482422,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 155.90835571289062,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 156.51950073242188,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 157.71014404296875,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 159.55001831054688,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 162.13951110839844,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 165.544921875,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 169.4325408935547,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 174.2554168701172,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 179.45626831054688,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 184.6850128173828,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 189.29034423828125,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 193.82058715820312,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 197.84005737304688,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 201.10617065429688,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 204.16146850585938,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 206.78375244140625,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 209.01893615722656,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 210.79000854492188,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 212.40414428710938,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 213.74984741210938,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 214.78541564941406,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 215.69390869140625,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 216.4101104736328,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 216.9524688720703,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 217.33706665039062,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 217.56613159179688,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 217.6859893798828,
+      "y": 576.4000244140625,
+      "state": "walking",
+      "overlap": false
+    },
+    {
+      "x": 217.6999969482422,
+      "y": 576.4000244140625,
+      "state": "sniffing",
+      "overlap": false
+    },
+    {
+      "x": 217.6999969482422,
+      "y": 576.4000244140625,
+      "state": "sniffing",
+      "overlap": false
+    },
+    {
+      "x": 217.6999969482422,
+      "y": 576.4000244140625,
+      "state": "sniffing",
+      "overlap": false
+    },
+    {
+      "x": 217.6999969482422,
+      "y": 576.4000244140625,
+      "state": "sniffing",
+      "overlap": false
+    }
+  ],
+  "clickThrough": true,
+  "panelsPause": true,
+  "reducedMotion": true,
+  "mobileStationary": true,
+  "errors": []
+}

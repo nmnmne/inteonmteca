@@ -1,6 +1,11 @@
+// Select the mobile renderer before acquiring contexts or constructing effects.
+const backgroundViewport = window.matchMedia("(max-width: 800px), (pointer: coarse)");
+let isMobileViewport = backgroundViewport.matches;
+const isListeningRoom = document.body.classList.contains("spatial-room");
+document.documentElement.dataset.backgroundMode = isMobileViewport ? "static" : "live";
 const player = document.getElementById("album-player");
 const perceptionVisual = document.getElementById("perception-visual");
-const perceptionContext = perceptionVisual?.getContext("2d");
+let perceptionContext = isMobileViewport ? null : perceptionVisual?.getContext("2d");
 const immersiveMode = document.getElementById("immersive-mode");
 const immersiveVisual = document.getElementById("immersive-visual");
 const immersiveTitle = document.getElementById("immersive-title");
@@ -11,8 +16,31 @@ const activeTrackArtist = document.getElementById("active-track-artist");
 const immersiveBack = document.getElementById("immersive-back");
 const immersivePlay = document.getElementById("immersive-play");
 const immersivePlayIcon = document.getElementById("immersive-play-icon");
+// One-time typography setup; CSS carries the restrained letter wave, no JS loop.
+const spatialHeading = document.querySelector(".spatial-room .listening-intro h1");
+if (spatialHeading) {
+  spatialHeading.setAttribute("aria-label", spatialHeading.textContent.replace(/\s+/g, " ").trim());
+  let letterIndex = 0;
+  const wrapHeadingLetters = (parent) => {
+    [...parent.childNodes].forEach((node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const fragment = document.createDocumentFragment();
+        for (const character of node.textContent) {
+          if (/\s/.test(character)) { fragment.append(document.createTextNode(character)); continue; }
+          const letter = document.createElement("span");
+          letter.className = "heading-letter";
+          letter.style.setProperty("--letter", letterIndex++);
+          letter.setAttribute("aria-hidden", "true");
+          letter.textContent = character;
+          fragment.append(letter);
+        }
+        node.replaceWith(fragment);
+      } else if (node.nodeType === Node.ELEMENT_NODE) wrapHeadingLetters(node);
+    });
+  };
+  wrapHeadingLetters(spatialHeading);
+}
 const nowPlayingTitle = document.getElementById("now-playing-title");
-const closeTrack = document.getElementById("close-track");
 const previousTrack = document.getElementById("previous-track");
 const nextTrack = document.getElementById("next-track");
 const trackProgress = document.getElementById("track-progress");
@@ -25,9 +53,9 @@ const trackViewport = document.getElementById("track-viewport");
 const scrollbar = document.getElementById("track-scrollbar");
 const scrollbarThumb = document.getElementById("track-scrollbar-thumb");
 const inkField = document.getElementById("ink-field");
-const inkContext = inkField?.getContext("2d");
-const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-const isMobileViewport = window.matchMedia("(max-width: 800px), (pointer: coarse)").matches;
+let inkContext = isMobileViewport || isListeningRoom ? null : inkField?.getContext("2d");
+const reducedMotionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+const prefersReducedMotion = reducedMotionPreference.matches;
 const lowPowerDevice = isMobileViewport
   || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
   || (navigator.deviceMemory && navigator.deviceMemory <= 4);
@@ -42,7 +70,7 @@ const logoTurbulence = document.getElementById("logo-turbulence");
 const logoDisplacement = document.getElementById("logo-displacement");
 const logoSliceContainer = document.getElementById("logo-vector-slices");
 const logoReactiveCanvas = document.getElementById("logo-reactive-canvas");
-const logoReactiveContext = logoReactiveCanvas?.getContext("2d");
+let logoReactiveContext = isMobileViewport || isListeningRoom ? null : logoReactiveCanvas?.getContext("2d");
 const logoParticles = document.getElementById("logo-particles");
 const logoSymbolEcho = document.getElementById("logo-symbol-echo");
 const uniqueCount = document.getElementById("unique-count");
@@ -427,7 +455,7 @@ const setPointerMotion = (event) => {
   immersiveState.pointerY += (y - immersiveState.pointerY) * .08;
 };
 
-window.addEventListener("pointermove", setPointerMotion, { passive: true });
+if (!isMobileViewport) window.addEventListener("pointermove", setPointerMotion, { passive: true });
 document.documentElement.addEventListener("pointerleave", () => {
   pointerState.active = false;
   setMotion(0, 0, 0);
@@ -448,13 +476,13 @@ const handleDeviceOrientation = (event) => {
   setMotion(x, y, Math.min(1, Math.hypot(x, y)));
 };
 
-window.addEventListener("devicemotion", handleDeviceMotion, { passive: true });
-window.addEventListener("deviceorientation", handleDeviceOrientation, { passive: true });
-if (typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function") {
+if (!isMobileViewport) window.addEventListener("devicemotion", handleDeviceMotion, { passive: true });
+if (!isMobileViewport) window.addEventListener("deviceorientation", handleDeviceOrientation, { passive: true });
+if (!isMobileViewport && typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function") {
   window.addEventListener("pointerdown", () => DeviceMotionEvent.requestPermission().catch(() => {}), { once: true, passive: true });
 }
 
-const canvasScale = () => Math.min(devicePixelRatio || 1, animationQuality === "low" ? 1 : 1.25);
+const canvasScale = () => isListeningRoom ? (animationQuality === "low" ? .5 : .75) : Math.min(devicePixelRatio || 1, animationQuality === "low" ? 1 : 1.25);
 
 const sizeCanvas = (canvas) => {
   if (!canvas) return;
@@ -478,6 +506,7 @@ const hashUnit = (value) => {
 let smokeEmitters = [];
 let smokeClouds = [];
 const setupSmokeEmitters = () => {
+  if (isMobileViewport) return;
   const count = animationQuality === "low" ? 5 : 8;
   smokeEmitters = Array.from({ length: count }, (_, index) => ({
     x: .08 + hashUnit(index + 1.2) * .84,
@@ -493,6 +522,7 @@ const setupSmokeEmitters = () => {
 setupSmokeEmitters();
 
 const setupPerceptionField = () => {
+  if (isMobileViewport) return;
   if (!perceptionVisual || !perceptionContext) return;
   perceptionField.length = 0;
   const count = animationQuality === "low" ? 4 : 7;
@@ -518,7 +548,13 @@ const renderPerceptionField = (now) => {
   const scale = canvasScale();
   perceptionContext.setTransform(scale, 0, 0, scale, 0, 0);
   perceptionContext.clearRect(0, 0, innerWidth, innerHeight);
-  if (!immersiveState.active) {
+  if (isListeningRoom) {
+    perceptionContext.save();
+    perceptionContext.translate(motionState.x * 20, motionState.y * 14);
+    window.inteonRoom?.drawMist(perceptionContext, innerWidth, innerHeight, now, player.paused ? 0 : energy.avg);
+    perceptionContext.restore();
+  }
+  if (!immersiveState.active && !isListeningRoom) {
     drawSmoke(perceptionContext, innerWidth, innerHeight, energy, now, .3);
   }
   drawWindField(perceptionContext, innerWidth, innerHeight, energy, now);
@@ -584,6 +620,7 @@ const spawnWindDigit = () => {
 };
 
 const setupWindField = () => {
+  if (isMobileViewport) return;
   windMotes.length = 0;
   windDigits.length = 0;
   const count = prefersReducedMotion ? 10 : animationQuality === "low" ? 32 : 64;
@@ -994,6 +1031,7 @@ const drawImmersiveScene = (now) => {
 const drawLiquid = drawImmersiveScene;
 
 const resizeInkField = () => {
+  if (isMobileViewport) return;
   if (!inkField || !inkContext) return;
   inkFieldBounds = inkField.getBoundingClientRect();
   const scale = Math.min(devicePixelRatio || 1, animationQuality === "low" ? 1 : 1.25);
@@ -1180,6 +1218,7 @@ const restorePlayingLetters = (letters) => {
 };
 
 const renderPlayingLetters = (now) => {
+  if (playlistList?.dataset?.layout === "catalog") return;
   if (!nowPlayingTitle) return;
   const playing = Boolean(currentTrack && player && !player.paused);
   if (!playing || prefersReducedMotion) {
@@ -1202,7 +1241,7 @@ const renderPlayingLetters = (now) => {
   if (now >= playingLetterUntil) {
     restorePlayingLetters(letters);
     playingLetterMode = "rest";
-    playingLetterNext = now + 8000 + Math.random() * 7000;
+    playingLetterNext = now + (isMobileViewport ? 2400 : 8000) + Math.random() * (isMobileViewport ? 2200 : 7000);
     return;
   }
   const duration = playingLetterMode === "stair" ? 1680 : 1280;
@@ -1236,6 +1275,8 @@ const renderPlayingLetters = (now) => {
 };
 
 const renderTitleMutation = (now) => {
+  if (playlistList?.dataset?.layout === "catalog") return;
+  if (prefersReducedMotion) return;
   if (now - titleLastFrame < (animationQuality === "low" ? 120 : 68)) return;
   titleLastFrame = now;
   const frame = Math.floor(now / (prefersReducedMotion ? 210 : 76));
@@ -1244,13 +1285,14 @@ const renderTitleMutation = (now) => {
     const original = element.dataset.originalText || element.textContent || "";
     if (!element.dataset.originalText) element.dataset.originalText = original;
     const hovering = Boolean(element.closest(".track-item")?.matches(":hover, :focus-within"));
-    const phase = (now * .001 + index * 1.31) % 7.4;
+    const phase = (now * .001 + index * 1.31) % (isMobileViewport ? 4.2 : 7.4);
     const wave = phase < .88 ? Math.sin((phase / .88) * Math.PI) : 0;
     const intensity = Math.min(.34, wave * .24 + (hovering ? .1 : 0));
     element.classList.toggle("is-scrambling", intensity > .05);
-    element.textContent = intensity > .05
+    const nextText = intensity > .05
       ? mutateGlyphString(original, intensity, frame, index + 1)
       : original;
+    if (element.textContent !== nextText) element.textContent = nextText;
   };
   for (let index = 0; index < titles.length; index += 1) mutateTitle(titles[index], index);
   if (immersiveTitle) mutateTitle(immersiveTitle, titles.length);
@@ -1272,6 +1314,7 @@ const renderLogoSymbolEcho = (now, energy) => {
 };
 
 const updateTrackFold = () => {
+  if (playlistList?.dataset?.layout === "catalog") return;
   if (!playlistList) return;
   const items = trackItemNodes.length ? trackItemNodes : [...playlistList.querySelectorAll(".track-item")];
   const overflowing = items.length > TRACK_VIEW;
@@ -1341,6 +1384,7 @@ const pointerPlaylistNudge = () => {
 };
 
 const loopPlaylistMotion = (now) => {
+  if (playlistList?.dataset?.layout === "catalog") return;
   if (now - playlistLastFrame < (animationQuality === "low" ? 90 : 50)) return;
   playlistLastFrame = now;
   if (pointerPlaylistNudge() && !playlistScrollRaf && playlistList) {
@@ -1414,12 +1458,15 @@ const createTrackItem = (track, index) => {
   item.className = "track-item";
   item.dataset.trackTitle = track.title;
   item.dataset.trackIndex = String(index);
+  item.dataset.number = String(index + 1).padStart(2, "0");
   const playing = currentTrack && (track === currentTrack || (track.audio || track.file) === (currentTrack.audio || currentTrack.file));
   if (playing) item.classList.add("is-playing");
   const button = document.createElement("button");
   button.className = "track-select";
   button.type = "button";
   button.setAttribute("aria-label", `Воспроизвести ${track.title}`);
+  button.setAttribute("aria-pressed", String(Boolean(playing)));
+  button.title = `${track.title} — ${track.artist || "inteonmteca"}`;
   const meta = document.createElement("span");
   meta.className = "track-meta";
   const title = document.createElement("span");
@@ -1433,16 +1480,22 @@ const createTrackItem = (track, index) => {
   meta.append(title, artist);
   const fold = document.createElement("span");
   fold.className = "track-fold";
-  fold.append(meta);
+  const artwork = document.createElement("span");
+  artwork.className = "track-art";
+  artwork.setAttribute("aria-hidden", "true");
+  artwork.textContent = item.dataset.number;
+  fold.append(artwork, meta);
   button.append(fold);
   item.append(button);
   bindTrackItem(item, track);
   return item;
 };
 
-const visibleTrackIndexes = () => tracks.map((_, index) => index).filter((index) => index !== currentTrackIndex);
+const visibleTrackIndexes = () => tracks.map((_, index) => index);
 const visibleTrackCount = () => Math.max(1, visibleTrackIndexes().length);
-const shuffledTrackIndexes = () => shuffle(visibleTrackIndexes());
+// The initial catalogue is shuffled once. Its cycles retain that order, including
+// the selected row, so selection never changes neighbours or scroll position.
+const shuffledTrackIndexes = () => visibleTrackIndexes();
 
 const appendWheelCycle = () => {
   if (!playlistList || !tracks.length) return 0;
@@ -1554,7 +1607,7 @@ let trackFlight = null;
 const launchTrackFlight = (sourceRect, sourceFontSize, track) => {
   trackFlight?.remove();
   trackFlight = null;
-  if (!sourceRect || prefersReducedMotion || !activePlayer) return;
+  if (playlistList?.dataset?.layout === "catalog" || !sourceRect || prefersReducedMotion || !activePlayer) return;
   activePlayer.classList.add("is-arrival-target");
   const targetCopy = activePlayer.querySelector(".active-track-copy");
   const targetTitle = activePlayer.querySelector(".now-playing-title");
@@ -1591,12 +1644,18 @@ const playTrack = (track, sourceItem = null, options = {}) => {
   const now = performance.now();
   if (now - playLockAt < 220 && currentTrack === track) return;
   playLockAt = now;
+  cancelAnimationFrame(playlistScrollRaf);
+  playlistScrollRaf = 0;
+  playlistScrollVelocity = 0;
+  playlistScrollTarget = playlistList?.scrollTop || 0;
   const requestId = ++playbackRequestId;
   if (pendingPlaybackSeek) player?.removeEventListener("loadedmetadata", pendingPlaybackSeek.place);
   pendingPlaybackSeek = null;
   currentTrack = track;
+  if (player && options.shared) window.inteonPlayback?.restore?.(player, options.shared);
+  else if (player) window.inteonPlayback?.select?.(player, options.origin || "home");
+  playbackStamp = "";
   setPlaybackStatus("", "");
-  activePlayer?.classList.toggle("is-swapping", activePlayer.classList.contains("is-visible"));
   currentTrackIndex = tracks.findIndex((candidate) => (
     candidate === track
     || (track.audio && candidate.audio === track.audio)
@@ -1624,6 +1683,10 @@ const playTrack = (track, sourceItem = null, options = {}) => {
   launchTrackFlight(sourceRect, sourceFontSize, track);
   const src = resolveTrackUrl(track);
   const assigned = player ? (player.getAttribute("src") || player.src || "") : "";
+  if (options.shared && player) {
+    player.preload = "metadata";
+    pendingPlaybackSeek = { requestId };
+  }
   if (player && src && assigned !== src && player.src !== src) player.src = src;
   if (player && options.shared) {
     const place = () => {
@@ -1649,14 +1712,14 @@ const playTrack = (track, sourceItem = null, options = {}) => {
       }).catch((error) => {
         if (requestId !== playbackRequestId) return;
         if (error?.name === "AbortError") {
-          player.play().catch(() => {});
+          syncTransport();
           return;
         }
         const message = error?.name === "NotAllowedError"
-          ? "нажми ▶ чтобы пустить звук"
+          ? "Нажмите «Воспроизвести»"
           : error?.name === "NotSupportedError"
             ? "этот файл браузер не играет"
-            : "звук не открылся — нажми ▶";
+            : "Не удалось воспроизвести. Повторите попытку";
         setPlaybackStatus(message, "error");
         syncTransport();
       });
@@ -1674,6 +1737,7 @@ const playTrack = (track, sourceItem = null, options = {}) => {
     const same = Number(item.dataset.trackIndex) === currentTrackIndex;
     item.classList.toggle("is-kept", Boolean(sourceItem) && item === sourceItem);
     item.classList.toggle("is-playing", same);
+    item.querySelector(".track-select")?.setAttribute("aria-pressed", String(same));
     item.classList.remove("is-departing");
     if (sourceItem && item === sourceItem) {
       item.style.opacity = "1";
@@ -1682,13 +1746,7 @@ const playTrack = (track, sourceItem = null, options = {}) => {
     }
   });
   updateTrackFold();
-  window.setTimeout(() => {
-    if (currentTrack !== track) return;
-    fillInfiniteWheel();
-    updateTrackFold();
-    updateScrollbar();
-    enterImmersiveMode(player, track);
-  }, prefersReducedMotion ? 0 : 620);
+  enterImmersiveMode(player, track);
 };
 
 const renderPlaylist = (playlist, { force = false } = {}) => {
@@ -1741,6 +1799,7 @@ const bindFallbackTracks = () => {
   const randomizedItems = shuffle([...(playlistList.querySelectorAll(".track-item") || [])]);
   randomizedItems.forEach((item, index) => {
     item.dataset.trackIndex = String(index);
+    item.dataset.number = String(index + 1).padStart(2, "0");
     const titleElement = item.querySelector(".track-title");
     if (titleElement) {
       titleElement.dataset.originalText = titleElement.textContent;
@@ -1784,6 +1843,7 @@ const pickTrackFromEvent = (event) => {
   playTrack(track, item);
 };
 window.inteonPlayTrack = playTrack;
+window.inteonTrackForItem = findTrackForItem;
 playlistList?.addEventListener("click", pickTrackFromEvent);
 
 const restoreTrackStage = () => {
@@ -1833,14 +1893,18 @@ const enterImmersiveMode = (audio, track = null) => {
 
 const exitImmersiveMode = () => {
   playbackRequestId += 1;
+  if (pendingPlaybackSeek) {
+    player?.removeEventListener("loadedmetadata", pendingPlaybackSeek.place);
+    pendingPlaybackSeek = null;
+  }
   immersiveState.active = false;
+  player?.pause();
   immersiveState.audio?.pause();
   window.inteonPlayback?.clear?.();
   immersiveState.audio = null;
   immersiveMode?.classList.remove("is-active");
   immersiveMode?.setAttribute("aria-hidden", "true");
-  activePlayer?.classList.remove("is-visible", "is-swapping");
-  activePlayer?.setAttribute("aria-hidden", "true");
+  activePlayer?.classList.remove("is-swapping");
   document.body.classList.remove("is-track-diving", "is-immersive", "is-inline-playing", "is-player-arranging", "is-signal");
   trackFlight?.remove();
   trackFlight = null;
@@ -1848,8 +1912,8 @@ const exitImmersiveMode = () => {
   currentTrackIndex = -1;
   cancelAnimationFrame(immersiveState.raf);
   setPlaybackStatus();
-  fillInfiniteWheel();
   restoreTrackStage();
+  syncTransport();
 };
 
 const formatTime = (value) => {
@@ -1861,6 +1925,17 @@ const formatTime = (value) => {
 
 const syncTransport = () => {
   if (!player) return;
+  const selected = Boolean(currentTrack);
+  const loading = selected && !player.paused && player.readyState < 3;
+  const playing = selected && !player.paused && !player.ended && !player.error && !loading;
+  if (activePlayer) activePlayer.dataset.state = !selected ? "empty" : player.error ? "error" : loading ? "loading" : playing ? "playing" : "paused";
+  if (immersivePlay) immersivePlay.disabled = !selected;
+  if (previousTrack) previousTrack.disabled = !selected || tracks.length < 2;
+  if (nextTrack) nextTrack.disabled = !selected || tracks.length < 2;
+  if (trackProgress) trackProgress.disabled = !selected || !Number.isFinite(player.duration) || player.duration <= 0;
+  if (trackVolume) trackVolume.disabled = !selected || !volumeSupported;
+  const caption = activePlayer?.querySelector(".player-caption");
+  if (caption) caption.textContent = !selected ? "Плеер" : loading ? "Загрузка" : playing ? "Сейчас играет" : "Пауза";
   const duration = Number.isFinite(player.duration) ? player.duration : 0;
   const progress = duration > 0 ? player.currentTime / duration : 0;
   const seekValue = `${(progress * 100).toFixed(2)}%`;
@@ -1871,14 +1946,16 @@ const syncTransport = () => {
   }
   if (currentTime) currentTime.textContent = formatTime(player.currentTime);
   if (durationTime) durationTime.textContent = formatTime(duration);
-  if (immersivePlayIcon) immersivePlayIcon.textContent = player.paused ? "▶" : "Ⅱ";
+  trackProgress?.setAttribute("aria-valuetext", `${formatTime(player.currentTime)} из ${formatTime(duration)}`);
+  if (immersivePlayIcon) immersivePlayIcon.dataset.state = playing ? "playing" : "paused";
   if (immersivePlay) immersivePlay.setAttribute("aria-label", player.paused ? "Воспроизвести" : "Пауза");
-  const signal = Boolean(currentTrack) && !player.paused;
+  const signal = playing;
   if (document.body.classList.contains("is-signal") !== signal) {
     document.body.classList.toggle("is-signal", signal);
   }
   if (nowPlayingTitle) {
-    const title = currentTrack?.title || immersiveTitle?.textContent || "";
+    const title = currentTrack?.title || "Выберите трек";
+    nowPlayingTitle.title = title;
     if (nowPlayingTitle.dataset.track !== title) {
       nowPlayingTitle.textContent = title;
       nowPlayingTitle.dataset.track = title;
@@ -1888,26 +1965,30 @@ const syncTransport = () => {
 };
 
 let playbackStamp = "";
+let playbackLeaving = false;
 const rememberPlayback = () => {
-  if (!window.inteonPlayback || !currentTrack || !player) return;
+  if (playbackLeaving || !window.inteonPlayback || !currentTrack || !player) return;
   if (pendingPlaybackSeek?.requestId === playbackRequestId) return;
-  const stamp = `${currentTrack.audio || currentTrack.file}|${player.paused}|${Math.floor(player.currentTime || 0)}`;
+  const stamp = `${currentTrack.audio || currentTrack.file}|${player.paused}|${player.currentTime || 0}`;
   if (stamp === playbackStamp) return;
   playbackStamp = stamp;
   window.inteonPlayback.save(player, currentTrack);
 };
 
 const restoreSharedPlayback = () => {
-  const saved = window.inteonPlayback?.read?.();
+  const saved = window.inteonPlayback?.forPage?.("home") || window.inteonPlayback?.read?.();
   if (!saved?.audio || currentTrack) return;
   const wanted = saved.audio;
   const track = tracks.find((item) => String(item.audio || item.file || "").replace(/\\/g, "/") === wanted);
   if (!track) return;
-  playTrack(track, null, { shared: saved });
+  playTrack(track, null, { shared: { ...saved, paused: !(saved.playingIntent ?? !saved.paused) } });
 };
 
 const togglePlayback = () => {
   if (!player || !currentTrack) return;
+  if (player.paused && !window.inteonPlayback?.read?.()?.playingIntent) window.inteonPlayback?.select?.(player, "home", { stopAtEnd: window.inteonPlayback?.stopsAtEnd?.(player) });
+  window.inteonPlayback?.intent?.(player, player.paused);
+  playbackStamp = "";
   if (player.paused) {
     setPlaybackStatus("", "");
     player.play()
@@ -1915,21 +1996,23 @@ const togglePlayback = () => {
         setPlaybackStatus();
         attachPlaybackAnalysis();
       })
-      .catch(() => setPlaybackStatus("нажми ▶ ещё раз", "error"));
+      .catch(() => { setPlaybackStatus("Не удалось воспроизвести. Повторите попытку", "error"); syncTransport(); });
   } else {
     player.pause();
+    rememberPlayback();
   }
 };
 
-const playRelativeTrack = (offset) => {
+const playRelativeTrack = (offset, automatic = false) => {
   if (!tracks.length) return;
   const start = currentTrackIndex >= 0 ? currentTrackIndex : 0;
   const nextIndex = (start + offset + tracks.length) % tracks.length;
-  playTrack(tracks[nextIndex], nearestItemForTrackIndex(nextIndex));
+  playTrack(tracks[nextIndex], nearestItemForTrackIndex(nextIndex), {
+    origin: automatic ? window.inteonPlayback?.read?.()?.origin : "home",
+  });
 };
 
 immersiveBack?.addEventListener("click", exitImmersiveMode);
-closeTrack?.addEventListener("click", exitImmersiveMode);
 immersivePlay?.addEventListener("click", togglePlayback);
 previousTrack?.addEventListener("click", () => playRelativeTrack(-1));
 nextTrack?.addEventListener("click", () => playRelativeTrack(1));
@@ -1938,16 +2021,27 @@ trackProgress?.addEventListener("input", () => {
   player.currentTime = (Number(trackProgress.value) / 1000) * player.duration;
   syncTransport();
 });
+let volumeSupported = true;
+if (player && trackVolume) {
+  player.volume = Number(trackVolume.value);
+  volumeSupported = Math.abs(player.volume - Number(trackVolume.value)) < .01;
+  if (!volumeSupported) {
+    trackVolume.hidden = true;
+    const note = document.getElementById("volume-note");
+    if (note) note.hidden = false;
+  }
+}
 trackVolume?.addEventListener("input", () => {
   if (player) player.volume = Number(trackVolume.value);
 });
-if (player && trackVolume) player.volume = Number(trackVolume.value);
 player?.addEventListener("timeupdate", syncTransport);
 player?.addEventListener("durationchange", syncTransport);
 player?.addEventListener("play", syncTransport);
 player?.addEventListener("pause", syncTransport);
-player?.addEventListener("playing", () => setPlaybackStatus());
-player?.addEventListener("waiting", () => setPlaybackStatus("сигнал буферизуется…", "loading"));
+player?.addEventListener("playing", () => { setPlaybackStatus(); syncTransport(); });
+player?.addEventListener("waiting", () => { setPlaybackStatus("Загрузка аудио…", "loading"); syncTransport(); });
+player?.addEventListener("loadedmetadata", syncTransport);
+player?.addEventListener("emptied", syncTransport);
 player?.addEventListener("stalled", () => setPlaybackStatus("соединение с media замедлилось", "error"));
 player?.addEventListener("error", () => {
   const messages = {
@@ -1957,11 +2051,22 @@ player?.addEventListener("error", () => {
     4: "формат аудио не поддерживается",
   };
   setPlaybackStatus(messages[player.error?.code] || "не удалось открыть аудиофайл", "error");
+  syncTransport();
 });
 player?.addEventListener("ended", () => {
-  if (tracks.length > 1) playRelativeTrack(1);
-  else exitImmersiveMode();
+  if (!currentTrack) return;
+  if (window.inteonPlayback?.stopsAtEnd?.(player)) {
+    window.inteonPlayback.intent(player, false);
+    player.pause();
+    playbackStamp = "";
+    rememberPlayback();
+    syncTransport();
+    return;
+  }
+  if (tracks.length > 1) playRelativeTrack(1, true);
+  else { player.pause(); syncTransport(); }
 });
+syncTransport();
 window.addEventListener("keydown", (event) => {
   if (!immersiveState.active || openPanels.length || document.activeElement?.isContentEditable
       || /^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(document.activeElement?.tagName || "")) return;
@@ -2002,7 +2107,9 @@ const animatePlaylistScroll = () => {
   playlistScrollVelocity = (playlistScrollVelocity + distance * .075) * .8;
   const nextPosition = Math.max(0, Math.min(max, playlistList.scrollTop + playlistScrollVelocity));
   playlistList.scrollTop = nextPosition;
-  if (!nudge && Math.abs(distance) < .35 && Math.abs(playlistScrollVelocity) < .12) {
+  // scrollTop can be quantized to a CSS pixel. A sub-pixel spring must settle
+  // instead of keeping an otherwise idle mobile page in an endless RAF loop.
+  if (!nudge && Math.abs(distance) <= 1 && Math.abs(playlistScrollVelocity) < .5) {
     playlistList.scrollTop = playlistScrollTarget;
     playlistScrollVelocity = 0;
     playlistScrollRaf = 0;
@@ -2208,7 +2315,7 @@ const initializeThemeSystem = () => {
   const storedTheme = readStoredValue(themeStorageKey);
   const storedDuration = Number(readStoredValue(themeDurationStorageKey)) || THEME_DEFAULT_MS;
   if (themeDuration) themeDuration.value = String(themeDurationToSlider(storedDuration));
-  setTheme(storedTheme || "desert", { animate: false, persist: false });
+  setTheme(storedTheme || document.documentElement.dataset.theme || "fern", { animate: false, persist: false });
   scheduleThemeRotation();
 };
 
@@ -2295,6 +2402,8 @@ const acceptLocalCode = () => {
   setAuthStatus("");
 };
 
+const apiMissing = (error) => /не подключён|недоступен|local-auth/.test(error?.message || "");
+
 const loadSession = async () => {
   if (isFileMode) {
     sessionEmail = readStoredValue(localSessionStorageKey) || "";
@@ -2306,9 +2415,14 @@ const loadSession = async () => {
     const data = await requestJson("/api/auth/me");
     sessionEmail = data.email || "";
     passIsLocal = false;
-  } catch {
-    passIsLocal = false;
-    sessionEmail = "";
+  } catch (error) {
+    if (apiMissing(error)) {
+      passIsLocal = true;
+      sessionEmail = readStoredValue(localSessionStorageKey) || "";
+    } else {
+      passIsLocal = false;
+      sessionEmail = "";
+    }
   }
   refreshAuthHint();
 };
@@ -2362,6 +2476,14 @@ authEmailForm?.addEventListener("submit", async (event) => {
     setAuthStatus(directCode ? `код входа: ${directCode}` : `код отправлен на ${pendingEmail}`);
     authCode?.focus();
   } catch (error) {
+    if (apiMissing(error)) {
+      try {
+        showLocalCode();
+      } catch (localError) {
+        setAuthStatus(localError.message);
+      }
+      return;
+    }
     setAuthStatus(error.message === "request failed" ? "сервер входа недоступен" : error.message);
   } finally {
     if (submit) submit.disabled = false;
@@ -2468,8 +2590,11 @@ const loadChat = async () => {
   try {
     const data = await requestJson("/api/chat");
     renderChatMessages(data.messages || data);
-  } catch {
-    if (!chatStream.childElementCount) {
+  } catch (error) {
+    if (apiMissing(error)) {
+      passIsLocal = true;
+      renderChatMessages(readStoredJson(localChatStorageKey, []));
+    } else if (!chatStream.childElementCount) {
       renderChatMessages([{ email: "inteonmteca", text: "чат временно недоступен — нет связи с сервером" }]);
     }
   } finally {
@@ -2552,6 +2677,20 @@ chatForm?.addEventListener("submit", async (event) => {
     chatInput.value = "";
     await loadChat();
   } catch (error) {
+    if (apiMissing(error)) {
+      passIsLocal = true;
+      const messages = readStoredJson(localChatStorageKey, []);
+      messages.push({
+        id: Date.now(),
+        email: sessionEmail,
+        text,
+        created_at: Math.floor(Date.now() / 1000),
+      });
+      storeValue(localChatStorageKey, JSON.stringify(messages));
+      chatInput.value = "";
+      renderChatMessages(messages);
+      return;
+    }
     renderChatMessages([{ email: "система", text: error.message === "request failed" ? "нет связи" : error.message }]);
   }
 });
@@ -2576,10 +2715,6 @@ const handlePanelKeydown = (event) => {
     if (topPanel === chatPanel) closeChat();
     else setPanelOpen(topPanel, false);
     return;
-  }
-  if (immersiveState.active) {
-    event.preventDefault();
-    exitImmersiveMode();
   }
 };
 window.addEventListener("keydown", handlePanelKeydown);
@@ -2683,6 +2818,7 @@ const runReadableWave = () => {
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 let logoFilamentSeeds = [];
 const setupLogoFilaments = () => {
+  if (isMobileViewport) return;
   logoFilamentSeeds = Array.from({ length: animationQuality === "low" ? 28 : 52 }, (_, index) => ({
     x: .08 + hashUnit(index + 101.3) * .84,
     y: .32 + hashUnit(index + 141.8) * .36,
@@ -2694,11 +2830,13 @@ const setupLogoFilaments = () => {
 setupLogoFilaments();
 
 const setupLogoSlices = () => {
+  if (isMobileViewport) return;
   if (!logoVector || !logoSliceContainer) return;
   const defs = logoVector.querySelector("defs");
   if (!defs) return;
   logoSlices = [];
   logoSliceContainer.replaceChildren();
+  defs.querySelectorAll('clipPath[id^="logo-slice-clip-"]').forEach(node => node.remove());
   const count = animationQuality === "low" ? 14 : 24;
   for (let index = 0; index < count; index += 1) {
     const clip = document.createElementNS(SVG_NAMESPACE, "clipPath");
@@ -2729,9 +2867,10 @@ const setupLogoSlices = () => {
 };
 
 const resizeLogoCanvas = () => {
+  if (isMobileViewport) return;
   if (!logoReactiveCanvas || !logoReactiveContext) return;
   const bounds = logoReactiveCanvas.getBoundingClientRect();
-  const scale = Math.min(devicePixelRatio || 1, 1.5);
+  const scale = isListeningRoom ? .75 : Math.min(devicePixelRatio || 1, 1.5);
   logoReactiveCanvas.width = Math.max(1, Math.round(bounds.width * scale));
   logoReactiveCanvas.height = Math.max(1, Math.round(bounds.height * scale));
 };
@@ -2754,6 +2893,8 @@ logoWrap?.addEventListener("pointerleave", () => {
 
 const drawLogoFilaments = (now, profile) => {
   if (!logoReactiveCanvas || !logoReactiveContext) return;
+  // The low-quality stylesheet hides this canvas; do not measure/draw it.
+  if (isMobileViewport && animationQuality === "low") return;
   const bounds = logoReactiveCanvas.getBoundingClientRect();
   if (!bounds.width || !bounds.height) return;
   const scale = logoReactiveCanvas.width / bounds.width;
@@ -2827,11 +2968,28 @@ const drawLogoFilaments = (now, profile) => {
   ctx.restore();
 };
 
+const logoAmbientUpdates = new Map();
+const writeLogoVariable = (element, name, value) => {
+  if (element && element.style.getPropertyValue(name) !== value) element.style.setProperty(name, value);
+};
 const setLogoCssVariable = (name, value) => {
-  document.documentElement.style.setProperty(name, value);
-  logoWrap?.style.setProperty(name, value);
+  if (!isListeningRoom) {
+    writeLogoVariable(document.documentElement, name, value);
+    writeLogoVariable(logoWrap, name, value);
+    return;
+  }
+  // Fast motion belongs to the SVG subtree, not to all 108 scattered tiles.
+  writeLogoVariable(reactiveLogo, name, value);
+  if (name === "--logo-high" || name === "--logo-energy") {
+    const now = performance.now();
+    if (now - (logoAmbientUpdates.get(name) || 0) > 120) {
+      writeLogoVariable(logoWrap, name, value);
+      logoAmbientUpdates.set(name, now);
+    }
+  }
 };
 
+let roomMusicAccentAt = 0, roomMusicAccentUntil = 0;
 const renderReactiveLogo = (now) => {
   if (now - logoLastFrame < renderInterval()) return;
   logoLastFrame = now;
@@ -2859,7 +3017,19 @@ const renderReactiveLogo = (now) => {
   setLogoCssVariable("--logo-rx", `${(-y * 9).toFixed(2)}deg`);
   setLogoCssVariable("--logo-ry", `${(x * 13).toFixed(2)}deg`);
   const live = immersiveState.active ? 1.45 : 1;
-  setLogoCssVariable("--logo-scale", (1 + (bass * .075 + profile.flux * .025) * live).toFixed(4));
+  let musicAccent = 0;
+  if (isListeningRoom && !player.paused && !player.ended) {
+    if (!roomMusicAccentAt) roomMusicAccentAt = now + 3000;
+    if (now >= roomMusicAccentAt) {
+      roomMusicAccentUntil = now + 4200;
+      roomMusicAccentAt = now + randomRange(17000,26000);
+    }
+    if (now < roomMusicAccentUntil) {
+      const progress = 1 - (roomMusicAccentUntil-now)/4200;
+      musicAccent = Math.sin(progress*Math.PI) * (.35 + bass*.65);
+    }
+  } else { roomMusicAccentAt = 0; roomMusicAccentUntil = 0; }
+  setLogoCssVariable("--logo-scale", (1 + (bass * .075 + profile.flux * .025) * live + musicAccent*.018).toFixed(4));
   setLogoCssVariable("--logo-bass", Math.min(1, bass * live).toFixed(4));
   setLogoCssVariable("--logo-mid", Math.min(1, mid * live).toFixed(4));
   setLogoCssVariable("--logo-high", Math.min(1, high * live).toFixed(4));
@@ -2885,7 +3055,7 @@ const renderReactiveLogo = (now) => {
     logoDisplacement.setAttribute("scale", String(1.4 + bass * 13 + high * 8 + profile.flux * 14 + chaos + liveWarp));
   }
 
-  const sliceForce = high * 8 + profile.flux * 13 + (logoChaosActive ? 12 : 0) + (immersiveState.active ? 7 : 0);
+  const sliceForce = high * 8 + profile.flux * 13 + musicAccent * 3 + (logoChaosActive ? 12 : 0) + (immersiveState.active ? 7 : 0);
   logoSlices.forEach((slice, index) => {
     const normalized = index / Math.max(1, logoSlices.length - 1) - .5;
     const phase = now * .0023 + index * 1.91;
@@ -2919,6 +3089,7 @@ const scatterLogoParticles = () => {
 };
 
 const setupLogoParticles = () => {
+  if (isMobileViewport) return;
   if (!logoParticles) return;
   const { cols, rows } = particleGrid;
   logoParticles.textContent = "";
@@ -2948,11 +3119,12 @@ const restoreLogoTileOrder = () => {
 };
 
 const renderLogoMatrix = (readable = false) => {
+  if (isMobileViewport) return;
   logoWrap?.classList.toggle("is-assembled", readable);
   logoWrap?.classList.toggle("is-charging", readable);
   if (logoChargeTimeout) window.clearTimeout(logoChargeTimeout);
   if (readable) {
-    logoChargeTimeout = window.setTimeout(() => logoWrap?.classList.remove("is-charging"), 1350);
+    logoChargeTimeout = scheduleLogo(() => logoWrap?.classList.remove("is-charging"), 1350);
     restoreLogoTileOrder();
   } else {
     scatterLogoParticles();
@@ -2980,13 +3152,16 @@ const setAllTextReadable = (isReadable) => {
 };
 
 const runLongReadableMoment = () => {
+  if (isMobileViewport) return;
   if (logoChaosActive) return;
   logoLocked = true;
   logoWrap?.classList.add("is-stable");
   renderLogoMatrix(true);
-  window.setTimeout(() => setAllTextReadable(true), 520);
-  window.setTimeout(() => setAllTextReadable(false), 4120);
-  window.setTimeout(() => {
+  if (!isListeningRoom) {
+    scheduleLogo(() => setAllTextReadable(true), 520);
+    scheduleLogo(() => setAllTextReadable(false), 4120);
+  }
+  scheduleLogo(() => {
     logoLocked = false;
     logoWrap?.classList.remove("is-stable");
   }, 5200);
@@ -2997,25 +3172,26 @@ const resetLogoChaosCountdown = () => {
 };
 
 const runLogoCycle = () => {
+  if (isMobileViewport) return;
   if (logoChaosActive) {
-    logoCycleTimeout = window.setTimeout(runLogoCycle, 1200);
+    logoCycleTimeout = scheduleLogo(runLogoCycle, 1200);
     return;
   }
   if (fullReadableMode || logoLocked) {
     renderLogoMatrix(true);
-    logoCycleTimeout = window.setTimeout(runLogoCycle, 1200);
+    logoCycleTimeout = scheduleLogo(runLogoCycle, 1200);
     return;
   }
   logoChaosCountdown -= 1;
   if (logoChaosCountdown <= 0) resetLogoChaosCountdown();
   renderLogoMatrix(false);
   const chaosDuration = randomRange(2000, 16000);
-  window.setTimeout(() => {
+  scheduleLogo(() => {
     if (logoChaosActive) return;
     logoWrap?.classList.add("is-assembling");
     renderLogoMatrix(true);
-    window.setTimeout(() => logoWrap?.classList.remove("is-assembling"), 320);
-    logoCycleTimeout = window.setTimeout(runLogoCycle, randomRange(1000, 10000));
+    scheduleLogo(() => logoWrap?.classList.remove("is-assembling"), 320);
+    logoCycleTimeout = scheduleLogo(runLogoCycle, randomRange(1000, 10000));
   }, chaosDuration);
 };
 
@@ -3024,19 +3200,54 @@ matrixElements.forEach((element) => {
   element.classList.add("is-matrixing");
 });
 
-window.setInterval(() => {
+if (matrixElements.length && !prefersReducedMotion) window.setInterval(() => {
   if (!document.hidden) matrixElements.forEach(renderMatrixNoise);
 }, prefersReducedMotion ? 360 : animationQuality === "low" ? 180 : 95);
 window.setTimeout(runReadableWave, 1200);
 window.setInterval(runReadableWave, 6200);
-window.setTimeout(runLongReadableMoment, 3200);
-window.setInterval(runLongReadableMoment, 9500);
+let logoReadableInterval = 0;
+const logoTimers = new Set();
+const scheduleLogo = (callback, delay) => {
+  const id = window.setTimeout(() => {
+    logoTimers.delete(id);
+    if (!isMobileViewport) callback();
+  }, delay);
+  logoTimers.add(id);
+  return id;
+};
+// Text is intentionally live, but never driven by the decorative frame loop.
+if (!prefersReducedMotion) window.setInterval(() => {
+  if (!isMobileViewport || document.hidden || !chatPanel?.hidden) return;
+  const now = performance.now();
+  renderTitleMutation(now);
+  renderPlayingLetters(now);
+}, 150);
+
+let roomLastRaf = 0, roomVisualCost = 0;
 const tickVisuals = (now) => {
+  sceneRaf = 0;
+  if (isMobileViewport) return;
   sceneRaf = requestAnimationFrame(tickVisuals);
   if (document.hidden) return;
+  // One sparse particle field; skip hidden ink/logo canvases and DOM-wide style writes.
+  if (isListeningRoom) {
+    if (roomLastRaf) recordFramePacing(now-roomLastRaf);
+    roomLastRaf = now;
+    const roomInterval = Math.max(renderInterval(), Math.min(100, roomVisualCost * 2.5));
+    if (now - lastVisualTick < roomInterval) return;
+    const roomFrameStart = performance.now();
+    lastVisualTick = now;
+    motionState.x += (motionTarget.x - motionState.x) * .025;
+    motionState.y += (motionTarget.y - motionState.y) * .025;
+    renderPerceptionField(now);
+    renderReactiveLogo(now);
+    renderTitleMutation(now);
+    renderPlayingLetters(now);
+    roomVisualCost += (performance.now()-roomFrameStart-roomVisualCost)*.12;
+    return;
+  }
   if (lastVisualTick) recordFramePacing(now - lastVisualTick);
   lastVisualTick = now;
-  if (isMobileViewport && !chatPanel?.hidden) return;
   renderWeightedMotion(now);
   renderPerceptionField(now);
   if (immersiveState.active) drawImmersiveScene(now);
@@ -3047,13 +3258,82 @@ const tickVisuals = (now) => {
   renderReactiveLogo(now);
 };
 
-setupLogoSlices();
-setupLogoParticles();
-resizeLogoCanvas();
-renderLogoMatrix(true);
-resetLogoChaosCountdown();
-logoCycleTimeout = window.setTimeout(runLogoCycle, randomRange(1000, 10000));
-requestAnimationFrame(tickVisuals);
+let backgroundInitialized = false;
+const syncBackgroundRenderer = () => {
+  isMobileViewport = backgroundViewport.matches;
+  document.documentElement.dataset.backgroundMode = isMobileViewport ? "static" : "live";
+  cancelAnimationFrame(sceneRaf);
+  sceneRaf = 0;
+  lastVisualTick = 0;
+  roomLastRaf = 0;
+  logoTimers.forEach(clearTimeout);
+  logoTimers.clear();
+  clearInterval(logoReadableInterval);
+  logoReadableInterval = 0;
+  window.removeEventListener("pointermove", setPointerMotion);
+  window.removeEventListener("devicemotion", handleDeviceMotion);
+  window.removeEventListener("deviceorientation", handleDeviceOrientation);
+  if (isMobileViewport) return;
+  if (isListeningRoom) {
+    if (document.hidden || reducedMotionPreference.matches) return;
+    perceptionContext ||= perceptionVisual?.getContext("2d");
+    setupPerceptionField();
+    setupWindField();
+    if (!backgroundInitialized) {
+      setupLogoSlices();
+      setupLogoParticles();
+      logoTurbulence?.setAttribute("numOctaves", "3");
+      backgroundInitialized = true;
+    }
+    logoReactiveContext ||= logoReactiveCanvas?.getContext("2d");
+    resizeLogoCanvas();
+    logoLocked = false;
+    fullReadableMode = false;
+    logoWrap?.classList.remove("is-assembling", "is-stable");
+    renderLogoMatrix(true);
+    resetLogoChaosCountdown();
+    scheduleLogo(runLongReadableMoment, 3200);
+    logoReadableInterval = window.setInterval(runLongReadableMoment, 9500);
+    logoCycleTimeout = scheduleLogo(runLogoCycle, randomRange(1000, 10000));
+    window.addEventListener("pointermove", setPointerMotion, { passive: true });
+    sceneRaf = requestAnimationFrame(tickVisuals);
+    return;
+  }
+  perceptionContext ||= perceptionVisual?.getContext("2d");
+  inkContext ||= inkField?.getContext("2d");
+  logoReactiveContext ||= logoReactiveCanvas?.getContext("2d");
+  if (!backgroundInitialized) {
+    setupLogoSlices();
+    setupLogoParticles();
+    backgroundInitialized = true;
+  }
+  setupPerceptionField();
+  setupWindField();
+  resizeInkField();
+  resizeLogoCanvas();
+  logoLocked = false;
+  setAllTextReadable(false);
+  logoWrap?.classList.remove("is-assembling", "is-stable");
+  renderLogoMatrix(true);
+  resetLogoChaosCountdown();
+  if (!prefersReducedMotion) {
+    scheduleLogo(runLongReadableMoment, 3200);
+    logoReadableInterval = window.setInterval(runLongReadableMoment, 9500);
+    logoCycleTimeout = scheduleLogo(runLogoCycle, randomRange(1000, 10000));
+  }
+  window.addEventListener("pointermove", setPointerMotion, { passive: true });
+  window.addEventListener("devicemotion", handleDeviceMotion, { passive: true });
+  window.addEventListener("deviceorientation", handleDeviceOrientation, { passive: true });
+  sceneRaf = requestAnimationFrame(tickVisuals);
+};
+backgroundViewport.addEventListener("change", syncBackgroundRenderer);
+reducedMotionPreference.addEventListener("change", () => {
+  if (isListeningRoom) syncBackgroundRenderer();
+});
+document.addEventListener("visibilitychange", () => {
+  if (isListeningRoom) syncBackgroundRenderer();
+});
+syncBackgroundRenderer();
 window.addEventListener("resize", resizeLogoCanvas, { passive: true });
 
 try { initializeThemeSystem(); } catch {}
@@ -3062,18 +3342,34 @@ window.setTimeout(() => {
     bindFallbackTracks();
     if (Array.isArray(window.INTEONMTECA_PLAYLIST) && window.INTEONMTECA_PLAYLIST.length) {
       renderPlaylist(window.INTEONMTECA_PLAYLIST);
-      const navigation = performance.getEntriesByType?.("navigation")?.[0];
-      if (navigation?.type === "reload") window.inteonPlayback?.clear?.();
-      else restoreSharedPlayback();
+      // Restoration retains the original playback origin, including reload.
+      restoreSharedPlayback();
     }
   } catch {}
 }, 0);
 loadSession();
 
 streetLink?.addEventListener("click", () => {
+  rememberPlayback();
+  if (window.inteonPlayback?.read?.()?.origin !== "yard") {
+    window.inteonPlayback?.intent?.(player, false);
+    player?.pause();
+    playbackStamp = "";
+    rememberPlayback();
+  }
   window.inteonStreet?.noteExit();
 });
-window.addEventListener("pagehide", () => rememberPlayback());
+window.addEventListener("pagehide", () => { rememberPlayback(); playbackLeaving = true; });
+window.addEventListener("pageshow", (event) => {
+  if (!event.persisted) return;
+  // A restored document must not overwrite the newer document's session.
+  const saved = window.inteonPlayback?.read?.();
+  if (!saved) { exitImmersiveMode(); playbackLeaving = false; return; }
+  player?.pause();
+  currentTrack = null;
+  playbackLeaving = false;
+  restoreSharedPlayback();
+});
 
 window.addEventListener("DOMContentLoaded", () => {
   setupVisitCounter();

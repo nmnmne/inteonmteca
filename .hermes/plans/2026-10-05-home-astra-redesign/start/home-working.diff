@@ -1,0 +1,1564 @@
+﻿diff --git a/index.html b/index.html
+index 30f93e4..30dc4ef 100644
+--- a/index.html
++++ b/index.html
+@@ -1,5 +1,5 @@
+ <!DOCTYPE html>
+-<html lang="ru" data-theme="desert">
++<html lang="ru" data-theme="slate">
+ <head>
+   <meta charset="UTF-8">
+   <meta http-equiv="Content-Language" content="ru">
+@@ -36,9 +36,14 @@
+   <link rel="icon" href="assets/favicon.ico" sizes="any">
+   <link rel="icon" href="assets/logo-inteonmteca.svg" type="image/svg+xml">
+   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+-  <link rel="stylesheet" href="styles.css?v=20261004-2310">
++  <link rel="stylesheet" href="styles.css?v=vr-room-20261004-3">
++  <link rel="stylesheet" href="home-player.css?v=vr-room-20261004-3">
+ </head>
+-<body class="perception-interface">
++<body class="perception-interface listening-room spatial-room">
++  <picture class="room-scene" aria-hidden="true">
++    <source media="(max-width: 800px), (pointer: coarse)" srcset="assets/vr-room-mobile-v1.webp">
++    <img src="assets/vr-room-v1.webp" width="1672" height="941" alt="" fetchpriority="high" decoding="async">
++  </picture>
+   <div class="perception-field" aria-hidden="true"></div>
+   <div class="theme-lights" aria-hidden="true">
+     <span class="theme-light theme-light-a"></span>
+@@ -59,6 +64,11 @@
+       </div>
+       <article class="release-stage player-console" aria-label="Проигрыватель inteonmteca">
+         <section class="release-card holo-stage" aria-label="Треки">
++          <div class="listening-intro">
++            <p class="label matrix-text">music label</p>
++            <h1>Выбери<br> <em>свой звук</em></h1>
++
++          </div>
+           <div class="mirage-layer" aria-hidden="true"><span class="mirage-word">inteonmteca</span><span class="mirage-word">from all ours</span></div>
+           <div class="logo-wrap release-logo" id="logo-wrap" aria-hidden="true">
+             <div class="reactive-logo" id="reactive-logo" aria-hidden="true">
+@@ -126,26 +136,33 @@
+             <div class="logo-particles" id="logo-particles" aria-hidden="true"></div>
+           </div>
+           <div class="release-content player-dock">
+-            <section class="active-player" id="active-player" aria-label="Сейчас играет" aria-hidden="true">
++            <div class="catalog-heading"><h2>Каталог</h2><p class="ours matrix-text">from all ours</p></div>
++            <section class="active-player is-visible" id="active-player" aria-label="Музыкальный плеер" aria-hidden="false" data-state="empty">
++              <div class="player-art" aria-hidden="true"><span></span></div>
+               <div class="active-track-copy">
++                <span class="player-caption">Плеер</span>
+                 <div class="active-track-heading">
+-                  <p class="now-playing-title" id="now-playing-title"></p>
+-                  <button class="close-track" id="close-track" type="button" aria-label="Закрыть трек">×</button>
++                  <p class="now-playing-title" id="now-playing-title">Выберите трек</p>
+                 </div>
+                 <p class="active-track-artist" id="active-track-artist"></p>
+               </div>
+               <div class="transport" aria-label="Управление воспроизведением">
+-                <button class="transport-play" id="immersive-play" type="button" aria-label="Пауза"><span id="immersive-play-icon">&#8545;</span></button>
++                <button class="transport-skip" id="previous-track" type="button" aria-label="Предыдущий трек" disabled><span class="skip-mark skip-mark-previous" aria-hidden="true"></span></button>
++                <button class="transport-play" id="immersive-play" type="button" aria-label="Воспроизвести" disabled><span id="immersive-play-icon" class="play-mark" data-state="paused" aria-hidden="true"></span></button>
++                <button class="transport-skip" id="next-track" type="button" aria-label="Следующий трек" disabled><span class="skip-mark" aria-hidden="true"></span></button>
++                <span class="transport-time" id="current-time">0:00</span>
+                 <div class="transport-seek-field">
+                   <span class="transport-seek-volume" aria-hidden="true"></span>
+-                  <input class="transport-progress" id="track-progress" type="range" min="0" max="1000" value="0" step="1" aria-label="Позиция трека">
++                  <input class="transport-progress" id="track-progress" type="range" min="0" max="1000" value="0" step="1" aria-label="Позиция трека" disabled>
+                 </div>
++                <span class="transport-time" id="duration-time">0:00</span>
+               </div>
++              <div class="volume-control"><label for="track-volume">Громкость</label><input id="track-volume" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="Громкость" disabled><span id="volume-note" class="volume-note" hidden>Кнопками устройства</span></div>
+               <p class="playback-status" id="playback-status" aria-live="polite"></p>
+             </section>
+             <div class="playlist-shell" id="playlist-shell">
+               <div class="track-viewport" id="track-viewport">
+-                <ol class="track-list" id="track-list" aria-label="Треки">
++                <ol class="track-list" id="track-list" data-layout="catalog" aria-label="Треки">
+                   <li class="track-item" data-track-title="Light Of The Night"><button class="track-select" type="button" onclick="window.inteonPick && window.inteonPick(event)"><span class="track-fold"><span class="track-meta"><span class="track-title" data-ink="Light Of The Night">Light Of The Night</span><span class="track-artist">Sonyx</span></span></span></button></li>
+                   <li class="track-item" data-track-title="Inteonmteca_"><button class="track-select" type="button" onclick="window.inteonPick && window.inteonPick(event)"><span class="track-fold"><span class="track-meta"><span class="track-title" data-ink="Inteonmteca_">Inteonmteca_</span><span class="track-artist">ыьек</span></span></span></button></li>
+                   <li class="track-item" data-track-title="Высоко до предела"><button class="track-select" type="button" onclick="window.inteonPick && window.inteonPick(event)"><span class="track-fold"><span class="track-meta"><span class="track-title" data-ink="Высоко до предела">Высоко до предела</span><span class="track-artist">Матт</span></span></span></button></li>
+@@ -160,9 +177,9 @@
+           </div>
+         </section>
+       </article>
+-      <p class="label matrix-text">music label</p>
++
+       <p class="text matrix-text">Музыка, люди, вайб. Уже здесь</p>
+-      <p class="ours matrix-text">from all ours</p>
++
+       <!-- /Frozen brand copy -->
+     </section>
+   </main>
+@@ -200,9 +217,7 @@
+     <a class="street-link" id="street-link" href="yard/">на улицу</a>
+   </div>
+   <button class="chat-hint" id="chat-hint" type="button" aria-controls="chat-panel" aria-expanded="false">чат</button>
+-  <div class="chat-sign" id="chat-sign" aria-hidden="true">
+-    <span class="chat-sign-word">чат</span>
+-  </div>
++
+   <section class="chat-panel" id="chat-panel" role="dialog" aria-label="Чат" aria-hidden="true" hidden>
+     <div class="chat-aura" aria-hidden="true"></div>
+     <div class="chat-stream" id="chat-stream" aria-live="polite"></div>
+@@ -233,9 +248,9 @@
+     <p class="theme-status" id="theme-status" aria-live="polite"></p>
+   </section>
+   <script src="playlist-data.js?v=20260910-2345"></script>
+-  <script src="track-play.js?v=20260911-0230"></script>
++  <script src="track-play.js?v=vr-room-20261004-2"></script>
+   <script src="street-return.js?v=20261004-2205"></script>
+   <script src="playback-link.js?v=20261004-2145"></script>
+-  <script src="script.js?v=20261004-2335"></script>
++  <script src="script.js?v=vr-room-20261004-2"></script>
+ </body>
+ </html>
+diff --git a/playback-link.js b/playback-link.js
+index 508f0a2..20387e8 100644
+--- a/playback-link.js
++++ b/playback-link.js
+@@ -1,5 +1,19 @@
+ (function () {
+   const key = "inteonmteca-playback";
++  // Documents own distinct media elements. This is a position/intent handoff,
++  // not gapless audio: navigation destroys the old element and autoplay may fail.
++  const sessions = new WeakMap();
++  const select = (audio, origin, { stopAtEnd = false } = {}) => sessions.set(audio, { origin, playingIntent: true, stopAtEnd });
++  const stopsAtEnd = (audio) => sessions.get(audio)?.stopAtEnd === true;
++  const restore = (audio, state) => sessions.set(audio, {
++    origin: state.origin === "yard" ? "yard" : "home",
++    playingIntent: state.playingIntent ?? !state.paused,
++    stopAtEnd: state.stopAtEnd === true,
++  });
++  const intent = (audio, playingIntent) => {
++    const state = sessions.get(audio);
++    if (state) state.playingIntent = playingIntent;
++  };
+ 
+   const read = () => {
+     try {
+@@ -13,6 +27,9 @@
+         artist: String(state.artist || ""),
+         time: Number.isFinite(time) && time > 0 ? time : 0,
+         paused: state.paused !== false,
++        origin: state.origin === "yard" ? "yard" : "home",
++        playingIntent: typeof state.playingIntent === "boolean" ? state.playingIntent : state.paused === false,
++        stopAtEnd: state.stopAtEnd === true,
+       };
+     } catch {
+       return null;
+@@ -30,6 +47,9 @@
+         artist: track.artist || "",
+         time: Number.isFinite(time) && time > 0 ? time : 0,
+         paused: Boolean(audio.paused),
++        origin: sessions.get(audio)?.origin || "home",
++        playingIntent: sessions.get(audio)?.playingIntent ?? !audio.paused,
++        stopAtEnd: stopsAtEnd(audio),
+       }));
+     } catch {}
+   };
+@@ -38,5 +58,14 @@
+     try { localStorage.removeItem(key); } catch {}
+   };
+ 
+-  window.inteonPlayback = { read, save, clear };
++  const forPage = (page) => {
++    const state = read();
++    if (state && page === "yard" && state.origin !== "yard") {
++      state.playingIntent = false;
++      state.paused = true;
++      try { localStorage.setItem(key, JSON.stringify(state)); } catch {}
++    }
++    return state;
++  };
++  window.inteonPlayback = { read, save, clear, select, restore, intent, forPage, stopsAtEnd };
+ })();
+diff --git a/script.js b/script.js
+index 74a507e..2faf10b 100644
+--- a/script.js
++++ b/script.js
+@@ -1,6 +1,10 @@
++// Select the mobile renderer before acquiring contexts or constructing effects.
++const backgroundViewport = window.matchMedia("(max-width: 800px), (pointer: coarse)");
++let isMobileViewport = backgroundViewport.matches;
++document.documentElement.dataset.backgroundMode = isMobileViewport ? "static" : "live";
+ const player = document.getElementById("album-player");
+ const perceptionVisual = document.getElementById("perception-visual");
+-const perceptionContext = perceptionVisual?.getContext("2d");
++let perceptionContext = isMobileViewport ? null : perceptionVisual?.getContext("2d");
+ const immersiveMode = document.getElementById("immersive-mode");
+ const immersiveVisual = document.getElementById("immersive-visual");
+ const immersiveTitle = document.getElementById("immersive-title");
+@@ -11,8 +15,31 @@ const activeTrackArtist = document.getElementById("active-track-artist");
+ const immersiveBack = document.getElementById("immersive-back");
+ const immersivePlay = document.getElementById("immersive-play");
+ const immersivePlayIcon = document.getElementById("immersive-play-icon");
++// One-time typography setup; CSS carries the restrained letter wave, no JS loop.
++const spatialHeading = document.querySelector(".spatial-room .listening-intro h1");
++if (spatialHeading) {
++  spatialHeading.setAttribute("aria-label", spatialHeading.textContent.replace(/\s+/g, " ").trim());
++  let letterIndex = 0;
++  const wrapHeadingLetters = (parent) => {
++    [...parent.childNodes].forEach((node) => {
++      if (node.nodeType === Node.TEXT_NODE) {
++        const fragment = document.createDocumentFragment();
++        for (const character of node.textContent) {
++          if (/\s/.test(character)) { fragment.append(document.createTextNode(character)); continue; }
++          const letter = document.createElement("span");
++          letter.className = "heading-letter";
++          letter.style.setProperty("--letter", letterIndex++);
++          letter.setAttribute("aria-hidden", "true");
++          letter.textContent = character;
++          fragment.append(letter);
++        }
++        node.replaceWith(fragment);
++      } else if (node.nodeType === Node.ELEMENT_NODE) wrapHeadingLetters(node);
++    });
++  };
++  wrapHeadingLetters(spatialHeading);
++}
+ const nowPlayingTitle = document.getElementById("now-playing-title");
+-const closeTrack = document.getElementById("close-track");
+ const previousTrack = document.getElementById("previous-track");
+ const nextTrack = document.getElementById("next-track");
+ const trackProgress = document.getElementById("track-progress");
+@@ -25,9 +52,8 @@ const trackViewport = document.getElementById("track-viewport");
+ const scrollbar = document.getElementById("track-scrollbar");
+ const scrollbarThumb = document.getElementById("track-scrollbar-thumb");
+ const inkField = document.getElementById("ink-field");
+-const inkContext = inkField?.getContext("2d");
++let inkContext = isMobileViewport ? null : inkField?.getContext("2d");
+ const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+-const isMobileViewport = window.matchMedia("(max-width: 800px), (pointer: coarse)").matches;
+ const lowPowerDevice = isMobileViewport
+   || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
+   || (navigator.deviceMemory && navigator.deviceMemory <= 4);
+@@ -42,7 +68,7 @@ const logoTurbulence = document.getElementById("logo-turbulence");
+ const logoDisplacement = document.getElementById("logo-displacement");
+ const logoSliceContainer = document.getElementById("logo-vector-slices");
+ const logoReactiveCanvas = document.getElementById("logo-reactive-canvas");
+-const logoReactiveContext = logoReactiveCanvas?.getContext("2d");
++let logoReactiveContext = isMobileViewport ? null : logoReactiveCanvas?.getContext("2d");
+ const logoParticles = document.getElementById("logo-particles");
+ const logoSymbolEcho = document.getElementById("logo-symbol-echo");
+ const uniqueCount = document.getElementById("unique-count");
+@@ -427,7 +453,7 @@ const setPointerMotion = (event) => {
+   immersiveState.pointerY += (y - immersiveState.pointerY) * .08;
+ };
+ 
+-window.addEventListener("pointermove", setPointerMotion, { passive: true });
++if (!isMobileViewport) window.addEventListener("pointermove", setPointerMotion, { passive: true });
+ document.documentElement.addEventListener("pointerleave", () => {
+   pointerState.active = false;
+   setMotion(0, 0, 0);
+@@ -448,9 +474,9 @@ const handleDeviceOrientation = (event) => {
+   setMotion(x, y, Math.min(1, Math.hypot(x, y)));
+ };
+ 
+-window.addEventListener("devicemotion", handleDeviceMotion, { passive: true });
+-window.addEventListener("deviceorientation", handleDeviceOrientation, { passive: true });
+-if (typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function") {
++if (!isMobileViewport) window.addEventListener("devicemotion", handleDeviceMotion, { passive: true });
++if (!isMobileViewport) window.addEventListener("deviceorientation", handleDeviceOrientation, { passive: true });
++if (!isMobileViewport && typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function") {
+   window.addEventListener("pointerdown", () => DeviceMotionEvent.requestPermission().catch(() => {}), { once: true, passive: true });
+ }
+ 
+@@ -478,6 +504,7 @@ const hashUnit = (value) => {
+ let smokeEmitters = [];
+ let smokeClouds = [];
+ const setupSmokeEmitters = () => {
++  if (isMobileViewport) return;
+   const count = animationQuality === "low" ? 5 : 8;
+   smokeEmitters = Array.from({ length: count }, (_, index) => ({
+     x: .08 + hashUnit(index + 1.2) * .84,
+@@ -493,6 +520,7 @@ const setupSmokeEmitters = () => {
+ setupSmokeEmitters();
+ 
+ const setupPerceptionField = () => {
++  if (isMobileViewport) return;
+   if (!perceptionVisual || !perceptionContext) return;
+   perceptionField.length = 0;
+   const count = animationQuality === "low" ? 4 : 7;
+@@ -584,6 +612,7 @@ const spawnWindDigit = () => {
+ };
+ 
+ const setupWindField = () => {
++  if (isMobileViewport) return;
+   windMotes.length = 0;
+   windDigits.length = 0;
+   const count = prefersReducedMotion ? 10 : animationQuality === "low" ? 32 : 64;
+@@ -994,6 +1023,7 @@ const drawImmersiveScene = (now) => {
+ const drawLiquid = drawImmersiveScene;
+ 
+ const resizeInkField = () => {
++  if (isMobileViewport) return;
+   if (!inkField || !inkContext) return;
+   inkFieldBounds = inkField.getBoundingClientRect();
+   const scale = Math.min(devicePixelRatio || 1, animationQuality === "low" ? 1 : 1.25);
+@@ -1180,6 +1210,7 @@ const restorePlayingLetters = (letters) => {
+ };
+ 
+ const renderPlayingLetters = (now) => {
++  if (playlistList?.dataset?.layout === "catalog") return;
+   if (!nowPlayingTitle) return;
+   const playing = Boolean(currentTrack && player && !player.paused);
+   if (!playing || prefersReducedMotion) {
+@@ -1202,7 +1233,7 @@ const renderPlayingLetters = (now) => {
+   if (now >= playingLetterUntil) {
+     restorePlayingLetters(letters);
+     playingLetterMode = "rest";
+-    playingLetterNext = now + 8000 + Math.random() * 7000;
++    playingLetterNext = now + (isMobileViewport ? 2400 : 8000) + Math.random() * (isMobileViewport ? 2200 : 7000);
+     return;
+   }
+   const duration = playingLetterMode === "stair" ? 1680 : 1280;
+@@ -1236,6 +1267,8 @@ const renderPlayingLetters = (now) => {
+ };
+ 
+ const renderTitleMutation = (now) => {
++  if (playlistList?.dataset?.layout === "catalog") return;
++  if (prefersReducedMotion) return;
+   if (now - titleLastFrame < (animationQuality === "low" ? 120 : 68)) return;
+   titleLastFrame = now;
+   const frame = Math.floor(now / (prefersReducedMotion ? 210 : 76));
+@@ -1244,13 +1277,14 @@ const renderTitleMutation = (now) => {
+     const original = element.dataset.originalText || element.textContent || "";
+     if (!element.dataset.originalText) element.dataset.originalText = original;
+     const hovering = Boolean(element.closest(".track-item")?.matches(":hover, :focus-within"));
+-    const phase = (now * .001 + index * 1.31) % 7.4;
++    const phase = (now * .001 + index * 1.31) % (isMobileViewport ? 4.2 : 7.4);
+     const wave = phase < .88 ? Math.sin((phase / .88) * Math.PI) : 0;
+     const intensity = Math.min(.34, wave * .24 + (hovering ? .1 : 0));
+     element.classList.toggle("is-scrambling", intensity > .05);
+-    element.textContent = intensity > .05
++    const nextText = intensity > .05
+       ? mutateGlyphString(original, intensity, frame, index + 1)
+       : original;
++    if (element.textContent !== nextText) element.textContent = nextText;
+   };
+   for (let index = 0; index < titles.length; index += 1) mutateTitle(titles[index], index);
+   if (immersiveTitle) mutateTitle(immersiveTitle, titles.length);
+@@ -1272,6 +1306,7 @@ const renderLogoSymbolEcho = (now, energy) => {
+ };
+ 
+ const updateTrackFold = () => {
++  if (playlistList?.dataset?.layout === "catalog") return;
+   if (!playlistList) return;
+   const items = trackItemNodes.length ? trackItemNodes : [...playlistList.querySelectorAll(".track-item")];
+   const overflowing = items.length > TRACK_VIEW;
+@@ -1341,6 +1376,7 @@ const pointerPlaylistNudge = () => {
+ };
+ 
+ const loopPlaylistMotion = (now) => {
++  if (playlistList?.dataset?.layout === "catalog") return;
+   if (now - playlistLastFrame < (animationQuality === "low" ? 90 : 50)) return;
+   playlistLastFrame = now;
+   if (pointerPlaylistNudge() && !playlistScrollRaf && playlistList) {
+@@ -1414,12 +1450,15 @@ const createTrackItem = (track, index) => {
+   item.className = "track-item";
+   item.dataset.trackTitle = track.title;
+   item.dataset.trackIndex = String(index);
++  item.dataset.number = String(index + 1).padStart(2, "0");
+   const playing = currentTrack && (track === currentTrack || (track.audio || track.file) === (currentTrack.audio || currentTrack.file));
+   if (playing) item.classList.add("is-playing");
+   const button = document.createElement("button");
+   button.className = "track-select";
+   button.type = "button";
+   button.setAttribute("aria-label", `Воспроизвести ${track.title}`);
++  button.setAttribute("aria-pressed", String(Boolean(playing)));
++  button.title = `${track.title} — ${track.artist || "inteonmteca"}`;
+   const meta = document.createElement("span");
+   meta.className = "track-meta";
+   const title = document.createElement("span");
+@@ -1433,16 +1472,22 @@ const createTrackItem = (track, index) => {
+   meta.append(title, artist);
+   const fold = document.createElement("span");
+   fold.className = "track-fold";
+-  fold.append(meta);
++  const artwork = document.createElement("span");
++  artwork.className = "track-art";
++  artwork.setAttribute("aria-hidden", "true");
++  artwork.textContent = item.dataset.number;
++  fold.append(artwork, meta);
+   button.append(fold);
+   item.append(button);
+   bindTrackItem(item, track);
+   return item;
+ };
+ 
+-const visibleTrackIndexes = () => tracks.map((_, index) => index).filter((index) => index !== currentTrackIndex);
++const visibleTrackIndexes = () => tracks.map((_, index) => index);
+ const visibleTrackCount = () => Math.max(1, visibleTrackIndexes().length);
+-const shuffledTrackIndexes = () => shuffle(visibleTrackIndexes());
++// The initial catalogue is shuffled once. Its cycles retain that order, including
++// the selected row, so selection never changes neighbours or scroll position.
++const shuffledTrackIndexes = () => visibleTrackIndexes();
+ 
+ const appendWheelCycle = () => {
+   if (!playlistList || !tracks.length) return 0;
+@@ -1554,7 +1599,7 @@ let trackFlight = null;
+ const launchTrackFlight = (sourceRect, sourceFontSize, track) => {
+   trackFlight?.remove();
+   trackFlight = null;
+-  if (!sourceRect || prefersReducedMotion || !activePlayer) return;
++  if (playlistList?.dataset?.layout === "catalog" || !sourceRect || prefersReducedMotion || !activePlayer) return;
+   activePlayer.classList.add("is-arrival-target");
+   const targetCopy = activePlayer.querySelector(".active-track-copy");
+   const targetTitle = activePlayer.querySelector(".now-playing-title");
+@@ -1591,12 +1636,18 @@ const playTrack = (track, sourceItem = null, options = {}) => {
+   const now = performance.now();
+   if (now - playLockAt < 220 && currentTrack === track) return;
+   playLockAt = now;
++  cancelAnimationFrame(playlistScrollRaf);
++  playlistScrollRaf = 0;
++  playlistScrollVelocity = 0;
++  playlistScrollTarget = playlistList?.scrollTop || 0;
+   const requestId = ++playbackRequestId;
+   if (pendingPlaybackSeek) player?.removeEventListener("loadedmetadata", pendingPlaybackSeek.place);
+   pendingPlaybackSeek = null;
+   currentTrack = track;
++  if (player && options.shared) window.inteonPlayback?.restore?.(player, options.shared);
++  else if (player) window.inteonPlayback?.select?.(player, options.origin || "home");
++  playbackStamp = "";
+   setPlaybackStatus("", "");
+-  activePlayer?.classList.toggle("is-swapping", activePlayer.classList.contains("is-visible"));
+   currentTrackIndex = tracks.findIndex((candidate) => (
+     candidate === track
+     || (track.audio && candidate.audio === track.audio)
+@@ -1624,6 +1675,10 @@ const playTrack = (track, sourceItem = null, options = {}) => {
+   launchTrackFlight(sourceRect, sourceFontSize, track);
+   const src = resolveTrackUrl(track);
+   const assigned = player ? (player.getAttribute("src") || player.src || "") : "";
++  if (options.shared && player) {
++    player.preload = "metadata";
++    pendingPlaybackSeek = { requestId };
++  }
+   if (player && src && assigned !== src && player.src !== src) player.src = src;
+   if (player && options.shared) {
+     const place = () => {
+@@ -1649,14 +1704,14 @@ const playTrack = (track, sourceItem = null, options = {}) => {
+       }).catch((error) => {
+         if (requestId !== playbackRequestId) return;
+         if (error?.name === "AbortError") {
+-          player.play().catch(() => {});
++          syncTransport();
+           return;
+         }
+         const message = error?.name === "NotAllowedError"
+-          ? "нажми ▶ чтобы пустить звук"
++          ? "Нажмите «Воспроизвести»"
+           : error?.name === "NotSupportedError"
+             ? "этот файл браузер не играет"
+-            : "звук не открылся — нажми ▶";
++            : "Не удалось воспроизвести. Повторите попытку";
+         setPlaybackStatus(message, "error");
+         syncTransport();
+       });
+@@ -1674,6 +1729,7 @@ const playTrack = (track, sourceItem = null, options = {}) => {
+     const same = Number(item.dataset.trackIndex) === currentTrackIndex;
+     item.classList.toggle("is-kept", Boolean(sourceItem) && item === sourceItem);
+     item.classList.toggle("is-playing", same);
++    item.querySelector(".track-select")?.setAttribute("aria-pressed", String(same));
+     item.classList.remove("is-departing");
+     if (sourceItem && item === sourceItem) {
+       item.style.opacity = "1";
+@@ -1682,13 +1738,7 @@ const playTrack = (track, sourceItem = null, options = {}) => {
+     }
+   });
+   updateTrackFold();
+-  window.setTimeout(() => {
+-    if (currentTrack !== track) return;
+-    fillInfiniteWheel();
+-    updateTrackFold();
+-    updateScrollbar();
+-    enterImmersiveMode(player, track);
+-  }, prefersReducedMotion ? 0 : 620);
++  enterImmersiveMode(player, track);
+ };
+ 
+ const renderPlaylist = (playlist, { force = false } = {}) => {
+@@ -1741,6 +1791,7 @@ const bindFallbackTracks = () => {
+   const randomizedItems = shuffle([...(playlistList.querySelectorAll(".track-item") || [])]);
+   randomizedItems.forEach((item, index) => {
+     item.dataset.trackIndex = String(index);
++    item.dataset.number = String(index + 1).padStart(2, "0");
+     const titleElement = item.querySelector(".track-title");
+     if (titleElement) {
+       titleElement.dataset.originalText = titleElement.textContent;
+@@ -1784,6 +1835,7 @@ const pickTrackFromEvent = (event) => {
+   playTrack(track, item);
+ };
+ window.inteonPlayTrack = playTrack;
++window.inteonTrackForItem = findTrackForItem;
+ playlistList?.addEventListener("click", pickTrackFromEvent);
+ 
+ const restoreTrackStage = () => {
+@@ -1833,14 +1885,18 @@ const enterImmersiveMode = (audio, track = null) => {
+ 
+ const exitImmersiveMode = () => {
+   playbackRequestId += 1;
++  if (pendingPlaybackSeek) {
++    player?.removeEventListener("loadedmetadata", pendingPlaybackSeek.place);
++    pendingPlaybackSeek = null;
++  }
+   immersiveState.active = false;
++  player?.pause();
+   immersiveState.audio?.pause();
+   window.inteonPlayback?.clear?.();
+   immersiveState.audio = null;
+   immersiveMode?.classList.remove("is-active");
+   immersiveMode?.setAttribute("aria-hidden", "true");
+-  activePlayer?.classList.remove("is-visible", "is-swapping");
+-  activePlayer?.setAttribute("aria-hidden", "true");
++  activePlayer?.classList.remove("is-swapping");
+   document.body.classList.remove("is-track-diving", "is-immersive", "is-inline-playing", "is-player-arranging", "is-signal");
+   trackFlight?.remove();
+   trackFlight = null;
+@@ -1848,8 +1904,8 @@ const exitImmersiveMode = () => {
+   currentTrackIndex = -1;
+   cancelAnimationFrame(immersiveState.raf);
+   setPlaybackStatus();
+-  fillInfiniteWheel();
+   restoreTrackStage();
++  syncTransport();
+ };
+ 
+ const formatTime = (value) => {
+@@ -1861,6 +1917,17 @@ const formatTime = (value) => {
+ 
+ const syncTransport = () => {
+   if (!player) return;
++  const selected = Boolean(currentTrack);
++  const loading = selected && !player.paused && player.readyState < 3;
++  const playing = selected && !player.paused && !player.ended && !player.error && !loading;
++  if (activePlayer) activePlayer.dataset.state = !selected ? "empty" : player.error ? "error" : loading ? "loading" : playing ? "playing" : "paused";
++  if (immersivePlay) immersivePlay.disabled = !selected;
++  if (previousTrack) previousTrack.disabled = !selected || tracks.length < 2;
++  if (nextTrack) nextTrack.disabled = !selected || tracks.length < 2;
++  if (trackProgress) trackProgress.disabled = !selected || !Number.isFinite(player.duration) || player.duration <= 0;
++  if (trackVolume) trackVolume.disabled = !selected || !volumeSupported;
++  const caption = activePlayer?.querySelector(".player-caption");
++  if (caption) caption.textContent = !selected ? "Плеер" : loading ? "Загрузка" : playing ? "Сейчас играет" : "Пауза";
+   const duration = Number.isFinite(player.duration) ? player.duration : 0;
+   const progress = duration > 0 ? player.currentTime / duration : 0;
+   const seekValue = `${(progress * 100).toFixed(2)}%`;
+@@ -1871,14 +1938,16 @@ const syncTransport = () => {
+   }
+   if (currentTime) currentTime.textContent = formatTime(player.currentTime);
+   if (durationTime) durationTime.textContent = formatTime(duration);
+-  if (immersivePlayIcon) immersivePlayIcon.textContent = player.paused ? "▶" : "Ⅱ";
++  trackProgress?.setAttribute("aria-valuetext", `${formatTime(player.currentTime)} из ${formatTime(duration)}`);
++  if (immersivePlayIcon) immersivePlayIcon.dataset.state = playing ? "playing" : "paused";
+   if (immersivePlay) immersivePlay.setAttribute("aria-label", player.paused ? "Воспроизвести" : "Пауза");
+-  const signal = Boolean(currentTrack) && !player.paused;
++  const signal = playing;
+   if (document.body.classList.contains("is-signal") !== signal) {
+     document.body.classList.toggle("is-signal", signal);
+   }
+   if (nowPlayingTitle) {
+-    const title = currentTrack?.title || immersiveTitle?.textContent || "";
++    const title = currentTrack?.title || "Выберите трек";
++    nowPlayingTitle.title = title;
+     if (nowPlayingTitle.dataset.track !== title) {
+       nowPlayingTitle.textContent = title;
+       nowPlayingTitle.dataset.track = title;
+@@ -1888,26 +1957,30 @@ const syncTransport = () => {
+ };
+ 
+ let playbackStamp = "";
++let playbackLeaving = false;
+ const rememberPlayback = () => {
+-  if (!window.inteonPlayback || !currentTrack || !player) return;
++  if (playbackLeaving || !window.inteonPlayback || !currentTrack || !player) return;
+   if (pendingPlaybackSeek?.requestId === playbackRequestId) return;
+-  const stamp = `${currentTrack.audio || currentTrack.file}|${player.paused}|${Math.floor(player.currentTime || 0)}`;
++  const stamp = `${currentTrack.audio || currentTrack.file}|${player.paused}|${player.currentTime || 0}`;
+   if (stamp === playbackStamp) return;
+   playbackStamp = stamp;
+   window.inteonPlayback.save(player, currentTrack);
+ };
+ 
+ const restoreSharedPlayback = () => {
+-  const saved = window.inteonPlayback?.read?.();
++  const saved = window.inteonPlayback?.forPage?.("home") || window.inteonPlayback?.read?.();
+   if (!saved?.audio || currentTrack) return;
+   const wanted = saved.audio;
+   const track = tracks.find((item) => String(item.audio || item.file || "").replace(/\\/g, "/") === wanted);
+   if (!track) return;
+-  playTrack(track, null, { shared: saved });
++  playTrack(track, null, { shared: { ...saved, paused: !(saved.playingIntent ?? !saved.paused) } });
+ };
+ 
+ const togglePlayback = () => {
+   if (!player || !currentTrack) return;
++  if (player.paused && !window.inteonPlayback?.read?.()?.playingIntent) window.inteonPlayback?.select?.(player, "home", { stopAtEnd: window.inteonPlayback?.stopsAtEnd?.(player) });
++  window.inteonPlayback?.intent?.(player, player.paused);
++  playbackStamp = "";
+   if (player.paused) {
+     setPlaybackStatus("", "");
+     player.play()
+@@ -1915,21 +1988,23 @@ const togglePlayback = () => {
+         setPlaybackStatus();
+         attachPlaybackAnalysis();
+       })
+-      .catch(() => setPlaybackStatus("нажми ▶ ещё раз", "error"));
++      .catch(() => { setPlaybackStatus("Не удалось воспроизвести. Повторите попытку", "error"); syncTransport(); });
+   } else {
+     player.pause();
++    rememberPlayback();
+   }
+ };
+ 
+-const playRelativeTrack = (offset) => {
++const playRelativeTrack = (offset, automatic = false) => {
+   if (!tracks.length) return;
+   const start = currentTrackIndex >= 0 ? currentTrackIndex : 0;
+   const nextIndex = (start + offset + tracks.length) % tracks.length;
+-  playTrack(tracks[nextIndex], nearestItemForTrackIndex(nextIndex));
++  playTrack(tracks[nextIndex], nearestItemForTrackIndex(nextIndex), {
++    origin: automatic ? window.inteonPlayback?.read?.()?.origin : "home",
++  });
+ };
+ 
+ immersiveBack?.addEventListener("click", exitImmersiveMode);
+-closeTrack?.addEventListener("click", exitImmersiveMode);
+ immersivePlay?.addEventListener("click", togglePlayback);
+ previousTrack?.addEventListener("click", () => playRelativeTrack(-1));
+ nextTrack?.addEventListener("click", () => playRelativeTrack(1));
+@@ -1938,16 +2013,27 @@ trackProgress?.addEventListener("input", () => {
+   player.currentTime = (Number(trackProgress.value) / 1000) * player.duration;
+   syncTransport();
+ });
++let volumeSupported = true;
++if (player && trackVolume) {
++  player.volume = Number(trackVolume.value);
++  volumeSupported = Math.abs(player.volume - Number(trackVolume.value)) < .01;
++  if (!volumeSupported) {
++    trackVolume.hidden = true;
++    const note = document.getElementById("volume-note");
++    if (note) note.hidden = false;
++  }
++}
+ trackVolume?.addEventListener("input", () => {
+   if (player) player.volume = Number(trackVolume.value);
+ });
+-if (player && trackVolume) player.volume = Number(trackVolume.value);
+ player?.addEventListener("timeupdate", syncTransport);
+ player?.addEventListener("durationchange", syncTransport);
+ player?.addEventListener("play", syncTransport);
+ player?.addEventListener("pause", syncTransport);
+-player?.addEventListener("playing", () => setPlaybackStatus());
+-player?.addEventListener("waiting", () => setPlaybackStatus("сигнал буферизуется…", "loading"));
++player?.addEventListener("playing", () => { setPlaybackStatus(); syncTransport(); });
++player?.addEventListener("waiting", () => { setPlaybackStatus("Загрузка аудио…", "loading"); syncTransport(); });
++player?.addEventListener("loadedmetadata", syncTransport);
++player?.addEventListener("emptied", syncTransport);
+ player?.addEventListener("stalled", () => setPlaybackStatus("соединение с media замедлилось", "error"));
+ player?.addEventListener("error", () => {
+   const messages = {
+@@ -1957,11 +2043,22 @@ player?.addEventListener("error", () => {
+     4: "формат аудио не поддерживается",
+   };
+   setPlaybackStatus(messages[player.error?.code] || "не удалось открыть аудиофайл", "error");
++  syncTransport();
+ });
+ player?.addEventListener("ended", () => {
+-  if (tracks.length > 1) playRelativeTrack(1);
+-  else exitImmersiveMode();
++  if (!currentTrack) return;
++  if (window.inteonPlayback?.stopsAtEnd?.(player)) {
++    window.inteonPlayback.intent(player, false);
++    player.pause();
++    playbackStamp = "";
++    rememberPlayback();
++    syncTransport();
++    return;
++  }
++  if (tracks.length > 1) playRelativeTrack(1, true);
++  else { player.pause(); syncTransport(); }
+ });
++syncTransport();
+ window.addEventListener("keydown", (event) => {
+   if (!immersiveState.active || openPanels.length || document.activeElement?.isContentEditable
+       || /^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(document.activeElement?.tagName || "")) return;
+@@ -2002,7 +2099,9 @@ const animatePlaylistScroll = () => {
+   playlistScrollVelocity = (playlistScrollVelocity + distance * .075) * .8;
+   const nextPosition = Math.max(0, Math.min(max, playlistList.scrollTop + playlistScrollVelocity));
+   playlistList.scrollTop = nextPosition;
+-  if (!nudge && Math.abs(distance) < .35 && Math.abs(playlistScrollVelocity) < .12) {
++  // scrollTop can be quantized to a CSS pixel. A sub-pixel spring must settle
++  // instead of keeping an otherwise idle mobile page in an endless RAF loop.
++  if (!nudge && Math.abs(distance) <= 1 && Math.abs(playlistScrollVelocity) < .5) {
+     playlistList.scrollTop = playlistScrollTarget;
+     playlistScrollVelocity = 0;
+     playlistScrollRaf = 0;
+@@ -2208,7 +2307,7 @@ const initializeThemeSystem = () => {
+   const storedTheme = readStoredValue(themeStorageKey);
+   const storedDuration = Number(readStoredValue(themeDurationStorageKey)) || THEME_DEFAULT_MS;
+   if (themeDuration) themeDuration.value = String(themeDurationToSlider(storedDuration));
+-  setTheme(storedTheme || "desert", { animate: false, persist: false });
++  setTheme(storedTheme || "slate", { animate: false, persist: false });
+   scheduleThemeRotation();
+ };
+ 
+@@ -2295,6 +2394,8 @@ const acceptLocalCode = () => {
+   setAuthStatus("");
+ };
+ 
++const apiMissing = (error) => /не подключён|недоступен|local-auth/.test(error?.message || "");
++
+ const loadSession = async () => {
+   if (isFileMode) {
+     sessionEmail = readStoredValue(localSessionStorageKey) || "";
+@@ -2306,9 +2407,14 @@ const loadSession = async () => {
+     const data = await requestJson("/api/auth/me");
+     sessionEmail = data.email || "";
+     passIsLocal = false;
+-  } catch {
+-    passIsLocal = false;
+-    sessionEmail = "";
++  } catch (error) {
++    if (apiMissing(error)) {
++      passIsLocal = true;
++      sessionEmail = readStoredValue(localSessionStorageKey) || "";
++    } else {
++      passIsLocal = false;
++      sessionEmail = "";
++    }
+   }
+   refreshAuthHint();
+ };
+@@ -2362,6 +2468,14 @@ authEmailForm?.addEventListener("submit", async (event) => {
+     setAuthStatus(directCode ? `код входа: ${directCode}` : `код отправлен на ${pendingEmail}`);
+     authCode?.focus();
+   } catch (error) {
++    if (apiMissing(error)) {
++      try {
++        showLocalCode();
++      } catch (localError) {
++        setAuthStatus(localError.message);
++      }
++      return;
++    }
+     setAuthStatus(error.message === "request failed" ? "сервер входа недоступен" : error.message);
+   } finally {
+     if (submit) submit.disabled = false;
+@@ -2468,8 +2582,11 @@ const loadChat = async () => {
+   try {
+     const data = await requestJson("/api/chat");
+     renderChatMessages(data.messages || data);
+-  } catch {
+-    if (!chatStream.childElementCount) {
++  } catch (error) {
++    if (apiMissing(error)) {
++      passIsLocal = true;
++      renderChatMessages(readStoredJson(localChatStorageKey, []));
++    } else if (!chatStream.childElementCount) {
+       renderChatMessages([{ email: "inteonmteca", text: "чат временно недоступен — нет связи с сервером" }]);
+     }
+   } finally {
+@@ -2552,6 +2669,20 @@ chatForm?.addEventListener("submit", async (event) => {
+     chatInput.value = "";
+     await loadChat();
+   } catch (error) {
++    if (apiMissing(error)) {
++      passIsLocal = true;
++      const messages = readStoredJson(localChatStorageKey, []);
++      messages.push({
++        id: Date.now(),
++        email: sessionEmail,
++        text,
++        created_at: Math.floor(Date.now() / 1000),
++      });
++      storeValue(localChatStorageKey, JSON.stringify(messages));
++      chatInput.value = "";
++      renderChatMessages(messages);
++      return;
++    }
+     renderChatMessages([{ email: "система", text: error.message === "request failed" ? "нет связи" : error.message }]);
+   }
+ });
+@@ -2577,10 +2708,6 @@ const handlePanelKeydown = (event) => {
+     else setPanelOpen(topPanel, false);
+     return;
+   }
+-  if (immersiveState.active) {
+-    event.preventDefault();
+-    exitImmersiveMode();
+-  }
+ };
+ window.addEventListener("keydown", handlePanelKeydown);
+ 
+@@ -2683,6 +2810,7 @@ const runReadableWave = () => {
+ const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+ let logoFilamentSeeds = [];
+ const setupLogoFilaments = () => {
++  if (isMobileViewport) return;
+   logoFilamentSeeds = Array.from({ length: animationQuality === "low" ? 28 : 52 }, (_, index) => ({
+     x: .08 + hashUnit(index + 101.3) * .84,
+     y: .32 + hashUnit(index + 141.8) * .36,
+@@ -2694,6 +2822,7 @@ const setupLogoFilaments = () => {
+ setupLogoFilaments();
+ 
+ const setupLogoSlices = () => {
++  if (isMobileViewport) return;
+   if (!logoVector || !logoSliceContainer) return;
+   const defs = logoVector.querySelector("defs");
+   if (!defs) return;
+@@ -2729,6 +2858,7 @@ const setupLogoSlices = () => {
+ };
+ 
+ const resizeLogoCanvas = () => {
++  if (isMobileViewport) return;
+   if (!logoReactiveCanvas || !logoReactiveContext) return;
+   const bounds = logoReactiveCanvas.getBoundingClientRect();
+   const scale = Math.min(devicePixelRatio || 1, 1.5);
+@@ -2754,6 +2884,8 @@ logoWrap?.addEventListener("pointerleave", () => {
+ 
+ const drawLogoFilaments = (now, profile) => {
+   if (!logoReactiveCanvas || !logoReactiveContext) return;
++  // The low-quality stylesheet hides this canvas; do not measure/draw it.
++  if (isMobileViewport && animationQuality === "low") return;
+   const bounds = logoReactiveCanvas.getBoundingClientRect();
+   if (!bounds.width || !bounds.height) return;
+   const scale = logoReactiveCanvas.width / bounds.width;
+@@ -2919,6 +3051,7 @@ const scatterLogoParticles = () => {
+ };
+ 
+ const setupLogoParticles = () => {
++  if (isMobileViewport) return;
+   if (!logoParticles) return;
+   const { cols, rows } = particleGrid;
+   logoParticles.textContent = "";
+@@ -2948,11 +3081,12 @@ const restoreLogoTileOrder = () => {
+ };
+ 
+ const renderLogoMatrix = (readable = false) => {
++  if (isMobileViewport) return;
+   logoWrap?.classList.toggle("is-assembled", readable);
+   logoWrap?.classList.toggle("is-charging", readable);
+   if (logoChargeTimeout) window.clearTimeout(logoChargeTimeout);
+   if (readable) {
+-    logoChargeTimeout = window.setTimeout(() => logoWrap?.classList.remove("is-charging"), 1350);
++    logoChargeTimeout = scheduleLogo(() => logoWrap?.classList.remove("is-charging"), 1350);
+     restoreLogoTileOrder();
+   } else {
+     scatterLogoParticles();
+@@ -2980,13 +3114,14 @@ const setAllTextReadable = (isReadable) => {
+ };
+ 
+ const runLongReadableMoment = () => {
++  if (isMobileViewport) return;
+   if (logoChaosActive) return;
+   logoLocked = true;
+   logoWrap?.classList.add("is-stable");
+   renderLogoMatrix(true);
+-  window.setTimeout(() => setAllTextReadable(true), 520);
+-  window.setTimeout(() => setAllTextReadable(false), 4120);
+-  window.setTimeout(() => {
++  scheduleLogo(() => setAllTextReadable(true), 520);
++  scheduleLogo(() => setAllTextReadable(false), 4120);
++  scheduleLogo(() => {
+     logoLocked = false;
+     logoWrap?.classList.remove("is-stable");
+   }, 5200);
+@@ -2997,25 +3132,26 @@ const resetLogoChaosCountdown = () => {
+ };
+ 
+ const runLogoCycle = () => {
++  if (isMobileViewport) return;
+   if (logoChaosActive) {
+-    logoCycleTimeout = window.setTimeout(runLogoCycle, 1200);
++    logoCycleTimeout = scheduleLogo(runLogoCycle, 1200);
+     return;
+   }
+   if (fullReadableMode || logoLocked) {
+     renderLogoMatrix(true);
+-    logoCycleTimeout = window.setTimeout(runLogoCycle, 1200);
++    logoCycleTimeout = scheduleLogo(runLogoCycle, 1200);
+     return;
+   }
+   logoChaosCountdown -= 1;
+   if (logoChaosCountdown <= 0) resetLogoChaosCountdown();
+   renderLogoMatrix(false);
+   const chaosDuration = randomRange(2000, 16000);
+-  window.setTimeout(() => {
++  scheduleLogo(() => {
+     if (logoChaosActive) return;
+     logoWrap?.classList.add("is-assembling");
+     renderLogoMatrix(true);
+-    window.setTimeout(() => logoWrap?.classList.remove("is-assembling"), 320);
+-    logoCycleTimeout = window.setTimeout(runLogoCycle, randomRange(1000, 10000));
++    scheduleLogo(() => logoWrap?.classList.remove("is-assembling"), 320);
++    logoCycleTimeout = scheduleLogo(runLogoCycle, randomRange(1000, 10000));
+   }, chaosDuration);
+ };
+ 
+@@ -3024,19 +3160,36 @@ matrixElements.forEach((element) => {
+   element.classList.add("is-matrixing");
+ });
+ 
+-window.setInterval(() => {
++if (matrixElements.length && !prefersReducedMotion) window.setInterval(() => {
+   if (!document.hidden) matrixElements.forEach(renderMatrixNoise);
+ }, prefersReducedMotion ? 360 : animationQuality === "low" ? 180 : 95);
+ window.setTimeout(runReadableWave, 1200);
+ window.setInterval(runReadableWave, 6200);
+-window.setTimeout(runLongReadableMoment, 3200);
+-window.setInterval(runLongReadableMoment, 9500);
++let logoReadableInterval = 0;
++const logoTimers = new Set();
++const scheduleLogo = (callback, delay) => {
++  const id = window.setTimeout(() => {
++    logoTimers.delete(id);
++    if (!isMobileViewport) callback();
++  }, delay);
++  logoTimers.add(id);
++  return id;
++};
++// Text is intentionally live, but never driven by the decorative frame loop.
++if (!prefersReducedMotion) window.setInterval(() => {
++  if (!isMobileViewport || document.hidden || !chatPanel?.hidden) return;
++  const now = performance.now();
++  renderTitleMutation(now);
++  renderPlayingLetters(now);
++}, 150);
++
+ const tickVisuals = (now) => {
++  sceneRaf = 0;
++  if (isMobileViewport) return;
+   sceneRaf = requestAnimationFrame(tickVisuals);
+   if (document.hidden) return;
+   if (lastVisualTick) recordFramePacing(now - lastVisualTick);
+   lastVisualTick = now;
+-  if (isMobileViewport && !chatPanel?.hidden) return;
+   renderWeightedMotion(now);
+   renderPerceptionField(now);
+   if (immersiveState.active) drawImmersiveScene(now);
+@@ -3047,13 +3200,50 @@ const tickVisuals = (now) => {
+   renderReactiveLogo(now);
+ };
+ 
+-setupLogoSlices();
+-setupLogoParticles();
+-resizeLogoCanvas();
+-renderLogoMatrix(true);
+-resetLogoChaosCountdown();
+-logoCycleTimeout = window.setTimeout(runLogoCycle, randomRange(1000, 10000));
+-requestAnimationFrame(tickVisuals);
++let backgroundInitialized = false;
++const syncBackgroundRenderer = () => {
++  isMobileViewport = backgroundViewport.matches;
++  document.documentElement.dataset.backgroundMode = isMobileViewport ? "static" : "live";
++  cancelAnimationFrame(sceneRaf);
++  sceneRaf = 0;
++  lastVisualTick = 0;
++  logoTimers.forEach(clearTimeout);
++  logoTimers.clear();
++  clearInterval(logoReadableInterval);
++  logoReadableInterval = 0;
++  window.removeEventListener("pointermove", setPointerMotion);
++  window.removeEventListener("devicemotion", handleDeviceMotion);
++  window.removeEventListener("deviceorientation", handleDeviceOrientation);
++  if (isMobileViewport) return;
++  perceptionContext ||= perceptionVisual?.getContext("2d");
++  inkContext ||= inkField?.getContext("2d");
++  logoReactiveContext ||= logoReactiveCanvas?.getContext("2d");
++  if (!backgroundInitialized) {
++    setupLogoSlices();
++    setupLogoParticles();
++    backgroundInitialized = true;
++  }
++  setupPerceptionField();
++  setupWindField();
++  resizeInkField();
++  resizeLogoCanvas();
++  logoLocked = false;
++  setAllTextReadable(false);
++  logoWrap?.classList.remove("is-assembling", "is-stable");
++  renderLogoMatrix(true);
++  resetLogoChaosCountdown();
++  if (!prefersReducedMotion) {
++    scheduleLogo(runLongReadableMoment, 3200);
++    logoReadableInterval = window.setInterval(runLongReadableMoment, 9500);
++    logoCycleTimeout = scheduleLogo(runLogoCycle, randomRange(1000, 10000));
++  }
++  window.addEventListener("pointermove", setPointerMotion, { passive: true });
++  window.addEventListener("devicemotion", handleDeviceMotion, { passive: true });
++  window.addEventListener("deviceorientation", handleDeviceOrientation, { passive: true });
++  sceneRaf = requestAnimationFrame(tickVisuals);
++};
++backgroundViewport.addEventListener("change", syncBackgroundRenderer);
++syncBackgroundRenderer();
+ window.addEventListener("resize", resizeLogoCanvas, { passive: true });
+ 
+ try { initializeThemeSystem(); } catch {}
+@@ -3062,18 +3252,34 @@ window.setTimeout(() => {
+     bindFallbackTracks();
+     if (Array.isArray(window.INTEONMTECA_PLAYLIST) && window.INTEONMTECA_PLAYLIST.length) {
+       renderPlaylist(window.INTEONMTECA_PLAYLIST);
+-      const navigation = performance.getEntriesByType?.("navigation")?.[0];
+-      if (navigation?.type === "reload") window.inteonPlayback?.clear?.();
+-      else restoreSharedPlayback();
++      // Restoration retains the original playback origin, including reload.
++      restoreSharedPlayback();
+     }
+   } catch {}
+ }, 0);
+ loadSession();
+ 
+ streetLink?.addEventListener("click", () => {
++  rememberPlayback();
++  if (window.inteonPlayback?.read?.()?.origin !== "yard") {
++    window.inteonPlayback?.intent?.(player, false);
++    player?.pause();
++    playbackStamp = "";
++    rememberPlayback();
++  }
+   window.inteonStreet?.noteExit();
+ });
+-window.addEventListener("pagehide", () => rememberPlayback());
++window.addEventListener("pagehide", () => { rememberPlayback(); playbackLeaving = true; });
++window.addEventListener("pageshow", (event) => {
++  if (!event.persisted) return;
++  // A restored document must not overwrite the newer document's session.
++  const saved = window.inteonPlayback?.read?.();
++  if (!saved) { exitImmersiveMode(); playbackLeaving = false; return; }
++  player?.pause();
++  currentTrack = null;
++  playbackLeaving = false;
++  restoreSharedPlayback();
++});
+ 
+ window.addEventListener("DOMContentLoaded", () => {
+   setupVisitCounter();
+diff --git a/street-return.js b/street-return.js
+index 2d56d12..60ef8d9 100644
+--- a/street-return.js
++++ b/street-return.js
+@@ -79,13 +79,57 @@
+     return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+   };
+ 
++  // Device-local calendar/storage, not a server entitlement. Clearing storage or
++  // changing the device clock is outside this client-only daily guarantee.
++  const walkKey = "inteonmteca-street-walk-v1";
++  let reschedule = null;
++  let armedVisit = null;
++  const walkState = () => {
++    try { return JSON.parse(read(walkKey)) || {}; } catch { return {}; }
++  };
++  const putWalk = (state) => write(walkKey, JSON.stringify(state));
++  const newVisit = () => {
++    const state = walkState();
++    state.visit = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
++    state.ended = false;
++    state.deadline = null;
++    putWalk(state);
++    return state;
++  };
++  const endVisit = () => {
++    const state = walkState();
++    state.ended = true;
++    state.deadline = null;
++    putWalk(state);
++  };
++  const atHome = () => {
++    const path = window.location?.pathname || "";
++    return Boolean(path) && !/\/yard(?:\/|$)/.test(path);
++  };
++  if (atHome()) endVisit();
++  window.addEventListener?.("pageshow", () => { if (atHome()) endVisit(); });
++
+   window.inteonStreet = {
++    endVisit,
++    boundaryVisit() { return armedVisit; },
++    boundaryPlaybackSucceeded(visit = armedVisit) {
++      const state = walkState();
++      if (!visit || visit !== armedVisit || state.visit !== visit || state.ended || state.consumedDay === today()
++          || !Number.isFinite(state.deadline) || state.deadline <= Date.now()) return false;
++      // One atomic record contains both consumption and the absolute deadline.
++      state.consumedDay = today();
++      state.deadline = Date.now() + 20 * 60 * 1000;
++      putWalk(state);
++      reschedule?.();
++      return true;
++    },
+     seconds() {
+       return storedSeconds() ?? baseSeconds;
+     },
+     visits,
+     formatWatch,
+     noteExit() {
++      newVisit();
+       resetIfNewDay();
+       const previous = storedSeconds();
+       const direction = read(directionKey) === "down" ? -1 : 1;
+@@ -115,18 +159,46 @@
+     },
+     armReturn(locationObject, protocol, onTick, remember) {
+       if (protocol === "file:") return;
+-      const endsAt = Date.now() + this.seconds() * 1000;
+-      const tick = () => {
+-        const left = Math.max(0, (endsAt - Date.now()) / 1000);
+-        if (typeof onTick === "function") onTick(left);
++      let interval;
++      let timeout;
++      const save = () => {
++        if (typeof remember === "function") this.savePose(remember());
+       };
+-      tick();
+-      const interval = window.setInterval(tick, 1000);
+-      window.setTimeout(() => {
++      const stop = () => {
+         window.clearInterval(interval);
+-        if (typeof remember === "function") this.savePose(remember());
+-        locationObject.replace("../index.html");
+-      }, Math.max(0, endsAt - Date.now()));
++        window.clearTimeout(timeout);
++      };
++      const start = () => {
++        stop();
++        let state = walkState();
++        if (!state.visit || state.ended) state = newVisit();
++        armedVisit = state.visit;
++        if (!Number.isFinite(state.deadline)) {
++          state.deadline = Date.now() + this.seconds() * 1000;
++          putWalk(state);
++        }
++        const endsAt = state.deadline;
++        const tick = () => {
++          const left = Math.max(0, (endsAt - Date.now()) / 1000);
++          if (typeof onTick === "function") onTick(left);
++        };
++        tick();
++        interval = window.setInterval(tick, 1000);
++        timeout = window.setTimeout(() => {
++          stop();
++          save();
++          endVisit();
++          locationObject.replace("../index.html");
++        }, Math.max(0, endsAt - Date.now()));
++      };
++      reschedule = start;
++      // A reload keeps its absolute deadline. Home marks the visit ended, even
++      // when restored from BFCache; a later yard restore is a new ordinary visit.
++      window.addEventListener?.("pagehide", () => { stop(); save(); reschedule = null; });
++      window.addEventListener?.("pageshow", (event) => {
++        if (event.persisted) { reschedule = start; start(); }
++      });
++      start();
+     },
+   };
+ })();
+diff --git a/styles.css b/styles.css
+index bedbd00..1042ed6 100644
+--- a/styles.css
++++ b/styles.css
+@@ -1511,7 +1511,7 @@ body.is-immersive .track-title::after { animation-duration: 3.2s; }
+   border: 1px solid rgba(var(--theme-accent-rgb), .18);
+   border-radius: 999px;
+   background: rgba(var(--theme-panel-rgb), .18);
+-  animation: chatHintNeon 16s linear infinite;
++
+ }
+ .auth-hint:hover,
+ .chat-hint:hover,
+@@ -1524,74 +1524,12 @@ body.is-immersive .track-title::after { animation-duration: 3.2s; }
+   outline-offset: 5px;
+ }
+ 
+-.chat-sign {
+-  position: fixed;
+-  right: 6vw;
+-  bottom: 8vh;
+-  z-index: 15;
+-  display: grid;
+-  place-items: center;
+-  width: min(260px, 28vw);
+-  height: min(150px, 24vh);
+-  padding: 0;
+-  overflow: hidden;
+-  pointer-events: none;
+-  border: 1px solid rgba(var(--theme-accent-rgb), .08);
+-  border-radius: 28px;
+-  background: linear-gradient(160deg, rgba(var(--theme-panel-rgb), .12), rgba(8, 6, 5, .04));
+-  transform: rotateY(-18deg) rotateX(8deg) translateZ(48px);
+-  transform-style: preserve-3d;
+-}
+-
+-.chat-sign::before,
+-.chat-sign::after {
+-  content: "";
+-  position: absolute;
+-  pointer-events: none;
+-}
+-
+-.chat-sign::before {
+-  inset: -2px;
+-  border: 1px solid rgba(var(--theme-accent-rgb), .04);
+-  border-radius: inherit;
+-  box-shadow: inset 0 0 28px rgba(var(--theme-accent-rgb), .03);
+-  animation: chatNeonFlicker 16s linear infinite;
+-}
+-
+-.chat-sign::after {
+-  top: 12%;
+-  right: 0;
+-  bottom: 12%;
+-  width: 38%;
+-  background: linear-gradient(105deg, transparent 0 36%, rgba(var(--theme-accent-rgb), .95) 50%, transparent 64%);
+-  mix-blend-mode: screen;
+-  filter: blur(1px);
+-  animation: chatNeonBolt 16s linear infinite;
+-}
+-
+-.chat-sign-word {
+-  position: relative;
+-  z-index: 1;
+-  color: rgba(var(--theme-accent-rgb), .1);
+-  font-size: .72rem;
+-  font-weight: 700;
+-  letter-spacing: .46em;
+-  text-transform: lowercase;
+-  animation: chatNeonWord 16s linear infinite;
+-}
+-
+-body.is-chat-open .chat-hint,
+-body.is-chat-open .chat-sign {
++body.is-chat-open .chat-hint {
+   opacity: 0;
+   visibility: hidden;
+   pointer-events: none;
+-  animation: none;
+ }
+ 
+-body.is-chat-open .chat-sign::before,
+-body.is-chat-open .chat-sign::after,
+-body.is-chat-open .chat-sign-word { animation: none; }
+-
+ .auth-panel,
+ .chat-panel {
+   position: fixed;
+@@ -1777,10 +1715,13 @@ body.is-chat-open .chat-sign-word { animation: none; }
+ 
+ .street-link {
+   padding: 0;
++  display: inline-flex;
++  align-items: center;
++  min-height: 44px;
+   color: rgba(var(--theme-text-rgb), .88);
+   border: 0;
+   background: none;
+-  font-size: 2.05rem;
++  font-size: clamp(.85rem, 1.5vw, 1.4rem);
+   font-weight: 700;
+   letter-spacing: .04em;
+   line-height: 1;
+@@ -2040,11 +1981,6 @@ html[data-theme] .chat-hint {
+   color: rgba(var(--theme-accent-rgb), .36);
+ }
+ 
+-html[data-theme] .chat-sign {
+-  border-color: rgba(var(--theme-accent-rgb), .1);
+-  background: linear-gradient(160deg, rgba(var(--theme-a-rgb), .05), rgba(var(--theme-panel-rgb), .08));
+-}
+-
+ html[data-theme] .auth-panel,
+ html[data-theme] .chat-panel {
+   border-color: rgba(var(--theme-accent-rgb), .18);
+@@ -2193,81 +2129,6 @@ html.is-theme-shifting .theme-lights {
+   50% { transform: rotateY(-12deg) rotateX(5deg) translateZ(62px) translateY(-8px); }
+ }
+ @keyframes chatAura { 0%, 100% { opacity: .55; transform: scale(.92); } 50% { opacity: 1; transform: scale(1.08); } }
+-@keyframes chatNeonFlicker {
+-  0%, 17.6%, 21.4%, 62%, 67.2%, 100% {
+-    opacity: .08;
+-    border-color: rgba(var(--theme-accent-rgb), .05);
+-    box-shadow: inset 0 0 18px rgba(var(--theme-accent-rgb), .02);
+-  }
+-  18.1% {
+-    opacity: .45;
+-    border-color: rgba(var(--theme-accent-rgb), .55);
+-    box-shadow: 0 0 16px rgba(var(--theme-accent-rgb), .35), inset 0 0 22px rgba(var(--theme-accent-rgb), .12);
+-  }
+-  18.5% { opacity: .04; }
+-  19.4% {
+-    opacity: 1;
+-    border-color: rgb(var(--theme-accent-rgb));
+-    box-shadow:
+-      0 0 22px rgba(var(--theme-accent-rgb), .85),
+-      0 0 64px rgba(var(--theme-a-rgb), .4),
+-      inset 0 0 28px rgba(var(--theme-accent-rgb), .22);
+-  }
+-  19.9% { opacity: .12; }
+-  20.5% { opacity: .72; }
+-  21.1% { opacity: .18; }
+-  63% { opacity: .28; }
+-  63.4% { opacity: .05; }
+-  64.6% {
+-    opacity: .9;
+-    border-color: rgb(var(--theme-accent-rgb));
+-    box-shadow: 0 0 26px rgba(var(--theme-accent-rgb), .7), inset 0 0 24px rgba(var(--theme-accent-rgb), .16);
+-  }
+-  65.1% { opacity: .1; }
+-  65.8% { opacity: .5; }
+-  66.6% { opacity: .08; }
+-}
+-@keyframes chatNeonBolt {
+-  0%, 18.8%, 21%, 63.8%, 67%, 100% { transform: translateX(-180%) skewX(-18deg); opacity: 0; }
+-  19.55% { transform: translateX(160%) skewX(-18deg); opacity: .95; }
+-  64.85% { transform: translateX(160%) skewX(-18deg); opacity: .8; }
+-}
+-@keyframes chatNeonWord {
+-  0%, 17.6%, 21.4%, 62%, 67.2%, 100% { opacity: .12; color: rgba(var(--theme-accent-rgb), .12); text-shadow: none; }
+-  18.1% { opacity: .55; }
+-  18.5% { opacity: .05; }
+-  19.4% {
+-    opacity: 1;
+-    color: rgb(var(--theme-text-rgb));
+-    text-shadow: 0 0 10px rgb(var(--theme-accent-rgb)), 0 0 28px rgba(var(--theme-accent-rgb), .8);
+-  }
+-  19.9% { opacity: .15; }
+-  20.5% { opacity: .8; }
+-  21.1% { opacity: .2; }
+-  63% { opacity: .35; }
+-  63.4% { opacity: .06; }
+-  64.6% {
+-    opacity: 1;
+-    color: rgb(var(--theme-accent-rgb));
+-    text-shadow: 0 0 12px rgba(var(--theme-accent-rgb), .9);
+-  }
+-  65.1% { opacity: .12; }
+-  65.8% { opacity: .55; }
+-  66.6% { opacity: .1; }
+-}
+-@keyframes chatHintNeon {
+-  0%, 17.6%, 21.4%, 62%, 67.2%, 100% { opacity: .55; text-shadow: none; }
+-  18.1% { opacity: .2; }
+-  19.4% {
+-    opacity: 1;
+-    color: rgb(var(--theme-accent-rgb));
+-    text-shadow: 0 0 12px rgba(var(--theme-accent-rgb), .85);
+-  }
+-  19.9% { opacity: .25; }
+-  20.5% { opacity: .9; }
+-  64.6% { opacity: 1; text-shadow: 0 0 10px rgba(var(--theme-accent-rgb), .7); }
+-  65.1% { opacity: .3; }
+-}
+ @keyframes artistFlicker {
+   0%, 14%, 100% { opacity: .48; filter: none; transform: translateX(0); }
+   16% { opacity: .16; filter: blur(.7px); transform: translateX(-1px); }
+@@ -2333,7 +2194,7 @@ html.is-theme-shifting .theme-lights {
+   }
+   .chat-panel .chat-input { min-height: 48px; font-size: 16px; }
+   .chat-panel .chat-send { min-width: 48px; min-height: 48px; }
+-  .chat-sign { display: none; }
++
+   .theme-panel { right: 10px; left: 10px; bottom: 52px; width: auto; max-height: calc(100dvh - 62px); overflow-y: auto; scrollbar-width: none; }
+   .theme-panel::-webkit-scrollbar,
+   .auth-panel::-webkit-scrollbar { display: none; }
+@@ -2378,9 +2239,7 @@ html.is-theme-shifting .theme-lights {
+ 
+ @media (prefers-reduced-motion: reduce) {
+   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+-  .chat-sign::before,
+-  .chat-sign::after,
+-  .chat-sign-word,
++
+   .chat-hint { animation: none !important; }
+ }
+ 
+@@ -2391,6 +2250,16 @@ html[data-animation-quality="low"] .logo-reactive-canvas { display: none; }
+ html[data-animation-quality="low"] .logo-particles { display: none; }
+ html[data-animation-quality="low"] .chat-glyph { transform: none !important; will-change: auto; }
+ 
++/* Mobile keeps the colored atmosphere and moving wordmark. Reduce only
++   offscreen filter surfaces and duplicate blur passes, not the logo motion. */
++@media (max-width: 800px), (pointer: coarse) {
++  html[data-animation-quality="low"] .theme-lights { filter: blur(6px); }
++  .logo-wrap.release-logo::before,
++  .logo-wrap.release-logo::after { filter: blur(8px); }
++  .reactive-logo { will-change: transform; }
++  .active-player { backdrop-filter: blur(8px); }
++}
++
+ @media (max-width: 640px), (pointer: coarse) and (max-width: 960px) {
+   body.is-chat-open .theme-light,
+   body.is-chat-open::before,
+@@ -2449,7 +2318,7 @@ body button:focus-visible, body a:focus-visible, body input:focus-visible, body
+ 
+ /* Inline now-playing composition */
+ @media (max-width: 1100px), (max-height: 540px) {
+-  .chat-sign { display: none; }
++
+   .chat-panel {
+     inset: var(--chat-top, 0px) 0 auto;
+     width: 100%;
+@@ -2576,10 +2445,14 @@ body {
+ }
+ 
+ .active-track-heading {
++  position: relative;
+   display: inline-flex;
+   align-items: flex-start;
+   justify-content: center;
+   max-width: 100%;
++  width: 100%;
++  box-sizing: border-box;
++  padding-inline: 52px;
+ }
+ 
+ .active-track-heading .now-playing-title {
+@@ -2587,17 +2460,20 @@ body {
+ }
+ 
+ .close-track {
++  position: absolute;
++  top: 0;
++  right: 0;
+   flex: 0 0 auto;
+-  width: 44px;
+-  min-width: 44px;
+-  height: 44px;
+-  min-height: 44px;
+-  margin: -.28em 0 0 .28em;
++  width: 48px;
++  min-width: 48px;
++  height: 48px;
++  min-height: 48px;
++  margin: 0;
+   padding: 0;
+   border: 0;
+-  color: rgba(var(--theme-text-rgb), .42);
++  color: rgba(var(--theme-text-rgb), .72);
+   background: transparent;
+-  font: 760 .72rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
++  font: 760 1.5rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+   cursor: pointer;
+   text-shadow: none;
+   transition: color .18s ease, text-shadow .18s ease;
+@@ -2923,3 +2799,50 @@ body.is-inline-playing .active-player .transport-play {
+     display: none;
+   }
+ }
++
++/* Mobile background: one baked alpha image, recolored by the active palette.
++   The logo is not a font recreation and contains no playlist/UI pixels. */
++html[data-background-mode="static"] .logo-wrap.release-logo {
++  width: min(96vw, 1040px);
++  aspect-ratio: 1160 / 280;
++  transform: translate(-50%, -50%);
++  animation: none;
++  filter: none;
++  opacity: .38;
++  background: linear-gradient(105deg, rgb(var(--theme-accent-rgb)), rgb(var(--theme-a-rgb)) 58%, rgb(var(--theme-accent-rgb)));
++  -webkit-mask-image: url("assets/logo-fragmented.png");
++  mask-image: url("assets/logo-fragmented.png");
++  -webkit-mask-size: 100% 100%;
++  mask-size: 100% 100%;
++  mask-repeat: no-repeat;
++  contain: layout style;
++}
++html[data-background-mode="static"] .logo-wrap::before,
++html[data-background-mode="static"] .logo-wrap::after { content: none; }
++html[data-background-mode="static"] .theme-light,
++html[data-background-mode="static"] .perception-field,
++html[data-background-mode="static"] .logo-atmosphere,
++html[data-background-mode="static"] .depth-floor,
++html[data-background-mode="static"] .hero,
++html[data-background-mode="static"] .release-stage,
++html[data-background-mode="static"] .release-card,
++html[data-background-mode="static"] .hero::before,
++html[data-background-mode="static"] .hero::after,
++html[data-background-mode="static"] .release-card::before,
++html[data-background-mode="static"] .release-card::after,
++html[data-background-mode="static"] body::before,
++html[data-background-mode="static"] body::after {
++  animation: none !important;
++  will-change: auto;
++}
++html[data-background-mode="static"] .track-title,
++html[data-background-mode="static"] .track-title::before,
++html[data-background-mode="static"] .track-title::after {
++  animation: none;
++}
++html[data-background-mode="static"] .track-title {
++  transition: color .3s ease;
++}
++html[data-background-mode="static"] .track-title.is-scrambling {
++  letter-spacing: .045em;
++}
+diff --git a/track-play.js b/track-play.js
+index 9318787..2a96ddc 100644
+--- a/track-play.js
++++ b/track-play.js
+@@ -9,6 +9,9 @@
+ 
+   const resolveTrack = (item) => {
+     if (!item) return null;
++    // The catalogue is shuffled; its indexes are not embedded playlist indexes.
++    const resolved = window.inteonTrackForItem?.(item);
++    if (resolved) return resolved;
+     const title = (item.getAttribute("data-track-title") || item.querySelector(".track-title")?.textContent || "").trim();
+     const index = Number(item.getAttribute("data-track-index"));
+     const tracks = allTracks();
+@@ -56,44 +59,29 @@
+     if (immersiveTitle) immersiveTitle.textContent = track.title || "";
+   };
+ 
+-  const itemFromStack = (clientX, clientY) => {
+-    const stack = document.elementsFromPoint(clientX, clientY) || [];
+-    for (let index = 0; index < stack.length; index += 1) {
+-      const item = stack[index].closest?.(".track-item");
+-      if (item && !item.classList.contains("track-empty")) return item;
+-    }
+-    const nodes = document.querySelectorAll("#track-list .track-item");
+-    let best = null;
+-    let bestDist = 1e9;
+-    for (let index = 0; index < nodes.length; index += 1) {
+-      const rect = nodes[index].getBoundingClientRect();
+-      if (rect.height < 2 || rect.width < 2) continue;
+-      const dx = clientX < rect.left ? rect.left - clientX : clientX > rect.right ? clientX - rect.right : 0;
+-      const dy = clientY < rect.top ? rect.top - clientY : clientY > rect.bottom ? clientY - rect.bottom : 0;
+-      const dist = Math.hypot(dx, dy);
+-      if (dist < bestDist) {
+-        best = nodes[index];
+-        bestDist = dist;
+-      }
+-    }
+-    return bestDist < 220 ? best : null;
+-  };
+-
+   const fromEvent = (event) => {
++    // A touch/pen pointerdown may become a scroll gesture, not a tap.
++    if (event.type === "pointerdown" && event.pointerType !== "mouse") return;
+     if (event.button != null && event.button !== 0) return;
+     let target = event.target;
+     if (target && target.nodeType === 3) target = target.parentElement;
+-    if (target?.closest?.(".transport, .auth-panel, .chat-panel, .theme-panel, .auth-hint, .chat-hint, .theme-hint, .immersive-back")) return;
+-    const item = target?.closest?.(".track-item") || itemFromStack(event.clientX, event.clientY);
++    if (target?.closest?.("a, input, select, textarea, .active-player, .transport, .auth-panel, .chat-panel, .theme-panel, .auth-hint, .chat-hint, .theme-hint, .immersive-back")) return;
++    // Only an actual track hit may select music; nearby navigation/blank space
++    // must not fall through to a row underneath or within a 220px radius.
++    const item = target?.closest?.(".track-item");
+     if (!item) return;
+     const track = resolveTrack(item);
+     if (!track) return;
+     const now = Date.now();
+     if (now - lock.at < 280) return;
+     lock.at = now;
+-    startAudio(track);
+-    if (typeof window.inteonPlayTrack === "function") window.inteonPlayTrack(track, item, { audioStarted: true });
+-    else showFallback(track, item);
++    if (typeof window.inteonPlayTrack === "function") window.inteonPlayTrack(track, item);
++    else {
++      const audio = document.getElementById("album-player");
++      if (audio) window.inteonPlayback?.select?.(audio, "home");
++      startAudio(track);
++      showFallback(track, item);
++    }
+   };
+ 
+   window.inteonPick = fromEvent;

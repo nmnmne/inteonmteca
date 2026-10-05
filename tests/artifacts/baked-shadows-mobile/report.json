@@ -1,0 +1,749 @@
+{
+  "visits": [
+    {
+      "index": 0,
+      "moment": "20 April 16:20",
+      "receivers": 163,
+      "residentSets": 1,
+      "gpuBytes": 4194304,
+      "version": 1,
+      "shadowMap": false,
+      "renderTarget": null,
+      "resources": [
+        {
+          "name": "http://127.0.0.1:61652/yard/data/shadows/mobile/sun-00.png",
+          "bytes": 137566,
+          "duration": 2.7000000029802322
+        }
+      ],
+      "programs": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "occlusionAudit": {
+        "samples": 1600,
+        "matches": 1518,
+        "shadowed": 844,
+        "views": [
+          {
+            "x": 77.16362926597961,
+            "z": -96.2575235828048,
+            "yaw": 1.0863355993954675,
+            "pitch": 0.288906430203754,
+            "shadowed": 63,
+            "lit": 1
+          },
+          {
+            "x": 64.90186546194862,
+            "z": -93.11560629087008,
+            "yaw": 1.0765341081878133,
+            "pitch": 0.2889064302037539,
+            "shadowed": 34,
+            "lit": 30
+          },
+          {
+            "x": 105.15253671631207,
+            "z": -45.21269724990827,
+            "yaw": 1.0540850256328274,
+            "pitch": 0.28890643020375395,
+            "shadowed": 33,
+            "lit": 31
+          },
+          {
+            "x": -78.18298554227522,
+            "z": -4.22141601617691,
+            "yaw": 1.044074599897178,
+            "pitch": 0.7840073437100956,
+            "shadowed": 3,
+            "lit": 61
+          },
+          {
+            "x": -76.11355599914113,
+            "z": -22.33483763268004,
+            "yaw": 1.0055733384486234,
+            "pitch": 0.7840073437100952,
+            "shadowed": 7,
+            "lit": 57
+          }
+        ]
+      }
+    },
+    {
+      "index": 1,
+      "moment": "20 April 16:40",
+      "receivers": 163,
+      "residentSets": 1,
+      "gpuBytes": 4194304,
+      "version": 1,
+      "shadowMap": false,
+      "renderTarget": null,
+      "resources": [
+        {
+          "name": "http://127.0.0.1:61652/yard/data/shadows/mobile/sun-01.png",
+          "bytes": 126381,
+          "duration": 3.3000000044703484
+        }
+      ],
+      "programs": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "index": 2,
+      "moment": "20 April 17:00",
+      "receivers": 163,
+      "residentSets": 1,
+      "gpuBytes": 4194304,
+      "version": 1,
+      "shadowMap": false,
+      "renderTarget": null,
+      "resources": [
+        {
+          "name": "http://127.0.0.1:61652/yard/data/shadows/mobile/sun-02.png",
+          "bytes": 141874,
+          "duration": 3
+        }
+      ],
+      "programs": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "index": 3,
+      "moment": "20 April 17:20",
+      "receivers": 163,
+      "residentSets": 1,
+      "gpuBytes": 4194304,
+      "version": 1,
+      "shadowMap": false,
+      "renderTarget": null,
+      "resources": [
+        {
+          "name": "http://127.0.0.1:61652/yard/data/shadows/mobile/sun-03.png",
+          "bytes": 154764,
+          "duration": 3
+        }
+      ],
+      "programs": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "index": 4,
+      "moment": "20 April 17:40",
+      "receivers": 163,
+      "residentSets": 1,
+      "gpuBytes": 4194304,
+      "version": 1,
+      "shadowMap": false,
+      "renderTarget": null,
+      "resources": [
+        {
+          "name": "http://127.0.0.1:61652/yard/data/shadows/mobile/sun-04.png",
+          "bytes": 188635,
+          "duration": 2.7999999970197678
+        }
+      ],
+      "programs": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "index": 5,
+      "moment": "20 April 18:00",
+      "receivers": 163,
+      "residentSets": 1,
+      "gpuBytes": 4194304,
+      "version": 1,
+      "shadowMap": false,
+      "renderTarget": null,
+      "resources": [
+        {
+          "name": "http://127.0.0.1:61652/yard/data/shadows/mobile/sun-05.png",
+          "bytes": 209551,
+          "duration": 2.7000000029802322
+        }
+      ],
+      "programs": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "occlusionAudit": {
+        "samples": 2880,
+        "matches": 2720,
+        "shadowed": 1623,
+        "views": [
+          {
+            "x": -34.519774931299935,
+            "z": 2.239968520425691,
+            "yaw": 2.6234585567080844,
+            "pitch": 0.5465244305305228,
+            "shadowed": 63,
+            "lit": 1
+          },
+          {
+            "x": 49.42583591761487,
+            "z": -16.337894419816546,
+            "yaw": 2.6282925483827566,
+            "pitch": 0.28890643020375395,
+            "shadowed": 14,
+            "lit": 50
+          },
+          {
+            "x": 1.7052758729712867,
+            "z": 48.74702376430766,
+            "yaw": 2.633993726468267,
+            "pitch": 0.2889064302037539,
+            "shadowed": 13,
+            "lit": 51
+          },
+          {
+            "x": -26.892728504692162,
+            "z": 92.19102826328756,
+            "yaw": 1.0608854553697333,
+            "pitch": 0.2889064302037539,
+            "shadowed": 39,
+            "lit": 25
+          },
+          {
+            "x": 34.27387382891857,
+            "z": -74.73927558557064,
+            "yaw": 2.630719427276622,
+            "pitch": 0.28890643020375395,
+            "shadowed": 13,
+            "lit": 51
+          },
+          {
+            "x": 5.329874234205361,
+            "z": -31.214795484418673,
+            "yaw": 1.0577490027568748,
+            "pitch": 0.28890643020375395,
+            "shadowed": 43,
+            "lit": 21
+          },
+          {
+            "x": 6.4878200612404875,
+            "z": -114.58901271477912,
+            "yaw": 2.6284192218276927,
+            "pitch": 0.2889064302037539,
+            "shadowed": 14,
+            "lit": 50
+          },
+          {
+            "x": 64.90186546194862,
+            "z": -93.11560629087008,
+            "yaw": 1.0765341081878133,
+            "pitch": 0.2889064302037539,
+            "shadowed": 42,
+            "lit": 22
+          },
+          {
+            "x": 102.5003616292863,
+            "z": -99.57314999574562,
+            "yaw": 2.626646190132878,
+            "pitch": 0.28890643020375395,
+            "shadowed": 53,
+            "lit": 11
+          },
+          {
+            "x": 105.15253671631207,
+            "z": -45.21269724990827,
+            "yaw": 1.0540850256328274,
+            "pitch": 0.28890643020375395,
+            "shadowed": 33,
+            "lit": 31
+          },
+          {
+            "x": -66.85003245393159,
+            "z": -52.40168608918912,
+            "yaw": 2.64191195847297,
+            "pitch": 0.7840073437100954,
+            "shadowed": 5,
+            "lit": 59
+          },
+          {
+            "x": -70.71509864665722,
+            "z": 2.99091799470228,
+            "yaw": 1.0509877416283935,
+            "pitch": 0.7840073437100954,
+            "shadowed": 8,
+            "lit": 56
+          },
+          {
+            "x": -78.18298554227522,
+            "z": -4.22141601617691,
+            "yaw": 1.044074599897178,
+            "pitch": 0.7840073437100956,
+            "shadowed": 3,
+            "lit": 61
+          }
+        ]
+      }
+    },
+    {
+      "index": 6,
+      "moment": "20 April 18:20",
+      "receivers": 163,
+      "residentSets": 1,
+      "gpuBytes": 4194304,
+      "version": 1,
+      "shadowMap": false,
+      "renderTarget": null,
+      "resources": [
+        {
+          "name": "http://127.0.0.1:61652/yard/data/shadows/mobile/sun-06.png",
+          "bytes": 231521,
+          "duration": 2.600000001490116
+        }
+      ],
+      "programs": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "index": 7,
+      "moment": "20 April 18:40",
+      "receivers": 163,
+      "residentSets": 1,
+      "gpuBytes": 4194304,
+      "version": 1,
+      "shadowMap": false,
+      "renderTarget": null,
+      "resources": [
+        {
+          "name": "http://127.0.0.1:61652/yard/data/shadows/mobile/sun-07.png",
+          "bytes": 243695,
+          "duration": 2.100000001490116
+        }
+      ],
+      "programs": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "index": 8,
+      "moment": "20 April 19:00",
+      "receivers": 163,
+      "residentSets": 1,
+      "gpuBytes": 4194304,
+      "version": 1,
+      "shadowMap": false,
+      "renderTarget": null,
+      "resources": [
+        {
+          "name": "http://127.0.0.1:61652/yard/data/shadows/mobile/sun-08.png",
+          "bytes": 240466,
+          "duration": 2.3000000044703484
+        }
+      ],
+      "programs": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "index": 9,
+      "moment": "20 April 19:20",
+      "receivers": 163,
+      "residentSets": 1,
+      "gpuBytes": 4194304,
+      "version": 1,
+      "shadowMap": false,
+      "renderTarget": null,
+      "resources": [
+        {
+          "name": "http://127.0.0.1:61652/yard/data/shadows/mobile/sun-09.png",
+          "bytes": 177503,
+          "duration": 2.100000001490116
+        }
+      ],
+      "programs": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "index": 10,
+      "moment": "20 April 19:40",
+      "receivers": 163,
+      "residentSets": 1,
+      "gpuBytes": 4194304,
+      "version": 1,
+      "shadowMap": false,
+      "renderTarget": null,
+      "resources": [
+        {
+          "name": "http://127.0.0.1:61652/yard/data/shadows/mobile/sun-10.png",
+          "bytes": 212254,
+          "duration": 2.5999999940395355
+        }
+      ],
+      "programs": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "index": 11,
+      "moment": "20 April 20:00",
+      "receivers": 163,
+      "residentSets": 1,
+      "gpuBytes": 4194304,
+      "version": 1,
+      "shadowMap": false,
+      "renderTarget": null,
+      "resources": [
+        {
+          "name": "http://127.0.0.1:61652/yard/data/shadows/mobile/sun-11.png",
+          "bytes": 172480,
+          "duration": 3
+        }
+      ],
+      "programs": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "occlusionAudit": {
+        "samples": 2880,
+        "matches": 2761,
+        "shadowed": 1913,
+        "views": [
+          {
+            "x": -41.046610685403955,
+            "z": -8.754506218198303,
+            "yaw": 2.6063168509091654,
+            "pitch": 0.5465244305305229,
+            "shadowed": 24,
+            "lit": 40
+          },
+          {
+            "x": 49.42583591761487,
+            "z": -16.337894419816546,
+            "yaw": 2.6282925483827566,
+            "pitch": 0.28890643020375395,
+            "shadowed": 48,
+            "lit": 16
+          },
+          {
+            "x": 34.27387382891857,
+            "z": -74.73927558557064,
+            "yaw": 2.630719427276622,
+            "pitch": 0.28890643020375395,
+            "shadowed": 36,
+            "lit": 28
+          },
+          {
+            "x": 6.4878200612404875,
+            "z": -114.58901271477912,
+            "yaw": 2.6284192218276927,
+            "pitch": 0.2889064302037539,
+            "shadowed": 6,
+            "lit": 58
+          },
+          {
+            "x": 64.90186546194862,
+            "z": -93.11560629087008,
+            "yaw": 1.0765341081878133,
+            "pitch": 0.2889064302037539,
+            "shadowed": 54,
+            "lit": 10
+          },
+          {
+            "x": 105.15253671631207,
+            "z": -45.21269724990827,
+            "yaw": 1.0540850256328274,
+            "pitch": 0.28890643020375395,
+            "shadowed": 51,
+            "lit": 13
+          },
+          {
+            "x": -66.85003245393159,
+            "z": -52.40168608918912,
+            "yaw": 2.64191195847297,
+            "pitch": 0.7840073437100954,
+            "shadowed": 4,
+            "lit": 60
+          },
+          {
+            "x": -70.71509864665722,
+            "z": 2.99091799470228,
+            "yaw": 1.0509877416283935,
+            "pitch": 0.7840073437100954,
+            "shadowed": 24,
+            "lit": 40
+          },
+          {
+            "x": -78.18298554227522,
+            "z": -4.22141601617691,
+            "yaw": 1.044074599897178,
+            "pitch": 0.7840073437100956,
+            "shadowed": 2,
+            "lit": 62
+          }
+        ]
+      }
+    },
+    {
+      "index": 0,
+      "moment": "20 April 16:20",
+      "receivers": 163,
+      "residentSets": 1,
+      "gpuBytes": 4194304,
+      "version": 1,
+      "shadowMap": false,
+      "renderTarget": null,
+      "resources": [
+        {
+          "name": "http://127.0.0.1:61652/yard/data/shadows/mobile/sun-00.png",
+          "bytes": 0,
+          "duration": 0.7000000029802322
+        }
+      ],
+      "programs": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  ],
+  "errors": []
+}

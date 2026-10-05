@@ -1,0 +1,1481 @@
+[
+  {
+    "mode": "static",
+    "raf": {},
+    "textChanges": 0,
+    "logoChanges": 0,
+    "decorativeNodes": 4,
+    "animations": [
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      }
+    ],
+    "overflow": false,
+    "mask": "url(\"http://127.0.0.1:59241/assets/logo-fragmented.png\")",
+    "paint": "linear-gradient(105deg, rgb(217, 177, 155), rgb(169, 114, 99) 58%, rgb(217, 177, 155))",
+    "name": "portrait",
+    "errors": [],
+    "themeRecolored": true,
+    "chatOpenClose": true,
+    "geometry": {
+      "player": {
+        "x": 16,
+        "y": 572,
+        "right": 374,
+        "bottom": 776,
+        "width": 358,
+        "height": 204
+      },
+      "list": {
+        "x": 16,
+        "y": 258,
+        "right": 374,
+        "bottom": 556,
+        "width": 358,
+        "height": 298
+      },
+      "transport": {
+        "x": 33,
+        "y": 655,
+        "right": 357,
+        "bottom": 759,
+        "width": 324,
+        "height": 104
+      },
+      "view": {
+        "width": 390,
+        "height": 844
+      },
+      "count": 128,
+      "unique": 16
+    },
+    "playbackControls": true
+  },
+  {
+    "mode": "static",
+    "raf": {},
+    "textChanges": 0,
+    "logoChanges": 0,
+    "decorativeNodes": 4,
+    "animations": [
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      }
+    ],
+    "overflow": false,
+    "mask": "url(\"http://127.0.0.1:59241/assets/logo-fragmented.png\")",
+    "paint": "linear-gradient(105deg, rgb(217, 177, 155), rgb(169, 114, 99) 58%, rgb(217, 177, 155))",
+    "name": "landscape",
+    "errors": [],
+    "themeRecolored": true,
+    "chatOpenClose": true,
+    "geometry": {
+      "player": {
+        "x": 20,
+        "y": 218,
+        "right": 824,
+        "bottom": 336,
+        "width": 804,
+        "height": 118
+      },
+      "list": {
+        "x": 365.703125,
+        "y": 90,
+        "right": 824,
+        "bottom": 206,
+        "width": 458.296875,
+        "height": 116
+      },
+      "transport": {
+        "x": 349.65625,
+        "y": 229,
+        "right": 722.984375,
+        "bottom": 325,
+        "width": 373.328125,
+        "height": 96
+      },
+      "view": {
+        "width": 844,
+        "height": 390
+      },
+      "count": 128,
+      "unique": 16
+    },
+    "playbackControls": true
+  },
+  {
+    "mode": "live",
+    "raf": {
+      "tickVisuals": 553
+    },
+    "textChanges": 0,
+    "logoChanges": 1199,
+    "decorativeNodes": 4,
+    "animations": [
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": "scanlines",
+        "target": "perception-interface listening-room spatial-room"
+      },
+      {
+        "name": "aura",
+        "target": "perception-interface listening-room spatial-room"
+      },
+      {
+        "name": "themeLightA",
+        "target": "theme-light theme-light-a"
+      },
+      {
+        "name": "themeLightB",
+        "target": "theme-light theme-light-b"
+      },
+      {
+        "name": "themeLightC",
+        "target": "theme-light theme-light-c"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "logoFloat",
+        "target": "logo-wrap release-logo is-assembled is-charging"
+      },
+      {
+        "name": "logoAtmosphere",
+        "target": "logo-wrap release-logo is-assembled is-charging"
+      },
+      {
+        "name": "logoAtmosphere",
+        "target": "logo-wrap release-logo is-assembled is-charging"
+      },
+      {
+        "name": "reactiveLogoBreath",
+        "target": "reactive-logo"
+      },
+      {
+        "name": "logoVectorDissolve",
+        "target": {}
+      }
+    ],
+    "overflow": false,
+    "mask": "none",
+    "paint": "none",
+    "name": "desktop",
+    "errors": [],
+    "themeRecolored": false,
+    "chatOpenClose": true,
+    "geometry": {
+      "player": {
+        "x": 108,
+        "y": 684,
+        "right": 1332,
+        "bottom": 828,
+        "width": 1224,
+        "height": 144
+      },
+      "list": {
+        "x": 734.375,
+        "y": 150,
+        "right": 1332,
+        "bottom": 660,
+        "width": 597.625,
+        "height": 510
+      },
+      "transport": {
+        "x": 625.796875,
+        "y": 704,
+        "right": 1161,
+        "bottom": 808,
+        "width": 535.203125,
+        "height": 104
+      },
+      "view": {
+        "width": 1440,
+        "height": 900
+      },
+      "count": 128,
+      "unique": 16
+    },
+    "playbackControls": true
+  },
+  {
+    "mode": "static",
+    "raf": {},
+    "textChanges": 0,
+    "logoChanges": 0,
+    "decorativeNodes": 4,
+    "animations": [],
+    "overflow": false,
+    "mask": "url(\"http://127.0.0.1:59241/assets/logo-fragmented.png\")",
+    "paint": "linear-gradient(105deg, rgb(217, 177, 155), rgb(169, 114, 99) 58%, rgb(217, 177, 155))",
+    "name": "reduced",
+    "errors": [],
+    "themeRecolored": true,
+    "chatOpenClose": true,
+    "geometry": {
+      "player": {
+        "x": 16,
+        "y": 572,
+        "right": 374,
+        "bottom": 776,
+        "width": 358,
+        "height": 204
+      },
+      "list": {
+        "x": 16,
+        "y": 258,
+        "right": 374,
+        "bottom": 556,
+        "width": 358,
+        "height": 298
+      },
+      "transport": {
+        "x": 33,
+        "y": 655,
+        "right": 357,
+        "bottom": 759,
+        "width": 324,
+        "height": 104
+      },
+      "view": {
+        "width": 390,
+        "height": 844
+      },
+      "count": 128,
+      "unique": 16
+    },
+    "playbackControls": true
+  },
+  {
+    "mode": "static",
+    "raf": {},
+    "textChanges": 0,
+    "logoChanges": 0,
+    "decorativeNodes": 4,
+    "animations": [
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      }
+    ],
+    "overflow": false,
+    "mask": "url(\"http://127.0.0.1:59241/assets/logo-fragmented.png\")",
+    "paint": "linear-gradient(105deg, rgb(217, 177, 155), rgb(169, 114, 99) 58%, rgb(217, 177, 155))",
+    "name": "small",
+    "errors": [],
+    "themeRecolored": true,
+    "chatOpenClose": true,
+    "geometry": {
+      "player": {
+        "x": 16,
+        "y": 336,
+        "right": 304,
+        "bottom": 510,
+        "width": 288,
+        "height": 174
+      },
+      "list": {
+        "x": 16,
+        "y": 180,
+        "right": 304,
+        "bottom": 324,
+        "width": 288,
+        "height": 144
+      },
+      "transport": {
+        "x": 33,
+        "y": 403,
+        "right": 287,
+        "bottom": 495,
+        "width": 254,
+        "height": 92
+      },
+      "view": {
+        "width": 320,
+        "height": 568
+      },
+      "count": 128,
+      "unique": 16
+    },
+    "playbackControls": true
+  },
+  {
+    "mode": "static",
+    "raf": {},
+    "textChanges": 0,
+    "logoChanges": 0,
+    "decorativeNodes": 4,
+    "animations": [
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      }
+    ],
+    "overflow": false,
+    "mask": "url(\"http://127.0.0.1:59241/assets/logo-fragmented.png\")",
+    "paint": "linear-gradient(105deg, rgb(217, 177, 155), rgb(169, 114, 99) 58%, rgb(217, 177, 155))",
+    "name": "small-landscape",
+    "errors": [],
+    "themeRecolored": true,
+    "chatOpenClose": true,
+    "geometry": {
+      "player": {
+        "x": 20,
+        "y": 203,
+        "right": 647,
+        "bottom": 321,
+        "width": 627,
+        "height": 118
+      },
+      "list": {
+        "x": 289.59375,
+        "y": 90,
+        "right": 647,
+        "bottom": 191,
+        "width": 357.40625,
+        "height": 101
+      },
+      "transport": {
+        "x": 271,
+        "y": 214,
+        "right": 546,
+        "bottom": 310,
+        "width": 275,
+        "height": 96
+      },
+      "view": {
+        "width": 667,
+        "height": 375
+      },
+      "count": 128,
+      "unique": 16
+    },
+    "playbackControls": true
+  }
+]

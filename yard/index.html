@@ -45,7 +45,10 @@
   <script src="../playback-link.js?v=20261004-1910"></script>
   <script src="../street-return.js?v=20261004-2205"></script>
   <script>
+    // Consume the actual return timer, including reloads and boundary extensions.
+    window.yardWalkClock = { enteredAt: Date.now(), deadline: null };
     window.inteonStreet?.armReturn(location, location.protocol, (left) => {
+      window.yardWalkClock.deadline = Date.now() + left * 1000;
       const watch = document.getElementById("street-watch");
       const face = document.getElementById("street-watch-face");
       if (!watch || !face) return;

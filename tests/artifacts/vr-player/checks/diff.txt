@@ -1,0 +1,16 @@
+warning: in the working copy of 'street-return.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/browser_release.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/home-resume.test.cjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/playback-handoff.test.cjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/street-return.test.cjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/test_site_content.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/yard-lighting.test.cjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/yard-minimap.test.cjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'track-play.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'yard/baked-lighting.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'yard/main.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'yard/quality.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'yard/scene.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'yard/shadow-atlas.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'yard/wall-player.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'yard/yard.css', LF will be replaced by CRLF the next time Git touches it

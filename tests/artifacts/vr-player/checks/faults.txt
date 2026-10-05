@@ -1,0 +1,6 @@
+{
+  "injectedAutoplayDenialAndRealRetry": true,
+  "audioNetworkFailureHasNoFalsePlayingIcon": true,
+  "injectedSystemVolumeConstraint": true,
+  "simulatedKeyboardViewport": true
+}

@@ -1,0 +1,72 @@
+{
+  "previewURL": "http://127.0.0.1:8080/",
+  "status": "verified local ambient redesign",
+  "layoutViewports": 14,
+  "playerViewports": 8,
+  "themesInspected": 6,
+  "copyAndSEO": "unchanged",
+  "protectedFilesUnchanged": 82,
+  "pythonTestsPassed": 55,
+  "nodeTestsPassed": 71,
+  "preExistingNodeFailures": [
+    "HTTP auth fallback",
+    "yard minimap desktop cadence",
+    "yard minimap touch cadence",
+    "yard minimap rotation"
+  ],
+  "rendererLifecycle": "reduce, restore, narrow, wide passed",
+  "performance": [
+    {
+      "width": 1440,
+      "variant": "before",
+      "TaskDuration": 0.8157,
+      "ScriptDuration": 0.07291,
+      "RecalcStyleDuration": 0.24563,
+      "LayoutCount": 75,
+      "canvasDraws": 225
+    },
+    {
+      "width": 1440,
+      "variant": "after",
+      "TaskDuration": 0.20915,
+      "ScriptDuration": 0.03174,
+      "RecalcStyleDuration": 0.07049,
+      "LayoutCount": 75,
+      "canvasDraws": 76
+    },
+    {
+      "width": 390,
+      "variant": "before",
+      "TaskDuration": 0.0023,
+      "ScriptDuration": 0.00037,
+      "RecalcStyleDuration": 0.0,
+      "LayoutCount": 0,
+      "canvasDraws": 0
+    },
+    {
+      "width": 390,
+      "variant": "after",
+      "TaskDuration": 0.00618,
+      "ScriptDuration": 0.00048,
+      "RecalcStyleDuration": 0.00079,
+      "LayoutCount": 1,
+      "canvasDraws": 0
+    }
+  ],
+  "cpu4x": {
+    "TaskDuration": 0.94222,
+    "ScriptDuration": 0.15604,
+    "RecalcStyleDuration": 0.34253,
+    "LayoutCount": 78,
+    "canvasDraws": 75
+  },
+  "mobileTesting": "browser emulation, not physical hardware",
+  "residentChecks": "approach, sniff, personal distance, control avoidance, panel pause, reduced motion and mobile passed",
+  "deployed": false,
+  "fileHashes": {
+    "index.html": "0c3c9b5502d03498cec84f282d3247cbe0cdd61a01f79d004690a6ac9522d970",
+    "home-player.css": "c0c57e6b84d79ae35b1f8b26741c25d3a24276c5a0840ac7e38d7677c70fbed7",
+    "script.js": "bf50b26879186e035b569f5840d02e4d2888f1cdd32496cc834f39f9da51b4d2",
+    "room-resident.js": "57deb3df89c3d3c13290cf3fb408dd1fa7d08a0e1a9cabb20dd67f0caeaed690"
+  }
+}

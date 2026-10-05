@@ -1,0 +1,194 @@
+[
+  {
+    "browser": "msedge",
+    "viewport": [
+      1440,
+      900
+    ],
+    "touch": false,
+    "errors": [],
+    "httpErrors": [
+      "401 http://127.0.0.1:62991/api/auth/me",
+      "401 http://127.0.0.1:62991/api/auth/me"
+    ],
+    "geometry": {
+      "player": {
+        "x": 47.984375,
+        "y": 704,
+        "width": 1344.03125,
+        "height": 124,
+        "right": 1392.015625,
+        "bottom": 828
+      },
+      "list": {
+        "x": 626.90625,
+        "y": 160,
+        "width": 764.109375,
+        "height": 507,
+        "right": 1391.015625,
+        "bottom": 667
+      },
+      "intro": {
+        "x": 47.984375,
+        "y": 117,
+        "width": 510.734375,
+        "height": 256.03125,
+        "right": 558.71875,
+        "bottom": 373.03125
+      },
+      "logo": {
+        "x": 54.29381561279297,
+        "y": 438.67779541015625,
+        "width": 538.443603515625,
+        "height": 108.18646240234375,
+        "right": 592.737419128418,
+        "bottom": 546.8642578125
+      },
+      "overflow": false,
+      "mode": "live",
+      "theme": "slate"
+    },
+    "idleCanvasDraws": 2509,
+    "existingPlayerChecks": {
+      "realPlayback": true,
+      "nativeEnded": true,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": false
+    },
+    "reloadState": {
+      "paused": true,
+      "hasTrack": true,
+      "origin": "home"
+    }
+  },
+  {
+    "browser": "msedge",
+    "viewport": [
+      1920,
+      1080
+    ],
+    "touch": false,
+    "errors": [],
+    "httpErrors": [
+      "401 http://127.0.0.1:62991/api/auth/me",
+      "401 http://127.0.0.1:62991/api/auth/me"
+    ],
+    "geometry": {
+      "player": {
+        "x": 63.984375,
+        "y": 884,
+        "width": 1792.03125,
+        "height": 124,
+        "right": 1856.015625,
+        "bottom": 1008
+      },
+      "list": {
+        "x": 835.546875,
+        "y": 183,
+        "width": 1019.46875,
+        "height": 664,
+        "right": 1855.015625,
+        "bottom": 847
+      },
+      "intro": {
+        "x": 63.984375,
+        "y": 140,
+        "width": 680.96875,
+        "height": 307.796875,
+        "right": 744.953125,
+        "bottom": 447.796875
+      },
+      "logo": {
+        "x": 72.37056732177734,
+        "y": 550.4237060546875,
+        "width": 717.9464111328125,
+        "height": 144.25762939453125,
+        "right": 790.3169784545898,
+        "bottom": 694.6813354492188
+      },
+      "overflow": false,
+      "mode": "live",
+      "theme": "slate"
+    },
+    "idleCanvasDraws": 2312,
+    "existingPlayerChecks": {
+      "realPlayback": true,
+      "nativeEnded": false,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": false
+    },
+    "reloadState": {
+      "paused": true,
+      "hasTrack": true,
+      "origin": "home"
+    }
+  },
+  {
+    "browser": "msedge",
+    "viewport": [
+      768,
+      1024
+    ],
+    "touch": true,
+    "errors": [],
+    "httpErrors": [
+      "401 http://127.0.0.1:62991/api/auth/me",
+      "401 http://127.0.0.1:62991/api/auth/me"
+    ],
+    "geometry": {
+      "player": {
+        "x": 24,
+        "y": 820,
+        "width": 720,
+        "height": 132,
+        "right": 744,
+        "bottom": 952
+      },
+      "list": {
+        "x": 288.796875,
+        "y": 147,
+        "width": 454.203125,
+        "height": 654,
+        "right": 743,
+        "bottom": 801
+      },
+      "intro": {
+        "x": 24,
+        "y": 104,
+        "width": 235,
+        "height": 146.25,
+        "right": 259,
+        "bottom": 250.25
+      },
+      "logo": {
+        "x": 19.1875,
+        "y": 544.3359375,
+        "width": 284.15625,
+        "height": 68.578125,
+        "right": 303.34375,
+        "bottom": 612.9140625
+      },
+      "overflow": false,
+      "mode": "static",
+      "theme": "slate"
+    },
+    "idleCanvasDraws": 0,
+    "existingPlayerChecks": {
+      "realPlayback": true,
+      "nativeEnded": false,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": true
+    },
+    "reloadState": {
+      "paused": true,
+      "hasTrack": true,
+      "origin": "home"
+    }
+  }
+]

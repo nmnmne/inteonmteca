@@ -1,0 +1,23 @@
+{
+  "nodeExit": 0,
+  "depthAssetsExit": 0,
+  "existingMinimapExit": 1,
+  "restoredAtlasExact": true,
+  "restoredAssetsTestExact": true,
+  "homePlayerUnchanged": true,
+  "sceneUnchanged": true,
+  "removedFilesAbsent": true,
+  "minimapNote": "Three existing failures: tests require per-frame redraw and rotating map; untouched code throttles redraws and uses north-up map. Scene hash unchanged; map scheduling block untouched.",
+  "browserPassed": true,
+  "browserPairs": 24,
+  "realClockPassed": true,
+  "screenshots": 33,
+  "realAutomaticReturnSeconds": 30.093999999997322,
+  "steadyFrameP95Ms": 8.400000000001455,
+  "maxRenderSubmissionMs": 257.79999999701977,
+  "performanceCaveat": "Headless Edge mobile profile on desktop GPU; not a physical mobile-device benchmark. Shader preparation can cause a one-time long frame; all raw samples retained.",
+  "server": {
+    "url": "http://127.0.0.1:8080/yard/",
+    "status": 200
+  }
+}

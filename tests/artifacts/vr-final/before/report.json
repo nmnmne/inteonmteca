@@ -1,0 +1,1494 @@
+{
+  "home-1440": {
+    "theme": "slate",
+    "animations": [
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": null,
+        "target": "logo-particle"
+      },
+      {
+        "name": "scanlines",
+        "target": "perception-interface listening-room spatial-room"
+      },
+      {
+        "name": "aura",
+        "target": "perception-interface listening-room spatial-room"
+      },
+      {
+        "name": "themeLightA",
+        "target": "theme-light theme-light-a"
+      },
+      {
+        "name": "themeLightB",
+        "target": "theme-light theme-light-b"
+      },
+      {
+        "name": "themeLightC",
+        "target": "theme-light theme-light-c"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "logoFloat",
+        "target": "logo-wrap"
+      },
+      {
+        "name": "logoAtmosphere",
+        "target": "logo-wrap"
+      },
+      {
+        "name": "logoAtmosphere",
+        "target": "logo-wrap"
+      },
+      {
+        "name": "reactiveLogoBreath",
+        "target": "reactive-logo"
+      },
+      {
+        "name": "logoVectorDissolve",
+        "target": "logo-vector"
+      }
+    ],
+    "resources": [
+      {
+        "name": "http://127.0.0.1:8080/styles.css?v=vr-room-20261004-2",
+        "bytes": 78899
+      },
+      {
+        "name": "http://127.0.0.1:8080/home-player.css?v=vr-room-20261004-2",
+        "bytes": 26847
+      },
+      {
+        "name": "http://127.0.0.1:8080/assets/vr-room-v1.webp",
+        "bytes": 153036
+      },
+      {
+        "name": "http://127.0.0.1:8080/track-play.js?v=vr-room-20261004-2",
+        "bytes": 3955
+      },
+      {
+        "name": "http://127.0.0.1:8080/script.js?v=vr-room-20261004-2",
+        "bytes": 143767
+      }
+    ]
+  },
+  "home-390": {
+    "theme": "slate",
+    "animations": [
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      }
+    ],
+    "resources": [
+      {
+        "name": "http://127.0.0.1:8080/styles.css?v=vr-room-20261004-2",
+        "bytes": 78899
+      },
+      {
+        "name": "http://127.0.0.1:8080/home-player.css?v=vr-room-20261004-2",
+        "bytes": 26847
+      },
+      {
+        "name": "http://127.0.0.1:8080/assets/vr-room-mobile-v1.webp",
+        "bytes": 38222
+      },
+      {
+        "name": "http://127.0.0.1:8080/track-play.js?v=vr-room-20261004-2",
+        "bytes": 3955
+      },
+      {
+        "name": "http://127.0.0.1:8080/script.js?v=vr-room-20261004-2",
+        "bytes": 143767
+      },
+      {
+        "name": "http://127.0.0.1:8080/assets/logo-fragmented.png",
+        "bytes": 32429
+      }
+    ]
+  },
+  "home-320": {
+    "theme": "slate",
+    "animations": [
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      }
+    ],
+    "resources": [
+      {
+        "name": "http://127.0.0.1:8080/styles.css?v=vr-room-20261004-2",
+        "bytes": 78899
+      },
+      {
+        "name": "http://127.0.0.1:8080/home-player.css?v=vr-room-20261004-2",
+        "bytes": 26847
+      },
+      {
+        "name": "http://127.0.0.1:8080/assets/vr-room-mobile-v1.webp",
+        "bytes": 38222
+      },
+      {
+        "name": "http://127.0.0.1:8080/track-play.js?v=vr-room-20261004-2",
+        "bytes": 3955
+      },
+      {
+        "name": "http://127.0.0.1:8080/script.js?v=vr-room-20261004-2",
+        "bytes": 143767
+      },
+      {
+        "name": "http://127.0.0.1:8080/assets/logo-fragmented.png",
+        "bytes": 32429
+      }
+    ]
+  },
+  "home-844": {
+    "theme": "slate",
+    "animations": [
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      },
+      {
+        "name": "heading-signal",
+        "target": "heading-letter"
+      }
+    ],
+    "resources": [
+      {
+        "name": "http://127.0.0.1:8080/styles.css?v=vr-room-20261004-2",
+        "bytes": 78899
+      },
+      {
+        "name": "http://127.0.0.1:8080/home-player.css?v=vr-room-20261004-2",
+        "bytes": 26847
+      },
+      {
+        "name": "http://127.0.0.1:8080/assets/vr-room-mobile-v1.webp",
+        "bytes": 38222
+      },
+      {
+        "name": "http://127.0.0.1:8080/track-play.js?v=vr-room-20261004-2",
+        "bytes": 3955
+      },
+      {
+        "name": "http://127.0.0.1:8080/script.js?v=vr-room-20261004-2",
+        "bytes": 143767
+      },
+      {
+        "name": "http://127.0.0.1:8080/assets/logo-fragmented.png",
+        "bytes": 32429
+      }
+    ]
+  },
+  "yard-0-0": {
+    "preset": "20 April 16:20",
+    "bytes": 67108864,
+    "groundReceivers": null,
+    "resources": [
+      {
+        "name": "http://127.0.0.1:8080/yard/data/shadows/manifest.json",
+        "bytes": 13214
+      },
+      {
+        "name": "http://127.0.0.1:8080/yard/data/shadows/sun-00.png",
+        "bytes": 912776
+      }
+    ],
+    "shadowMap": false,
+    "programs": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "yard-0-5": {
+    "preset": "20 April 18:00",
+    "bytes": 67108864,
+    "groundReceivers": null,
+    "resources": [
+      {
+        "name": "http://127.0.0.1:8080/yard/data/shadows/manifest.json",
+        "bytes": 13214
+      },
+      {
+        "name": "http://127.0.0.1:8080/yard/data/shadows/sun-05.png",
+        "bytes": 1550178
+      }
+    ],
+    "shadowMap": false,
+    "programs": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "yard-0-11": {
+    "preset": "20 April 20:00",
+    "bytes": 67108864,
+    "groundReceivers": null,
+    "resources": [
+      {
+        "name": "http://127.0.0.1:8080/yard/data/shadows/manifest.json",
+        "bytes": 13214
+      },
+      {
+        "name": "http://127.0.0.1:8080/yard/data/shadows/sun-11.png",
+        "bytes": 1683483
+      }
+    ],
+    "shadowMap": false,
+    "programs": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "yard-errors-False": [],
+  "yard-1-0": {
+    "preset": "20 April 16:20",
+    "bytes": 4194304,
+    "groundReceivers": null,
+    "resources": [
+      {
+        "name": "http://127.0.0.1:8080/yard/data/shadows/mobile/manifest.json",
+        "bytes": 13196
+      },
+      {
+        "name": "http://127.0.0.1:8080/yard/data/shadows/mobile/sun-00.png",
+        "bytes": 137566
+      }
+    ],
+    "shadowMap": false,
+    "programs": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "yard-1-5": {
+    "preset": "20 April 18:00",
+    "bytes": 4194304,
+    "groundReceivers": null,
+    "resources": [
+      {
+        "name": "http://127.0.0.1:8080/yard/data/shadows/mobile/manifest.json",
+        "bytes": 13196
+      },
+      {
+        "name": "http://127.0.0.1:8080/yard/data/shadows/mobile/sun-05.png",
+        "bytes": 209551
+      }
+    ],
+    "shadowMap": false,
+    "programs": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "yard-1-11": {
+    "preset": "20 April 20:00",
+    "bytes": 4194304,
+    "groundReceivers": null,
+    "resources": [
+      {
+        "name": "http://127.0.0.1:8080/yard/data/shadows/mobile/manifest.json",
+        "bytes": 13196
+      },
+      {
+        "name": "http://127.0.0.1:8080/yard/data/shadows/mobile/sun-11.png",
+        "bytes": 172480
+      }
+    ],
+    "shadowMap": false,
+    "programs": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "yard-errors-True": []
+}

@@ -1,0 +1,224 @@
+[
+  {
+    "viewport": [
+      1440,
+      900
+    ],
+    "errors": [],
+    "performance3s": {
+      "TaskDuration": 0.86946,
+      "ScriptDuration": 0.05534,
+      "LayoutDuration": 0.06567,
+      "RecalcStyleDuration": 0.27759,
+      "LayoutCount": 300
+    },
+    "geometry": {
+      "player": {
+        "x": 108,
+        "y": 684,
+        "width": 1224,
+        "height": 144,
+        "right": 1332,
+        "bottom": 828
+      },
+      "list": {
+        "x": 734.375,
+        "y": 150,
+        "width": 597.625,
+        "height": 510,
+        "right": 1332,
+        "bottom": 660
+      },
+      "overflow": false
+    }
+  },
+  {
+    "viewport": [
+      1280,
+      720
+    ],
+    "errors": [],
+    "geometry": {
+      "player": {
+        "x": 96,
+        "y": 504,
+        "width": 1088,
+        "height": 144,
+        "right": 1184,
+        "bottom": 648
+      },
+      "list": {
+        "x": 652.78125,
+        "y": 150,
+        "width": 531.21875,
+        "height": 330,
+        "right": 1184,
+        "bottom": 480
+      },
+      "overflow": false
+    }
+  },
+  {
+    "viewport": [
+      1024,
+      768
+    ],
+    "errors": [],
+    "geometry": {
+      "player": {
+        "x": 76.796875,
+        "y": 552,
+        "width": 870.40625,
+        "height": 144,
+        "right": 947.203125,
+        "bottom": 696
+      },
+      "list": {
+        "x": 522.21875,
+        "y": 150,
+        "width": 424.96875,
+        "height": 378,
+        "right": 947.1875,
+        "bottom": 528
+      },
+      "overflow": false
+    }
+  },
+  {
+    "viewport": [
+      800,
+      600
+    ],
+    "errors": [],
+    "geometry": {
+      "player": {
+        "x": 24,
+        "y": 384,
+        "width": 752,
+        "height": 144,
+        "right": 776,
+        "bottom": 528
+      },
+      "list": {
+        "x": 347.34375,
+        "y": 132,
+        "width": 428.65625,
+        "height": 234,
+        "right": 776,
+        "bottom": 366
+      },
+      "overflow": false
+    }
+  },
+  {
+    "viewport": [
+      390,
+      844
+    ],
+    "errors": [],
+    "performance3s": {
+      "TaskDuration": 0.25924,
+      "ScriptDuration": 0.00034,
+      "LayoutDuration": 0.05003,
+      "RecalcStyleDuration": 0.05147,
+      "LayoutCount": 225
+    },
+    "geometry": {
+      "player": {
+        "x": 16,
+        "y": 572,
+        "width": 358,
+        "height": 204,
+        "right": 374,
+        "bottom": 776
+      },
+      "list": {
+        "x": 16,
+        "y": 258,
+        "width": 358,
+        "height": 298,
+        "right": 374,
+        "bottom": 556
+      },
+      "overflow": false
+    }
+  },
+  {
+    "viewport": [
+      320,
+      568
+    ],
+    "errors": [],
+    "geometry": {
+      "player": {
+        "x": 16,
+        "y": 306,
+        "width": 288,
+        "height": 194,
+        "right": 304,
+        "bottom": 500
+      },
+      "list": {
+        "x": 16,
+        "y": 210,
+        "width": 288,
+        "height": 84,
+        "right": 304,
+        "bottom": 294
+      },
+      "overflow": false
+    }
+  },
+  {
+    "viewport": [
+      844,
+      390
+    ],
+    "errors": [],
+    "geometry": {
+      "player": {
+        "x": 20,
+        "y": 218,
+        "width": 804,
+        "height": 118,
+        "right": 824,
+        "bottom": 336
+      },
+      "list": {
+        "x": 365.703125,
+        "y": 90,
+        "width": 458.296875,
+        "height": 116,
+        "right": 824,
+        "bottom": 206
+      },
+      "overflow": false
+    }
+  },
+  {
+    "viewport": [
+      667,
+      375
+    ],
+    "errors": [],
+    "geometry": {
+      "player": {
+        "x": 20,
+        "y": 203,
+        "width": 627,
+        "height": 118,
+        "right": 647,
+        "bottom": 321
+      },
+      "list": {
+        "x": 289.59375,
+        "y": 90,
+        "width": 357.40625,
+        "height": 101,
+        "right": 647,
+        "bottom": 191
+      },
+      "overflow": false
+    }
+  }
+]

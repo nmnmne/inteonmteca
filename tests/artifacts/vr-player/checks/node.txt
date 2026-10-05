@@ -1,0 +1,495 @@
+TAP version 13
+# Subtest: missing HTTP backend never presents local storage as a logged-in account
+not ok 1 - missing HTTP backend never presents local storage as a logged-in account
+  ---
+  duration_ms: 1.5337
+  type: 'test'
+  location: 'D:\\Dev\\inteonmteca\\tests\\auth-fallback.test.cjs:11:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (D:\Dev\inteonmteca\tests\auth-fallback.test.cjs:16:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: file preview retains its explicitly local demo pass
+ok 2 - file preview retains its explicitly local demo pass
+  ---
+  duration_ms: 0.5325
+  type: 'test'
+  ...
+# Subtest: selecting an audio-only playlist entry keeps its actual index
+ok 3 - selecting an audio-only playlist entry keeps its actual index
+  ---
+  duration_ms: 1.1906
+  type: 'test'
+  ...
+# Subtest: home restore cannot seek a subsequently selected track
+ok 4 - home restore cannot seek a subsequently selected track
+  ---
+  duration_ms: 0.7945
+  type: 'test'
+  ...
+# Subtest: home keeps shared time while metadata is pending
+ok 5 - home keeps shared time while metadata is pending
+  ---
+  duration_ms: 1.2536
+  type: 'test'
+  ...
+# Subtest: mobile render gate skips unchanged poses but invalidates textures, resize and pitch
+ok 6 - mobile render gate skips unchanged poses but invalidates textures, resize and pitch
+  ---
+  duration_ms: 2.9487
+  type: 'test'
+  ...
+# Subtest: desktop render gate retains continuous rendering
+ok 7 - desktop render gate retains continuous rendering
+  ---
+  duration_ms: 0.2308
+  type: 'test'
+  ...
+# Subtest: paused 42-second handoff survives pending metadata and resumes persistence after seeking
+ok 8 - paused 42-second handoff survives pending metadata and resumes persistence after seeking
+  ---
+  duration_ms: 2.4619
+  type: 'test'
+  ...
+# Subtest: next before metadata cannot apply A's saved seek to B
+ok 9 - next before metadata cannot apply A's saved seek to B
+  ---
+  duration_ms: 1.5902
+  type: 'test'
+  ...
+# Subtest: metadata from the old resource cannot complete the new selection's pending handoff
+ok 10 - metadata from the old resource cannot complete the new selection's pending handoff
+  ---
+  duration_ms: 0.8512
+  type: 'test'
+  ...
+# Subtest: A to B to A before metadata does not revive A's obsolete restored position
+ok 11 - A to B to A before metadata does not revive A's obsolete restored position
+  ---
+  duration_ms: 0.8564
+  type: 'test'
+  ...
+# PASS: playback link
+# Subtest: tests\\playback-link.test.cjs
+ok 5 - tests\\playback-link.test.cjs
+  ---
+  duration_ms: 127.4067
+  type: 'test'
+  ...
+# Subtest: home selection stops at yard; origin never changes on a save
+ok 13 - home selection stops at yard; origin never changes on a save
+  ---
+  duration_ms: 1.369
+  type: 'test'
+  ...
+# Subtest: yard origin and intent survive home saves and blocked autoplay
+ok 14 - yard origin and intent survive home saves and blocked autoplay
+  ---
+  duration_ms: 0.6781
+  type: 'test'
+  ...
+# Subtest: boundary stop policy survives handoff and completion; explicit selection clears it
+ok 15 - boundary stop policy survives handoff and completion; explicit selection clears it
+  ---
+  duration_ms: 0.7302
+  type: 'test'
+  ...
+# Subtest: explicit home selection replaces yard origin even for same file
+ok 16 - explicit home selection replaces yard origin even for same file
+  ---
+  duration_ms: 1.3144
+  type: 'test'
+  ...
+# Subtest: player is visible and disabled before a track is chosen, with no close control
+ok 17 - player is visible and disabled before a track is chosen, with no close control
+  ---
+  duration_ms: 1.1561
+  type: 'test'
+  ...
+# Subtest: Escape without a dialog retains playback and the persistent panel
+ok 18 - Escape without a dialog retains playback and the persistent panel
+  ---
+  duration_ms: 1.2628
+  type: 'test'
+  ...
+# Subtest: player controls never trigger the global track picker
+ok 19 - player controls never trigger the global track picker
+  ---
+  duration_ms: 1.014
+  type: 'test'
+  ...
+# Subtest: a pixel-quantized wheel stops its RAF instead of running forever near the target
+ok 20 - a pixel-quantized wheel stops its RAF instead of running forever near the target
+  ---
+  duration_ms: 1.9476
+  type: 'test'
+  ...
+# PASS: site usability
+# Subtest: tests\\site-usability.test.cjs
+ok 8 - tests\\site-usability.test.cjs
+  ---
+  duration_ms: 118.6707
+  type: 'test'
+  ...
+# Subtest: spatial listening surface retains identity and approved copy
+ok 22 - spatial listening surface retains identity and approved copy
+  ---
+  duration_ms: 0.8529
+  type: 'test'
+  ...
+# Subtest: spatial control system has large targets and responsive low-height mode
+ok 23 - spatial control system has large targets and responsive low-height mode
+  ---
+  duration_ms: 0.2571
+  type: 'test'
+  ...
+# Subtest: mobile uses an actual baked logo asset and no decorative scene loop
+ok 24 - mobile uses an actual baked logo asset and no decorative scene loop
+  ---
+  duration_ms: 1.132
+  type: 'test'
+  ...
+# Subtest: listening room keeps original copy and infinite two-way scrolling
+ok 25 - listening room keeps original copy and infinite two-way scrolling
+  ---
+  duration_ms: 0.307
+  type: 'test'
+  ...
+# Subtest: listening room exposes a complete transport
+ok 26 - listening room exposes a complete transport
+  ---
+  duration_ms: 0.2779
+  type: 'test'
+  ...
+# Subtest: closed chat has only the accessible compact opener, no teaser
+ok 27 - closed chat has only the accessible compact opener, no teaser
+  ---
+  duration_ms: 0.9643
+  type: 'test'
+  ...
+# Subtest: expired visit cannot receive a delayed playback bonus
+ok 28 - expired visit cannot receive a delayed playback bonus
+  ---
+  duration_ms: 2.0789
+  type: 'test'
+  ...
+# Subtest: timeout ends the bonus and an ended visit rejects stale playback callbacks
+ok 29 - timeout ends the bonus and an ended visit rejects stale playback callbacks
+  ---
+  duration_ms: 0.9465
+  type: 'test'
+  ...
+# Subtest: local midnight does not reset an existing deadline; a later visit can earn the new day
+ok 30 - local midnight does not reset an existing deadline; a later visit can earn the new day
+  ---
+  duration_ms: 2.653
+  type: 'test'
+  ...
+# Subtest: successful switch grants a fixed 20-minute deadline, reload preserves it, home forfeits it
+ok 31 - successful switch grants a fixed 20-minute deadline, reload preserves it, home forfeits it
+  ---
+  duration_ms: 2.2375
+  type: 'test'
+  ...
+# PASS: street return
+# Subtest: tests\\street-return.test.cjs
+ok 12 - tests\\street-return.test.cjs
+  ---
+  duration_ms: 102.1617
+  type: 'test'
+  ...
+# Subtest: manual return saves pose and a cached yard gets a fresh cancellable deadline
+ok 33 - manual return saves pose and a cached yard gets a fresh cancellable deadline
+  ---
+  duration_ms: 2.9288
+  type: 'test'
+  ...
+# PASS: 99 unique palettes, 10 + 89 groups, valid tokens, legacy IDs preserved
+# Subtest: tests\\test_theme_registry.cjs
+ok 14 - tests\\test_theme_registry.cjs
+  ---
+  duration_ms: 92.5971
+  type: 'test'
+  ...
+# PASS: 99 distinct palettes; 10 + 89 groups; all persisted IDs, CSS tokens, select, random and rotation; soft logo depth.
+# Subtest: tests\\themes.test.cjs
+ok 15 - tests\\themes.test.cjs
+  ---
+  duration_ms: 88.2112
+  type: 'test'
+  ...
+# Subtest: text links and blank space never select a nearby/underlying song
+ok 36 - text links and blank space never select a nearby/underlying song
+  ---
+  duration_ms: 2.3886
+  type: 'test'
+  ...
+# Subtest: touch starts scrolling without selecting; the completed tap still selects
+ok 37 - touch starts scrolling without selecting; the completed tap still selects
+  ---
+  duration_ms: 0.7106
+  type: 'test'
+  ...
+# Subtest: artist labels never flicker
+ok 38 - artist labels never flicker
+  ---
+  duration_ms: 0.6569
+  type: 'test'
+  ...
+# Subtest: hover alone cannot scroll the playlist
+ok 39 - hover alone cannot scroll the playlist
+  ---
+  duration_ms: 0.6136
+  type: 'test'
+  ...
+# Subtest: panels move focus in, restore opener and expose expanded state
+ok 40 - panels move focus in, restore opener and expose expanded state
+  ---
+  duration_ms: 0.6724
+  type: 'test'
+  ...
+# Subtest: Escape closes only the latest panel before immersive playback
+ok 41 - Escape closes only the latest panel before immersive playback
+  ---
+  duration_ms: 0.4917
+  type: 'test'
+  ...
+# Subtest: controls have a shared 44px hit area and visible keyboard focus
+ok 42 - controls have a shared 44px hit area and visible keyboard focus
+  ---
+  duration_ms: 0.87
+  type: 'test'
+  ...
+# Subtest: panel triggers declare their controls before JavaScript loads
+ok 43 - panel triggers declare their controls before JavaScript loads
+  ---
+  duration_ms: 0.3431
+  type: 'test'
+  ...
+# Subtest: a late chat response cannot steal focus or restart polling after close
+ok 44 - a late chat response cannot steal focus or restart polling after close
+  ---
+  duration_ms: 0.2706
+  type: 'test'
+  ...
+# Subtest: visible wheel tracks remain sharp at every position
+ok 45 - visible wheel tracks remain sharp at every position
+  ---
+  duration_ms: 0.9259
+  type: 'test'
+  ...
+# Subtest: boundary session stops at end; manual next resumes normal playlist without bonus replay
+ok 46 - boundary session stops at end; manual next resumes normal playlist without bonus replay
+  ---
+  duration_ms: 3.529
+  type: 'test'
+  ...
+# Subtest: exit selects exact track and replaces other active audio, not the same active track
+ok 47 - exit selects exact track and replaces other active audio, not the same active track
+  ---
+  duration_ms: 2.0993
+  type: 'test'
+  ...
+# Subtest: denied crossing remains paused with one attempt until explicit retry gesture
+ok 48 - denied crossing remains paused with one attempt until explicit retry gesture
+  ---
+  duration_ms: 3.8405
+  type: 'test'
+  ...
+# Subtest: a different selection cancels a denied boundary grant
+ok 49 - a different selection cancels a denied boundary grant
+  ---
+  duration_ms: 1.138
+  type: 'test'
+  ...
+# Subtest: scene frame wires crossing check to wall player using actual walkable polygon
+ok 50 - scene frame wires crossing check to wall player using actual walkable polygon
+  ---
+  duration_ms: 0.3114
+  type: 'test'
+  ...
+# Subtest: touching every actual polygon edge triggers, but near-edge interior does not
+ok 51 - touching every actual polygon edge triggers, but near-edge interior does not
+  ---
+  duration_ms: 1.1097
+  type: 'test'
+  ...
+# Subtest: actual polygon exit triggers once, not grid proximity; reentry rearms; outside spawn is silent
+ok 52 - actual polygon exit triggers once, not grid proximity; reentry rearms; outside spawn is silent
+  ---
+  duration_ms: 0.8043
+  type: 'test'
+  ...
+# PASS: all facade normals outside footprints
+# Subtest: tests\\yard-facade-normals.test.cjs
+ok 19 - tests\\yard-facade-normals.test.cjs
+  ---
+  duration_ms: 83.1451
+  type: 'test'
+  ...
+# PASS: yard geometry / visible roads
+# Subtest: tests\\yard-geometry.test.cjs
+ok 20 - tests\\yard-geometry.test.cjs
+  ---
+  duration_ms: 76.2794
+  type: 'test'
+  ...
+# PASS: yard input
+# Subtest: tests\\yard-input.test.cjs
+ok 21 - tests\\yard-input.test.cjs
+  ---
+  duration_ms: 64.1225
+  type: 'test'
+  ...
+# Subtest: visit cycle includes every twenty-minute slot and wraps after 20:00
+ok 56 - visit cycle includes every twenty-minute slot and wraps after 20:00
+  ---
+  duration_ms: 35.6328
+  type: 'test'
+  ...
+# Subtest: storage failures and corrupt values safely fall back without freezing the cycle
+ok 57 - storage failures and corrupt values safely fall back without freezing the cycle
+  ---
+  duration_ms: 0.4099
+  type: 'test'
+  ...
+# Subtest: presets move the reference sun and coherently change sky, fill and baked shadows
+ok 58 - presets move the reference sun and coherently change sky, fill and baked shadows
+  ---
+  duration_ms: 2.621
+  type: 'test'
+  ...
+# PASS: actual offline shadow assets and no runtime rasterization
+# Subtest: tests\\yard-lighting.test.cjs
+ok 23 - tests\\yard-lighting.test.cjs
+  ---
+  duration_ms: 81.3182
+  type: 'test'
+  ...
+# Subtest: minimap follows every changed animation frame (touch=false)
+not ok 60 - minimap follows every changed animation frame (touch=false)
+  ---
+  duration_ms: 1.3862
+  type: 'test'
+  location: 'D:\\Dev\\inteonmteca\\tests\\yard-minimap.test.cjs:12:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    no skipped animation frames during rotation
+    
+    1 !== 5
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 5
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (D:\Dev\inteonmteca\tests\yard-minimap.test.cjs:24:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: minimap follows every changed animation frame (touch=true)
+not ok 61 - minimap follows every changed animation frame (touch=true)
+  ---
+  duration_ms: 1.1398
+  type: 'test'
+  location: 'D:\\Dev\\inteonmteca\\tests\\yard-minimap.test.cjs:12:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    no skipped animation frames during rotation
+    
+    0 !== 5
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 5
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (D:\Dev\inteonmteca\tests\yard-minimap.test.cjs:24:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: minimap crops nearby geography rather than fitting the whole site
+ok 62 - minimap crops nearby geography rather than fitting the whole site
+  ---
+  duration_ms: 1.0502
+  type: 'test'
+  ...
+# Subtest: moving player pans cached map while keeping the marker centered
+not ok 63 - moving player pans cached map while keeping the marker centered
+  ---
+  duration_ms: 0.9057
+  type: 'test'
+  location: 'D:\\Dev\\inteonmteca\\tests\\yard-minimap.test.cjs:57:1'
+  failureType: 'testCodeFailure'
+  error: 'map rotates opposite to viewing direction'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (D:\Dev\inteonmteca\tests\yard-minimap.test.cjs:71:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# PASS: yard models
+# Subtest: tests\\yard-models.test.cjs
+ok 25 - tests\\yard-models.test.cjs
+  ---
+  duration_ms: 48.1306
+  type: 'test'
+  ...
+# PASS: yard navigation
+# Subtest: tests\\yard-navigation.test.cjs
+ok 26 - tests\\yard-navigation.test.cjs
+  ---
+  duration_ms: 178.569
+  type: 'test'
+  ...
+# PASS: yard place
+# Subtest: tests\\yard-place.test.cjs
+ok 27 - tests\\yard-place.test.cjs
+  ---
+  duration_ms: 39.1955
+  type: 'test'
+  ...
+# PASS: yard roads
+# Subtest: tests\\yard-roads.test.cjs
+ok 28 - tests\\yard-roads.test.cjs
+  ---
+  duration_ms: 39.7387
+  type: 'test'
+  ...
+1..67
+# tests 67
+# suites 0
+# pass 63
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 303.489

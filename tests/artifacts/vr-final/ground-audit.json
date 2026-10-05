@@ -1,0 +1,122 @@
+[
+  {
+    "mobile": false,
+    "slot": 0,
+    "audit": {
+      "samples": 548,
+      "matches": 548,
+      "shadowed": 64,
+      "penumbra": 9,
+      "failures": []
+    },
+    "state": {
+      "bytes": 71303168,
+      "receivers": 3,
+      "uuid": "6a899c19-5081-439d-82c6-a1b8e1a75f03",
+      "version": 1,
+      "groundShaders": 1,
+      "liveShadows": false,
+      "renderTarget": null
+    }
+  },
+  {
+    "mobile": false,
+    "slot": 5,
+    "audit": {
+      "samples": 554,
+      "matches": 554,
+      "shadowed": 140,
+      "penumbra": 3,
+      "failures": []
+    },
+    "state": {
+      "bytes": 71303168,
+      "receivers": 3,
+      "uuid": "7109f67a-3e42-4a52-8527-4ca285068af1",
+      "version": 1,
+      "groundShaders": 1,
+      "liveShadows": false,
+      "renderTarget": null
+    }
+  },
+  {
+    "mobile": false,
+    "slot": 11,
+    "audit": {
+      "samples": 553,
+      "matches": 553,
+      "shadowed": 354,
+      "penumbra": 4,
+      "failures": []
+    },
+    "state": {
+      "bytes": 71303168,
+      "receivers": 3,
+      "uuid": "780440b1-51ef-4ed6-969d-09992ef04f22",
+      "version": 1,
+      "groundShaders": 1,
+      "liveShadows": false,
+      "renderTarget": null
+    }
+  },
+  {
+    "mobile": true,
+    "slot": 0,
+    "audit": {
+      "samples": 546,
+      "matches": 546,
+      "shadowed": 63,
+      "penumbra": 11,
+      "failures": []
+    },
+    "state": {
+      "bytes": 5242880,
+      "receivers": 3,
+      "uuid": "b05b3589-8ff3-4e61-aea3-8d81e8cd3458",
+      "version": 1,
+      "groundShaders": 1,
+      "liveShadows": false,
+      "renderTarget": null
+    }
+  },
+  {
+    "mobile": true,
+    "slot": 5,
+    "audit": {
+      "samples": 553,
+      "matches": 553,
+      "shadowed": 140,
+      "penumbra": 4,
+      "failures": []
+    },
+    "state": {
+      "bytes": 5242880,
+      "receivers": 3,
+      "uuid": "5d9c3170-31fb-43fd-922c-ca5959f1c112",
+      "version": 1,
+      "groundShaders": 1,
+      "liveShadows": false,
+      "renderTarget": null
+    }
+  },
+  {
+    "mobile": true,
+    "slot": 11,
+    "audit": {
+      "samples": 553,
+      "matches": 553,
+      "shadowed": 354,
+      "penumbra": 4,
+      "failures": []
+    },
+    "state": {
+      "bytes": 5242880,
+      "receivers": 3,
+      "uuid": "60eed43c-b927-4c0c-b86a-b1001d98da18",
+      "version": 1,
+      "groundShaders": 1,
+      "liveShadows": false,
+      "renderTarget": null
+    }
+  }
+]

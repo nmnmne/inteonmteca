@@ -1,0 +1,10 @@
+{
+  "escape": true,
+  "circle": true,
+  "chase": true,
+  "ignore": true,
+  "musicAccent": true,
+  "exploration": true,
+  "reducedMotion": true,
+  "errors": []
+}

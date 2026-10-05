@@ -1,0 +1,673 @@
+[
+  {
+    "browser": "msedge",
+    "viewport": [
+      1440,
+      900
+    ],
+    "touch": false,
+    "errors": [],
+    "httpErrors": [
+      "401 http://127.0.0.1:62568/api/auth/me",
+      "401 http://127.0.0.1:62568/api/auth/me"
+    ],
+    "geometry": {
+      "player": {
+        "x": 47.984375,
+        "y": 704,
+        "width": 1344.03125,
+        "height": 124,
+        "right": 1392.015625,
+        "bottom": 828
+      },
+      "list": {
+        "x": 626.90625,
+        "y": 160,
+        "width": 764.109375,
+        "height": 507,
+        "right": 1391.015625,
+        "bottom": 667
+      },
+      "intro": {
+        "x": 47.984375,
+        "y": 117,
+        "width": 510.734375,
+        "height": 256.03125,
+        "right": 558.71875,
+        "bottom": 373.03125
+      },
+      "logo": {
+        "x": 54.196067810058594,
+        "y": 471.93927001953125,
+        "width": 538.63916015625,
+        "height": 108.29412841796875,
+        "right": 592.8352279663086,
+        "bottom": 580.2333984375
+      },
+      "overflow": false,
+      "mode": "live",
+      "theme": "slate"
+    },
+    "idleCanvasDraws": 2508,
+    "existingPlayerChecks": {
+      "realPlayback": true,
+      "nativeEnded": true,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": false
+    },
+    "failure": "",
+    "traceback": "Traceback (most recent call last):\n  File \"D:\\Dev\\inteonmteca\\.hermes\\plans\\2026-10-05-home-astra-redesign\\evidence\\qa_home.py\", line 54, in <module>\n    assert page.evaluate('player.paused && currentTrack===null')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  {
+    "browser": "msedge",
+    "viewport": [
+      1920,
+      1080
+    ],
+    "touch": false,
+    "errors": [],
+    "httpErrors": [
+      "401 http://127.0.0.1:62568/api/auth/me",
+      "401 http://127.0.0.1:62568/api/auth/me"
+    ],
+    "geometry": {
+      "player": {
+        "x": 63.984375,
+        "y": 884,
+        "width": 1792.03125,
+        "height": 124,
+        "right": 1856.015625,
+        "bottom": 1008
+      },
+      "list": {
+        "x": 835.546875,
+        "y": 183,
+        "width": 1019.46875,
+        "height": 664,
+        "right": 1855.015625,
+        "bottom": 847
+      },
+      "intro": {
+        "x": 63.984375,
+        "y": 140,
+        "width": 680.96875,
+        "height": 307.796875,
+        "right": 744.953125,
+        "bottom": 447.796875
+      },
+      "logo": {
+        "x": 72.4113998413086,
+        "y": 592.8357543945312,
+        "width": 717.86474609375,
+        "height": 144.21258544921875,
+        "right": 790.2761459350586,
+        "bottom": 737.04833984375
+      },
+      "overflow": false,
+      "mode": "live",
+      "theme": "slate"
+    },
+    "idleCanvasDraws": 2509,
+    "existingPlayerChecks": {
+      "realPlayback": true,
+      "nativeEnded": false,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": false
+    },
+    "failure": "",
+    "traceback": "Traceback (most recent call last):\n  File \"D:\\Dev\\inteonmteca\\.hermes\\plans\\2026-10-05-home-astra-redesign\\evidence\\qa_home.py\", line 54, in <module>\n    assert page.evaluate('player.paused && currentTrack===null')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  {
+    "browser": "msedge",
+    "viewport": [
+      768,
+      1024
+    ],
+    "touch": true,
+    "errors": [],
+    "httpErrors": [
+      "401 http://127.0.0.1:62568/api/auth/me",
+      "401 http://127.0.0.1:62568/api/auth/me"
+    ],
+    "geometry": {
+      "player": {
+        "x": 24,
+        "y": 820,
+        "width": 720,
+        "height": 132,
+        "right": 744,
+        "bottom": 952
+      },
+      "list": {
+        "x": 288.796875,
+        "y": 147,
+        "width": 454.203125,
+        "height": 654,
+        "right": 743,
+        "bottom": 801
+      },
+      "intro": {
+        "x": 24,
+        "y": 104,
+        "width": 235,
+        "height": 146.25,
+        "right": 259,
+        "bottom": 250.25
+      },
+      "logo": {
+        "x": 19.1875,
+        "y": 586.2265625,
+        "width": 284.15625,
+        "height": 68.578125,
+        "right": 303.34375,
+        "bottom": 654.8046875
+      },
+      "overflow": false,
+      "mode": "static",
+      "theme": "slate"
+    },
+    "idleCanvasDraws": 0,
+    "existingPlayerChecks": {
+      "realPlayback": true,
+      "nativeEnded": false,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": true
+    },
+    "failure": "",
+    "traceback": "Traceback (most recent call last):\n  File \"D:\\Dev\\inteonmteca\\.hermes\\plans\\2026-10-05-home-astra-redesign\\evidence\\qa_home.py\", line 54, in <module>\n    assert page.evaluate('player.paused && currentTrack===null')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  {
+    "browser": "msedge",
+    "viewport": [
+      800,
+      900
+    ],
+    "touch": false,
+    "errors": [],
+    "httpErrors": [
+      "401 http://127.0.0.1:62568/api/auth/me",
+      "401 http://127.0.0.1:62568/api/auth/me"
+    ],
+    "geometry": {
+      "player": {
+        "x": 24,
+        "y": 696,
+        "width": 752,
+        "height": 132,
+        "right": 776,
+        "bottom": 828
+      },
+      "list": {
+        "x": 300.53125,
+        "y": 147,
+        "width": 474.46875,
+        "height": 530,
+        "right": 775,
+        "bottom": 677
+      },
+      "intro": {
+        "x": 24,
+        "y": 104,
+        "width": 245.453125,
+        "height": 149.25,
+        "right": 269.453125,
+        "bottom": 253.25
+      },
+      "logo": {
+        "x": 20,
+        "y": 493.03125,
+        "width": 296,
+        "height": 71.4375,
+        "right": 316,
+        "bottom": 564.46875
+      },
+      "overflow": false,
+      "mode": "static",
+      "theme": "slate"
+    },
+    "idleCanvasDraws": 0,
+    "existingPlayerChecks": {
+      "realPlayback": true,
+      "nativeEnded": false,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": false
+    },
+    "failure": "",
+    "traceback": "Traceback (most recent call last):\n  File \"D:\\Dev\\inteonmteca\\.hermes\\plans\\2026-10-05-home-astra-redesign\\evidence\\qa_home.py\", line 54, in <module>\n    assert page.evaluate('player.paused && currentTrack===null')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  {
+    "browser": "msedge",
+    "viewport": [
+      801,
+      900
+    ],
+    "touch": false,
+    "errors": [],
+    "httpErrors": [
+      "401 http://127.0.0.1:62568/api/auth/me",
+      "401 http://127.0.0.1:62568/api/auth/me"
+    ],
+    "geometry": {
+      "player": {
+        "x": 24,
+        "y": 696,
+        "width": 753,
+        "height": 132,
+        "right": 777,
+        "bottom": 828
+      },
+      "list": {
+        "x": 300.890625,
+        "y": 147,
+        "width": 475.109375,
+        "height": 530,
+        "right": 776,
+        "bottom": 677
+      },
+      "intro": {
+        "x": 24,
+        "y": 104,
+        "width": 245.78125,
+        "height": 149.34375,
+        "right": 269.78125,
+        "bottom": 253.34375
+      },
+      "logo": {
+        "x": 19.79261589050293,
+        "y": 500.0185546875,
+        "width": 296.821044921875,
+        "height": 59.6290283203125,
+        "right": 316.61366081237793,
+        "bottom": 559.6475830078125
+      },
+      "overflow": false,
+      "mode": "live",
+      "theme": "slate"
+    },
+    "idleCanvasDraws": 2384,
+    "existingPlayerChecks": {
+      "realPlayback": true,
+      "nativeEnded": false,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": false
+    },
+    "failure": "",
+    "traceback": "Traceback (most recent call last):\n  File \"D:\\Dev\\inteonmteca\\.hermes\\plans\\2026-10-05-home-astra-redesign\\evidence\\qa_home.py\", line 54, in <module>\n    assert page.evaluate('player.paused && currentTrack===null')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  {
+    "browser": "msedge",
+    "viewport": [
+      390,
+      844
+    ],
+    "touch": true,
+    "errors": [],
+    "httpErrors": [
+      "401 http://127.0.0.1:62568/api/auth/me",
+      "401 http://127.0.0.1:62568/api/auth/me"
+    ],
+    "geometry": {
+      "player": {
+        "x": 16,
+        "y": 602,
+        "width": 358,
+        "height": 174,
+        "right": 374,
+        "bottom": 776
+      },
+      "list": {
+        "x": 17,
+        "y": 243,
+        "width": 356,
+        "height": 342,
+        "right": 373,
+        "bottom": 585
+      },
+      "intro": {
+        "x": 16,
+        "y": 78,
+        "width": 358,
+        "height": 57.9375,
+        "right": 374,
+        "bottom": 135.9375
+      },
+      "logo": {
+        "x": 54,
+        "y": 133.96875,
+        "width": 282,
+        "height": 68.0625,
+        "right": 336,
+        "bottom": 202.03125
+      },
+      "overflow": false,
+      "mode": "static",
+      "theme": "slate"
+    },
+    "idleCanvasDraws": 0,
+    "existingPlayerChecks": {
+      "realPlayback": true,
+      "nativeEnded": true,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": true
+    },
+    "failure": "",
+    "traceback": "Traceback (most recent call last):\n  File \"D:\\Dev\\inteonmteca\\.hermes\\plans\\2026-10-05-home-astra-redesign\\evidence\\qa_home.py\", line 54, in <module>\n    assert page.evaluate('player.paused && currentTrack===null')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  {
+    "browser": "msedge",
+    "viewport": [
+      320,
+      740
+    ],
+    "touch": true,
+    "errors": [],
+    "httpErrors": [
+      "401 http://127.0.0.1:62568/api/auth/me",
+      "401 http://127.0.0.1:62568/api/auth/me"
+    ],
+    "geometry": {
+      "player": {
+        "x": 16,
+        "y": 498,
+        "width": 288,
+        "height": 174,
+        "right": 304,
+        "bottom": 672
+      },
+      "list": {
+        "x": 17,
+        "y": 243,
+        "width": 286,
+        "height": 238,
+        "right": 303,
+        "bottom": 481
+      },
+      "intro": {
+        "x": 16,
+        "y": 78,
+        "width": 288,
+        "height": 55.65625,
+        "right": 304,
+        "bottom": 133.65625
+      },
+      "logo": {
+        "x": 32,
+        "y": 137.109375,
+        "width": 256,
+        "height": 61.78125,
+        "right": 288,
+        "bottom": 198.890625
+      },
+      "overflow": false,
+      "mode": "static",
+      "theme": "slate"
+    },
+    "idleCanvasDraws": 0,
+    "existingPlayerChecks": {
+      "realPlayback": true,
+      "nativeEnded": false,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": true
+    },
+    "failure": "",
+    "traceback": "Traceback (most recent call last):\n  File \"D:\\Dev\\inteonmteca\\.hermes\\plans\\2026-10-05-home-astra-redesign\\evidence\\qa_home.py\", line 54, in <module>\n    assert page.evaluate('player.paused && currentTrack===null')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  {
+    "browser": "msedge",
+    "viewport": [
+      320,
+      568
+    ],
+    "touch": true,
+    "errors": [],
+    "httpErrors": [
+      "401 http://127.0.0.1:62568/api/auth/me",
+      "401 http://127.0.0.1:62568/api/auth/me"
+    ],
+    "geometry": {
+      "player": {
+        "x": 16,
+        "y": 336,
+        "width": 288,
+        "height": 174,
+        "right": 304,
+        "bottom": 510
+      },
+      "list": {
+        "x": 17,
+        "y": 181,
+        "width": 286,
+        "height": 142,
+        "right": 303,
+        "bottom": 323
+      },
+      "intro": {
+        "x": 16,
+        "y": 64,
+        "width": 288,
+        "height": 46.5,
+        "right": 304,
+        "bottom": 110.5
+      },
+      "logo": {
+        "x": 70.40625,
+        "y": 110.375,
+        "width": 179.1875,
+        "height": 43.25,
+        "right": 249.59375,
+        "bottom": 153.625
+      },
+      "overflow": false,
+      "mode": "static",
+      "theme": "slate"
+    },
+    "idleCanvasDraws": 0,
+    "existingPlayerChecks": {
+      "realPlayback": true,
+      "nativeEnded": false,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": true
+    },
+    "failure": "",
+    "traceback": "Traceback (most recent call last):\n  File \"D:\\Dev\\inteonmteca\\.hermes\\plans\\2026-10-05-home-astra-redesign\\evidence\\qa_home.py\", line 54, in <module>\n    assert page.evaluate('player.paused && currentTrack===null')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  {
+    "browser": "msedge",
+    "viewport": [
+      844,
+      390
+    ],
+    "touch": true,
+    "errors": [],
+    "httpErrors": [
+      "401 http://127.0.0.1:62568/api/auth/me",
+      "401 http://127.0.0.1:62568/api/auth/me"
+    ],
+    "geometry": {
+      "player": {
+        "x": 20,
+        "y": 218,
+        "width": 804,
+        "height": 118,
+        "right": 824,
+        "bottom": 336
+      },
+      "list": {
+        "x": 366.703125,
+        "y": 91,
+        "width": 456.296875,
+        "height": 114,
+        "right": 823,
+        "bottom": 205
+      },
+      "intro": {
+        "x": 20,
+        "y": 64,
+        "width": 305.515625,
+        "height": 88.25,
+        "right": 325.515625,
+        "bottom": 152.25
+      },
+      "logo": {
+        "x": 49.7734375,
+        "y": 143.40625,
+        "width": 270.078125,
+        "height": 65.1875,
+        "right": 319.8515625,
+        "bottom": 208.59375
+      },
+      "overflow": false,
+      "mode": "static",
+      "theme": "slate"
+    },
+    "idleCanvasDraws": 0,
+    "existingPlayerChecks": {
+      "realPlayback": true,
+      "nativeEnded": false,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": true
+    },
+    "failure": "",
+    "traceback": "Traceback (most recent call last):\n  File \"D:\\Dev\\inteonmteca\\.hermes\\plans\\2026-10-05-home-astra-redesign\\evidence\\qa_home.py\", line 54, in <module>\n    assert page.evaluate('player.paused && currentTrack===null')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  {
+    "browser": "chrome",
+    "viewport": [
+      1440,
+      900
+    ],
+    "touch": false,
+    "errors": [],
+    "httpErrors": [
+      "401 http://127.0.0.1:62568/api/auth/me",
+      "401 http://127.0.0.1:62568/api/auth/me"
+    ],
+    "geometry": {
+      "player": {
+        "x": 47.984375,
+        "y": 704,
+        "width": 1344.03125,
+        "height": 124,
+        "right": 1392.015625,
+        "bottom": 828
+      },
+      "list": {
+        "x": 626.90625,
+        "y": 160,
+        "width": 764.109375,
+        "height": 507,
+        "right": 1391.015625,
+        "bottom": 667
+      },
+      "intro": {
+        "x": 47.984375,
+        "y": 117,
+        "width": 510.734375,
+        "height": 256.03125,
+        "right": 558.71875,
+        "bottom": 373.03125
+      },
+      "logo": {
+        "x": 54.175498962402344,
+        "y": 471.981201171875,
+        "width": 538.6802978515625,
+        "height": 108.31683349609375,
+        "right": 592.8557968139648,
+        "bottom": 580.2980346679688
+      },
+      "overflow": false,
+      "mode": "live",
+      "theme": "slate"
+    },
+    "idleCanvasDraws": 2316,
+    "existingPlayerChecks": {
+      "realPlayback": true,
+      "nativeEnded": true,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": false
+    },
+    "failure": "",
+    "traceback": "Traceback (most recent call last):\n  File \"D:\\Dev\\inteonmteca\\.hermes\\plans\\2026-10-05-home-astra-redesign\\evidence\\qa_home.py\", line 54, in <module>\n    assert page.evaluate('player.paused && currentTrack===null')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  {
+    "browser": "chrome",
+    "viewport": [
+      390,
+      844
+    ],
+    "touch": true,
+    "errors": [],
+    "httpErrors": [
+      "401 http://127.0.0.1:62568/api/auth/me",
+      "401 http://127.0.0.1:62568/api/auth/me"
+    ],
+    "geometry": {
+      "player": {
+        "x": 16,
+        "y": 602,
+        "width": 358,
+        "height": 174,
+        "right": 374,
+        "bottom": 776
+      },
+      "list": {
+        "x": 17,
+        "y": 243,
+        "width": 356,
+        "height": 342,
+        "right": 373,
+        "bottom": 585
+      },
+      "intro": {
+        "x": 16,
+        "y": 78,
+        "width": 358,
+        "height": 57.9375,
+        "right": 374,
+        "bottom": 135.9375
+      },
+      "logo": {
+        "x": 54,
+        "y": 133.96875,
+        "width": 282,
+        "height": 68.0625,
+        "right": 336,
+        "bottom": 202.03125
+      },
+      "overflow": false,
+      "mode": "static",
+      "theme": "slate"
+    },
+    "idleCanvasDraws": 0,
+    "existingPlayerChecks": {
+      "realPlayback": true,
+      "nativeEnded": true,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": true
+    },
+    "failure": "",
+    "traceback": "Traceback (most recent call last):\n  File \"D:\\Dev\\inteonmteca\\.hermes\\plans\\2026-10-05-home-astra-redesign\\evidence\\qa_home.py\", line 54, in <module>\n    assert page.evaluate('player.paused && currentTrack===null')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  }
+]

@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: minimap follows every changed animation frame (touch=false)
+not ok 1 - minimap follows every changed animation frame (touch=false)
+  ---
+  duration_ms: 1.3152
+  type: 'test'
+  location: 'D:\\Dev\\inteonmteca\\tests\\yard-minimap.test.cjs:12:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    no skipped animation frames during rotation
+    
+    1 !== 5
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 5
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (D:\Dev\inteonmteca\tests\yard-minimap.test.cjs:24:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: minimap follows every changed animation frame (touch=true)
+not ok 2 - minimap follows every changed animation frame (touch=true)
+  ---
+  duration_ms: 0.9954
+  type: 'test'
+  location: 'D:\\Dev\\inteonmteca\\tests\\yard-minimap.test.cjs:12:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    no skipped animation frames during rotation
+    
+    0 !== 5
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 5
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (D:\Dev\inteonmteca\tests\yard-minimap.test.cjs:24:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: minimap crops nearby geography rather than fitting the whole site
+ok 3 - minimap crops nearby geography rather than fitting the whole site
+  ---
+  duration_ms: 1.0456
+  type: 'test'
+  ...
+# Subtest: moving player pans cached map while keeping the marker centered
+not ok 4 - moving player pans cached map while keeping the marker centered
+  ---
+  duration_ms: 0.7382
+  type: 'test'
+  location: 'D:\\Dev\\inteonmteca\\tests\\yard-minimap.test.cjs:57:1'
+  failureType: 'testCodeFailure'
+  error: 'map rotates opposite to viewing direction'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (D:\Dev\inteonmteca\tests\yard-minimap.test.cjs:71:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 1
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 56.4717

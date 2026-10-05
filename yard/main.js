@@ -1,9 +1,12 @@
 import * as THREE from "./vendor/three.module.js";
 import { distanceToWall, isWalkable, moveCircle } from "./navigation.js";
 import { createInputController } from "./input-controller.js";
-import { createQualityMeter, pixelRatioCap } from "./quality.js";
+import { createQualityMeter, createRenderGate, pixelRatioCap } from "./quality.js";
 import { createYardScene, drawScheme } from "./scene.js";
 import { createWallPlayer } from "./wall-player.js";
+import { createBoundaryMusic } from "./boundary-music.js";
+import { createLightingCycle, addBakedLighting } from "./baked-lighting.js";
+import { createLightingTransition } from "./lighting-transition.js";
 
 const fallback = document.querySelector("#file-fallback");
 const canvas = document.querySelector("#yard-view");
@@ -29,12 +32,18 @@ if (location.protocol === "file:") {
 } else {
   const schemeMap = drawScheme(schemeCanvas, layout);
   await player.load();
-  const { scene, solids, edgeEffect } = createYardScene(layout);
   const camera = new THREE.PerspectiveCamera(60, 1, 0.08, 400);
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
   renderer.setPixelRatio(pixelRatioCap());
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = false;
+  // Consume exactly one preset on entrance, never on walking/player/visibility events.
+  const lighting = createLightingCycle().next(layout);
+  const { scene, solids, logo, edgeEffect } = createYardScene(layout, lighting);
+  const lightingTransition = createLightingTransition(scene, layout, lighting, window.yardWalkClock);
+  let disposed = false;
+  // Draw and enable input before fetching the optional projected-depth enhancement.
+  const shouldRender = createRenderGate(matchMedia("(max-width: 800px), (pointer: coarse)").matches);
 
   const params = new URLSearchParams(location.search);
   const resumed = window.inteonStreet?.resumePose?.();
@@ -49,6 +58,7 @@ if (location.protocol === "file:") {
     yaw: start.yaw,
     pitch: start.pitch || 0,
   };
+  const boundaryMusic = createBoundaryMusic(layout.walkable, body, () => player.playBoundaryTrack());
   const input = createInputController(window, {
     walkSpeed: layout.movement.speedMps,
     sprintSpeed: layout.movement.sprintMps || 3.8,
@@ -68,11 +78,15 @@ if (location.protocol === "file:") {
     appliedLook = next;
   };
 
+  let renderRevision = 0;
+  canvas.addEventListener("webglcontextrestored", () => { renderRevision += 1; });
   const resize = () => {
+    renderRevision += 1;
     const width = canvas.clientWidth || window.innerWidth;
     const height = canvas.clientHeight || window.innerHeight;
     camera.aspect = width / Math.max(1, height);
     camera.updateProjectionMatrix();
+    renderer.setPixelRatio(pixelRatioCap());
     renderer.setSize(width, height, false);
   };
   resize();
@@ -180,7 +194,7 @@ if (location.protocol === "file:") {
 
   let marked = null;
   const scheduleFrame = () => {
-    if (!document.hidden && frameHandle === null) frameHandle = requestAnimationFrame(frame);
+    if (!disposed && !document.hidden && frameHandle === null) frameHandle = requestAnimationFrame(frame);
   };
   const frame = (now) => {
     frameHandle = null;
@@ -207,6 +221,8 @@ if (location.protocol === "file:") {
     }
     placeCamera();
     edgeEffect?.update(body.x, body.z);
+    if (lightingTransition.update()) renderRevision += 1;
+    boundaryMusic(body.x, body.z);
     updateNear();
     const mapInterval = coarsePointer ? 120 : 48;
     if (now - lastMapDraw >= mapInterval && (!marked || marked.x !== body.x || marked.z !== body.z || marked.yaw !== body.yaw)) {
@@ -214,7 +230,9 @@ if (location.protocol === "file:") {
       schemeMap.drawMarker(body.x, body.z, body.yaw);
       lastMapDraw = now;
     }
-    if (!document.hidden) renderer.render(scene, camera);
+    if (!document.hidden && shouldRender(body, canvas.width, canvas.height, `${renderRevision}:${logo.material.map?.version || 0}`)) {
+      renderer.render(scene, camera);
+    }
     scheduleFrame();
   };
   placeCamera();
@@ -227,8 +245,52 @@ if (location.protocol === "file:") {
   });
   scheduleFrame();
 
+  scene.userData.bakedLightingStatus = "loading";
+  // Start after the first visible frame, not on the critical boot path.
+  requestAnimationFrame(() => setTimeout(() => {
+    if (disposed) return;
+    addBakedLighting(scene, null, layout, lighting).then(atlas => {
+      lightingTransition.attach(atlas);
+      if (disposed) return;
+      scene.userData.bakedLightingStatus = "ready";
+      renderRevision += 1; // Wake the mobile idle gate when shaders/textures change.
+      scheduleFrame();
+    }).catch(error => {
+      if (disposed) return;
+      scene.userData.bakedLightingStatus = "unavailable";
+      scene.userData.bakedLightingError = String(error);
+      console.warn("Precomputed yard shadows unavailable; retaining lit scene:", error);
+    });
+  }, 0));
+
+  window.addEventListener("pagehide", () => {
+    disposed = true;
+    cancelAnimationFrame(frameHandle);
+    frameHandle = null;
+    lightingTransition.dispose();
+    const resources = new Set();
+    scene.traverse(mesh => {
+      if (mesh.geometry) resources.add(mesh.geometry);
+      for (const material of !mesh.material ? [] : Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+        resources.add(material);
+        for (const value of Object.values(material)) if (value?.isTexture) resources.add(value);
+      }
+    });
+    resources.forEach(resource => resource.dispose());
+    renderer.dispose();
+    scene.userData.bakedLightingStatus = "disposed";
+  });
+
+  // Back/forward cache restores an old frozen scene without re-running modules.
+  // Treat that restoration as an entrance too, using the ordinary selected-texture load path.
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) location.reload();
+  });
+
   window.__yard = {
     layout,
+    lighting,
+    lightingTransition,
     body,
     meter,
     renderer,

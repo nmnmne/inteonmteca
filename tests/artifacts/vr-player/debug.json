@@ -1,0 +1,36 @@
+[
+  {
+    "viewport": [
+      320,
+      568
+    ],
+    "errors": [],
+    "geometry": {
+      "player": {
+        "x": 16,
+        "y": 306,
+        "width": 288,
+        "height": 194,
+        "right": 304,
+        "bottom": 500
+      },
+      "list": {
+        "x": 16,
+        "y": 210,
+        "width": 288,
+        "height": 84,
+        "right": 304,
+        "bottom": 294
+      },
+      "overflow": false
+    },
+    "checks": {
+      "realPlayback": true,
+      "nativeEnded": false,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": true
+    }
+  }
+]

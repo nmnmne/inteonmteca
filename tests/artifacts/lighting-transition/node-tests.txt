@@ -1,0 +1,223 @@
+TAP version 13
+# Subtest: mobile render gate skips unchanged poses but invalidates textures, resize and pitch
+ok 1 - mobile render gate skips unchanged poses but invalidates textures, resize and pitch
+  ---
+  duration_ms: 3.6996
+  type: 'test'
+  ...
+# Subtest: desktop render gate retains continuous rendering
+ok 2 - desktop render gate retains continuous rendering
+  ---
+  duration_ms: 0.247
+  type: 'test'
+  ...
+# Subtest: expired visit cannot receive a delayed playback bonus
+ok 3 - expired visit cannot receive a delayed playback bonus
+  ---
+  duration_ms: 3.0759
+  type: 'test'
+  ...
+# Subtest: timeout ends the bonus and an ended visit rejects stale playback callbacks
+ok 4 - timeout ends the bonus and an ended visit rejects stale playback callbacks
+  ---
+  duration_ms: 1.2274
+  type: 'test'
+  ...
+# Subtest: local midnight does not reset an existing deadline; a later visit can earn the new day
+ok 5 - local midnight does not reset an existing deadline; a later visit can earn the new day
+  ---
+  duration_ms: 2.4717
+  type: 'test'
+  ...
+# Subtest: successful switch grants a fixed 20-minute deadline, reload preserves it, home forfeits it
+ok 6 - successful switch grants a fixed 20-minute deadline, reload preserves it, home forfeits it
+  ---
+  duration_ms: 2.7053
+  type: 'test'
+  ...
+# PASS: street return
+# Subtest: D:\\Dev\\inteonmteca\\tests\\street-return.test.cjs
+ok 3 - D:\\Dev\\inteonmteca\\tests\\street-return.test.cjs
+  ---
+  duration_ms: 74.0368
+  type: 'test'
+  ...
+# Subtest: manual return saves pose and a cached yard gets a fresh cancellable deadline
+ok 8 - manual return saves pose and a cached yard gets a fresh cancellable deadline
+  ---
+  duration_ms: 3.129
+  type: 'test'
+  ...
+# Subtest: boundary session stops at end; manual next resumes normal playlist without bonus replay
+ok 9 - boundary session stops at end; manual next resumes normal playlist without bonus replay
+  ---
+  duration_ms: 3.5695
+  type: 'test'
+  ...
+# Subtest: exit selects exact track and replaces other active audio, not the same active track
+ok 10 - exit selects exact track and replaces other active audio, not the same active track
+  ---
+  duration_ms: 5.8597
+  type: 'test'
+  ...
+# Subtest: denied crossing remains paused with one attempt until explicit retry gesture
+ok 11 - denied crossing remains paused with one attempt until explicit retry gesture
+  ---
+  duration_ms: 5.7618
+  type: 'test'
+  ...
+# Subtest: a different selection cancels a denied boundary grant
+ok 12 - a different selection cancels a denied boundary grant
+  ---
+  duration_ms: 1.7083
+  type: 'test'
+  ...
+# Subtest: scene frame wires crossing check to wall player using actual walkable polygon
+ok 13 - scene frame wires crossing check to wall player using actual walkable polygon
+  ---
+  duration_ms: 0.4615
+  type: 'test'
+  ...
+# Subtest: touching every actual polygon edge triggers, but near-edge interior does not
+ok 14 - touching every actual polygon edge triggers, but near-edge interior does not
+  ---
+  duration_ms: 1.4226
+  type: 'test'
+  ...
+# Subtest: actual polygon exit triggers once, not grid proximity; reentry rearms; outside spawn is silent
+ok 15 - actual polygon exit triggers once, not grid proximity; reentry rearms; outside spawn is silent
+  ---
+  duration_ms: 1.0382
+  type: 'test'
+  ...
+# PASS: all facade normals outside footprints
+# Subtest: D:\\Dev\\inteonmteca\\tests\\yard-facade-normals.test.cjs
+ok 6 - D:\\Dev\\inteonmteca\\tests\\yard-facade-normals.test.cjs
+  ---
+  duration_ms: 91.109
+  type: 'test'
+  ...
+# PASS: yard geometry / visible roads
+# Subtest: D:\\Dev\\inteonmteca\\tests\\yard-geometry.test.cjs
+ok 7 - D:\\Dev\\inteonmteca\\tests\\yard-geometry.test.cjs
+  ---
+  duration_ms: 90.1763
+  type: 'test'
+  ...
+# PASS: yard input
+# Subtest: D:\\Dev\\inteonmteca\\tests\\yard-input.test.cjs
+ok 8 - D:\\Dev\\inteonmteca\\tests\\yard-input.test.cjs
+  ---
+  duration_ms: 58.5092
+  type: 'test'
+  ...
+# Subtest: visit cycle includes every twenty-minute slot and wraps after 20:00
+ok 19 - visit cycle includes every twenty-minute slot and wraps after 20:00
+  ---
+  duration_ms: 44.1595
+  type: 'test'
+  ...
+# Subtest: storage failures and corrupt values safely fall back without freezing the cycle
+ok 20 - storage failures and corrupt values safely fall back without freezing the cycle
+  ---
+  duration_ms: 0.4807
+  type: 'test'
+  ...
+# Subtest: presets move the reference sun and coherently change sky, fill and baked shadows
+ok 21 - presets move the reference sun and coherently change sky, fill and baked shadows
+  ---
+  duration_ms: 2.8074
+  type: 'test'
+  ...
+# Subtest: hold is ten seconds; every real walk duration ends exactly at its deadline
+ok 22 - hold is ten seconds; every real walk duration ends exactly at its deadline
+  ---
+  duration_ms: 4.8518
+  type: 'test'
+  ...
+# Subtest: late initialization, resumed frames and an already short remaining visit use absolute time
+ok 23 - late initialization, resumed frames and an already short remaining visit use absolute time
+  ---
+  duration_ms: 0.3075
+  type: 'test'
+  ...
+# Subtest: actual street-return ticks and its boundary bonus retime continuously without a second duration
+ok 24 - actual street-return ticks and its boundary bonus retime continuously without a second duration
+  ---
+  duration_ms: 2.6919
+  type: 'test'
+  ...
+# Subtest: all twelve transitions select only the next preset, including 11 -> 0
+ok 25 - all twelve transitions select only the next preset, including 11 -> 0
+  ---
+  duration_ms: 41.5805
+  type: 'test'
+  ...
+# Subtest: two depth maps during blending; old GPU texture is released at completion and next at exit
+ok 26 - two depth maps during blending; old GPU texture is released at completion and next at exit
+  ---
+  duration_ms: 1.7477
+  type: 'test'
+  ...
+# Subtest: exit during next-map loading disposes the late result without patching a dead scene
+ok 27 - exit during next-map loading disposes the late result without patching a dead scene
+  ---
+  duration_ms: 0.4602
+  type: 'test'
+  ...
+# Subtest: missing next map retains the original depth texture and shader
+ok 28 - missing next map retains the original depth texture and shader
+  ---
+  duration_ms: 0.3972
+  type: 'test'
+  ...
+# Subtest: restored atlas remains byte-for-byte identical to the saved original
+ok 29 - restored atlas remains byte-for-byte identical to the saved original
+  ---
+  duration_ms: 0.453
+  type: 'test'
+  ...
+# PASS: actual offline shadow assets and no runtime rasterization
+# Subtest: D:\\Dev\\inteonmteca\\tests\\yard-lighting.test.cjs
+ok 11 - D:\\Dev\\inteonmteca\\tests\\yard-lighting.test.cjs
+  ---
+  duration_ms: 95.3964
+  type: 'test'
+  ...
+# PASS: yard models
+# Subtest: D:\\Dev\\inteonmteca\\tests\\yard-models.test.cjs
+ok 12 - D:\\Dev\\inteonmteca\\tests\\yard-models.test.cjs
+  ---
+  duration_ms: 52.5537
+  type: 'test'
+  ...
+# PASS: yard navigation
+# Subtest: D:\\Dev\\inteonmteca\\tests\\yard-navigation.test.cjs
+ok 13 - D:\\Dev\\inteonmteca\\tests\\yard-navigation.test.cjs
+  ---
+  duration_ms: 203.9864
+  type: 'test'
+  ...
+# PASS: yard place
+# Subtest: D:\\Dev\\inteonmteca\\tests\\yard-place.test.cjs
+ok 14 - D:\\Dev\\inteonmteca\\tests\\yard-place.test.cjs
+  ---
+  duration_ms: 52.471
+  type: 'test'
+  ...
+# PASS: yard roads
+# Subtest: D:\\Dev\\inteonmteca\\tests\\yard-roads.test.cjs
+ok 15 - D:\\Dev\\inteonmteca\\tests\\yard-roads.test.cjs
+  ---
+  duration_ms: 49.6703
+  type: 'test'
+  ...
+1..34
+# tests 34
+# suites 0
+# pass 34
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 267.6496

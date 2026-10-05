@@ -1,0 +1,49 @@
+{
+  "baselineReload": {
+    "paused": true,
+    "hasTrack": true,
+    "origin": "home",
+    "title": "Last Eclipse (Negative Space Resonance)",
+    "sameAudio": true
+  },
+  "redesignReload": {
+    "paused": true,
+    "hasTrack": true,
+    "origin": "home",
+    "title": "Last Eclipse (Negative Space Resonance)",
+    "sameAudio": true
+  },
+  "reloadBehaviorPreserved": true,
+  "resize": [
+    {
+      "width": 390,
+      "mode": "static",
+      "canvasDraws": 0
+    },
+    {
+      "width": 1440,
+      "mode": "live",
+      "canvasDraws": 1459
+    },
+    {
+      "width": 800,
+      "mode": "static",
+      "canvasDraws": 0
+    },
+    {
+      "width": 801,
+      "mode": "live",
+      "canvasDraws": 1376
+    },
+    {
+      "width": 390,
+      "mode": "static",
+      "canvasDraws": 0
+    }
+  ],
+  "reducedMotionRunningAnimations": [],
+  "dialogsWithinViewport": true,
+  "browsers": {
+    "edge": "154.0.4258.53"
+  }
+}

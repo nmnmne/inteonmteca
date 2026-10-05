@@ -1,0 +1,332 @@
+[
+  {
+    "size": [
+      1440,
+      900
+    ],
+    "mode": "live",
+    "perf": {
+      "TaskDuration": 0.7647,
+      "ScriptDuration": 0.0385,
+      "RecalcStyleDuration": 0.5227,
+      "LayoutCount": 50
+    },
+    "geometry": {
+      ".logo-wrap": {
+        "x": 158.40625,
+        "y": 48.4296875,
+        "width": 1123.1875,
+        "height": 225.046875,
+        "top": 48.4296875,
+        "right": 1281.59375,
+        "bottom": 273.4765625,
+        "left": 158.40625
+      },
+      ".listening-intro": {
+        "x": 64.796875,
+        "y": 324.5625,
+        "width": 482.21875,
+        "height": 301.875,
+        "top": 324.5625,
+        "right": 547.015625,
+        "bottom": 626.4375,
+        "left": 64.796875
+      },
+      "#track-list": {
+        "x": 651.84375,
+        "y": 315,
+        "width": 723.359375,
+        "height": 356,
+        "top": 315,
+        "right": 1375.203125,
+        "bottom": 671,
+        "left": 651.84375
+      },
+      "#active-player": {
+        "x": 64.796875,
+        "y": 696,
+        "width": 1310.40625,
+        "height": 128,
+        "top": 696,
+        "right": 1375.203125,
+        "bottom": 824,
+        "left": 64.796875
+      }
+    }
+  },
+  {
+    "size": [
+      390,
+      844
+    ],
+    "mode": "static",
+    "perf": {
+      "TaskDuration": 0.2079,
+      "ScriptDuration": 0.0004,
+      "RecalcStyleDuration": 0.1866,
+      "LayoutCount": 0
+    },
+    "geometry": {
+      ".logo-wrap": {
+        "x": 19.5,
+        "y": 90.8828125,
+        "width": 351,
+        "height": 70.328125,
+        "top": 90.8828125,
+        "right": 370.5,
+        "bottom": 161.2109375,
+        "left": 19.5
+      },
+      ".listening-intro": {
+        "x": 19.5,
+        "y": 194.109375,
+        "width": 351,
+        "height": 54,
+        "top": 194.109375,
+        "right": 370.5,
+        "bottom": 248.109375,
+        "left": 19.5
+      },
+      "#track-list": {
+        "x": 19.5,
+        "y": 298.109375,
+        "width": 351,
+        "height": 274.890625,
+        "top": 298.109375,
+        "right": 370.5,
+        "bottom": 573,
+        "left": 19.5
+      },
+      "#active-player": {
+        "x": 19.5,
+        "y": 592,
+        "width": 351,
+        "height": 184,
+        "top": 592,
+        "right": 370.5,
+        "bottom": 776,
+        "left": 19.5
+      }
+    }
+  },
+  {
+    "size": [
+      320,
+      568
+    ],
+    "mode": "static",
+    "perf": {
+      "TaskDuration": 0.2117,
+      "ScriptDuration": 0.0004,
+      "RecalcStyleDuration": 0.1906,
+      "LayoutCount": 0
+    },
+    "geometry": {
+      ".logo-wrap": {
+        "x": 16,
+        "y": 66.1484375,
+        "width": 288,
+        "height": 57.703125,
+        "top": 66.1484375,
+        "right": 304,
+        "bottom": 123.8515625,
+        "left": 16
+      },
+      ".listening-intro": {
+        "x": 16,
+        "y": 132,
+        "width": 288,
+        "height": 44,
+        "top": 132,
+        "right": 304,
+        "bottom": 176,
+        "left": 16
+      },
+      "#track-list": {
+        "x": 16,
+        "y": 211,
+        "width": 288,
+        "height": 120,
+        "top": 211,
+        "right": 304,
+        "bottom": 331,
+        "left": 16
+      },
+      "#active-player": {
+        "x": 16,
+        "y": 344,
+        "width": 288,
+        "height": 166,
+        "top": 344,
+        "right": 304,
+        "bottom": 510,
+        "left": 16
+      }
+    }
+  },
+  {
+    "size": [
+      844,
+      390
+    ],
+    "mode": "static",
+    "perf": {
+      "TaskDuration": 0.2311,
+      "ScriptDuration": 0.0004,
+      "RecalcStyleDuration": 0.1894,
+      "LayoutCount": 0
+    },
+    "geometry": {
+      ".logo-wrap": {
+        "x": 20,
+        "y": 77,
+        "width": 303.828125,
+        "height": 60.875,
+        "top": 77,
+        "right": 323.828125,
+        "bottom": 137.875,
+        "left": 20
+      },
+      ".listening-intro": {
+        "x": 20,
+        "y": 153.5,
+        "width": 305.515625,
+        "height": 54.5,
+        "top": 153.5,
+        "right": 325.515625,
+        "bottom": 208,
+        "left": 20
+      },
+      "#track-list": {
+        "x": 365.703125,
+        "y": 94,
+        "width": 458.296875,
+        "height": 113,
+        "top": 94,
+        "right": 824,
+        "bottom": 207,
+        "left": 365.703125
+      },
+      "#active-player": {
+        "x": 20,
+        "y": 220,
+        "width": 804,
+        "height": 116,
+        "top": 220,
+        "right": 824,
+        "bottom": 336,
+        "left": 20
+      }
+    }
+  },
+  {
+    "size": [
+      800,
+      600
+    ],
+    "mode": "static",
+    "perf": {
+      "TaskDuration": 0.2297,
+      "ScriptDuration": 0.0003,
+      "RecalcStyleDuration": 0.1841,
+      "LayoutCount": 0
+    },
+    "geometry": {
+      ".logo-wrap": {
+        "x": 40,
+        "y": 22.8671875,
+        "width": 720,
+        "height": 144.265625,
+        "top": 22.8671875,
+        "right": 760,
+        "bottom": 167.1328125,
+        "left": 40
+      },
+      ".listening-intro": {
+        "x": 40,
+        "y": 132,
+        "width": 720,
+        "height": 44,
+        "top": 132,
+        "right": 760,
+        "bottom": 176,
+        "left": 40
+      },
+      "#track-list": {
+        "x": 40,
+        "y": 211,
+        "width": 720,
+        "height": 152,
+        "top": 211,
+        "right": 760,
+        "bottom": 363,
+        "left": 40
+      },
+      "#active-player": {
+        "x": 40,
+        "y": 376,
+        "width": 720,
+        "height": 166,
+        "top": 376,
+        "right": 760,
+        "bottom": 542,
+        "left": 40
+      }
+    }
+  },
+  {
+    "size": [
+      1920,
+      1080
+    ],
+    "mode": "live",
+    "perf": {
+      "TaskDuration": 0.614,
+      "ScriptDuration": 0.0355,
+      "RecalcStyleDuration": 0.4035,
+      "LayoutCount": 50
+    },
+    "geometry": {
+      ".logo-wrap": {
+        "x": 370,
+        "y": 67.21875,
+        "width": 1180,
+        "height": 236.4375,
+        "top": 67.21875,
+        "right": 1550,
+        "bottom": 303.65625,
+        "left": 370
+      },
+      ".listening-intro": {
+        "x": 86.390625,
+        "y": 432.40625,
+        "width": 642.96875,
+        "height": 317.1875,
+        "top": 432.40625,
+        "right": 729.359375,
+        "bottom": 749.59375,
+        "left": 86.390625
+      },
+      "#track-list": {
+        "x": 869.125,
+        "y": 366,
+        "width": 964.484375,
+        "height": 485,
+        "top": 366,
+        "right": 1833.609375,
+        "bottom": 851,
+        "left": 869.125
+      },
+      "#active-player": {
+        "x": 86.390625,
+        "y": 876,
+        "width": 1747.21875,
+        "height": 128,
+        "top": 876,
+        "right": 1833.609375,
+        "bottom": 1004,
+        "left": 86.390625
+      }
+    }
+  }
+]

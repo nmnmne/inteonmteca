@@ -1,0 +1,43 @@
+[
+  {
+    "viewport": [
+      390,
+      844
+    ],
+    "errors": [],
+    "performance3s": {
+      "TaskDuration": 0.0051,
+      "ScriptDuration": 0.00044,
+      "LayoutDuration": 0,
+      "RecalcStyleDuration": 0.00037,
+      "LayoutCount": 0
+    },
+    "geometry": {
+      "player": {
+        "x": 19.5,
+        "y": 592,
+        "width": 351,
+        "height": 184,
+        "right": 370.5,
+        "bottom": 776
+      },
+      "list": {
+        "x": 19.5,
+        "y": 298.109375,
+        "width": 351,
+        "height": 274.890625,
+        "right": 370.5,
+        "bottom": 573
+      },
+      "overflow": false
+    },
+    "checks": {
+      "realPlayback": true,
+      "nativeEnded": true,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": true
+    }
+  }
+]

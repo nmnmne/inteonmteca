@@ -1,0 +1,288 @@
+[
+  {
+    "viewport": [
+      1440,
+      900
+    ],
+    "errors": [],
+    "performance3s": {
+      "TaskDuration": 0.15674,
+      "ScriptDuration": 0.02369,
+      "LayoutDuration": 0,
+      "RecalcStyleDuration": 0.04867,
+      "LayoutCount": 0
+    },
+    "geometry": {
+      "player": {
+        "x": 64.796875,
+        "y": 696,
+        "width": 1310.40625,
+        "height": 128,
+        "right": 1375.203125,
+        "bottom": 824
+      },
+      "list": {
+        "x": 651.84375,
+        "y": 315,
+        "width": 723.359375,
+        "height": 356,
+        "right": 1375.203125,
+        "bottom": 671
+      },
+      "overflow": false
+    },
+    "checks": {
+      "realPlayback": true,
+      "nativeEnded": true,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": false
+    }
+  },
+  {
+    "viewport": [
+      1280,
+      720
+    ],
+    "errors": [],
+    "geometry": {
+      "player": {
+        "x": 57.59375,
+        "y": 516,
+        "width": 1164.8125,
+        "height": 128,
+        "right": 1222.40625,
+        "bottom": 644
+      },
+      "list": {
+        "x": 579.421875,
+        "y": 264,
+        "width": 642.984375,
+        "height": 227,
+        "right": 1222.40625,
+        "bottom": 491
+      },
+      "overflow": false
+    },
+    "checks": {
+      "realPlayback": true,
+      "nativeEnded": false,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": false
+    }
+  },
+  {
+    "viewport": [
+      1024,
+      768
+    ],
+    "errors": [],
+    "geometry": {
+      "player": {
+        "x": 32,
+        "y": 564,
+        "width": 960,
+        "height": 128,
+        "right": 992,
+        "bottom": 692
+      },
+      "list": {
+        "x": 405.421875,
+        "y": 266.390625,
+        "width": 586.578125,
+        "height": 272.609375,
+        "right": 992,
+        "bottom": 539
+      },
+      "overflow": false
+    },
+    "checks": {
+      "realPlayback": true,
+      "nativeEnded": false,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": false
+    }
+  },
+  {
+    "viewport": [
+      800,
+      600
+    ],
+    "errors": [],
+    "geometry": {
+      "player": {
+        "x": 20,
+        "y": 418,
+        "width": 760,
+        "height": 118,
+        "right": 780,
+        "bottom": 536
+      },
+      "list": {
+        "x": 346.796875,
+        "y": 216,
+        "width": 433.203125,
+        "height": 181,
+        "right": 780,
+        "bottom": 397
+      },
+      "overflow": false
+    },
+    "checks": {
+      "realPlayback": true,
+      "nativeEnded": false,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": false
+    }
+  },
+  {
+    "viewport": [
+      390,
+      844
+    ],
+    "errors": [],
+    "performance3s": {
+      "TaskDuration": 0.0018,
+      "ScriptDuration": 0.00038,
+      "LayoutDuration": 0,
+      "RecalcStyleDuration": 0,
+      "LayoutCount": 0
+    },
+    "geometry": {
+      "player": {
+        "x": 19.5,
+        "y": 592,
+        "width": 351,
+        "height": 184,
+        "right": 370.5,
+        "bottom": 776
+      },
+      "list": {
+        "x": 19.5,
+        "y": 298.109375,
+        "width": 351,
+        "height": 274.890625,
+        "right": 370.5,
+        "bottom": 573
+      },
+      "overflow": false
+    },
+    "checks": {
+      "realPlayback": true,
+      "nativeEnded": true,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": true
+    }
+  },
+  {
+    "viewport": [
+      320,
+      568
+    ],
+    "errors": [],
+    "geometry": {
+      "player": {
+        "x": 16,
+        "y": 354,
+        "width": 288,
+        "height": 160,
+        "right": 304,
+        "bottom": 514
+      },
+      "list": {
+        "x": 16,
+        "y": 194,
+        "width": 288,
+        "height": 147,
+        "right": 304,
+        "bottom": 341
+      },
+      "overflow": false
+    },
+    "checks": {
+      "realPlayback": true,
+      "nativeEnded": false,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": true
+    }
+  },
+  {
+    "viewport": [
+      844,
+      390
+    ],
+    "errors": [],
+    "geometry": {
+      "player": {
+        "x": 20,
+        "y": 220,
+        "width": 804,
+        "height": 116,
+        "right": 824,
+        "bottom": 336
+      },
+      "list": {
+        "x": 365.703125,
+        "y": 94,
+        "width": 458.296875,
+        "height": 113,
+        "right": 824,
+        "bottom": 207
+      },
+      "overflow": false
+    },
+    "checks": {
+      "realPlayback": true,
+      "nativeEnded": false,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": true
+    }
+  },
+  {
+    "viewport": [
+      667,
+      375
+    ],
+    "errors": [],
+    "geometry": {
+      "player": {
+        "x": 20,
+        "y": 205,
+        "width": 627,
+        "height": 116,
+        "right": 647,
+        "bottom": 321
+      },
+      "list": {
+        "x": 289.59375,
+        "y": 94,
+        "width": 357.40625,
+        "height": 98,
+        "right": 647,
+        "bottom": 192
+      },
+      "overflow": false
+    },
+    "checks": {
+      "realPlayback": true,
+      "nativeEnded": false,
+      "cyclesBothWays": true,
+      "selectionStable": true,
+      "panelsKeyboardTheme": true,
+      "touchSwipe": true
+    }
+  }
+]

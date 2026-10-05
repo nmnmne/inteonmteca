@@ -1,0 +1,109 @@
+{
+  "coarse": true,
+  "frame": 3,
+  "baked": {
+    "bytes": 4194304
+  },
+  "programs": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "resources": [
+    {
+      "url": "http://127.0.0.1:59881/yard/data/shadows/mobile/manifest.json",
+      "duration": 2,
+      "bytes": 13196
+    },
+    {
+      "url": "http://127.0.0.1:59881/yard/data/shadows/mobile/sun-00.png",
+      "duration": 2.100000001490116,
+      "bytes": 137566
+    }
+  ],
+  "idleFrames": 0,
+  "movementFrames": 1,
+  "audit": {
+    "samples": 1600,
+    "matches": 1518,
+    "shadowed": 844,
+    "views": [
+      {
+        "x": 77.16362926597961,
+        "z": -96.2575235828048,
+        "yaw": 1.0863355993954675,
+        "pitch": 0.288906430203754,
+        "shadowed": 63,
+        "lit": 1
+      },
+      {
+        "x": 64.90186546194862,
+        "z": -93.11560629087008,
+        "yaw": 1.0765341081878133,
+        "pitch": 0.2889064302037539,
+        "shadowed": 34,
+        "lit": 30
+      },
+      {
+        "x": 105.15253671631207,
+        "z": -45.21269724990827,
+        "yaw": 1.0540850256328274,
+        "pitch": 0.28890643020375395,
+        "shadowed": 33,
+        "lit": 31
+      },
+      {
+        "x": -78.18298554227522,
+        "z": -4.22141601617691,
+        "yaw": 1.044074599897178,
+        "pitch": 0.7840073437100956,
+        "shadowed": 3,
+        "lit": 61
+      },
+      {
+        "x": -76.11355599914113,
+        "z": -22.33483763268004,
+        "yaw": 1.0055733384486234,
+        "pitch": 0.7840073437100952,
+        "shadowed": 7,
+        "lit": 57
+      }
+    ]
+  },
+  "walking": {
+    "start": {
+      "x": 0.5185555745513105,
+      "z": -9.510373936654712,
+      "frame": 51
+    },
+    "end": {
+      "x": -0.9962157959791245,
+      "z": -9.009733122675927,
+      "frame": 97
+    }
+  },
+  "startupSeconds": 0.5319999999992433,
+  "errors": [
+    "Failed to load resource: the server responded with a status of 404 (File not found)"
+  ],
+  "delayedFirstFrameSeconds": 0.20300000000133878,
+  "assetTimeoutSeconds": 15.219000000004598,
+  "assetTimeoutError": "TimeoutError: signal timed out"
+}

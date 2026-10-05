@@ -1,0 +1,55 @@
+{
+  "candidate": "D:\\Dev\\inteonmteca\\tests\\artifacts\\home-synthesis\\candidate",
+  "previewURL": "http://127.0.0.1:8765/",
+  "status": "fully verified candidate; concurrent writer still mutates shared files",
+  "changedFiles": [
+    "index.html",
+    "home-player.css",
+    "script.js",
+    "room-resident.js",
+    "deploy-site.ps1"
+  ],
+  "copyAndSEO": "identical to start; SEO and original SVG also identical to HEAD",
+  "protectedFilesUnchanged": 82,
+  "browserPlayerViewports": 8,
+  "layoutViewports": 14,
+  "palettesInspected": 6,
+  "residentChecks": [
+    "approach stationary cursor",
+    "sniff at a distance",
+    "retreat calmly",
+    "avoid controls",
+    "click through",
+    "hide for panels",
+    "reduced motion",
+    "mobile stays by heading"
+  ],
+  "nodeTests": {
+    "passed": 71,
+    "preExistingFailures": 4,
+    "failures": [
+      "auth HTTP fallback",
+      "yard minimap desktop cadence",
+      "yard minimap touch cadence",
+      "yard minimap rotation"
+    ]
+  },
+  "pythonTests": {
+    "passed": 55
+  },
+  "desktopMainThreadSecondsPer3s": {
+    "before": 0.80767,
+    "after": 0.1769
+  },
+  "mobileCanvasDraws": 0,
+  "cpuThrottling": "4x tested; mobile checks use emulation, not physical devices",
+  "deployed": false,
+  "evidence": [
+    "audit.json",
+    "resident-checks.json",
+    "content-audit.json",
+    "node-tests.txt",
+    "python-tests.txt",
+    "inhabited-desktop.png"
+  ]
+}

@@ -1,0 +1,158 @@
+[
+  {
+    "TaskDuration": 0.8157,
+    "ScriptDuration": 0.06902,
+    "RecalcStyleDuration": 0.24563,
+    "LayoutCount": 75,
+    "canvasDraws": 228,
+    "size": [
+      1440,
+      900
+    ],
+    "variant": "before",
+    "trial": 0
+  },
+  {
+    "TaskDuration": 0.20497,
+    "ScriptDuration": 0.03174,
+    "RecalcStyleDuration": 0.07036,
+    "LayoutCount": 75,
+    "canvasDraws": 75,
+    "size": [
+      1440,
+      900
+    ],
+    "variant": "after",
+    "trial": 0
+  },
+  {
+    "TaskDuration": 0.80012,
+    "ScriptDuration": 0.07291,
+    "RecalcStyleDuration": 0.22147,
+    "LayoutCount": 75,
+    "canvasDraws": 225,
+    "size": [
+      1440,
+      900
+    ],
+    "variant": "before",
+    "trial": 1
+  },
+  {
+    "TaskDuration": 0.20915,
+    "ScriptDuration": 0.03221,
+    "RecalcStyleDuration": 0.07049,
+    "LayoutCount": 77,
+    "canvasDraws": 76,
+    "size": [
+      1440,
+      900
+    ],
+    "variant": "after",
+    "trial": 1
+  },
+  {
+    "TaskDuration": 0.8715,
+    "ScriptDuration": 0.07795,
+    "RecalcStyleDuration": 0.26133,
+    "LayoutCount": 75,
+    "canvasDraws": 225,
+    "size": [
+      1440,
+      900
+    ],
+    "variant": "before",
+    "trial": 2
+  },
+  {
+    "TaskDuration": 0.22234,
+    "ScriptDuration": 0.03147,
+    "RecalcStyleDuration": 0.07393,
+    "LayoutCount": 75,
+    "canvasDraws": 76,
+    "size": [
+      1440,
+      900
+    ],
+    "variant": "after",
+    "trial": 2
+  },
+  {
+    "TaskDuration": 0.00221,
+    "ScriptDuration": 0.00037,
+    "RecalcStyleDuration": 0.0,
+    "LayoutCount": 0,
+    "canvasDraws": 0,
+    "size": [
+      390,
+      844
+    ],
+    "variant": "before",
+    "trial": 0
+  },
+  {
+    "TaskDuration": 0.00395,
+    "ScriptDuration": 0.00035,
+    "RecalcStyleDuration": 0.0,
+    "LayoutCount": 0,
+    "canvasDraws": 0,
+    "size": [
+      390,
+      844
+    ],
+    "variant": "after",
+    "trial": 0
+  },
+  {
+    "TaskDuration": 0.00255,
+    "ScriptDuration": 0.00038,
+    "RecalcStyleDuration": 0.0,
+    "LayoutCount": 0,
+    "canvasDraws": 0,
+    "size": [
+      390,
+      844
+    ],
+    "variant": "before",
+    "trial": 1
+  },
+  {
+    "TaskDuration": 0.00938,
+    "ScriptDuration": 0.0005,
+    "RecalcStyleDuration": 0.00177,
+    "LayoutCount": 2,
+    "canvasDraws": 0,
+    "size": [
+      390,
+      844
+    ],
+    "variant": "after",
+    "trial": 1
+  },
+  {
+    "TaskDuration": 0.0023,
+    "ScriptDuration": 0.00036,
+    "RecalcStyleDuration": 0.0,
+    "LayoutCount": 0,
+    "canvasDraws": 0,
+    "size": [
+      390,
+      844
+    ],
+    "variant": "before",
+    "trial": 2
+  },
+  {
+    "TaskDuration": 0.00618,
+    "ScriptDuration": 0.00048,
+    "RecalcStyleDuration": 0.00079,
+    "LayoutCount": 1,
+    "canvasDraws": 0,
+    "size": [
+      390,
+      844
+    ],
+    "variant": "after",
+    "trial": 2
+  }
+]

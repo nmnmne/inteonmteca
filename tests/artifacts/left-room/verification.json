@@ -1,0 +1,27 @@
+{
+  "layout": "logo, headline and resident left; playlist right; player below",
+  "logo": "original appearance and animation settings, with occasional music accent",
+  "browserPlaybackViewports": 8,
+  "layoutViewports": 14,
+  "behavior": {
+    "escape": true,
+    "circle": true,
+    "chase": true,
+    "ignore": true,
+    "musicAccent": true,
+    "exploration": true,
+    "reducedMotion": true,
+    "errors": []
+  },
+  "musicExploration": "actual movement to playlist verified",
+  "copyAndSEO": "preserved",
+  "protectedFilesUnchanged": 82,
+  "mobileChecks": "Chromium emulation",
+  "fileHashes": {
+    "script.js": "66847aad59d032cbae76fa3406e5f88099567ec984f0bf65e9b37c7273e3d05e",
+    "home-player.css": "95c836b313fd628536f8e8b46338b9e70e646fa1c675b8d595649446186531d3",
+    "room-resident.js": "fa6988db13f30e838bac4e21262f0b66be798526346a87081727d0a7c4fba514",
+    "index.html": "48eb01eeb5882629000fbfc4f2524cecad42a32c9bffd91f6520d14f03643778"
+  },
+  "performanceCaveat": "Full original logo effects remain more expensive during animation bursts; CPU-throttled browser is not physical hardware."
+}

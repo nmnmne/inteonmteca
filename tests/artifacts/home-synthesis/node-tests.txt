@@ -1,0 +1,173 @@
+✖ missing HTTP backend never presents local storage as a logged-in account (1.4525ms)
+✔ file preview retains its explicitly local demo pass (0.4881ms)
+✔ selecting an audio-only playlist entry keeps its actual index (0.9366ms)
+✔ home restore cannot seek a subsequently selected track (0.6453ms)
+✔ home keeps shared time while metadata is pending (0.9754ms)
+✔ mobile render gate skips unchanged poses but invalidates textures, resize and pitch (2.408ms)
+✔ desktop render gate retains continuous rendering (0.1817ms)
+✔ paused 42-second handoff survives pending metadata and resumes persistence after seeking (2.579ms)
+✔ next before metadata cannot apply A's saved seek to B (1.4935ms)
+✔ metadata from the old resource cannot complete the new selection's pending handoff (0.8493ms)
+✔ A to B to A before metadata does not revive A's obsolete restored position (0.8318ms)
+PASS: playback link
+✔ tests\playback-link.test.cjs (127.2249ms)
+✔ home selection stops at yard; origin never changes on a save (1.5884ms)
+✔ yard origin and intent survive home saves and blocked autoplay (0.8289ms)
+✔ boundary stop policy survives handoff and completion; explicit selection clears it (0.8371ms)
+✔ explicit home selection replaces yard origin even for same file (1.2766ms)
+✔ player is visible and disabled before a track is chosen, with no close control (1.2342ms)
+✔ Escape without a dialog retains playback and the persistent panel (1.0385ms)
+✔ player controls never trigger the global track picker (0.6903ms)
+✔ a pixel-quantized wheel stops its RAF instead of running forever near the target (1.7001ms)
+PASS: site usability
+✔ tests\site-usability.test.cjs (115.0495ms)
+✔ spatial listening surface retains identity and approved copy (0.6453ms)
+✔ spatial control system has large targets and responsive low-height mode (0.2231ms)
+✔ mobile uses an actual baked logo asset and no decorative scene loop (1.5194ms)
+✔ listening room keeps original copy and infinite two-way scrolling (0.4075ms)
+✔ listening room exposes a complete transport (0.3195ms)
+✔ closed chat has only the accessible compact opener, no teaser (0.795ms)
+✔ expired visit cannot receive a delayed playback bonus (2.3068ms)
+✔ timeout ends the bonus and an ended visit rejects stale playback callbacks (1.0207ms)
+✔ local midnight does not reset an existing deadline; a later visit can earn the new day (2.0196ms)
+✔ successful switch grants a fixed 20-minute deadline, reload preserves it, home forfeits it (1.7243ms)
+PASS: street return
+✔ tests\street-return.test.cjs (95.4052ms)
+✔ manual return saves pose and a cached yard gets a fresh cancellable deadline (2.6399ms)
+PASS: 99 unique palettes, 10 + 89 groups, valid tokens, legacy IDs preserved
+✔ tests\test_theme_registry.cjs (86.6466ms)
+PASS: 99 distinct palettes; 10 + 89 groups; all persisted IDs, CSS tokens, select, random and rotation; soft logo depth.
+✔ tests\themes.test.cjs (82.4102ms)
+✔ text links and blank space never select a nearby/underlying song (1.7082ms)
+✔ touch starts scrolling without selecting; the completed tap still selects (0.5715ms)
+✔ artist labels never flicker (0.625ms)
+✔ hover alone cannot scroll the playlist (0.5252ms)
+✔ panels move focus in, restore opener and expose expanded state (0.882ms)
+✔ Escape closes only the latest panel before immersive playback (1.2683ms)
+✔ controls have a shared 44px hit area and visible keyboard focus (0.2656ms)
+✔ panel triggers declare their controls before JavaScript loads (0.4121ms)
+✔ a late chat response cannot steal focus or restart polling after close (0.1743ms)
+✔ visible wheel tracks remain sharp at every position (0.891ms)
+✔ boundary session stops at end; manual next resumes normal playlist without bonus replay (2.6712ms)
+✔ exit selects exact track and replaces other active audio, not the same active track (1.1176ms)
+✔ denied crossing remains paused with one attempt until explicit retry gesture (3.9693ms)
+✔ a different selection cancels a denied boundary grant (1.1805ms)
+✔ scene frame wires crossing check to wall player using actual walkable polygon (0.3511ms)
+✔ touching every actual polygon edge triggers, but near-edge interior does not (1.2863ms)
+✔ actual polygon exit triggers once, not grid proximity; reentry rearms; outside spawn is silent (0.8746ms)
+PASS: all facade normals outside footprints
+✔ tests\yard-facade-normals.test.cjs (72.1941ms)
+PASS: yard geometry / visible roads
+✔ tests\yard-geometry.test.cjs (75.2722ms)
+PASS: yard input
+✔ tests\yard-input.test.cjs (54.7355ms)
+✔ visit cycle includes every twenty-minute slot and wraps after 20:00 (37.0057ms)
+✔ storage failures and corrupt values safely fall back without freezing the cycle (0.4537ms)
+✔ presets move the reference sun and coherently change sky, fill and baked shadows (3.291ms)
+✔ hold is ten seconds; every real walk duration ends exactly at its deadline (3.3805ms)
+✔ late initialization, resumed frames and an already short remaining visit use absolute time (0.1711ms)
+✔ actual street-return ticks and its boundary bonus retime continuously without a second duration (1.853ms)
+✔ all twelve transitions select only the next preset, including 11 -> 0 (34.4974ms)
+✔ two depth maps during blending; old GPU texture is released at completion and next at exit (1.5898ms)
+✔ exit during next-map loading disposes the late result without patching a dead scene (0.449ms)
+✔ missing next map retains the original depth texture and shader (0.3801ms)
+✔ restored atlas remains byte-for-byte identical to the saved original (0.3964ms)
+PASS: actual offline shadow assets and no runtime rasterization
+✔ tests\yard-lighting.test.cjs (75.432ms)
+✖ minimap follows every changed animation frame (touch=false) (1.9136ms)
+✖ minimap follows every changed animation frame (touch=true) (0.5294ms)
+✔ minimap crops nearby geography rather than fitting the whole site (0.9126ms)
+✖ moving player pans cached map while keeping the marker centered (0.6224ms)
+PASS: yard models
+✔ tests\yard-models.test.cjs (44.1708ms)
+PASS: yard navigation
+✔ tests\yard-navigation.test.cjs (168.9405ms)
+PASS: yard place
+✔ tests\yard-place.test.cjs (40.3483ms)
+PASS: yard roads
+✔ tests\yard-roads.test.cjs (38.7921ms)
+ℹ tests 75
+ℹ suites 0
+ℹ pass 71
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 297.1554
+
+✖ failing tests:
+
+test at tests\auth-fallback.test.cjs:11:1
+✖ missing HTTP backend never presents local storage as a logged-in account (1.4525ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (D:\Dev\inteonmteca\tests\auth-fallback.test.cjs:16:10)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\yard-minimap.test.cjs:12:3
+✖ minimap follows every changed animation frame (touch=false) (1.9136ms)
+  AssertionError [ERR_ASSERTION]: no skipped animation frames during rotation
+  
+  1 !== 5
+  
+      at TestContext.<anonymous> (D:\Dev\inteonmteca\tests\yard-minimap.test.cjs:24:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.start (node:internal/test_runner/test:944:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 5,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\yard-minimap.test.cjs:12:3
+✖ minimap follows every changed animation frame (touch=true) (0.5294ms)
+  AssertionError [ERR_ASSERTION]: no skipped animation frames during rotation
+  
+  0 !== 5
+  
+      at TestContext.<anonymous> (D:\Dev\inteonmteca\tests\yard-minimap.test.cjs:24:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 5,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\yard-minimap.test.cjs:57:1
+✖ moving player pans cached map while keeping the marker centered (0.6224ms)
+  AssertionError [ERR_ASSERTION]: map rotates opposite to viewing direction
+      at TestContext.<anonymous> (D:\Dev\inteonmteca\tests\yard-minimap.test.cjs:71:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

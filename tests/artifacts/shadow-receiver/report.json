@@ -1,0 +1,41 @@
+[
+  {
+    "view": 0,
+    "differenceBounds": [
+      0,
+      446,
+      1000,
+      800
+    ],
+    "nearGroundLuminance": [
+      63.306666666666665,
+      71.94373076923077
+    ]
+  },
+  {
+    "view": 1,
+    "differenceBounds": [
+      0,
+      440,
+      1000,
+      800
+    ],
+    "nearGroundLuminance": [
+      61.64125641025641,
+      68.93017948717949
+    ]
+  },
+  {
+    "view": 2,
+    "differenceBounds": [
+      0,
+      446,
+      1000,
+      800
+    ],
+    "nearGroundLuminance": [
+      63.37890384615385,
+      71.94373076923077
+    ]
+  }
+]

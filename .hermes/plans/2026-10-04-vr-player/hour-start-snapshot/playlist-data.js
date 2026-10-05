@@ -1,0 +1,98 @@
+window.INTEONMTECA_PLAYLIST = [
+  {
+    "id": "media/Deadsouls/Матт - Deadsouls.flac",
+    "artist": "Матт",
+    "title": "Deadsouls",
+    "audio": "media/Deadsouls/Матт - Deadsouls.flac"
+  },
+  {
+    "id": "media/Echoes Resurface/Матт - Echoes Resurface.flac",
+    "artist": "Матт",
+    "title": "Echoes Resurface",
+    "audio": "media/Echoes Resurface/Матт - Echoes Resurface.flac"
+  },
+  {
+    "id": "media/God Is Dead/Матт - God Is Dead.flac",
+    "artist": "Матт",
+    "title": "God Is Dead",
+    "audio": "media/God Is Dead/Матт - God Is Dead.flac"
+  },
+  {
+    "id": "media/Heavenly  Melody/Sonyx - Heavenly  Melody.flac",
+    "artist": "Sonyx",
+    "title": "Heavenly  Melody",
+    "audio": "media/Heavenly  Melody/Sonyx - Heavenly  Melody.flac"
+  },
+  {
+    "id": "media/High Stage Of Reality/Матт - High Stage Of Reality.flac",
+    "artist": "Матт",
+    "title": "High Stage Of Reality",
+    "audio": "media/High Stage Of Reality/Матт - High Stage Of Reality.flac"
+  },
+  {
+    "id": "media/inteonmteca_/Матт - Inteonmteca_.flac",
+    "artist": "Матт",
+    "title": "Inteonmteca_",
+    "audio": "media/inteonmteca_/Матт - Inteonmteca_.flac"
+  },
+  {
+    "id": "media/inteonmteca_/ыьек - Inteonmteca_.flac",
+    "artist": "ыьек",
+    "title": "Inteonmteca_",
+    "audio": "media/inteonmteca_/ыьек - Inteonmteca_.flac"
+  },
+  {
+    "id": "media/Kimpintyau/Матт- Высоко до предела.flac",
+    "artist": "Матт",
+    "title": "Высоко до предела",
+    "audio": "media/Kimpintyau/Матт- Высоко до предела.flac"
+  },
+  {
+    "id": "media/Last_Eclipse/Матт - Last Eclipse (Negative Space Resonance).flac",
+    "artist": "Матт",
+    "title": "Last Eclipse (Negative Space Resonance)",
+    "audio": "media/Last_Eclipse/Матт - Last Eclipse (Negative Space Resonance).flac"
+  },
+  {
+    "id": "media/Light Of The Night/Sonyx - Light Of The Night [Матт remix].flac",
+    "artist": "Sonyx",
+    "title": "Light Of The Night [Матт remix]",
+    "audio": "media/Light Of The Night/Sonyx - Light Of The Night [Матт remix].flac"
+  },
+  {
+    "id": "media/Light Of The Night/Sonyx - Light Of The Night.flac",
+    "artist": "Sonyx",
+    "title": "Light Of The Night",
+    "audio": "media/Light Of The Night/Sonyx - Light Of The Night.flac"
+  },
+  {
+    "id": "media/Liquid Hard Lines/Матт - Liquid Hard Lines.flac",
+    "artist": "Матт",
+    "title": "Liquid Hard Lines",
+    "audio": "media/Liquid Hard Lines/Матт - Liquid Hard Lines.flac"
+  },
+  {
+    "id": "media/M/ыьек - M.flac",
+    "artist": "ыьек",
+    "title": "M",
+    "audio": "media/M/ыьек - M.flac"
+  },
+  {
+    "id": "media/N01Dentity/Матт - N01Dentity.flac",
+    "artist": "Матт",
+    "title": "N01Dentity",
+    "audio": "media/N01Dentity/Матт - N01Dentity.flac"
+  },
+  {
+    "id": "media/Pvvmb/ыьек - Pvvmb.flac",
+    "artist": "ыьек",
+    "title": "Pvvmb",
+    "audio": "media/Pvvmb/ыьек - Pvvmb.flac"
+  },
+  {
+    "id": "media/Random Spiral/Матт - Random Spiral.flac",
+    "artist": "Матт",
+    "title": "Random Spiral",
+    "audio": "media/Random Spiral/Матт - Random Spiral.flac"
+  }
+];
