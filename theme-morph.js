@@ -38,15 +38,15 @@
       cancelAnimationFrame(frame); frame=0;
       const light=mood==='light';
       target={...tokens,
-        '--interface-ink':light?'12, 15, 17':'249, 244, 233',
-        '--interface-muted':light?'38, 42, 43':'202, 196, 178',
-        '--interface-accent':light?'12, 15, 17':'218, 243, 149',
-        '--interface-peach':light?'12, 15, 17':'232, 178, 125',
-        '--interface-sage':light?'12, 15, 17':'191, 211, 151',
+        '--interface-ink':tokens['--interface-ink'] || (light?'12, 15, 17':'249, 244, 233'),
+        '--interface-muted':tokens['--interface-muted'] || (light?'38, 42, 43':'202, 196, 178'),
+        '--interface-accent':tokens['--interface-accent'] || (light?'12, 15, 17':'218, 243, 149'),
+        '--interface-peach':tokens['--interface-peach'] || (light?'12, 15, 17':'232, 178, 125'),
+        '--interface-sage':tokens['--interface-sage'] || (light?'12, 15, 17':'191, 211, 151'),
         '--interface-glass':light?'250, 248, 239':'12, 14, 14',
         '--interface-control':light?'12, 15, 17':'230, 237, 232',
         '--interface-on-control':light?'251, 250, 245':'12, 15, 17',
-        '--logo-brightness':light?'0':'1.15',
+        '--logo-brightness':light?'0':'1.45',
         '--field-opacity':light?'.19':'.27',
         '--field-strength':mood==='dark'?'.07':'.17',
       };

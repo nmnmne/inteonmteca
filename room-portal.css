@@ -8,9 +8,20 @@
 html[data-portal-arrival]::view-transition-old(root) { animation: portal-dissolve 4.6s cubic-bezier(.32, 0, .4, 1) both; }
 html[data-portal-arrival="yard"]::view-transition-old(root) { animation-duration: var(--portal-exit-fade, 1350ms); mask-image: var(--portal-holes); mask-mode: alpha; mask-size: 100% 100%; mask-repeat: no-repeat; }
 html[data-portal-arrival="home"] #logo-wrap { view-transition-name: portal-logo; }
+html[data-portal-arrival="home"]::view-transition-old(root) { transform-origin: 50% 50%; animation-name: portal-home-inertia; animation-timing-function: linear; }
 ::view-transition-group(portal-logo) { z-index: 3; animation: none; }
 ::view-transition-new(portal-logo) { mix-blend-mode: normal; animation: portal-logo-materialize 1.5s ease both; }
 @keyframes portal-dissolve { 0%, 8% { opacity: 1; } 100% { opacity: 0; } }
+@property --portal-turn { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@property --portal-zoom { syntax: '<number>'; inherits: false; initial-value: 1; }
+html[data-portal-arrival="home"]::view-transition-old(root) {
+  transform: scale(max(var(--portal-zoom), calc((cos(var(--portal-turn)) + var(--portal-aspect, 1) * sin(var(--portal-turn))) * 1.001))) rotate(calc(-1 * var(--portal-turn)));
+}
+@keyframes portal-home-inertia {
+  0% { opacity: 1; --portal-turn: 0deg; --portal-zoom: 1; }
+  8% { opacity: 1; }
+  100% { opacity: 0; --portal-turn: 6deg; --portal-zoom: 1.045; }
+}
 @keyframes portal-logo-materialize { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: blur(0); } }
 .portal-shards { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1000; pointer-events: none; }
 body.portal-leaving :is(#logo-wrap, .room-resident, .logo-storm) { visibility: hidden !important; }

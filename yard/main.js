@@ -2,8 +2,8 @@ import * as THREE from "./vendor/three.module.js";
 import { distanceToWall, isWalkable, moveCircle } from "./navigation.js";
 import { createInputController } from "./input-controller.js";
 import { createQualityMeter, createRenderGate, pixelRatioCap } from "./quality.js";
-import { createYardScene, drawScheme } from "./scene.js";
-import { createWallPlayer } from "./wall-player.js";
+import { createYardScene, drawScheme } from "./scene.js?v=five-storey-20261006-3";
+import { createWallPlayer } from "./wall-player.js?v=seek-fade-20261006-2";
 import { createBoundaryMusic } from "./boundary-music.js";
 import { createLightingCycle, addBakedLighting } from "./baked-lighting.js";
 import { createLightingTransition } from "./lighting-transition.js";
@@ -20,7 +20,7 @@ const meter = createQualityMeter();
 try {
 let layout = null;
 if (location.protocol !== "file:") {
-  layout = await fetch(new URL("./data/site-layout.json", import.meta.url)).then((response) => {
+  layout = await fetch(new URL("./data/site-layout.json?v=five-storey-20261006-3", import.meta.url)).then((response) => {
     if (!response.ok) throw new Error(`site-layout ${response.status}`);
     return response.json();
   });
@@ -31,7 +31,7 @@ if (location.protocol === "file:") {
   canvas.hidden = true;
 } else {
   const schemeMap = drawScheme(schemeCanvas, layout);
-  await player.load();
+  void player.load();
   const camera = new THREE.PerspectiveCamera(60, 1, 0.08, 400);
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
   renderer.setPixelRatio(pixelRatioCap());
@@ -58,6 +58,7 @@ if (location.protocol === "file:") {
     yaw: start.yaw,
     pitch: start.pitch || 0,
   };
+  let returnPose = null, flightEye = layout.movement.eyeM, flightRoll = 0;
   const boundaryMusic = createBoundaryMusic(layout.walkable, body, () => player.playBoundaryTrack());
   const input = createInputController(window, {
     walkSpeed: layout.movement.speedMps,
@@ -73,12 +74,16 @@ if (location.protocol === "file:") {
   let lastMapDraw = 0;
   let appliedLook = { yaw: 0, pitch: 0 };
   const syncLook = (next) => {
+    if (returnPose) return;
     body.yaw += next.yaw - appliedLook.yaw;
     body.pitch = Math.max(-1.1, Math.min(1.1, body.pitch + next.pitch - appliedLook.pitch));
     appliedLook = next;
   };
 
   let renderRevision = 0;
+  canvas.addEventListener("webglcontextlost", () => {
+    delete document.documentElement.dataset.yardReady;
+  });
   canvas.addEventListener("webglcontextrestored", () => { renderRevision += 1; });
   const resize = () => {
     renderRevision += 1;
@@ -93,10 +98,11 @@ if (location.protocol === "file:") {
   window.addEventListener("resize", resize);
 
   const placeCamera = () => {
-    camera.position.set(body.x, layout.movement.eyeM, body.z);
+    camera.position.set(body.x, flightEye, body.z);
     camera.rotation.order = "YXZ";
     camera.rotation.y = -body.yaw;
     camera.rotation.x = body.pitch;
+    camera.rotation.z = flightRoll;
   };
 
   const wallVisible = () => {
@@ -201,7 +207,7 @@ if (location.protocol === "file:") {
     meter.tick(now);
     const dt = Math.min(layout.movement.maxDeltaSec, (now - last) / 1000);
     last = now;
-    if (input.mode === "walking" && !reading && !document.hidden) {
+    if (input.mode === "walking" && !reading && !document.hidden && !returnPose) {
       const move = input.sample();
       const length = Math.hypot(move.forward, move.strafe);
       if (length > 1) {
@@ -230,8 +236,9 @@ if (location.protocol === "file:") {
       schemeMap.drawMarker(body.x, body.z, body.yaw);
       lastMapDraw = now;
     }
-    if (!document.hidden && shouldRender(body, canvas.width, canvas.height, `${renderRevision}:${logo.material.map?.version || 0}`)) {
+    if (!document.hidden && !renderer.getContext().isContextLost() && shouldRender(body, canvas.width, canvas.height, `${renderRevision}:${logo.material.map?.version || 0}`)) {
       renderer.render(scene, camera);
+      document.documentElement.dataset.yardReady = "true";
     }
     scheduleFrame();
   };
@@ -239,6 +246,7 @@ if (location.protocol === "file:") {
   edgeEffect?.update(body.x, body.z);
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
+      renderRevision += 1;
       last = performance.now();
       scheduleFrame();
     }
@@ -296,6 +304,42 @@ if (location.protocol === "file:") {
     renderer,
     scene,
     camera,
+    rememberedPose: () => returnPose || {x: body.x, z: body.z, yaw: body.yaw, pitch: body.pitch},
+    flyToSpawn: () => {
+      if (returnPose) return Promise.resolve();
+      returnPose = {x: body.x, z: body.z, yaw: body.yaw, pitch: body.pitch};
+      window.inteonStreet?.savePose(returnPose);
+      input.setMode('idle');
+      const origin = {...returnPose}, target = layout.spawn;
+      const turn = Math.atan2(Math.sin(target.yaw-origin.yaw), Math.cos(target.yaw-origin.yaw));
+      const started = performance.now();
+      const duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1150;
+      return new Promise(resolve => {
+        const fly = now => {
+          const t = duration ? Math.min(1, (now-started)/duration) : 1;
+          const blend = t*t*(3-2*t);
+          // Bank clockwise, then start levelling before the snapshot takes over.
+          const bank = t < .65 ? Math.sin(t/.65*Math.PI/2)*9 : 9-(t-.65)/.35*3;
+          flightRoll = -bank * Math.PI/180;
+          const aspect = Math.max(camera.aspect, 1 / camera.aspect);
+          const cover = Math.max(1.045, (Math.cos(Math.PI/30) + aspect*Math.sin(Math.PI/30))*1.001);
+          camera.fov = Math.atan(Math.tan(Math.PI/6)*(1+(cover-1)*blend))*360/Math.PI;
+          camera.updateProjectionMatrix();
+          body.x = origin.x + (target.x-origin.x)*blend;
+          body.z = origin.z + (target.z-origin.z)*blend;
+          body.yaw = origin.yaw + turn*blend;
+          body.pitch = origin.pitch + ((target.pitch || 0)-origin.pitch)*blend;
+          flightEye = layout.movement.eyeM + Math.sin(Math.PI*t)*Math.min(6, Math.hypot(target.x-origin.x,target.z-origin.z)*.15);
+          placeCamera(); renderer.render(scene, camera);
+          if (t<1 && !disposed) requestAnimationFrame(fly);
+          else {
+            Object.assign(body, target); flightEye = layout.movement.eyeM; placeCamera();
+            renderer.render(scene, camera); requestAnimationFrame(() => resolve());
+          }
+        };
+        requestAnimationFrame(fly);
+      });
+    },
     renderSnapshot: () => { if (!disposed) renderer.render(scene, camera); },
     reading: () => reading,
     openPlayer: () => setReading(true),

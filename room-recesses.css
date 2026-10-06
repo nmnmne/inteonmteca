@@ -177,8 +177,19 @@ html[data-theme] .chat-inline .chat-send:hover { background: rgba(var(--interfac
 @media (prefers-reduced-motion: reduce) { .spatial-room :is(.release-content, .mobile-section-thumb, #chat-panel.chat-inline) { transition: none !important; } }
 
 @media (min-width: 801px) and (min-height: 541px) {
-  html[data-theme] .spatial-room .theme-panel { left: 24px; right: auto; top: 78px; bottom: auto; width: min(340px, calc(50vw - 48px)); max-height: min(250px, 28vh); overflow-y: auto; z-index: 70 !important; }
-  .spatial-room .listening-intro :is(.label, h1) { transition: translate .35s ease; }
-  .spatial-room.is-theme-menu-open .listening-intro :is(.label, h1) { translate: 0 var(--theme-heading-shift, 0px); }
-  body.spatial-room.is-theme-menu-open .logo-wrap.release-logo { top: max(47%, var(--theme-logo-top, 47%)); }
+  .spatial-room { --theme-menu-width: clamp(190px, 22vw, 300px); }
+  html[data-theme] .spatial-room .theme-panel { left: auto; right: calc(50vw + 18px); top: 78px; bottom: auto; width: var(--theme-menu-width); max-height: min(250px, 28vh); overflow-y: auto; z-index: 70 !important; }
+  .spatial-room .listening-intro :is(.label, h1) { transition: right .35s ease, font-size .35s ease; }
+  .spatial-room.is-theme-menu-open .listening-intro :is(.label, h1) { right: calc(var(--theme-menu-width) + 36px); }
+  .spatial-room.is-theme-menu-open .listening-intro h1 { font-size: clamp(18px, calc((50vw - var(--theme-menu-width) - 60px) / 8.4), 86px); }
+}
+/* Separate the pigment from nearby background shades without a broad glow. */
+body.spatial-room .logo-vector { filter: contrast(1.12) drop-shadow(0 2px 2px #0009); }
+body.spatial-room .reactive-logo { filter: brightness(var(--logo-brightness)) contrast(1.08); }
+body.spatial-room .reactive-logo { animation-name: logoContrastBreath; }
+@keyframes logoContrastBreath {
+  0%, 100% { opacity: .7; }
+  48% { opacity: .8; }
+  53% { opacity: .5; }
+  58% { opacity: .74; }
 }

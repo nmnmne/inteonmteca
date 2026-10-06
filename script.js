@@ -160,7 +160,7 @@ const themeRegistry = Object.freeze([
   "amethyst|аметистовый мираж|352452 211632 cb8cf0 9078e7 ec9bbb e3c0ff f9edff|color",
   "glacier|ледяная память|1c3d53 132936 98e8f3 4ba3dc 9fbaff c6fff9 e8fbff|color",
   "terracotta|пыльная терракота|4c3228 2d211a e9a076 c9826a f2c697 ebd0a3 fff1e2|color",
-  "saffron|нить шафрана|494018 2d2714 e9cc55 e6a250 cad68a f6eab6 fff7da|color",
+  "saffron|нить шафрана|3d4318 252b11 b4d34b 8d9b32 77ba48 aaff3c 91ff2e|color",
   "pistachio|скорлупа фисташки|35422a 232c1e bddd99 8ebf97 d8b68d d9eab7 f5f8e9|color",
   "mint-copper|мята и медь|1c483b 153024 8ee6b4 5eb6a6 e2aa7f d9ead0 f1faed|color",
   "petrol|петролевая эмаль|16464c 112f33 69d9df 4c9fba e5c994 b8f0eb e4faff|color",
@@ -202,6 +202,7 @@ const themeRegistry = Object.freeze([
       abyss: "мрачные", graphite: "мрачные", porcelain: "светлые", chalk: "светлые",
     }[id],
     tokens: Object.freeze({
+      ...(id === 'saffron' ? {'--interface-ink': '145, 255, 46', '--interface-muted': '116, 191, 65', '--interface-accent': '170, 255, 60', '--interface-peach': '151, 223, 48', '--interface-sage': '119, 211, 69'} : {}),
       "--theme-bg": `#${bg}`,
       "--theme-panel-rgb": rgb(panel),
       "--theme-a-rgb": rgb(a),
@@ -2104,15 +2105,6 @@ const setPanelOpen = (panel, open, { focus = true } = {}) => {
   panel.hidden = !open;
   if (panel === themePanel) {
     document.body.classList.toggle('is-theme-menu-open', open);
-    if (open) {
-      const bottom = panel.getBoundingClientRect().bottom;
-      const shift = Math.max(0, bottom + 38 - (innerHeight * .14 + 44));
-      document.body.style.setProperty('--theme-heading-shift', `${shift}px`);
-      const heading = document.querySelector('.listening-intro h1');
-      const logoHeight = logoWrap?.getBoundingClientRect().height || 0;
-      const headingHeight = heading?.getBoundingClientRect().height || 0;
-      document.body.style.setProperty('--theme-logo-top', `${innerHeight * .14 + 44 + shift + headingHeight + logoHeight / 2 + 20}px`);
-    }
   }
   panel.setAttribute("aria-hidden", String(!open));
   trigger?.setAttribute("aria-expanded", String(open));
@@ -3342,7 +3334,7 @@ streetLink?.addEventListener("click", (event) => {
   rememberPlayback();
   if (window.inteonPlayback?.read?.()?.origin !== "yard") {
     window.inteonPlayback?.intent?.(player, false);
-    player?.pause();
+    if (player && !player.paused) window.inteonPlayback?.fadeOut?.(player);
     playbackStamp = "";
     rememberPlayback();
   }

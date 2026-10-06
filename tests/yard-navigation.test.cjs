@@ -53,8 +53,9 @@ const run = async () => {
   assert.equal(isWalkable(layout, 300, 10, layout.movement.radiusM), true);
   const towardWall = moveCircle(
     layout,
-    layout.spawn.x,
-    layout.spawn.z,
+    // Aim at the same facade independently of the user-editable spawn pose.
+    4,
+    0,
     -40,
     0,
     layout.movement.radiusM,

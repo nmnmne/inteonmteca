@@ -28,10 +28,10 @@
     "exitM": 7
   },
   "spawn": {
-    "x": 4,
-    "z": 0,
-    "yaw": -1.5707963267948966,
-    "pitch": 0.08
+    "x": -1.6938,
+    "z": -9.1307,
+    "yaw": -1.9932,
+    "pitch": -0.0014
   },
   "photoView": {
     "x": 2,
@@ -68,10 +68,22 @@
     "status": "short-end-nearest-gps"
   },
   "walkable": [
-    [-86, -150],
-    [164, -150],
-    [164, 145],
-    [-86, 145]
+    [
+      -86,
+      -150
+    ],
+    [
+      164,
+      -150
+    ],
+    [
+      164,
+      145
+    ],
+    [
+      -86,
+      145
+    ]
   ],
   "surfaces": [],
   "parking": [],
@@ -85,7 +97,32 @@
       "widthStatus": "satellite-image estimate; OSM has no width tag",
       "source": "OSM way 229651920 (highway=service, surface=asphalt), aligned against supplied satellite map",
       "confidence": "mapped-and-imagery-aligned",
-      "centerline": [[108.55, -42.13], [25, 10.57], [10.91, 19.73], [23.11, 40.83], [-34.78, 74.65]]
+      "centerline": [
+        [
+          108.55,
+          -42.13
+        ],
+        [
+          25,
+          10.57
+        ],
+        [
+          10.91,
+          19.73
+        ],
+        [
+          23.11,
+          40.83
+        ],
+        [
+          -34.78,
+          74.65
+        ],
+        [
+          -40.1,
+          74.65
+        ]
+      ]
     },
     {
       "id": "house14-inner-drive",
@@ -98,10 +135,503 @@
       "widthStatus": "satellite-image estimate; OSM has no width tag",
       "source": "OSM way 251168367 (highway=service, surface=asphalt), aligned against supplied satellite map",
       "confidence": "mapped-and-imagery-aligned",
-      "centerline": [[25, 10.57], [18.63, 6.09], [-36.08, 39.34], [-34.78, 74.65], [-33.46, 110.35]]
+      "centerline": [
+        [
+          25,
+          10.57
+        ],
+        [
+          18.63,
+          6.09
+        ],
+        [
+          -36.08,
+          39.34
+        ],
+        [
+          -34.78,
+          74.65
+        ],
+        [
+          -33.46,
+          110.35
+        ]
+      ]
+    },
+    {
+      "id": "zhandova-east-street",
+      "kind": "asphalt",
+      "surface": "asphalt",
+      "widthM": 6.5,
+      "source": "User road markup 2026-10-06, aligned to exported site map and supplied satellite reference; approximate widths",
+      "confidence": "user-drawn-alignment",
+      "centerline": [
+        [
+          64.1,
+          -120.71
+        ],
+        [
+          71.11,
+          -109.02
+        ],
+        [
+          76.05,
+          -93.95
+        ],
+        [
+          84.36,
+          -79.92
+        ],
+        [
+          95.53,
+          -66.41
+        ],
+        [
+          100.99,
+          -52.64
+        ],
+        [
+          108.55,
+          -42.13
+        ],
+        [
+          115.02,
+          -26.14
+        ],
+        [
+          122.03,
+          -14.97
+        ],
+        [
+          132.17,
+          2.96
+        ]
+      ]
+    },
+    {
+      "id": "zhandova-east-branch",
+      "kind": "asphalt",
+      "surface": "asphalt",
+      "widthM": 5.5,
+      "source": "User road markup 2026-10-06, aligned to exported site map and supplied satellite reference; approximate widths",
+      "confidence": "user-drawn-alignment",
+      "centerline": [
+        [
+          122.03,
+          -14.97
+        ],
+        [
+          159.19,
+          -29.26
+        ]
+      ]
+    },
+    {
+      "id": "house36-front-drive",
+      "kind": "asphalt",
+      "surface": "asphalt",
+      "widthM": 5,
+      "source": "User road markup 2026-10-06, aligned to exported site map and supplied satellite reference; approximate widths",
+      "confidence": "user-drawn-alignment",
+      "centerline": [
+        [
+          -29.43,
+          -54.46
+        ],
+        [
+          -12.03,
+          -62.77
+        ],
+        [
+          11.88,
+          -75.51
+        ],
+        [
+          31.88,
+          -85.9
+        ],
+        [
+          41.75,
+          -93.17
+        ],
+        [
+          56.56,
+          -99.93
+        ],
+        [
+          66.96,
+          -106.42
+        ],
+        [
+          72.15,
+          -106.42
+        ]
+      ]
+    },
+    {
+      "id": "house26-front-drive",
+      "kind": "asphalt",
+      "surface": "asphalt",
+      "widthM": 5,
+      "source": "User road markup 2026-10-06, aligned to exported site map and supplied satellite reference; approximate widths",
+      "confidence": "user-drawn-alignment",
+      "centerline": [
+        [
+          -41.12,
+          -23.8
+        ],
+        [
+          -21.64,
+          -32.12
+        ],
+        [
+          -2.93,
+          -40.43
+        ],
+        [
+          14.48,
+          -50.82
+        ],
+        [
+          34.74,
+          -62.26
+        ],
+        [
+          56.04,
+          -73.95
+        ],
+        [
+          76.31,
+          -84.34
+        ],
+        [
+          81.25,
+          -84.86
+        ]
+      ]
+    },
+    {
+      "id": "tower34-west-access",
+      "kind": "asphalt",
+      "surface": "asphalt",
+      "widthM": 3.8,
+      "source": "User road markup 2026-10-06, aligned to exported site map and supplied satellite reference; approximate widths",
+      "confidence": "user-drawn-alignment",
+      "centerline": [
+        [
+          -29.43,
+          -54.46
+        ],
+        [
+          -40.86,
+          -54.72
+        ],
+        [
+          -53.85,
+          -47.71
+        ],
+        [
+          -66.84,
+          -40.69
+        ],
+        [
+          -69.7,
+          -37.05
+        ],
+        [
+          -72.82,
+          12.05
+        ]
+      ]
+    },
+    {
+      "id": "house14-rear-drive",
+      "kind": "asphalt",
+      "surface": "asphalt",
+      "widthM": 4.5,
+      "source": "User road markup 2026-10-06, aligned to exported site map and supplied satellite reference; approximate widths",
+      "confidence": "user-drawn-alignment",
+      "centerline": [
+        [
+          -72.82,
+          12.05
+        ],
+        [
+          -75.42,
+          24.78
+        ],
+        [
+          -75.68,
+          64.53
+        ],
+        [
+          -76.72,
+          120.39
+        ]
+      ]
+    },
+    {
+      "id": "house14-south-drive",
+      "kind": "asphalt",
+      "surface": "asphalt",
+      "widthM": 5,
+      "source": "User road markup 2026-10-06, aligned to exported site map and supplied satellite reference; approximate widths",
+      "confidence": "user-drawn-alignment",
+      "centerline": [
+        [
+          -96.2,
+          120.39
+        ],
+        [
+          -76.46,
+          121.17
+        ],
+        [
+          -60.09,
+          119.61
+        ],
+        [
+          -42.42,
+          121.69
+        ],
+        [
+          -40.08,
+          120.39
+        ]
+      ]
+    },
+    {
+      "id": "house14-courtyard-drive",
+      "kind": "asphalt",
+      "surface": "asphalt",
+      "widthM": 4.5,
+      "source": "User road markup 2026-10-06, aligned to exported site map and supplied satellite reference; approximate widths",
+      "confidence": "user-drawn-alignment",
+      "centerline": [
+        [
+          -40.08,
+          120.39
+        ],
+        [
+          -39.82,
+          90.51
+        ],
+        [
+          -40.08,
+          74.4
+        ],
+        [
+          -37.75,
+          54.66
+        ],
+        [
+          -37.75,
+          40.37
+        ],
+        [
+          -17.22,
+          27.12
+        ],
+        [
+          -1.11,
+          16.99
+        ],
+        [
+          10.91,
+          19.73
+        ]
+      ]
+    },
+    {
+      "id": "house14-north-access",
+      "kind": "asphalt",
+      "surface": "asphalt",
+      "widthM": 5,
+      "source": "User road markup 2026-10-06, aligned to exported site map and supplied satellite reference; approximate widths",
+      "confidence": "user-drawn-alignment",
+      "centerline": [
+        [
+          -83.99,
+          27.12
+        ],
+        [
+          -81.65,
+          18.54
+        ],
+        [
+          -64.51,
+          10.23
+        ],
+        [
+          -47.1,
+          -0.42
+        ],
+        [
+          -30.99,
+          -6.66
+        ]
+      ]
+    },
+    {
+      "id": "house14-courtyard-link",
+      "kind": "asphalt",
+      "surface": "asphalt",
+      "widthM": 4.5,
+      "source": "User road markup 2026-10-06, aligned to exported site map and supplied satellite reference; approximate widths",
+      "confidence": "user-drawn-alignment",
+      "centerline": [
+        [
+          10.91,
+          19.73
+        ],
+        [
+          18.37,
+          10.49
+        ],
+        [
+          30,
+          7.94
+        ]
+      ]
+    },
+    {
+      "id": "tower34-forecourt-west",
+      "kind": "asphalt",
+      "surface": "asphalt",
+      "widthM": 9,
+      "source": "User road markup 2026-10-06, aligned to exported site map and supplied satellite reference; approximate widths",
+      "confidence": "user-drawn-alignment",
+      "centerline": [
+        [
+          -38.27,
+          -79.66
+        ],
+        [
+          -41.12,
+          -73.17
+        ],
+        [
+          -36.19,
+          -63.03
+        ],
+        [
+          -29.43,
+          -54.46
+        ],
+        [
+          -23.72,
+          -42.25
+        ],
+        [
+          -30.99,
+          -31.6
+        ],
+        [
+          -41.12,
+          -23.8
+        ]
+      ]
+    },
+    {
+      "id": "tower34-forecourt-east",
+      "kind": "asphalt",
+      "surface": "asphalt",
+      "widthM": 7,
+      "source": "User road markup 2026-10-06, aligned to exported site map and supplied satellite reference; approximate widths",
+      "confidence": "user-drawn-alignment",
+      "centerline": [
+        [
+          -12.03,
+          -62.77
+        ],
+        [
+          -5.53,
+          -62.77
+        ],
+        [
+          -2.15,
+          -53.42
+        ],
+        [
+          -1.37,
+          -45.63
+        ],
+        [
+          -8.13,
+          -38.35
+        ],
+        [
+          -21.64,
+          -32.12
+        ]
+      ]
+    },
+    {
+      "id": "tower34-forecourt-cross",
+      "kind": "asphalt",
+      "surface": "asphalt",
+      "widthM": 8,
+      "source": "User road markup 2026-10-06, aligned to exported site map and supplied satellite reference; approximate widths",
+      "confidence": "user-drawn-alignment",
+      "centerline": [
+        [
+          -29.43,
+          -54.46
+        ],
+        [
+          -23.2,
+          -48.49
+        ],
+        [
+          -14.1,
+          -45.11
+        ],
+        [
+          -1.37,
+          -45.63
+        ]
+      ]
+    },
+    {
+      "id": "spawn-pedestrian-link",
+      "kind": "asphalt",
+      "surface": "asphalt",
+      "widthM": 1.8,
+      "source": "User road markup 2026-10-06, aligned to exported site map and supplied satellite reference; approximate widths",
+      "confidence": "user-drawn-alignment",
+      "centerline": [
+        [
+          -13.06,
+          -33.42
+        ],
+        [
+          -6.83,
+          -21.99
+        ],
+        [
+          -3.19,
+          -11.85
+        ],
+        [
+          -1.63,
+          -4.58
+        ],
+        [
+          1.74,
+          2.44
+        ],
+        [
+          5.9,
+          9.45
+        ],
+        [
+          10.91,
+          19.73
+        ]
+      ]
     }
   ],
-  "roadsStatus": "two paved service ways are mapped and imagery-aligned; widths remain visual estimates",
+  "roadsStatus": "Existing drive supplemented by user-marked roads, courtyard access and a narrow pedestrian link; widths remain approximate",
   "utilityStructures": [
     {
       "id": "electric-kiosk",
@@ -111,7 +641,24 @@
       "heightStatus": "low utility-building height estimated from panorama",
       "source": "OSM way 402910822 (building=service, building:levels=1); user confirmed this is the electrical kiosk between house 14 and tower 34",
       "confidence": "user-confirmed-purpose-osm-footprint",
-      "footprint": [[-25.22, -12.46], [-14.17, -17.98], [-11.16, -11.96], [-22.21, -6.44]]
+      "footprint": [
+        [
+          -25.22,
+          -12.46
+        ],
+        [
+          -14.17,
+          -17.98
+        ],
+        [
+          -11.16,
+          -11.96
+        ],
+        [
+          -22.21,
+          -6.44
+        ]
+      ]
     }
   ],
   "lighting": {
@@ -122,8 +669,15 @@
       "calculation": "NOAA-style solar position for the fixed visual reference; shadows are baked phantom decals, not realtime shadow maps",
       "altitudeDeg": 37.629,
       "azimuthDegFromNorth": 235.451,
-      "sunVectorXYZ": [-0.65231, 0.61055, 0.44914],
-      "shadowDirectionXZ": [0.65231, -0.44914],
+      "sunVectorXYZ": [
+        -0.65231,
+        0.61055,
+        0.44914
+      ],
+      "shadowDirectionXZ": [
+        0.65231,
+        -0.44914
+      ],
       "skyColor": "#a4bec9",
       "fogColor": "#a4bec9",
       "ambientIntensity": 0.56,
@@ -133,6 +687,72 @@
     }
   },
   "entrances": [
+    {
+      "id": "house-14-entrance-1",
+      "offsetM": 1.25,
+      "buildingId": "house-14",
+      "edgeIndex": 7,
+      "alongM": 16.9644,
+      "number": 1,
+      "widthM": 1.45,
+      "heightM": 2.15,
+      "style": "nine-storey-reference",
+      "stairWindow": false,
+      "source": "User view ray from (-41.2873, 92.9166), yaw -1.5818; approximate courtyard facade intersection"
+    },
+    {
+      "id": "house-14-entrance-2",
+      "offsetM": 1.25,
+      "buildingId": "house-14",
+      "edgeIndex": 7,
+      "alongM": 40.1024,
+      "number": 2,
+      "widthM": 1.45,
+      "heightM": 2.15,
+      "style": "nine-storey-reference",
+      "stairWindow": false,
+      "source": "Approximate midpoint between user-confirmed entrances 1 and 3"
+    },
+    {
+      "id": "house-14-entrance-3",
+      "offsetM": 1.25,
+      "buildingId": "house-14",
+      "edgeIndex": 7,
+      "alongM": 63.2404,
+      "number": 3,
+      "widthM": 1.45,
+      "heightM": 2.15,
+      "style": "nine-storey-reference",
+      "stairWindow": false,
+      "source": "User view ray from (-40.5915, 46.6032), yaw -1.5876; approximate courtyard facade intersection"
+    },
+    {
+      "id": "house-14-entrance-4",
+      "offsetM": 1.25,
+      "buildingId": "house-14",
+      "edgeIndex": 9,
+      "alongM": 11.3559,
+      "number": 4,
+      "widthM": 1.45,
+      "heightM": 2.15,
+      "style": "nine-storey-reference",
+      "stairWindow": false,
+      "source": "User view ray from (-32.9487, 30.6274), yaw -0.58, intersected with courtyard facade; schematic photo reference"
+    },
+    {
+      "id": "house-14-entrance-5",
+      "offsetM": 1.25,
+      "buildingId": "house-14",
+      "edgeIndex": 9,
+      "alongM": 36.1295,
+      "number": 5,
+      "widthM": 1.1,
+      "heightM": 2.15,
+      "style": "nine-storey-reference",
+      "stairWindow": false,
+      "handrails": true,
+      "source": "User view ray from (-11.088, 19.96), yaw -0.514, intersected with courtyard facade; schematic photo reference"
+    },
     {
       "id": "tower-34-main-entrance",
       "buildingId": "tower-34",
@@ -146,25 +766,113 @@
       "confidence": "mapped-entrance-node"
     },
     {
-      "id": "house-46-2-courtyard-entrance-a",
+      "id": "house-46-2-courtyard-entrance-1",
       "buildingId": "house-46-2",
       "edgeIndex": 0,
-      "alongM": 17.2,
-      "widthM": 1.5,
-      "heightM": 2.1,
-      "style": "five-storey-vestibule",
-      "source": "user panorama image_df69aa: visible ground-level entry zone on the long 46/2 facade; along-distance is photo-relative, not surveyed",
+      "alongM": 7.0359,
+      "widthM": 1.52,
+      "heightM": 2.3,
+      "style": "pink-hourglass-integrated",
+      "source": "User-approved reconstructed photograph",
       "confidence": "photo-relative"
     },
     {
-      "id": "house-46-2-courtyard-entrance-b",
+      "id": "house-46-2-courtyard-entrance-2",
       "buildingId": "house-46-2",
       "edgeIndex": 0,
-      "alongM": 39.4,
-      "widthM": 1.5,
-      "heightM": 2.1,
-      "style": "five-storey-vestibule",
-      "source": "user panorama image_df69aa: second visible ground-level entry zone on the long 46/2 facade; along-distance is photo-relative, not surveyed",
+      "alongM": 21.1076,
+      "widthM": 1.52,
+      "heightM": 2.3,
+      "style": "pink-hourglass-integrated",
+      "source": "User-approved reconstructed photograph",
+      "confidence": "photo-relative"
+    },
+    {
+      "id": "house-46-2-courtyard-entrance-3",
+      "buildingId": "house-46-2",
+      "edgeIndex": 0,
+      "alongM": 35.1794,
+      "widthM": 1.52,
+      "heightM": 2.3,
+      "style": "pink-hourglass-integrated",
+      "source": "User-approved reconstructed photograph",
+      "confidence": "photo-relative"
+    },
+    {
+      "id": "house-46-2-courtyard-entrance-4",
+      "buildingId": "house-46-2",
+      "edgeIndex": 0,
+      "alongM": 49.2511,
+      "widthM": 1.52,
+      "heightM": 2.3,
+      "style": "pink-hourglass-integrated",
+      "source": "User-approved reconstructed photograph",
+      "confidence": "photo-relative"
+    },
+    {
+      "id": "house-46-1-courtyard-entrance-1",
+      "buildingId": "house-46-1",
+      "edgeIndex": 2,
+      "alongM": 7.7274,
+      "widthM": 1.52,
+      "heightM": 2.3,
+      "style": "pink-hourglass-integrated",
+      "source": "User confirms six entrances",
+      "confidence": "photo-relative"
+    },
+    {
+      "id": "house-46-1-courtyard-entrance-2",
+      "buildingId": "house-46-1",
+      "edgeIndex": 2,
+      "alongM": 23.1822,
+      "widthM": 1.52,
+      "heightM": 2.3,
+      "style": "pink-hourglass-integrated",
+      "source": "User confirms six entrances",
+      "confidence": "photo-relative"
+    },
+    {
+      "id": "house-46-1-courtyard-entrance-3",
+      "buildingId": "house-46-1",
+      "edgeIndex": 2,
+      "alongM": 38.6369,
+      "widthM": 1.52,
+      "heightM": 2.3,
+      "style": "pink-hourglass-integrated",
+      "source": "User confirms six entrances",
+      "confidence": "photo-relative"
+    },
+    {
+      "id": "house-46-1-courtyard-entrance-4",
+      "buildingId": "house-46-1",
+      "edgeIndex": 2,
+      "alongM": 54.0917,
+      "widthM": 1.52,
+      "heightM": 2.3,
+      "style": "pink-hourglass-integrated",
+      "source": "User confirms six entrances",
+      "confidence": "photo-relative"
+    },
+    {
+      "id": "house-46-1-courtyard-entrance-5",
+      "buildingId": "house-46-1",
+      "edgeIndex": 2,
+      "alongM": 69.5465,
+      "widthM": 1.52,
+      "heightM": 2.3,
+      "style": "pink-hourglass-integrated",
+      "source": "User confirms six entrances",
+      "confidence": "photo-relative"
+    },
+    {
+      "id": "house-46-1-courtyard-entrance-6",
+      "buildingId": "house-46-1",
+      "edgeIndex": 2,
+      "alongM": 85.0012,
+      "widthM": 1.52,
+      "heightM": 2.3,
+      "style": "pink-hourglass-integrated",
+      "source": "User confirms six entrances",
       "confidence": "photo-relative"
     }
   ],
@@ -178,15 +886,46 @@
       "source": "user ground photo image_d6ffa6: yellow wall run, lowered corner connector and freestanding supported span",
       "confidence": "photo-anchored-route; exact metres are visual estimates",
       "path": [
-        { "edgeIndex": 10, "alongM": 0.8, "heightM": 3.05, "offsetM": 0.85 },
-        { "edgeIndex": 10, "alongM": 12.15, "heightM": 3.05, "offsetM": 0.85 },
-        { "edgeIndex": 0, "alongM": 0.3, "heightM": 3.05, "offsetM": 0.85 },
-        { "edgeIndex": 0, "alongM": 0.3, "heightM": 3.05, "offsetM": 4.8 },
-        { "edgeIndex": 0, "alongM": 0.3, "heightM": 3.05, "offsetM": 5.4 }
+        {
+          "edgeIndex": 10,
+          "alongM": 0.8,
+          "heightM": 3.05,
+          "offsetM": 0.85
+        },
+        {
+          "edgeIndex": 10,
+          "alongM": 12.15,
+          "heightM": 3.05,
+          "offsetM": 0.85
+        },
+        {
+          "edgeIndex": 0,
+          "alongM": 0.3,
+          "heightM": 3.05,
+          "offsetM": 0.85
+        },
+        {
+          "edgeIndex": 0,
+          "alongM": 0.3,
+          "heightM": 3.05,
+          "offsetM": 4.8
+        },
+        {
+          "edgeIndex": 0,
+          "alongM": 0.3,
+          "heightM": 3.05,
+          "offsetM": 5.4
+        }
       ],
       "supports": [
-        { "pathIndex": 3, "floorY": 0 },
-        { "pathIndex": 4, "floorY": 0 }
+        {
+          "pathIndex": 3,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 4,
+          "floorY": 0
+        }
       ]
     },
     {
@@ -197,10 +936,30 @@
       "source": "image_d6ffa6: lower wall branch separates before corner; dimensions are visual estimates",
       "confidence": "photo-relative-estimate",
       "path": [
-        { "edgeIndex": 10, "alongM": 11.6, "heightM": 3.05, "offsetM": 0.85 },
-        { "edgeIndex": 10, "alongM": 11.6, "heightM": 2.4, "offsetM": 0.85 },
-        { "edgeIndex": 0, "alongM": 0.3, "heightM": 2.4, "offsetM": 0.85 },
-        { "edgeIndex": 0, "alongM": 14.8, "heightM": 2.4, "offsetM": 0.85 }
+        {
+          "edgeIndex": 10,
+          "alongM": 11.6,
+          "heightM": 3.05,
+          "offsetM": 0.85
+        },
+        {
+          "edgeIndex": 10,
+          "alongM": 11.6,
+          "heightM": 2.4,
+          "offsetM": 0.85
+        },
+        {
+          "edgeIndex": 0,
+          "alongM": 0.3,
+          "heightM": 2.4,
+          "offsetM": 0.85
+        },
+        {
+          "edgeIndex": 0,
+          "alongM": 14.8,
+          "heightM": 2.4,
+          "offsetM": 0.85
+        }
       ],
       "supports": []
     }
@@ -267,7 +1026,64 @@
       "confidence": "photo-facade",
       "facadeProject": {
         "kind": "nine-storey",
-        "balconyEdges": [7, 9],
+        "reliefDepthM": 1.25,
+        "reliefSections": [
+          {
+            "edgeIndex": 7,
+            "entrances": true,
+            "centersM": [
+              18.3644,
+              41.5024,
+              64.6404
+            ]
+          },
+          {
+            "edgeIndex": 9,
+            "entrances": true,
+            "centersM": [
+              12.7559,
+              37.5295
+            ]
+          },
+          {
+            "edgeIndex": 5,
+            "entrances": false,
+            "centersM": [
+              11.0763,
+              34.2135,
+              57.3506
+            ]
+          },
+          {
+            "edgeIndex": 0,
+            "entrances": false,
+            "centersM": [
+              11.6265,
+              36.3965
+            ]
+          }
+        ],
+        "referenceEntranceBays": [
+          {
+            "edgeIndex": 7,
+            "centersM": [
+              16.9644,
+              40.1024,
+              63.2404
+            ]
+          },
+          {
+            "edgeIndex": 9,
+            "centersM": [
+              11.3559,
+              36.1295
+            ]
+          }
+        ],
+        "balconyEdges": [
+          7,
+          9
+        ],
         "balconyEvery": 1,
         "balconyMode": "mixed",
         "source": "user panorama confirms courtyard balcony rhythm; the two music-wall edges remain the separately confirmed blank facade"
@@ -277,7 +1093,7 @@
       "id": "house-46-1",
       "osm": "46/1",
       "role": "residential",
-      "roof": "red",
+      "roof": "unknown-flat-gray",
       "floors": 5,
       "heightM": 14,
       "heightStatus": "osm-5-floors-times-2.8-estimated",
@@ -304,18 +1120,21 @@
         "kind": "five-storey",
         "longFacesOnly": true,
         "minBalconyWallM": 18,
-        "source": "five floors and red roof from OSM/map; balcony rhythm restricted to long elevations"
+        "source": "User confirms neighbouring long five-storey block has the same facade and six entrances",
+        "referenceStyle": "pink-hourglass",
+        "referenceFrontEdge": 2,
+        "referenceEntranceCount": 6
       },
       "plinthMaterialId": "unknown-plinth",
-      "roofMaterialId": "red",
+      "roofMaterialId": "unknown-flat-gray",
       "source": "osm-plan-svg",
-      "confidence": "osm-footprint-facade-unknown"
+      "confidence": "user-confirmed-photo-pattern"
     },
     {
       "id": "house-46-2",
       "osm": "46/2",
       "role": "residential",
-      "roof": "red",
+      "roof": "unknown-flat-gray",
       "floors": 5,
       "heightM": 14,
       "heightStatus": "osm-5-floors-times-2.8-estimated",
@@ -342,12 +1161,14 @@
         "kind": "five-storey",
         "longFacesOnly": true,
         "minBalconyWallM": 18,
-        "source": "user panorama confirms five-storey red-roof block with mixed balcony glazing"
+        "source": "User-approved reconstructed courtyard photo: four red stair strips, three projecting balcony stacks",
+        "referenceStyle": "pink-hourglass",
+        "referenceFrontEdge": 0
       },
       "plinthMaterialId": "unknown-plinth",
-      "roofMaterialId": "red",
+      "roofMaterialId": "unknown-flat-gray",
       "source": "osm-plan-svg",
-      "confidence": "osm-footprint-facade-unknown"
+      "confidence": "user-approved-photo-reconstruction"
     },
     {
       "id": "house-26",
@@ -501,7 +1322,13 @@
       "confidence": "footprint-confirmed-facade-unknown",
       "facadeProject": {
         "kind": "tower",
-        "balconyEdges": [0, 6, 9, 12, 15],
+        "balconyEdges": [
+          0,
+          6,
+          9,
+          12,
+          15
+        ],
         "balconyEvery": 2,
         "source": "14-storey count and stepped footprint from OSM; balcony stacks are a restrained visual estimate"
       },
@@ -620,29 +1447,17 @@
     "source": "user-confirmed-presence",
     "confidence": "photo-green-zone",
     "note": "Положение восстановлено относительно зелёной отметки на фото: площадка на грунтовой полосе между домом 14, парковкой и пятиэтажками. Метры ориентировочные, не геодезический обмер.",
-    "sandbox": {
-      "x": -26,
-      "z": 44,
-      "size": 3.4,
-      "height": 0.25
-    },
     "bars": {
-      "x": -34,
-      "z": 45,
+      "x": 10.9,
+      "z": 27.85,
+      "yaw": -1.1462,
       "span": 4.2,
-      "depth": 1.2,
+      "depth": 0.35,
       "heights": [
-        1.5,
+        2.5,
         2,
-        2.3
+        1.7
       ]
-    },
-    "slide": {
-      "x": -19,
-      "z": 38,
-      "width": 1.5,
-      "length": 4,
-      "platform": 1.5
     },
     "view": {
       "x": -29,

@@ -72,10 +72,22 @@ window.INTEONMTECA_PLAYLIST = [
     "audio": "media/Liquid Hard Lines/Матт - Liquid Hard Lines.flac"
   },
   {
+    "id": "media/Loud Silence (Shifting Reality)/Матт - Loud Silence (Shifting Reality).flac",
+    "artist": "Матт",
+    "title": "Loud Silence (Shifting Reality)",
+    "audio": "media/Loud Silence (Shifting Reality)/Матт - Loud Silence (Shifting Reality).flac"
+  },
+  {
     "id": "media/M/ыьек - M.flac",
     "artist": "ыьек",
     "title": "M",
     "audio": "media/M/ыьек - M.flac"
+  },
+  {
+    "id": "media/Memphis/Матт - Memphis.flac",
+    "artist": "Матт",
+    "title": "Memphis",
+    "audio": "media/Memphis/Матт - Memphis.flac"
   },
   {
     "id": "media/N01Dentity/Матт - N01Dentity.flac",
@@ -94,5 +106,11 @@ window.INTEONMTECA_PLAYLIST = [
     "artist": "Матт",
     "title": "Random Spiral",
     "audio": "media/Random Spiral/Матт - Random Spiral.flac"
+  },
+  {
+    "id": "media/Лифт моего времени/Матт - Лифт моего времени.flac",
+    "artist": "Матт",
+    "title": "Лифт моего времени",
+    "audio": "media/Лифт моего времени/Матт - Лифт моего времени.flac"
   }
 ];

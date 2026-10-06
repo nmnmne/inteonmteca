@@ -3,14 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="../room-portal.css?v=20261005-2">
-  <script src="../room-portal.js?v=20261005-2"></script>
+  <link rel="stylesheet" href="../room-portal.css?v=return-cover-20261006-5">
+  <script src="../room-portal.js?v=playlist-scatter-20261006-9"></script>
   <title>inteonmteca — двор</title>
   <link rel="icon" href="../assets/logo-inteonmteca.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./yard.css?v=20261004-2310">
+  <link rel="preload" as="image" href="./assets/spawn-mobile.jpg" media="(orientation: portrait)">
+  <link rel="preload" as="image" href="./assets/spawn-desktop.jpg" media="(orientation: landscape)">
+  <link rel="stylesheet" href="./yard.css?v=loading-poster-20261006-1">
 </head>
 <body>
   <canvas id="yard-view" aria-label="Серый прототип двора"></canvas>
+  <picture id="yard-loading" aria-hidden="true">
+    <source media="(orientation: portrait)" srcset="./assets/spawn-mobile.jpg">
+    <img src="./assets/spawn-desktop.jpg" alt="" fetchpriority="high">
+  </picture>
   <section class="file-fallback" id="file-fallback" hidden>
     <p>Трёхмерный двор открывается через локальный сервер. Обычный плеер работает и отсюда.</p>
     <p><a href="../index.html">домой</a></p>
@@ -43,12 +49,14 @@
     <p id="yard-now"></p>
   </section>
   <audio id="album-player" preload="none" playsinline></audio>
-  <script src="../playlist-data.js"></script>
-  <script src="../playback-link.js?v=20261004-1910"></script>
-  <script src="../street-return.js?v=20261004-2205"></script>
+  <script src="../playlist-data.js?v=tracks-20261006-1"></script>
+  <script src="../playback-link.js?v=seek-fade-20261006-2"></script>
+  <script src="../street-return.js?v=boundary-four-minutes-20261006-2"></script>
   <script>
     // Consume the actual return timer, including reloads and boundary extensions.
     window.yardWalkClock = { enteredAt: Date.now(), deadline: null };
+    const startYardClock = () => {
+    window.yardWalkClock.enteredAt = Date.now();
     window.inteonStreet?.armReturn({ replace: url => window.inteonPortal ? window.inteonPortal.returnHome(url, true) : location.replace(url) }, location.protocol, (left) => {
       window.yardWalkClock.deadline = Date.now() + left * 1000;
       const watch = document.getElementById("street-watch");
@@ -60,8 +68,11 @@
     }, () => {
       const body = window.__yard?.body;
       if (!body) return null;
-      return { x: body.x, z: body.z, yaw: body.yaw, pitch: body.pitch };
+      return window.__yard.rememberedPose?.() || { x: body.x, z: body.z, yaw: body.yaw, pitch: body.pitch };
     });
+    };
+    if (document.prerendering) document.addEventListener('prerenderingchange', startYardClock, { once: true });
+    else startYardClock();
   </script>
   <script>
     if (location.protocol === "file:") {
@@ -69,7 +80,7 @@
       document.getElementById("yard-view").hidden = true;
     }
   </script>
-  <script type="module" src="./main.js?v=20261005-portal-1"></script>
+  <script type="module" src="./main.js?v=five-storey-20261006-3"></script>
   <script data-development-only src="../development-debug.js?v=20261006-1"></script>
   <script data-development-only src="./debug-pose.js?v=20261006-2"></script>
 </body>

@@ -1,11 +1,13 @@
 import * as THREE from "./vendor/three.module.js";
+import { addFiveStoreyReference } from './five-storey-reference.js?v=20261006-3';
+import { addHouseRelief } from "./house14-relief.js?v=20261006-1";
 import { facadeNormal } from "./facade-frame.js";
 import { createYardMaterials } from "./materials.js";
-import { facadeSpec, openingsForFacade } from "./models.js";
+import { facadeSpec, openingsForFacade } from "./models.js?v=bars-20261006-3";
 import { addHruDetails } from "./hru-details.js";
 import { addRoadDetails } from "./road-details.js";
 import { addReferenceUtilities, addUtilityStructures } from "./site-structures.js";
-import { addGasPipes, addSiteEntrances } from "./site-details.js";
+import { addGasPipes, addSiteEntrances } from "./site-details.js?v=five-storey-20261006-2";
 import { fixedSunForLayout } from "./baked-lighting.js";
 
 const ROOF_COLOR = {
@@ -262,18 +264,25 @@ function addPlayground(scene, materials, playground) {
   }
   const bars = playground.bars;
   if (bars) {
+    const group = new THREE.Group();
+    group.name = "courtyard-pullup-bars";
+    group.position.set(bars.x, 0, bars.z);
+    group.rotation.y = bars.yaw || 0;
+    const span = bars.span || 4.2;
+    const bay = span / bars.heights.length;
+    for (let index = 0; index <= bars.heights.length; index++) {
+      const height = Math.max(bars.heights[index - 1] || 0, bars.heights[index] || 0);
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(.055, .055, height, 8), metal);
+      post.position.set(-span / 2 + index * bay, height / 2, 0);
+      group.add(post);
+    }
     bars.heights.forEach((height, index) => {
-      const x = bars.x - (bars.span || 4.2) / 2 + 0.8 + index * 1.4;
-      for (const side of [-(bars.depth || 1.2) / 2, (bars.depth || 1.2) / 2]) {
-        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, height, 8), metal);
-        post.position.set(x, height / 2, bars.z + side);
-        scene.add(post);
-      }
-      const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, bars.depth || 1.2, 8), metal);
-      rail.position.set(x, height, bars.z);
-      rail.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1));
-      scene.add(rail);
+      const rail = new THREE.Mesh(new THREE.CylinderGeometry(.04, .04, bay, 8), metal);
+      rail.position.set(-span / 2 + (index + .5) * bay, height, 0);
+      rail.rotation.z = Math.PI / 2;
+      group.add(rail);
     });
+    scene.add(group);
   }
   const slide = playground.slide;
   if (slide) {
@@ -456,9 +465,11 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout)) {
       const onSegment = (same(a, music.segment[0]) && same(b, music.segment[1])) || (same(a, music.segment[1]) && same(b, music.segment[0]));
       const isMusic = building.id === music.buildingId && onSegment;
       if (building.id === music.buildingId && onSegment) mesh.name = "music-wall";
-      if (!isMusic) collectOpenings(openings, a, b, building, index);
+      if (!isMusic && !building.facadeProject?.referenceStyle && !building.facadeProject?.reliefSections?.some(section => section.edgeIndex === index)) collectOpenings(openings, a, b, building, index);
     }
     addRoof(scene, ring, building.heightM + 0.05, ROOF_COLOR[building.roof] || 0x8d9298, building.roof === "red");
+    addHouseRelief(scene, solids, materials, layout, building);
+    addFiveStoreyReference(scene, materials, building);
   }
   addOpeningMeshes(scene, materials, openings);
   addHruDetails(scene, materials, openings);

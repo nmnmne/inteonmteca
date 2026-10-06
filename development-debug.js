@@ -36,7 +36,20 @@ window.inteonDebugReady = (async () => {
   const menu = document.createElement('nav');
   menu.className = 'development-animation-menu'; menu.dataset.debugElement = '';
   menu.setAttribute('aria-label', 'Повтор анимаций');
-  if (copy) document.body.append(menu);
+  menu.id = 'development-animation-menu'; menu.hidden = true;
+  const effectsButton = document.createElement('button'); effectsButton.type = 'button';
+  effectsButton.className = 'development-debug-toggle development-debug-street';
+  effectsButton.dataset.debugElement = '';
+  effectsButton.textContent = 'Эффекты лого ▾';
+  effectsButton.setAttribute('aria-controls', menu.id);
+  effectsButton.setAttribute('aria-expanded', 'false');
+  const showEffects = open => {
+    menu.hidden = !open;
+    effectsButton.setAttribute('aria-expanded', String(open));
+    effectsButton.textContent = open ? 'Эффекты лого ▴' : 'Эффекты лого ▾';
+  };
+  effectsButton.addEventListener('click', () => showEffects(menu.hidden));
+  if (copy) document.body.append(effectsButton, menu);
   const resetEffects = async () => {
     window.inteonLogoAcid?.stop(); window.inteonLogoStorm?.stop(); window.inteonAtmosphere?.stop();
     await Promise.resolve();
@@ -68,7 +81,8 @@ window.inteonDebugReady = (async () => {
     const rect = copy.getBoundingClientRect();
     button.style.left = `${rect.right + 14}px`;
     button.style.top = `${rect.top - 3}px`;
-    menu.style.left = `${rect.right + 14}px`; menu.style.top = `${rect.top + 25}px`;
+    effectsButton.style.left = `${rect.right + 14}px`; effectsButton.style.top = `${rect.top + 25}px`;
+    menu.style.left = `${rect.right + 14}px`; menu.style.top = `${rect.top + 53}px`;
   };
   place();
   window.addEventListener('resize', place, {passive: true});
@@ -77,6 +91,7 @@ window.inteonDebugReady = (async () => {
     document.documentElement.dataset.debugEnabled = String(enabled);
     button.setAttribute('aria-checked', String(enabled));
     button.textContent = enabled ? 'debug on' : 'debug off';
+    if (!enabled) showEffects(false);
     window.dispatchEvent(new Event('inteon-debug-change'));
   };
   button.addEventListener('pointerdown', event => event.stopPropagation());

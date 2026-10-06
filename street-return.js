@@ -118,7 +118,7 @@
           || !Number.isFinite(state.deadline) || state.deadline <= Date.now()) return false;
       // One atomic record contains both consumption and the absolute deadline.
       state.consumedDay = today();
-      state.deadline = Date.now() + 20 * 60 * 1000;
+      state.deadline = Date.now() + 4 * 60 * 1000;
       putWalk(state);
       reschedule?.();
       return true;

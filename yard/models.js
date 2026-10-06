@@ -105,6 +105,24 @@ export function openingsForFacade(building, wallLength, edgeIndex = 0) {
   const windows = [];
   const balconies = [];
   const project = building.facadeProject || {};
+  // Photo-guided courtyard bays: a clear stairwell axis and wider balcony stacks.
+  const references = project.referenceEntranceBays;
+  const reference = Array.isArray(references) ? references.find(item => item.edgeIndex === edgeIndex) : references;
+  if (reference?.edgeIndex === edgeIndex) {
+    for (const center of reference.centersM) {
+      for (let floor = 0; floor < floors; floor += 1) {
+        for (const offset of [-9.4, -6.3, -2.9, 0, 2.9, 6.3, 9.4]) {
+          const along = center + offset;
+          if (along < 1 || along > wallLength - 1 || (offset === 0 && floor === 0)) continue;
+          const balcony = Math.abs(offset) === 6.3;
+          const y = .65 + (floor + .55) * floorHeight;
+          windows.push({along, y, width: offset === 0 ? 1.05 : balcony ? 2.8 : 1.4, height: 1.45});
+          if (balcony) balconies.push({along, y: .48 + floor * floorHeight, width: 3.5, depth: .95, railHeight: .95, variant: (floor + (offset > 0 ? 1 : 0)) % 4 === 0 ? "open" : "glazed"});
+        }
+      }
+    }
+    return {windows, balconies, entrances: []};
+  }
   const balconyEvery = Number(project.balconyEvery ?? spec.balconyEvery) || 0;
   const balconyEdges = Array.isArray(project.balconyEdges) ? project.balconyEdges : null;
   const longFacesOnly = project.longFacesOnly ?? (floors === 5 && balconyEvery > 0);
@@ -154,7 +172,11 @@ export function playgroundFootprints(playground) {
     output.push(rectangle("sandbox", playground.sandbox.x, playground.sandbox.z, playground.sandbox.size, playground.sandbox.size));
   }
   if (playground.bars) {
-    output.push(rectangle("bars", playground.bars.x, playground.bars.z, playground.bars.span || 4.2, playground.bars.depth || 1.2));
+    const bars = playground.bars;
+    const footprint = rectangle("bars", 0, 0, bars.span || 4.2, bars.depth || 1.2);
+    const angle = bars.yaw || 0;
+    footprint.footprint = footprint.footprint.map(([x, z]) => [bars.x + x*Math.cos(angle) + z*Math.sin(angle), bars.z - x*Math.sin(angle) + z*Math.cos(angle)]);
+    output.push(footprint);
   }
   if (playground.slide) {
     output.push(rectangle("slide", playground.slide.x, playground.slide.z + (playground.slide.length || 4) * 0.25, playground.slide.width, playground.slide.length || 4));

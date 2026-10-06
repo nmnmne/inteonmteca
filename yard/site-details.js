@@ -43,12 +43,46 @@ export function addSiteEntrances(scene, materials, layout) {
   group.name = "site-entrances";
 
   for (const entry of entries) {
+    // This facade batches its doors together with the reference geometry.
+    if (entry.style === "pink-hourglass-integrated") continue;
     const anchor = resolveFacadeAnchor(layout, entry);
     if (!anchor) continue;
     const doorWidth = Number(entry.widthM) || 1.55;
     const doorHeight = Number(entry.heightM) || 2.1;
     const entryGroup = new THREE.Group();
     entryGroup.name = entry.id;
+    if (entry.style === "nine-storey-reference") {
+      const rise = .48;
+      const door = box(doorWidth, doorHeight, .12, doorMaterial, anchor, rise + doorHeight / 2, anchor.yaw, .11);
+      door.name = `${entry.id}-door`;
+      entryGroup.add(door);
+      for (const side of [-1, 1]) {
+        const point = {...anchor, x: anchor.x + Math.cos(anchor.yaw) * side * (doorWidth / 2 + .08), z: anchor.z - Math.sin(anchor.yaw) * side * (doorWidth / 2 + .08)};
+        entryGroup.add(box(.16, doorHeight + .15, .22, frameMaterial, point, rise + doorHeight / 2, anchor.yaw, .13));
+      }
+      entryGroup.add(box(doorWidth + .3, .15, .22, frameMaterial, anchor, rise + doorHeight + .04, anchor.yaw, .13));
+      // Three descending treads and a landing, all outside the wall plane.
+      for (let step = 0; step < 3; step++) {
+        const height = rise - step * .16;
+        entryGroup.add(box(doorWidth + 1.05 + step * .14, height, step === 0 ? .9 : .36, concrete, anchor, height / 2, anchor.yaw, step === 0 ? .5 : .95 + (step - .5) * .36));
+      }
+      entryGroup.add(box(doorWidth + 1.2, .14, 1.5, canopy, anchor, 2.95, anchor.yaw, .65));
+      const handle = {...anchor, x: anchor.x + Math.cos(anchor.yaw) * doorWidth * .3, z: anchor.z - Math.sin(anchor.yaw) * doorWidth * .3};
+      entryGroup.add(box(.055, .3, .09, frameMaterial, handle, 1.45, anchor.yaw, .22));
+      if (entry.handrails) {
+        const rail = materials.flat(0x477c9c);
+        for (const side of [-1, 1]) {
+          const point = {...anchor, x: anchor.x + Math.cos(anchor.yaw) * side * (doorWidth + .85) / 2, z: anchor.z - Math.sin(anchor.yaw) * side * (doorWidth + .85) / 2};
+          const near = {x: point.x + point.nx * .45, y: 1.38, z: point.z + point.nz * .45};
+          const far = {x: point.x + point.nx * 1.5, y: 1.02, z: point.z + point.nz * 1.5};
+          cylinderBetween(entryGroup, {...near, y: .48}, near, .025, rail, "rail-post");
+          cylinderBetween(entryGroup, {...far, y: .12}, far, .025, rail, "rail-post");
+          cylinderBetween(entryGroup, near, far, .028, rail, "rail-handhold");
+        }
+      }
+      group.add(entryGroup);
+      continue;
+    }
 
     const door = box(doorWidth, doorHeight, 0.1, doorMaterial, anchor, doorHeight / 2, anchor.yaw, 0.1);
     door.name = `${entry.id}-door`;

@@ -60,20 +60,43 @@ export function createWallPlayer(root) {
     const request = ++selection;
     pendingBoundary = boundary ? { request, visit: window.inteonStreet?.boundaryVisit?.(), src: rootUrl(pathOf(track)) } : null;
     hideBoundaryRetry();
-    if (pendingSeek) audio.removeEventListener("loadedmetadata", pendingSeek);
+    if (pendingSeek) {
+      audio.removeEventListener("loadedmetadata", pendingSeek);
+      audio.removeEventListener("seeked", pendingSeek);
+    }
     currentIndex = index;
     if (shared) window.inteonPlayback?.restore?.(audio, shared);
     else window.inteonPlayback?.select?.(audio, "yard", { stopAtEnd: boundary });
     stamp = "";
     const src = rootUrl(pathOf(track));
+    const startPlayback = () => {
+      if (request !== selection || paused || (shared?.fade && shared.fade.until <= Date.now())) return;
+      const failed = (error) => {
+        paint();
+        if (request === selection && audio.paused && error?.name === "NotAllowedError") offerBoundaryRetry();
+      };
+      try {
+        const started = audio.play();
+        if (started && typeof started.catch === "function") started.catch(failed);
+      } catch (error) { failed(error); }
+    };
+    let seekRequested = false;
+    const resumeAfterSeek = Boolean(shared && time > 0 && !paused);
     const place = () => {
       // A late event must neither seek a newer selection nor finish its restore.
       if (pendingSeek !== place || currentIndex !== index || audio.src !== src
           || audio.currentSrc !== src || audio.readyState < 1) return;
-      if (Number.isFinite(time) && time > 0) audio.currentTime = time;
+      if (!seekRequested && Number.isFinite(time) && time > 0) {
+        seekRequested = true;
+        if (resumeAfterSeek) audio.addEventListener("seeked", place);
+        audio.currentTime = time;
+      }
+      if (resumeAfterSeek && audio.seeking) return;
       audio.removeEventListener("loadedmetadata", place);
+      audio.removeEventListener("seeked", place);
       pendingSeek = null;
       remember();
+      if (resumeAfterSeek) startPlayback();
     };
     // Suppress saves before src/load can emit reset-time or pause events.
     pendingSeek = place;
@@ -89,14 +112,7 @@ export function createWallPlayer(root) {
       remember();
       return;
     }
-    const failed = (error) => {
-      paint();
-      if (request === selection && audio.paused && error?.name === "NotAllowedError") offerBoundaryRetry();
-    };
-    try {
-      const started = audio.play();
-      if (started && typeof started.catch === "function") started.catch(failed);
-    } catch (error) { failed(error); }
+    if (!resumeAfterSeek) startPlayback();
   };
 
   const step = (offset) => {
@@ -131,6 +147,11 @@ export function createWallPlayer(root) {
   };
 
   const load = async () => {
+    // Prerender has no playback permission and can overwrite the live handoff.
+    // Read the final position/fade only once the user actually enters the yard.
+    if (document.prerendering) {
+      await new Promise(resolve => document.addEventListener("prerenderingchange", resolve, {once: true}));
+    }
     if (location.protocol === "http:" || location.protocol === "https:") {
       try {
         const response = await fetch(rootUrl("playlist.json"), { cache: "no-store" });
