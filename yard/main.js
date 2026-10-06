@@ -2,7 +2,7 @@ import * as THREE from "./vendor/three.module.js";
 import { distanceToWall, isWalkable, moveCircle } from "./navigation.js";
 import { createInputController } from "./input-controller.js";
 import { createQualityMeter, createRenderGate, pixelRatioCap } from "./quality.js";
-import { createYardScene, drawScheme } from "./scene.js?v=five-storey-20261006-3";
+import { createYardScene, drawScheme } from "./scene.js?v=five-storey-20261006-4";
 import { createWallPlayer } from "./wall-player.js?v=seek-fade-20261006-2";
 import { createBoundaryMusic } from "./boundary-music.js";
 import { createLightingCycle, addBakedLighting } from "./baked-lighting.js";
@@ -20,7 +20,7 @@ const meter = createQualityMeter();
 try {
 let layout = null;
 if (location.protocol !== "file:") {
-  layout = await fetch(new URL("./data/site-layout.json?v=five-storey-20261006-3", import.meta.url)).then((response) => {
+  layout = await fetch(new URL("./data/site-layout.json?v=five-storey-20261006-4", import.meta.url)).then((response) => {
     if (!response.ok) throw new Error(`site-layout ${response.status}`);
     return response.json();
   });
