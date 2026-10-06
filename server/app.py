@@ -243,7 +243,7 @@ class Store:
         ]
 
 
-def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_dev_code: bool = False):
+def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_dev_code: bool = False, debug: bool = False):
     root = root.resolve()
 
     class Handler(SimpleHTTPRequestHandler):
@@ -276,6 +276,8 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
 
         def do_GET(self) -> None:  # noqa: N802
             parsed = urlparse(self.path)
+            if parsed.path == "/api/runtime":
+                return self._json(HTTPStatus.OK, {"debug": debug})
             if self._forbidden(parsed.path):
                 self.send_error(HTTPStatus.NOT_FOUND, "Not found")
                 return
@@ -510,19 +512,24 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
     return Handler
 
 
-def serve(root: Path | None = None, host: str = "127.0.0.1", port: int = 8080, db_path: Path | None = None) -> ThreadingHTTPServer:
+def serve(root: Path | None = None, host: str = "127.0.0.1", port: int = 8080, db_path: Path | None = None, debug: bool = False) -> ThreadingHTTPServer:
     site_root = (root or ROOT).resolve()
     database = db_path or (Path(__file__).resolve().parent / "data" / "inteonmteca.db")
     store = Store(database)
-    handler = make_handler(site_root, store, smtp_config(), force_dev_code=os.environ.get("INTEONMTECA_DEV") == "1")
+    handler = make_handler(site_root, store, smtp_config(), force_dev_code=os.environ.get("INTEONMTECA_DEV") == "1", debug=debug)
     server = ThreadingHTTPServer((host, port), handler)
     return server
 
 
 def main() -> int:
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--production", action="store_true", help="Disable development debugging")
+    args = parser.parse_args()
     host = os.environ.get("INTEONMTECA_HOST", "127.0.0.1")
     port = int(os.environ.get("INTEONMTECA_PORT", "8080"))
-    server = serve(host=host, port=port)
+    debug = not args.production and os.environ.get("INTEONMTECA_ENV", "development") == "development" and host in {"127.0.0.1", "localhost", "::1"}
+    server = serve(host=host, port=port, debug=debug)
     print(f"inteonmteca  http://{host}:{port}", flush=True)
     try:
         server.serve_forever()

@@ -370,3 +370,42 @@ html[data-background-mode="static"] .spatial-room .theme-light-c { animation: no
 .spatial-room .active-player .transport-play:hover:not(:disabled) { box-shadow: 0 0 0 8px rgba(var(--theme-accent-rgb), .07), 0 0 22px rgba(var(--theme-accent-rgb), .09); }
 .spatial-room :is(.auth-hint, .theme-hint, .chat-hint, .street-link) { border-color: rgba(var(--theme-text-rgb), .08); background: rgba(var(--theme-panel-rgb), .2); transition: background-color .25s, border-color .25s; }
 .spatial-room :is(.auth-hint, .theme-hint, .chat-hint, .street-link):hover { border-color: rgba(var(--theme-accent-rgb), .3); background: rgba(var(--theme-accent-rgb), .06); }
+
+/* One-line invitation above the wordmark; the resident watches from below. */
+.logo-storm { position: fixed; inset: 0; z-index: 40; overflow: hidden; pointer-events: none; }
+.logo-storm-piece { position: absolute; background-image: url('assets/logo-wordmark.svg'); background-repeat: no-repeat; filter: brightness(1.5) sepia(.25); opacity: .85; will-change: transform; }
+.logo-storm-sky { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0, #06070c, #000 70%); opacity: 0; }
+.logo-storm-bolts { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; fill: none; stroke: #dbe4ff; stroke-width: 2; filter: drop-shadow(0 0 8px #9baeff) drop-shadow(0 0 22px #8c9edb); }
+body.spatial-room .logo-wrap.release-logo.is-screen-scattered { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .logo-storm { display: none; } }
+.spatial-room .listening-intro h1 {
+  white-space: nowrap; max-width: none;
+  font-family: "Cascadia Code", Consolas, "Liberation Mono", ui-monospace, monospace;
+  font-weight: 500; font-variant-ligatures: none; letter-spacing: -.055em; line-height: 1.15;
+}
+@media (min-width: 801px) and (min-height: 541px) {
+  .spatial-room .listening-intro {
+    position: relative; left: auto; top: auto; grid-column: 1; align-self: center;
+    width: 100%; min-width: 0; padding: 0; text-align: center;
+  }
+  .spatial-room .listening-intro h1 { font-size: clamp(28px, 3.4vw, 54px); margin-top: 14px; }
+  body.spatial-room .logo-wrap.release-logo { position: relative; left: auto; top: auto; width: 88%; margin: clamp(20px, 4dvh, 42px) auto 0; transform: none; }
+  .spatial-room .release-content { grid-column: 2; }
+  .spatial-room .room-presence { position: relative; left: auto; right: auto; top: auto; width: 100px; height: 52px; margin: 22px auto 0; }
+}
+@media (max-width: 800px) and (min-height: 541px), (max-width: 500px) {
+  .spatial-room { --room-top: clamp(180px, 23dvh, 205px); }
+  .spatial-room .release-card { grid-template-rows: minmax(0, 1fr); }
+  .spatial-room .listening-intro { position: absolute; inset: 55px var(--spatial-gutter) auto; display: block; text-align: center; }
+  .spatial-room .listening-intro .label { display: flex; justify-content: center; margin: 0 0 5px; }
+  .spatial-room .listening-intro h1 { margin: 0; font-size: clamp(24px, 6.6vw, 34px); }
+  body.spatial-room .logo-wrap.release-logo { position: relative; left: auto; top: auto; width: min(80%, 340px); margin: 18px auto 0; transform: none; }
+  .spatial-room .room-presence { display: block; position: absolute; left: auto; right: -4px; top: auto; bottom: 6px; width: 38px; height: 38px; margin: 0; }
+}
+@media (min-width: 501px) and (max-height: 540px) {
+  .spatial-room .listening-intro { position: relative; align-self: center; padding: 0; text-align: center; min-width: 0; }
+  .spatial-room .listening-intro .label { justify-content: center; }
+  .spatial-room .listening-intro h1 { font-size: clamp(18px, 2.7vw, 26px); }
+  body.spatial-room .logo-wrap.release-logo { position: relative; left: auto; top: auto; width: 88%; margin: 14px auto 0; transform: none; }
+  .spatial-room .room-presence { display: block; position: absolute; left: auto; right: -24px; top: auto; bottom: 4px; width: 38px; height: 44px; margin: 0; }
+}

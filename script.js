@@ -87,6 +87,7 @@ const authClose = document.getElementById("auth-close");
 const authLogout = document.getElementById("auth-logout");
 const chatHint = document.getElementById("chat-hint");
 const chatPanel = document.getElementById("chat-panel");
+const inlineChat = chatPanel?.classList.contains("chat-inline");
 const chatStream = document.getElementById("chat-stream");
 const chatForm = document.getElementById("chat-form");
 const chatInput = document.getElementById("chat-input");
@@ -137,9 +138,8 @@ const TRACK_VIEW = 5;
 const THEME_MIN_MS = 4 * 1000;
 const THEME_MAX_MS = 7 * 24 * 60 * 60 * 1000;
 const THEME_DEFAULT_MS = 8 * 1000;
-// Single file://-safe source of truth. First ten are the core collection;
-// the remaining material studies are deliberately composed, not hue rotations.
-// Row: id | Russian label | background panel light-a light-b light-c accent text.
+// Curated collection: sixteen colorful atmospheres, two nights and two daylight palettes.
+// Row: id | Russian label | background panel light-a light-b light-c accent text | mood.
 const themeCoreFilters = Object.freeze({
   desert: { canvas: "none", logo: "none", fog: "18px", opacity: ".82" },
   sunset: { canvas: "hue-rotate(22deg) saturate(1.28)", logo: "hue-rotate(23deg) saturate(1.24)", fog: "22px", opacity: "1" },
@@ -153,118 +153,28 @@ const themeCoreFilters = Object.freeze({
   oxblood: { canvas: "hue-rotate(-18deg) saturate(1.2)", logo: "hue-rotate(-16deg) saturate(1.16)", fog: "18px", opacity: ".84" },
 });
 const themeRegistry = Object.freeze([
-  // основные — seven original IDs stay vivid; three more complete the core ten
-  "desert|пустынная ртуть|070605 070605 e07d49 893a2d 6b415b d3ff69 f4eee8",
-  "sunset|перегретый закат|0d0802 0d0802 ff741a ffbe41 68ae37 bcff63 fff1dc",
-  "abyss|ультрамариновая глубина|020810 020810 14a8ff 1945dc 7e32ff 68ffe6 e0f5ff",
-  "moss|радиоактивный мох|050804 050804 9df330 347025 d2a326 d5ff66 edf5db",
-  "infrared|инфракрасный сон|0a0103 0a0103 ff261e 8b002d ff5c12 ff704e ffe6de",
-  "amethyst|аметистовый мираж|080410 080410 be48ff 4948e6 ff5bb5 e29dff f7e8ff",
-  "glacier|ледяная память|02090d 02090d 97eeff 2689eb cdffe8 c6fff9 e8fbff",
-  "porcelain|тёплый фарфор|14120f 26231c c9bc9e 92806b a9aaa0 e8dbbb f6f0e5",
-  "graphite|мягкий графит|0c0e10 1b1e21 929b9e 59666c 898078 c2cdce eff1f0",
-  "oxblood|воловья кожа|160b0b 291818 a97263 794452 9a825f d9b19b f5e8df",
-  // глины и земли
-  "kaolin|сырой каолин|14110e 27221c bcb09c 928675 847f6c d9c8aa f4ecdf",
-  "terracotta|пыльная терракота|190e0a 302019 c08364 914e42 aa946f e2ba91 f8eadb",
-  "umber|жжёная умбра|110e09 231d13 9c8159 685c44 948478 d2bc90 f0e9db",
-  "sienna|сырая сиена|171107 2b2112 b69a5d 8a684c 8f9170 e3ce9b f6eed7",
-  "ochre|золотая охра|151107 292314 c3a856 847344 a58b70 e7d69d f9f0d9",
-  "bentonite|серая глина|121211 232522 a4aaa0 727d79 978e7d ced1bb f0f0e5",
-  "brick-dust|кирпичная пыль|170d0d 2b1a19 b67569 885e58 8f856d dcb8a7 f6e9e0",
-  "adobe|саманный дом|15120c 282418 b4a37a 837552 9b8e7d d9cba7 f3eddf",
-  "red-earth|красная земля|170c08 2c1b12 b77247 874d3e 998058 ddb18a f5e8d9",
-  // волокна и ткани
-  "linen|небелёный лён|12130f 24271e aeb49a 80876d a19783 d5d9bd f1f2e5",
-  "hemp|конопляное полотно|13110a 272217 ada17a 777853 978765 d8cfa3 f2efda",
-  "raw-silk|шёлк экрю|151110 2b2220 c4aea3 95847d a4a291 e5d5bf f8eee7",
-  "cashmere|серый кашемир|111214 242529 a1a3b1 777a8c a39189 d0cbd8 f0eff5",
-  "felt|войлок и шалфей|0e1210 202722 98a897 617a70 a2967d c8d4b9 ebf2e8",
-  "velvet|табачный бархат|14100b 281f17 ab9065 79604b 928378 d6bd94 f4eada",
-  "denim|выцветший деним|0c1117 1a2632 829bb7 4e6b8a 9d9690 bdceda e9f0f7",
-  "corduroy|вельвет корицы|160e0b 2c1d17 b28b6b 88664f 968976 dbbd9c f5eadd",
-  "muslin|розовый муслин|171113 2b2127 c0a1b0 907b8d ada190 e6c9d5 faedf2",
-  // садовая зелень
-  "sage|серебряный шалфей|0f1410 202b23 9caf98 6d8b7b b0a184 cdddba eff5e8",
-  "olive|оливковая косточка|131409 272b18 a4a76c 737b45 9b8964 d1d49e f1f2dc",
-  "eucalyptus|кора эвкалипта|0d1413 1b2b29 7fa79c 537e79 a7927d bad8c9 e9f5ef",
-  "fern|тенистый папоротник|09130d 17291c 739c6c 466c54 938e62 b6d7a6 e8f4e4",
-  "juniper|сухой можжевельник|0d1214 1b282b 83a4a9 53747c 9d9b85 c0d8d1 ebf4f1",
-  "pistachio|скорлупа фисташки|14150e 292c20 b2bb85 7d9167 b0a081 d9e0b1 f3f5e3",
-  "nettle|крапивный настой|101307 222918 8f9a55 5e753c a39560 c4d393 eff3d9",
-  "lichen|лишайник на камне|131512 272c26 a1ae8b 748472 a5a290 d2d7b8 f0f3e6",
-  "artichoke|лист артишока|13120f 29271f a3a083 73785e 958a9a d1cdb0 f3eee3",
-  // вода и минеральные синие
-  "petrol|петролевая эмаль|081415 152b2d 589a9e 37696e a59877 abd6cb e4f4f0",
-  "slate|мокрый сланец|101216 222730 8897ad 5e708b a39c96 c5cfdb eff2f7",
-  "celadon|селадоновая глазурь|101612 222e26 a1beb0 6e9285 b6af8e d5e7ce f0f8ed",
-  "sea-glass|матовое стекло|0e1616 1d2d2e 8fb9b6 648e99 a8b19b c8e3d7 ecf7f2",
-  "verdigris|медная патина|0b1511 182d25 6cae95 487967 b09a68 bbe0b8 e7f5e9",
-  "ink-blue|синие чернила|0c101b 1b2335 718bad 4c597e 9d8f9f bdc9df eaf0fc",
-  "storm-blue|грозовой лён|10141a 232b36 93a6bc 637c94 a8a390 ccdbe0 f0f4f8",
-  "ceramic-blue|синяя керамика|0b121a 192936 759eb5 486f93 b5a184 bed7e3 eaf4fa",
-  "river-silt|речной ил|111512 242d26 9fac98 697f76 a59a88 d0dac1 eff5e8",
-  // плоды и настои
-  "quince|айвовый мёд|181307 302715 c7ac62 937343 a19a6e e9d8a1 f9f1d9",
-  "fig|кожица инжира|170e18 2d1e2e ad87a9 735e7c a19c77 d9bed2 f8edf6",
-  "plum|сливовый налёт|130e19 271e31 9e8bb0 655777 ab8e8b cfbeda f2eaf9",
-  "mulberry|сок шелковицы|180b13 301922 b17894 7f4968 a88c71 e0b1c6 fae6ef",
-  "blackcurrant|смородиновый лист|130e16 261e2c 97798d 625470 8f9e76 cdb8c7 f4eaf1",
-  "rosehip|сухой шиповник|1a0e0b 321e18 c08770 92594d a59b77 e9bea1 fbeddf",
-  "pomegranate|гранатовая корка|190b0f 30181f b57279 803e58 ae8868 e3b2ae fae7e7",
-  "apricot|абрикосовая замша|19130e 30261e c7a17a 937957 a7a18b edd0a9 faf1e4",
-  "persimmon|вяленая хурма|191006 302115 c58f50 956344 9a976e ebc28e f9ebd6",
-  // древесина и смолы
-  "walnut|ореховый шпон|120e0c 261e1a a58b7a 71584f 97947a d4bba3 f1e7dd",
-  "cedar|кедровая стружка|17110c 2d231a b69b79 8b6d55 9d9f80 e1c9a5 f6eddf",
-  "ebony|чёрное дерево|0c0c0a 1e1d17 8b8971 5b6355 928076 c4bf9e eceade",
-  "birch|берёзовая кора|141413 292a26 b9b9aa 858d82 a59a87 e0dfc9 f4f4e9",
-  "cork|португальская пробка|18130e 2e261b b8a080 8c775e a59687 e4cfae f8efdf",
-  "rosewood|розовое дерево|180f11 2f2022 b58a89 845e69 a5927c e0bebe f9eaeb",
-  "smoked-oak|копчёный дуб|11100e 25241d 96957d 676b58 988577 c7c2a4 f0ede0",
-  "amber-resin|янтарная смола|171005 2d2210 bd984c 86672f a28760 e7ce8e f7edcf",
-  "pine-bark|сосновая кора|13100b 292219 a48b62 726a48 8d9b83 d1c294 f0ebda",
-  // металл и камень
-  "pewter|оловянная чашка|121416 262b2e a9b2b4 76868e a69c8a d5ded9 f1f5f2",
-  "brass|старая латунь|151309 2b2817 b9ab69 887b43 a69b7f dfdaa5 f6f3dd",
-  "copper|травлёная медь|180e0c 2f1f1b b98772 86594e 80a293 e1bba7 f8eade",
-  "basalt|тёплый базальт|101110 232522 90998f 616e69 9a8d81 c6cfc1 edf1e8",
-  "travertine|римский травертин|17140f 2e281e c1b091 948366 a9a18c e7d9b7 f8f1e1",
-  "soapstone|мыльный камень|111614 252e28 a8b8aa 728e7f aca88f d6e2cd f1f7eb",
-  "malachite|матовый малахит|091611 172e24 6ca68a 3e725f b1a37e b9d9ba e6f6e9",
-  "rhodonite|пыльный родонит|180f15 301f2a ba92aa 805f7a 9e9c88 e5c1d4 f9edf4",
-  "fluorite|зелёный флюорит|101515 222d2f 9fb5ad 778b9e ac94b3 d4ddd0 f1f6f1",
-  // чай и пряности
-  "matcha|маття в тени|14170c 292e1b a9b77c 7a9058 b2a179 dce3ac f5f7e0",
-  "oolong|дымный улун|17130b 2d281b ac9c76 7a704e 9b9e84 d9cda2 f4efdc",
-  "hibiscus|чай каркаде|190d16 311c2b b17e9b 7f4f73 a88d81 e1b8d0 f9eaf3",
-  "saffron|нить шафрана|191406 302911 c1a345 947531 a28e67 e9d485 faf1d2",
-  "cardamom|зелёный кардамон|15170f 2c3020 aeb891 7e906b b5aa8c dde4bd f5f7e7",
-  "cinnamon|палочка корицы|180f0a 301f16 b98d69 885e44 a29676 e3c09a f8ead9",
-  "clove|сухая гвоздика|140e10 291e21 9e7f82 70585f 9a9179 d1b6b5 f2e7e6",
-  "vanilla|стручок ванили|17150f 2e2b1f c0b598 908767 a9a293 e9ddbb f9f3e3",
-  "cacao|горькое какао|120d0b 271c17 9e8069 705549 9b8b78 d2b398 f1e5d8",
-  // пигменты и бумага
-  "parchment|старый пергамент|18160f 302d20 bdb58d 91845f aba28a e5dfb6 f9f5e0",
-  "sepia|сепия на бумаге|151008 2b2316 ab9164 786345 a1997e dac498 f4ecda",
-  "indigo|потёртый индиго|10101b 232338 8c8ead 5c608b a39d8e c8cce0 f0f0fb",
-  "madder|мареновый краситель|1a0e11 321e23 ba8287 894d63 b69b81 e8bdbb fbeaec",
-  "weld|резеда красильная|17170c 2f301b b6b777 818c4e a79c76 e0e2a9 f7f7df",
-  "wisteria|сухая глициния|141019 292333 ac9dbb 79708d b2a191 dfd1e5 f6effa",
-  "dusty-rose|пепельная роза|181215 30262a c0a3ad 917b87 afa18d ead0d7 fbF0f3",
-  "chalk|цветной мел|151718 2b3031 b4c0bc 83959d b5aa9c e0e9dd f5faf3",
-  "charcoal|угольный набросок|0e1012 21262b 929fa8 647580 9e9588 c6d4d9 ecf3f6",
-  // необычные сочетания
-  "salt-plum|соль и слива|15121a 2c2733 b0a3c1 7c718e a6b7ab e0d4eb f7f1fc",
-  "pear-smoke|груша в дыму|17180e 2f3220 b9bf87 879759 b3a094 e6e9ba f8f9e5",
-  "tea-rose|чайная роза|1a1310 332820 c6a48d 947e68 a9ae93 eed2b8 fcf1e5",
-  "lavender-clay|лавандовая глина|17111a 2f2534 b29db4 7d708b b4a082 e3cfe1 f8eff9",
-  "mint-copper|мята и медь|101915 21332b 9ebbaa 6c9388 bb987b d9ead0 f1faed",
-  "mustard-ink|горчица и тушь|151510 2b2d23 b5ad75 657e80 a28b76 e0d7a6 f6f3e0",
-  "aubergine-linen|баклажан и лён|191019 312330 b69cad 806177 b5af8e e4d2c0 faf0ec",
-  "oyster|устричный перламутр|151617 2d3030 b7bdbc 858e9a b8a69f e5e6da f8f8f1"
-].map((row, index) => {
-  const [id, name, palette] = row.split("|");
+  "desert|пустынная ртуть|3b2a19 23180e f3b966 d78855 c7d87a d3ff69 fff4df|color",
+  "sunset|перегретый закат|492329 291b20 ff9556 ed5971 e8bd68 ffdb96 fff0e9|color",
+  "moss|радиоактивный мох|263b15 15250f b7ee4b 64b454 e1c46a d5ff66 f3ffdc|color",
+  "infrared|инфракрасный сон|4b192b 2a1320 ff626b e54836 ffaf6e ffb18f ffe9e4|color",
+  "amethyst|аметистовый мираж|352452 211632 cb8cf0 9078e7 ec9bbb e3c0ff f9edff|color",
+  "glacier|ледяная память|1c3d53 132936 98e8f3 4ba3dc 9fbaff c6fff9 e8fbff|color",
+  "terracotta|пыльная терракота|4c3228 2d211a e9a076 c9826a f2c697 ebd0a3 fff1e2|color",
+  "saffron|нить шафрана|494018 2d2714 e9cc55 e6a250 cad68a f6eab6 fff7da|color",
+  "pistachio|скорлупа фисташки|35422a 232c1e bddd99 8ebf97 d8b68d d9eab7 f5f8e9|color",
+  "mint-copper|мята и медь|1c483b 153024 8ee6b4 5eb6a6 e2aa7f d9ead0 f1faed|color",
+  "petrol|петролевая эмаль|16464c 112f33 69d9df 4c9fba e5c994 b8f0eb e4faff|color",
+  "ceramic-blue|синяя керамика|223c63 15243e 82b5f3 678ce1 e5b48d bed7ff eaf4ff|color",
+  "indigo|потёртый индиго|303364 20213d 989fee 7278cc dda5be c8d2ff f0f0ff|color",
+  "wisteria|сухая глициния|453552 2b2233 cdb0e7 9f8dc9 e3c8a8 e6d1ef f8efff|color",
+  "hibiscus|чай каркаде|502b46 301c2a e78cb5 c16d9c efb19b f2c1dc ffedf7|color",
+  "apricot|абрикосовая замша|4b382a 30251c efba8b d39c79 d7dca0 f2d0a9 fff3e4|color",
+  "abyss|ультрамариновая глубина|030914 070c19 296dba 183b74 583777 9cb9d6 e8efff|dark",
+  "graphite|мягкий графит|0c0e10 17191c 576267 323d44 76685f c2cdce eff1f0|dark",
+  "porcelain|тёплый фарфор|e8dfca f6efdf e6b982 cab894 c6d6b4 526c37 282b26|light",
+  "chalk|цветной мел|dce9ed eff6f6 9fcfd5 aab9df e6b8c3 356570 23353d|light",
+].map((row) => {
+  const [id, name, palette, mood] = row.split("|");
   const [bg, panel, a, b, c, accent, text] = palette.toLowerCase().split(" ");
   const rgb = (hex) => hex.match(/.{2}/g).map((channel) => parseInt(channel, 16)).join(", ");
   const hueOf = (hex) => {
@@ -283,7 +193,14 @@ const themeRegistry = Object.freeze([
   return Object.freeze({
     id,
     name,
-    group: index < 10 ? "основные" : "оттенки",
+    mood,
+    group: {
+      desert: "янтарные", saffron: "янтарные", terracotta: "земляные", apricot: "земляные",
+      sunset: "розовые", hibiscus: "розовые", moss: "электрические", infrared: "электрические",
+      pistachio: "зелёные", "mint-copper": "зелёные", glacier: "бирюзовые", petrol: "бирюзовые",
+      "ceramic-blue": "синие", indigo: "синие", amethyst: "фиолетовые", wisteria: "фиолетовые",
+      abyss: "мрачные", graphite: "мрачные", porcelain: "светлые", chalk: "светлые",
+    }[id],
     tokens: Object.freeze({
       "--theme-bg": `#${bg}`,
       "--theme-panel-rgb": rgb(panel),
@@ -305,16 +222,16 @@ const themesById = new Map(themeRegistry.map((theme) => [theme.id, theme]));
 const populateThemeSelect = () => {
   if (!themeSelect) return;
   themeSelect.replaceChildren();
-  const groups = { "основные": document.createElement("optgroup"), "оттенки": document.createElement("optgroup") };
-  groups["основные"].label = "основные";
-  groups["оттенки"].label = "оттенки";
+  const groups = Object.fromEntries(["мрачные", "светлые", "янтарные", "земляные", "розовые", "электрические", "зелёные", "бирюзовые", "синие", "фиолетовые"].map(label => {
+    const group = document.createElement("optgroup"); group.label = label; return [label, group];
+  }));
   for (const theme of themeRegistry) {
     const option = document.createElement("option");
     option.value = theme.id;
     option.textContent = theme.name;
     groups[theme.group].append(option);
   }
-  themeSelect.append(groups["основные"], groups["оттенки"]);
+  themeSelect.append(...Object.values(groups));
 };
 const themeStorageKey = "inteonmteca-theme";
 const themeDurationStorageKey = "inteonmteca-theme-duration";
@@ -1453,12 +1370,14 @@ const bindTrackItem = (item, track) => {
   button.addEventListener("click", play);
 };
 
-const createTrackItem = (track, index) => {
+const wrapTrackNumber = number => ((number + 999) % 1999 + 1999) % 1999 - 999;
+const createTrackItem = (track, index, wheelNumber = index) => {
   const item = document.createElement("li");
   item.className = "track-item";
   item.dataset.trackTitle = track.title;
   item.dataset.trackIndex = String(index);
-  item.dataset.number = String(index + 1).padStart(2, "0");
+  item.dataset.wheelNumber = String(wheelNumber);
+  item.dataset.number = String(wrapTrackNumber(wheelNumber));
   const playing = currentTrack && (track === currentTrack || (track.audio || track.file) === (currentTrack.audio || currentTrack.file));
   if (playing) item.classList.add("is-playing");
   const button = document.createElement("button");
@@ -1500,7 +1419,8 @@ const shuffledTrackIndexes = () => visibleTrackIndexes();
 const appendWheelCycle = () => {
   if (!playlistList || !tracks.length) return 0;
   const before = playlistList.scrollHeight;
-  shuffledTrackIndexes().forEach((index) => playlistList.append(createTrackItem(tracks[index], index)));
+  const start = playlistList.lastElementChild ? Number(playlistList.lastElementChild.dataset.wheelNumber) + 1 : -visibleTrackCount();
+  shuffledTrackIndexes().forEach((index, offset) => playlistList.append(createTrackItem(tracks[index], index, start + offset)));
   return playlistList.scrollHeight - before;
 };
 
@@ -1508,7 +1428,8 @@ const prependWheelCycle = () => {
   if (!playlistList || !tracks.length) return 0;
   const before = playlistList.scrollHeight;
   const fragment = document.createDocumentFragment();
-  shuffledTrackIndexes().forEach((index) => fragment.append(createTrackItem(tracks[index], index)));
+  const start = Number(playlistList.firstElementChild?.dataset.wheelNumber || 0) - visibleTrackCount();
+  shuffledTrackIndexes().forEach((index, offset) => fragment.append(createTrackItem(tracks[index], index, start + offset)));
   playlistList.prepend(fragment);
   const added = playlistList.scrollHeight - before;
   playlistList.scrollTop += added;
@@ -2126,6 +2047,7 @@ window.addEventListener("pointermove", () => {
 
 trackViewport?.addEventListener("wheel", (event) => {
   if (!playlistList) return;
+  if (playlistList.dataset.layout === "catalog") return;
   event.preventDefault();
   const lineScale = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 20 : 1;
   const pageScale = event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? playlistList.clientHeight : 1;
@@ -2180,6 +2102,18 @@ const setPanelOpen = (panel, open, { focus = true } = {}) => {
   const index = openPanels.indexOf(panel);
   if (index !== -1) openPanels.splice(index, 1);
   panel.hidden = !open;
+  if (panel === themePanel) {
+    document.body.classList.toggle('is-theme-menu-open', open);
+    if (open) {
+      const bottom = panel.getBoundingClientRect().bottom;
+      const shift = Math.max(0, bottom + 38 - (innerHeight * .14 + 44));
+      document.body.style.setProperty('--theme-heading-shift', `${shift}px`);
+      const heading = document.querySelector('.listening-intro h1');
+      const logoHeight = logoWrap?.getBoundingClientRect().height || 0;
+      const headingHeight = heading?.getBoundingClientRect().height || 0;
+      document.body.style.setProperty('--theme-logo-top', `${innerHeight * .14 + 44 + shift + headingHeight + logoHeight / 2 + 20}px`);
+    }
+  }
   panel.setAttribute("aria-hidden", String(!open));
   trigger?.setAttribute("aria-expanded", String(open));
   if (open) {
@@ -2276,17 +2210,11 @@ const setTheme = (name, { animate = true, persist = true } = {}) => {
   const nextTheme = themesById.has(name) ? name : "desert";
   const root = document.documentElement;
   const changed = root.dataset.theme !== nextTheme;
-  if (changed && animate && !prefersReducedMotion) {
-    root.classList.remove("is-theme-shifting");
-    void root.offsetWidth;
-    root.classList.add("is-theme-shifting");
-    window.clearTimeout(themeShiftTimer);
-    themeShiftTimer = window.setTimeout(() => root.classList.remove("is-theme-shifting"), 1650);
-  }
+  const theme = themesById.get(nextTheme);
+  if (window.inteonThemeMorph) window.inteonThemeMorph.apply(theme.tokens, theme.mood, changed && animate);
+  else for (const [property, value] of Object.entries(theme.tokens)) root.style.setProperty(property, value);
   root.dataset.theme = nextTheme;
-  for (const [property, value] of Object.entries(themesById.get(nextTheme).tokens)) {
-    root.style.setProperty(property, value);
-  }
+  root.dataset.themeMood = theme.mood;
   if (themeSelect) themeSelect.value = nextTheme;
   if (persist) storeValue(themeStorageKey, nextTheme);
   if (changed && themeStatus) {
@@ -2307,7 +2235,7 @@ const scheduleThemeRotation = () => {
   themeRotationTimer = window.setTimeout(() => {
     randomizeTheme();
     scheduleThemeRotation();
-  }, duration);
+  }, duration + (window.inteonThemeMorph?.active ? 15000 : 0));
 };
 
 const initializeThemeSystem = () => {
@@ -2428,7 +2356,9 @@ const loadSession = async () => {
 };
 
 authHint?.addEventListener("click", () => {
-  setPanelOpen(authPanel, true);
+  const opening = authPanel.hidden;
+  setPanelOpen(authPanel, opening);
+  if (!opening) return;
   if (sessionEmail) {
     setAuthStatus(sessionEmail);
     return;
@@ -2538,7 +2468,7 @@ let chatLoading = false;
 const renderChatMessages = (messages) => {
   if (!chatStream) return;
   const all = Array.isArray(messages) ? messages : [];
-  const animateGlyphs = animationQuality !== "low" && !prefersReducedMotion && !compactChatViewport.matches;
+  const animateGlyphs = !inlineChat && animationQuality !== "low" && !prefersReducedMotion && !compactChatViewport.matches;
   const snapshot = JSON.stringify([animateGlyphs, all]);
   if (snapshot === chatSnapshot) {
     if (chatGlyphs.length && !chatAnimationFrame && !chatPanel?.hidden && !document.hidden) chatAnimationFrame = requestAnimationFrame(animateChatGlyphs);
@@ -2603,12 +2533,14 @@ const loadChat = async () => {
 };
 
 const openChat = async ({ focus = false } = {}) => {
-  if (compactChatViewport.matches) {
+  if (!inlineChat && compactChatViewport.matches) {
     setPanelOpen(authPanel, false);
     setPanelOpen(themePanel, false);
   }
-  setPanelOpen(chatPanel, true, { focus: false });
-  document.body.classList.add("is-chat-open");
+  if (!inlineChat) {
+    setPanelOpen(chatPanel, true, { focus: false });
+    document.body.classList.add("is-chat-open");
+  }
   syncChatViewport();
   if (chatInput) {
     chatInput.placeholder = sessionEmail ? "написать в воздух" : "войди, чтобы написать";
@@ -2623,6 +2555,7 @@ const openChat = async ({ focus = false } = {}) => {
 };
 
 const closeChat = () => {
+  if (inlineChat) return;
   window.clearInterval(chatTimer);
   cancelAnimationFrame(chatAnimationFrame);
   chatAnimationFrame = 0;
@@ -2633,6 +2566,16 @@ const closeChat = () => {
 };
 
 const syncChatViewport = () => {
+  if (inlineChat) {
+    const dock = document.getElementById("active-player")?.getBoundingClientRect();
+    if (dock) {
+      chatPanel.style.setProperty("--inline-chat-left", `${dock.left + 10}px`);
+      chatPanel.style.setProperty("--inline-chat-width", `${Math.max(0,dock.width - 20)}px`);
+      chatPanel.style.setProperty("--inline-chat-bottom", `${innerHeight-dock.top+8}px`);
+    }
+    chatPanel.removeAttribute("aria-modal");
+    return;
+  }
   const modal = compactChatViewport.matches && !chatPanel?.hidden;
   chatPanel?.setAttribute("aria-modal", String(modal));
   document.querySelectorAll('.page, .street-return, .auth-hint, .theme-hint').forEach((element) => { element.inert = modal; });
@@ -2650,6 +2593,31 @@ window.visualViewport?.addEventListener("resize", syncChatViewport, { passive: t
 window.visualViewport?.addEventListener("scroll", syncChatViewport, { passive: true });
 chatHint?.addEventListener("click", () => openChat({ focus: !compactChatViewport.matches }));
 chatClose?.addEventListener("click", closeChat);
+// Keep a rolling draft that fits the actual input, including proportional letters and emoji.
+const chatMeasureContext = document.createElement("canvas").getContext("2d");
+const chatSegmenter = typeof Intl.Segmenter === "function" ? new Intl.Segmenter(undefined, {granularity:"grapheme"}) : null;
+const fitChatDraft = () => {
+  if (!chatInput || !chatMeasureContext || !chatInput.value) return;
+  const style = getComputedStyle(chatInput);
+  const available = chatInput.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 3;
+  if (available <= 0) return;
+  chatMeasureContext.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+  const spacing = parseFloat(style.letterSpacing) || 0;
+  const original = chatInput.value;
+  const chars = chatSegmenter ? [...chatSegmenter.segment(original)].map(part => part.segment) : Array.from(original);
+  const fits = start => chatMeasureContext.measureText(chars.slice(start).join("")).width + Math.max(0,chars.length-start-1)*spacing <= available;
+  if (fits(0)) { chatInput.scrollLeft = 0; return; }
+  let low=0, high=chars.length;
+  while (low<high) { const middle=(low+high)>>1; if (fits(middle)) high=middle; else low=middle+1; }
+  const value=chars.slice(low).join("");
+  const removed=original.length-value.length;
+  const start=chatInput.selectionStart, end=chatInput.selectionEnd;
+  chatInput.value=value;
+  chatInput.setSelectionRange(Math.max(0,start-removed),Math.max(0,end-removed));
+  chatInput.scrollLeft=0;
+};
+chatInput?.addEventListener("input", event => { if (!event.isComposing) fitChatDraft(); });
+chatInput?.addEventListener("compositionend", fitChatDraft);
 chatForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!sessionEmail) {
@@ -2657,6 +2625,7 @@ chatForm?.addEventListener("submit", async (event) => {
     setAuthStatus("сначала почта");
     return;
   }
+  fitChatDraft();
   const text = chatInput?.value.trim();
   if (!text) return;
   try {
@@ -2696,7 +2665,7 @@ chatForm?.addEventListener("submit", async (event) => {
 });
 
 const handlePanelKeydown = (event) => {
-  if (event.key === "Tab" && compactChatViewport.matches && !chatPanel?.hidden) {
+  if (!inlineChat && event.key === "Tab" && compactChatViewport.matches && !chatPanel?.hidden) {
     const controls = [...chatPanel.querySelectorAll('input:not([disabled]), button:not([disabled])')];
     const first = controls[0];
     const last = controls[controls.length - 1];
@@ -2912,7 +2881,7 @@ const drawLogoFilaments = (now, profile) => {
   const strandCount = animationQuality === "low" ? 5 : 9;
   for (let strand = 0; strand < strandCount; strand += 1) {
     ctx.beginPath();
-    const steps = 34;
+    const steps = 64;
     for (let step = 0; step <= steps; step += 1) {
       const progress = step / steps;
       const x = width * (.08 + progress * .84);
@@ -2928,9 +2897,15 @@ const drawLogoFilaments = (now, profile) => {
       else ctx.lineTo(x, y);
     }
     const green = strand % 3 === 0;
-    ctx.strokeStyle = green
-      ? `rgba(204,255,105,${.025 + profile.high * .18})`
-      : `rgba(224,112,64,${.025 + profile.mid * .14})`;
+    const tint = green ? '204,255,105' : '224,112,64';
+    const alpha = .025 + (green ? profile.high * .18 : profile.mid * .14);
+    const fade = ctx.createLinearGradient(width * .08, 0, width * .92, 0);
+    fade.addColorStop(0, `rgba(${tint},0)`);
+    fade.addColorStop(.22, `rgba(${tint},${alpha})`);
+    fade.addColorStop(.78, `rgba(${tint},${alpha})`);
+    fade.addColorStop(1, `rgba(${tint},0)`);
+    ctx.strokeStyle = fade;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.lineWidth = .35 + profile.bass * 1.2;
     ctx.shadowBlur = 4 + profile.high * 16;
     ctx.shadowColor = green ? "rgba(201,255,97,.55)" : "rgba(224,92,51,.5)";
@@ -3014,8 +2989,8 @@ const renderReactiveLogo = (now) => {
   const energy = logoReactiveState.energy;
   setLogoCssVariable("--logo-x", `${(x * 12).toFixed(2)}px`);
   setLogoCssVariable("--logo-y", `${(y * 8).toFixed(2)}px`);
-  setLogoCssVariable("--logo-rx", `${(-y * 9).toFixed(2)}deg`);
-  setLogoCssVariable("--logo-ry", `${(x * 13).toFixed(2)}deg`);
+  setLogoCssVariable("--logo-rx", `${(-y * 2.25).toFixed(2)}deg`);
+  setLogoCssVariable("--logo-ry", `${(x * 3.25).toFixed(2)}deg`);
   const live = immersiveState.active ? 1.45 : 1;
   let musicAccent = 0;
   if (isListeningRoom && !player.paused && !player.ended) {
@@ -3153,6 +3128,7 @@ const setAllTextReadable = (isReadable) => {
 
 const runLongReadableMoment = () => {
   if (isMobileViewport) return;
+  if (window.inteonLogoAcid?.active) return;
   if (logoChaosActive) return;
   logoLocked = true;
   logoWrap?.classList.add("is-stable");
@@ -3171,6 +3147,7 @@ const resetLogoChaosCountdown = () => {
   logoChaosCountdown = randomInteger(5, 10);
 };
 
+let logoCycleVariant = 0;
 const runLogoCycle = () => {
   if (isMobileViewport) return;
   if (logoChaosActive) {
@@ -3181,6 +3158,16 @@ const runLogoCycle = () => {
     renderLogoMatrix(true);
     logoCycleTimeout = scheduleLogo(runLogoCycle, 1200);
     return;
+  }
+  if (++logoCycleVariant % 3 === 0) {
+    const acid = window.inteonLogoAcid?.run();
+    if (acid) {
+      acid.then(() => {
+        renderLogoMatrix(true);
+        logoCycleTimeout = scheduleLogo(runLogoCycle, randomRange(3000, 7000));
+      });
+      return;
+    }
   }
   logoChaosCountdown -= 1;
   if (logoChaosCountdown <= 0) resetLogoChaosCountdown();
@@ -3217,7 +3204,7 @@ const scheduleLogo = (callback, delay) => {
 };
 // Text is intentionally live, but never driven by the decorative frame loop.
 if (!prefersReducedMotion) window.setInterval(() => {
-  if (!isMobileViewport || document.hidden || !chatPanel?.hidden) return;
+  if (!isMobileViewport || document.hidden || (!inlineChat && !chatPanel?.hidden)) return;
   const now = performance.now();
   renderTitleMutation(now);
   renderPlayingLetters(now);
@@ -3349,7 +3336,9 @@ window.setTimeout(() => {
 }, 0);
 loadSession();
 
-streetLink?.addEventListener("click", () => {
+streetLink?.addEventListener("click", (event) => {
+  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  if (window.inteonPortal?.busy) { event.preventDefault(); return; }
   rememberPlayback();
   if (window.inteonPlayback?.read?.()?.origin !== "yard") {
     window.inteonPlayback?.intent?.(player, false);
@@ -3358,6 +3347,7 @@ streetLink?.addEventListener("click", () => {
     rememberPlayback();
   }
   window.inteonStreet?.noteExit();
+  if (window.inteonPortal) { event.preventDefault(); window.inteonPortal.exit(streetLink.href); }
 });
 window.addEventListener("pagehide", () => { rememberPlayback(); playbackLeaving = true; });
 window.addEventListener("pageshow", (event) => {
@@ -3375,3 +3365,11 @@ window.addEventListener("DOMContentLoaded", () => {
   setupVisitCounter();
   updateScrollbar();
 });
+
+if (inlineChat) {
+  openChat();
+  window.addEventListener("resize", syncChatViewport, {passive:true});
+  const inlineDock = document.getElementById("active-player");
+  if (inlineDock) new ResizeObserver(syncChatViewport).observe(inlineDock);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) loadChat(); });
+}

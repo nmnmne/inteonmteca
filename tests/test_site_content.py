@@ -278,7 +278,7 @@ class SiteContentTests(unittest.TestCase):
         self.assertNotIn('id="refresh-media"', html)
         self.assertIn('value="desert"', html)
         registry = script.split("const themeRegistry = Object.freeze([", 1)[1].split("].map", 1)[0]
-        self.assertEqual(len(re.findall(r'^  "[a-z-]+\|', registry, re.MULTILINE)), 99)
+        self.assertEqual(len(re.findall(r'^  "[a-z-]+\|', registry, re.MULTILINE)), 20)
         self.assertIn("populateThemeSelect();", script)
         self.assertIn("themeCoreFilters", script)
         self.assertNotIn('grayscale(1)', script)

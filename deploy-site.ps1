@@ -56,7 +56,26 @@ $syncArgs = @(
   "--include", "styles.css",
   "--include", "home-player.css",
   "--include", "script.js",
+  "--include", "mobile-sections.js",
   "--include", "room-resident.js",
+  "--include", "atmosphere-events.css",
+  "--include", "atmosphere-events.js",
+  "--include", "charged-material.css",
+  "--include", "energy-field.js",
+  "--include", "logo-ripples.js",
+  "--include", "logo-storm.js",
+  "--include", "logo-acid.js",
+  "--include", "room-composition.css",
+  "--include", "room-editor.css",
+  "--include", "room-finish.css",
+  "--include", "room-finish.js",
+  "--include", "room-grid.css",
+  "--include", "room-portal.css",
+  "--include", "room-portal.js",
+  "--include", "room-recesses.css",
+  "--include", "text-waves.css",
+  "--include", "text-waves.js",
+  "--include", "theme-morph.js",
   "--include", "track-play.js",
   "--include", "street-return.js",
   "--include", "playback-link.js",
@@ -89,12 +108,14 @@ $staleKeys = @(
 
 Write-Host "Updating asset version to $version..." -ForegroundColor Yellow
 $indexHtml = [System.IO.File]::ReadAllText($indexPath, [System.Text.Encoding]::UTF8)
+$indexHtml = $indexHtml -replace '<script data-development-only[^>]*></script>', ''
 $deployIndexHtml = $indexHtml -replace 'href="styles(?:\.[0-9]{8}-[0-9]{6})?\.css(?:\?v=[^"]*)?"', "href=`"$versionedStylesName`""
 $deployIndexHtml = $deployIndexHtml -replace 'src="script(?:\.[0-9]{8}-[0-9]{6})?\.js(?:\?v=[^"]*)?"', "src=`"$versionedScriptName`""
 $deployIndexHtml = $deployIndexHtml -replace '\?v=[0-9A-Za-z._-]+', "?v=$version"
 [System.IO.File]::WriteAllText($deployIndexPath, $deployIndexHtml, [System.Text.UTF8Encoding]::new($false))
 if (Test-Path $yardIndexPath) {
   $yardHtml = [System.IO.File]::ReadAllText($yardIndexPath, [System.Text.Encoding]::UTF8)
+  $yardHtml = $yardHtml -replace '<script data-development-only[^>]*></script>', ''
   $yardHtml = $yardHtml -replace '\?v=[0-9A-Za-z._-]+', "?v=$version"
   [System.IO.File]::WriteAllText($deployYardIndexPath, $yardHtml, [System.Text.UTF8Encoding]::new($false))
 }

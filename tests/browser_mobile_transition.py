@@ -1,6 +1,7 @@
 """Real touch-navigation regression. Uses an isolated ephemeral local server."""
 import functools
 import json
+import tempfile
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -26,6 +27,7 @@ def swipe(page, x, y, dx, dy):
     cdp.detach()
 
 root = Path(__file__).resolve().parents[1]
+output = Path(tempfile.mkdtemp(prefix='inteon-mobile-transition-'))
 server = ThreadingHTTPServer(('127.0.0.1', 0), functools.partial(QuietHandler, directory=str(root)))
 threading.Thread(target=server.serve_forever, daemon=True).start()
 url = f'http://127.0.0.1:{server.server_port}'
@@ -59,8 +61,7 @@ try:
             page.locator('#street-link').tap()
             page.wait_for_url('**/yard/')
             page.wait_for_function('!!window.__yard')
-            output = root / 'tests/artifacts/vr-player'
-            output.mkdir(parents=True, exist_ok=True)
+            page.wait_for_function('!document.documentElement.dataset.portalPhase')
             page.screenshot(path=str(output / f'mobile-yard-{width}.png'))
             picks = page.evaluate("Number(sessionStorage.getItem('qa-picks') || 0)")
             home = page.locator('.home-link').bounding_box()
@@ -76,7 +77,7 @@ try:
             assert pose['yaw'] != old_yaw, 'Real touch look must work'
             page.locator('.home-link').tap()
             page.wait_for_url('**/index.html')
-            page.wait_for_timeout(300)
+            page.wait_for_function('!document.documentElement.dataset.portalPhase')
             saved = page.evaluate('inteonStreet.resumePose()')
             assert saved and abs(saved['yaw']-pose['yaw']) < .01, 'Manual home lost the yard pose'
             assert page.evaluate('!document.body.classList.contains("is-inline-playing")')
@@ -90,6 +91,7 @@ try:
                 page.locator('.home-link').focus()
                 page.keyboard.press('Enter')
                 page.wait_for_url('**/index.html')
+                page.wait_for_function('!document.documentElement.dataset.portalPhase')
                 page.locator('#street-link').tap()
                 page.wait_for_url('**/yard/')
                 page.wait_for_function('!!window.__yard')
@@ -98,6 +100,7 @@ try:
                 assert page.evaluate('document.documentElement.scrollWidth <= innerWidth && scrollY === 0')
                 # Let the real timer perform the second visit's automatic return.
                 page.wait_for_url('**/index.html', timeout=22000)
+                page.wait_for_function('!document.documentElement.dataset.portalPhase')
                 assert page.evaluate('!document.querySelector(".page").inert && scrollY === 0')
                 assert page.locator('#street-link').is_visible()
             # Selection must still work after returning, not just avoid false picks.

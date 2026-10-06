@@ -319,3 +319,9 @@ body.is-reading .stick, body.is-reading #enter-walk, body.is-reading #listen { d
 @media (max-height: 540px) {
   .touch-guide { display: none; }
 }
+.yard-debug { position: fixed; top: 76px; left: 12px; z-index: 60; width: min(300px, calc(100vw - 24px)); padding: 12px; box-sizing: border-box; border: 1px solid #bac48b55; border-radius: 8px; background: #101511db; color: #dce4cc; font: 12px/1.4 Consolas, monospace; }
+.yard-debug strong { color: #bac48b; font-weight: 400; }
+.yard-debug textarea { display: block; box-sizing: border-box; width: 100%; height: 160px; margin: 8px 0; resize: vertical; border: 0; background: transparent; color: inherit; font: inherit; }
+.yard-debug button { width: 100%; padding: 8px; border: 1px solid #bac48b55; border-radius: 4px; background: #bac48b12; color: inherit; font: inherit; cursor: pointer; }
+.yard-debug [role="status"] { display: block; margin-top: 4px; }
+@media (max-width: 500px) { .yard-debug { top: 60px; width: 230px; padding: 8px; } .yard-debug textarea { height: 105px; } }

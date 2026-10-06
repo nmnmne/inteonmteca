@@ -63,7 +63,7 @@
   resident.className = "room-resident";
   resident.setAttribute("aria-hidden", "true");
   resident.innerHTML = '<div class="resident-mist"></div><div class="resident-body">'
-    + '<div class="resident-face"><i></i><i></i></div></div><div class="resident-shadow"></div>';
+    + '<div class="resident-face"><i></i><i></i></div></div><div class="resident-mark"></div><div class="resident-shadow"></div>';
   document.body.append(resident);
   anchor.classList.add("has-resident");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
@@ -72,6 +72,7 @@
   const timers = new Set();
   let journey = null, decision = 0, stillness = 0, resizeTimer = 0;
   let blocked = false, lastPointerWork = 0, lastEncounter = -60000;
+  let cinematic = false;
   let encounter = 0, hoverArmed = true, ignoreUntil = 0, chaseUntil = 0;
   const music = document.getElementById("album-player");
   const musicPlaying = () => music && !music.paused && !music.ended;
@@ -103,7 +104,7 @@
     obstacles = [...document.querySelectorAll(
       '.logo-wrap, .listening-intro h1, .listening-intro .label, .hero-intro, '
       + '.catalog-heading, #track-list, #active-player, .text, '
-      + '#auth-hint, #theme-hint, #chat-hint, #street-link, .street-return'
+      + '#auth-hint, #theme-hint, #chat-hint, #street-link, .street-return, .chat-compose, .chat-stream:not(:empty)'
     )].map(el => el.getBoundingClientRect()).filter(r => r.width && r.height);
   };
   const safe = p => p.x > 38 && p.x < innerWidth - 38 && p.y > 75 && p.y < innerHeight - 55
@@ -150,7 +151,7 @@
       const angle = random(0, Math.PI * 2), distance = random(65, 260);
       const target = {x:from.x+Math.cos(angle)*distance, y:from.y+Math.sin(angle)*distance};
       if (Math.hypot(target.x-pointer.x,target.y-pointer.y) < 105) continue;
-      if (walk(target, () => { pose(Math.random()<.3 ? "cube" : "thinking"); schedule(); })) return true;
+      if (walk(target, () => { pose(Math.random()<.4 ? "letter" : "thinking"); schedule(random(9000,17000)); })) return true;
     }
     return false;
   };
@@ -160,7 +161,7 @@
     const mood = Math.random();
     if (musicPlaying() && mood < .48 && explore()) return;
     if (mood < .38 && wander()) return;
-    if (mood > .88 && safe(home()) && walk(home(), () => { pose("cube"); schedule(random(15000,32000)); })) return;
+    if (mood > .88 && safe(home()) && walk(home(), () => { pose(Math.random()<.5 ? "letter" : "cube"); schedule(random(15000,32000)); })) return;
     pose(mood < .62 ? "thinking" : mood < .82 ? "watching" : "cube");
     look({x:random(0,innerWidth),y:random(0,innerHeight*.7)});
     schedule(mood < .22 ? random(18000,34000) : random(7000,18000));
@@ -194,8 +195,10 @@
     stopJourney(); resident.classList.remove("is-blinking");
   };
   const sync = () => {
+    if (cinematic) return;
     const hidden = document.hidden || !anchor.getBoundingClientRect().width
-      || [...document.querySelectorAll('#chat-panel,#theme-panel,#auth-panel')].some(el=>!el.hidden);
+      || document.body.classList.contains('is-interlude')
+      || [...document.querySelectorAll('#chat-panel:not(.chat-inline),#theme-panel,#auth-panel')].some(el=>!el.hidden);
     suspend(); chaseUntil=0; encounter=0; hoverArmed=true; resident.dataset.behavior="independent"; blocked = hidden; resident.hidden = hidden;
     if (hidden) return;
     resident.style.transform = position(home());
@@ -309,8 +312,24 @@
   reduced.addEventListener("change",sync);
   compact.addEventListener("change",sync);
   const panels = new MutationObserver(sync);
-  document.querySelectorAll('#chat-panel,#theme-panel,#auth-panel').forEach(el=>panels.observe(el,{attributes:true,attributeFilter:['hidden']}));
+  document.querySelectorAll('#chat-panel:not(.chat-inline),#theme-panel,#auth-panel').forEach(el=>panels.observe(el,{attributes:true,attributeFilter:['hidden']}));
   window.addEventListener("pagehide",suspend);
+  window.addEventListener('inteon-storm', event => {
+    const {phase, x, y} = event.detail;
+    if (phase === 'prepare') {
+      suspend(); cinematic = true; blocked = true;
+      resident.style.opacity = '0';
+    } else if (phase === 'burst') {
+      resident.hidden = false;
+      resident.style.transform = position({x, y});
+      resident.classList.add('is-detonating');
+      resident.style.opacity = '1'; pose('watching');
+    } else if (cinematic) {
+      cinematic = false; resident.classList.remove('is-detonating'); resident.style.opacity = '';
+      sync(); resident.animate([{opacity:0},{opacity:1}], {duration:1400});
+    }
+  });
+  window.addEventListener('inteon-interlude', sync);
   window.addEventListener("pageshow",sync);
   sync();
 })();

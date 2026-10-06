@@ -22,10 +22,10 @@ class DeployReleaseTests(unittest.TestCase):
             root = Path(directory)
             shutil.copy2(ROOT / "deploy-site.ps1", root / "deploy-site.ps1")
             files = {
-                "index.html": '<link href="styles.css"><script src="script.js"></script>',
+                "index.html": '<link href="styles.css"><script src="script.js"></script><script data-development-only src="development-debug.js"></script>',
                 "styles.css": "body {}", "script.js": "void 0;",
                 "playlist.json": "[]", "playlist-data.js": "window.playlist=[];",
-                "yard/index.html": '<link href="yard.css?v=old">',
+                "yard/index.html": '<link href="yard.css?v=old"><script data-development-only src="../development-debug.js"></script>',
                 "yard/yard.css": "body {}", "yard/main.js": "void 0;",
                 "tools/generate_playlist.py": "raise RuntimeError('must not execute')",
                 "styles.20000101-000000.css": "old local asset",
@@ -71,7 +71,16 @@ catch { Write-Output $_; exit 1 }
         sync = next(call["args"] for call in calls if "sync" in call["args"])
         # AWS filters are ordered: the final exclusion must win over yard/*.
         self.assertEqual(sync[sync.index("--cache-control") - 2:sync.index("--cache-control")], ["--exclude", "*.html"])
+        # Every actual root CSS/JS dependency must survive the public allowlist.
+        import re
+        includes = [sync[i + 1] for i, value in enumerate(sync) if value == '--include']
+        public_html = re.sub(r'<script data-development-only[^>]*></script>', '', (ROOT / 'index.html').read_text(encoding='utf-8'))
+        for asset in re.findall(r'(?:src|href)="([^"/?]+\.(?:css|js))(?:\?[^" ]*)?"', public_html):
+            self.assertIn(asset, includes, f'Homepage dependency missing from publication: {asset}')
         uploads = [call for call in calls if "cp" in call["args"]]
+        for call in uploads:
+            if 'html' in call:
+                self.assertNotIn('development-debug.js', call['html'])
         targets = [call["args"][call["args"].index("cp") + 2] for call in uploads]
         self.assertEqual(targets[-2:], ["s3://inteonmteca.online/yard/index.html", "s3://inteonmteca.online/index.html"])
         import re

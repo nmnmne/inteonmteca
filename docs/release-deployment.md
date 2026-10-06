@@ -42,6 +42,7 @@ python -m unittest discover -s tests -p test_deploy_release.py -v
 
 ```dotenv
 INTEONMTECA_HOST=127.0.0.1
+INTEONMTECA_ENV=production
 INTEONMTECA_PORT=8080
 INTEONMTECA_DEV=0
 INTEONMTECA_DIRECT_CODE=0

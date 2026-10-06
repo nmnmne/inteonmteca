@@ -1,0 +1,4 @@
+.logo-ripples { position: absolute; inset: -150% -32%; width: 164%; height: 400%; z-index: 0; pointer-events: none; opacity: .85; mask-image: radial-gradient(ellipse, #000 28%, transparent 70%); }
+.is-rebuilding .logo-ripples, .is-screen-scattered .logo-ripples { visibility: hidden; }
+@media (max-width: 800px) { .logo-ripples { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .logo-ripples { display: none; } }

@@ -1,0 +1,15 @@
+/* Original characters retain their metrics and accessible text; only their ink changes. */
+.text-wave-char { position: relative; }
+.theme-hint :is(.text-wave-run, .text-wave-char) { color: inherit; }
+.theme-hint :is(.text-wave-run, .text-wave-char, .text-wave-mask) { filter: none; }
+.text-wave-char.is-wave-noisy { color: transparent !important; text-shadow: none !important; }
+.text-wave-mask { position: absolute; inset: 0; pointer-events: none; user-select: none; color: rgb(var(--theme-accent-rgb)); }
+.text-wave-mask::before {
+  content: attr(data-glyph); position: absolute; left: 50%; top: 0; transform: translateX(-50%);
+  font-family: "Cascadia Code", Consolas, "Liberation Mono", ui-monospace, monospace;
+  font-weight: 400; font-style: normal; text-shadow: 0 0 .6em rgba(var(--theme-accent-rgb), .18);
+}
+@media (prefers-reduced-motion: reduce) {
+  .text-wave-char.is-wave-noisy { color: inherit !important; }
+  .text-wave-mask { display: none; }
+}

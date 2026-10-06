@@ -12,11 +12,11 @@ const source = fs.readFileSync(path.join(root, "street-return.js"), "utf8");
 
 assert.doesNotMatch(html, /street-return-scale/, "the street duration is not a user control");
 assert.match(html, /<a class="street-link" id="street-link" href="yard\/">на улицу<\/a>/);
-assert.match(script, /streetLink\?\.addEventListener\("click", \(\) => \{(?:(?!\n\}\);)[\s\S])*window\.inteonStreet\?\.noteExit\(\);\s*\}\);/, "leaving for the street records the visit after applying playback policy");
+assert.match(script, /streetLink\?\.addEventListener\("click", \(event\) => \{(?:(?!\n\}\);)[\s\S])*window\.inteonStreet\?\.noteExit\(\);/, "leaving for the street records the visit after applying playback policy");
 assert.match(script, /document\.body\.classList\.toggle\("is-signal", signal\)/, "playback changes the page signal");
 assert.match(styles, /body\.is-signal \.topline/, "playing shifts the visible inscriptions");
 assert.match(yard, /class="montana"/, "the yard shows a Montana-style countdown");
-assert.match(yard, /inteonStreet\?\.armReturn\(location, location\.protocol, \(left\)/, "the countdown uses the same return deadline");
+assert.match(yard, /inteonStreet\?\.armReturn\(\{ replace: url =>[^\n]+location\.protocol, \(left\)/, "the countdown uses the same return deadline through the animated navigation adapter");
 
 const load = (store, iso) => {
   const scheduled = [];

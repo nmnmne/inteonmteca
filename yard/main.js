@@ -296,6 +296,7 @@ if (location.protocol === "file:") {
     renderer,
     scene,
     camera,
+    renderSnapshot: () => { if (!disposed) renderer.render(scene, camera); },
     reading: () => reading,
     openPlayer: () => setReading(true),
   };

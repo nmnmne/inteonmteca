@@ -7,7 +7,7 @@ const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf8') + fs.readFileSync(path.join(root, 'home-player.css'), 'utf8');
 test('spatial listening surface retains identity and approved copy', () => {
   assert.match(html, /listening-room spatial-room/);
-  assert.match(html, /Выбери<br> <em>свой звук<\/em>/);
+  assert.match(html, /Выбери <em>свой звук<\/em>/);
   assert.match(html, /id="logo-vector"/);
   assert.match(css, /logo-fragmented\.png/);
 });

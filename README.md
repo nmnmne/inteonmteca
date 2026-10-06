@@ -22,6 +22,12 @@ the database, chat, byte-range audio streaming, and live media-folder refresh.
 Opening `index.html` directly still plays the generated bundled playlist, but a
 browser page cannot start the Python account server by itself.
 
+Local startup enables the yard's development pose panel automatically. It copies
+position in meters, yaw/pitch in radians, and the world-space look direction.
+Use `python server/app.py --production` or `INTEONMTECA_ENV=production` on a server
+to disable debugging. Static deployment removes the development panel script
+from the published yard page. This debugging mode does not enable demo login.
+
 Email login requires configured SMTP. Without SMTP, the server now refuses login
 instead of returning a code that lets anyone impersonate an email address.
 For an explicitly local demo only, set `INTEONMTECA_DEV=1` before starting the server.

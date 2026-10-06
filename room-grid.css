@@ -1,0 +1,128 @@
+/* Two exact half screens; the catalog has no outer gutter. */
+.spatial-room { --catalog-fill: 1; --catalog-row-min: 66; --tile-gap: 0px; --toolbar-height: 104px; }
+.spatial-room .hero { padding: 0; }
+.spatial-room .release-card { gap: 0; }
+.spatial-room .release-content { overflow: hidden; }
+.spatial-room .catalog-heading { align-items: end; flex: 0 0 var(--toolbar-height); padding: 0 20px 12px; }
+.spatial-room .playlist-shell { margin: 0; padding: 0; }
+.spatial-room .track-list, .spatial-room .track-list.has-overflow { padding: 0; }
+.spatial-room .track-select { border-radius: 0; border-width: 0 0 1px; padding-inline: clamp(16px, 2vw, 32px); }
+.spatial-room .track-art { border-radius: 4px; background: transparent; font-size: 10px; }
+.spatial-room .track-fold { gap: 18px; }
+.spatial-room .track-item.is-playing .track-select { box-shadow: inset 3px 0 rgb(var(--tile-accent)); }
+.spatial-room .track-meta { gap: 5px; }
+.spatial-room .listening-intro .label { left: auto; bottom: auto; width: auto; height: auto; }
+.spatial-room .room-toolbar { position: fixed; top: 0; right: 0; width: 50%; height: 76px; display: flex; align-items: center; gap: 8px; padding: 0 18px; z-index: 32; }
+.spatial-room .room-toolbar :is(.auth-hint, .theme-hint, .chat-hint) { position: relative; inset: auto; min-width: 56px; height: 40px; min-height: 40px; padding: 0 13px; border-radius: 5px; font: 600 12px ui-monospace, monospace; }
+.spatial-room .room-toolbar .street-return { position: relative; inset: auto; margin: 16px 0 0 auto; transform: none; }
+.spatial-room .street-return::before { content: ''; position: absolute; top: -28px; height: 28px; left: 0; right: 0; background: linear-gradient(90deg, transparent 19%, rgba(var(--interface-ink), .6) 19% 20%, transparent 20% 79%, rgba(var(--interface-ink), .6) 79% 80%, transparent 80%); }
+html[data-theme] .spatial-room .street-link { position: relative; min-height: 44px; border-radius: 3px; padding: 0 20px; font: 700 clamp(15px, 1.5vw, 23px)/1.1 ui-monospace, monospace; letter-spacing: -.06em; border: 1px solid rgba(var(--interface-ink), .5); background: rgba(var(--interface-glass), .9); box-shadow: inset 0 -3px 0 rgba(var(--interface-ink), .09), 0 8px 20px #0003; transform-origin: 50% -25px; animation: hanging-sign 16s ease-in-out infinite; }
+.spatial-room .street-link::before { content: ''; position: absolute; top: 4px; left: 19%; width: 3px; height: 3px; border-radius: 50%; background: rgb(var(--interface-ink)); opacity: .7; }
+@keyframes hanging-sign { 0%, 65%, 100% { rotate: 0deg; } 72% { rotate: .8deg; } 81% { rotate: -.5deg; } 90% { rotate: .2deg; } }
+.spatial-room .active-player { border-radius: 7px; }
+/* Cut metal controls, with distinct play/pause and double-arrow skip marks. */
+.spatial-room .active-player .transport-play { border-radius: 12px 3px 12px 3px; box-shadow: inset 0 1px 0 #ffffff33, 0 5px 0 rgba(var(--interface-ink), .12); }
+.spatial-room .transport-skip { border: 1px solid rgba(var(--interface-ink), .18); border-radius: 3px 9px 3px 9px; height: 42px; min-height: 42px; width: 46px; min-width: 46px; background: rgba(var(--interface-ink), .025); transition: background .2s, transform .2s; }
+.spatial-room .transport-skip:active, .spatial-room .active-player .transport-play:active { transform: translateY(2px); }
+.spatial-room .skip-mark::before { inset: 3px 5px 3px 0; clip-path: polygon(0 0, 50% 30%, 50% 0, 100% 50%, 50% 100%, 50% 70%, 0 100%); }
+.spatial-room .skip-mark::after { width: 2px; }
+.spatial-room .play-mark[data-state="paused"]::before { clip-path: polygon(0 0, 100% 50%, 0 100%, 0 70%, 48% 50%, 0 30%); }
+.spatial-room :is(.theme-panel, .auth-panel, .chat-panel) { top: 78px; bottom: auto; }
+.spatial-room .theme-panel, .spatial-room .auth-panel { left: calc(50% + 18px); }
+.spatial-room .chat-panel { right: 18px; }
+.logo-ripples { inset: -135% -34%; width: 168%; height: 370%; mask-image: radial-gradient(ellipse, #000 28%, transparent 72%); }
+body.is-interlude .room-toolbar { opacity: 0; pointer-events: none; transition: opacity 2.5s; }
+body.is-interlude.scene-dawn .room-toolbar { opacity: 1; pointer-events: auto; transition: opacity 10s; }
+
+@media (min-width: 801px), (min-width: 501px) and (max-height: 500px) {
+  .spatial-room { --spatial-gutter: 0px; --room-top: 0px; --room-bottom: 0px; --dock-height: 120px; }
+  .spatial-room .hero { padding: 0; }
+  .spatial-room .release-card { grid-template-columns: 50% 50%; grid-template-rows: minmax(0, 1fr); height: 100dvh; }
+  .spatial-room .release-content { grid-column: 2; grid-row: 1; height: 100%; width: 100%; }
+  .spatial-room .listening-intro { grid-column: 1; grid-row: 1; position: relative; inset: auto; align-self: stretch; height: 100%; width: 100%; padding: 0; text-align: right; }
+  .spatial-room .listening-intro .label { position: absolute; top: 13vh; right: 24px; justify-content: end; margin: 0; }
+  .spatial-room .listening-intro h1 { position: absolute; top: calc(13vh + 24px); right: 16px; margin: 0; font-size: clamp(26px, 3.1vw, 66px); letter-spacing: -.065em; }
+  body.spatial-room .logo-wrap.release-logo { position: absolute; top: 45%; left: 15%; width: 70%; margin: 0; transform: translateY(-50%); }
+  .spatial-room .room-presence { position: absolute; top: 58%; left: 21%; right: auto; bottom: auto; width: 70px; height: 52px; margin: 0; }
+  .spatial-room .active-player { position: fixed; left: 10px; right: calc(50% + 10px); bottom: 36px; height: 120px; display: grid; grid-template-columns: minmax(110px, 1fr) minmax(196px, 1.2fr) 64px; grid-template-rows: 1fr; gap: 0 16px; padding: 12px 20px; }
+  .spatial-room .active-track-copy { grid-column: 1; grid-row: 1; }
+  .spatial-room .active-player .transport { grid-column: 2; grid-row: 1; gap: 0 5px; }
+  .spatial-room .volume-control { grid-column: 3; grid-row: 1; }
+  .spatial-room .active-player .transport-seek-field { margin-inline: 30px; }
+  html[data-theme] .spatial-room .active-player .now-playing-title { font-size: clamp(14px, 1.2vw, 19px); }
+  .spatial-room .hero-intro { left: 24px; top: 27px; transform: none; }
+  .spatial-room .text { left: 25%; bottom: 10px; max-width: 48%; font-size: 9px; }
+}
+@media (min-width: 801px) and (max-width: 1200px) and (min-height: 501px) {
+  .spatial-room .active-player { height: 140px; grid-template-columns: minmax(0, 1fr) 66px; grid-template-rows: 34px 80px; gap: 4px 10px; padding: 10px 16px; }
+  .spatial-room .active-player .transport { grid-column: 1 / -1; grid-row: 2; }
+  .spatial-room .volume-control { grid-column: 2; grid-row: 1; }
+}
+@media (min-width: 501px) and (max-height: 500px) {
+  .spatial-room { --toolbar-height: 84px; --catalog-row-min: 54; }
+  .spatial-room .room-toolbar { height: 60px; padding-inline: 10px; gap: 5px; }
+  .spatial-room .room-toolbar :is(.auth-hint, .theme-hint, .chat-hint) { min-width: 46px; padding-inline: 8px; font-size: 10px; }
+  html[data-theme] .spatial-room .street-link { padding-inline: 12px; font-size: 15px; }
+  .spatial-room .listening-intro .label { top: 70px; font-size: 8px; }
+  .spatial-room .listening-intro h1 { top: 87px; font-size: clamp(20px, 2.8vw, 30px); }
+  body.spatial-room .logo-wrap.release-logo { width: 66%; left: 17%; top: 49%; }
+  .spatial-room .active-player { bottom: 25px; height: 90px; padding: 5px 12px; grid-template-columns: minmax(70px, 1fr) minmax(170px, 1.3fr) 44px; gap: 8px; }
+  .spatial-room .active-player .transport-time { font-size: 8px; }
+  .spatial-room .room-presence { top: 53%; left: 2%; width: 38px; height: 42px; }
+  .spatial-room .catalog-heading { padding-bottom: 7px; }
+}
+@media (min-width: 501px) and (max-width: 700px) and (max-height: 500px) {
+  html[data-theme] .spatial-room .street-link { font-size: 13px; padding-inline: 10px; gap: 8px; white-space: nowrap; }
+  .spatial-room .active-player { height: 118px; grid-template-columns: minmax(0, 1fr) 54px; grid-template-rows: 28px 68px; gap: 4px 8px; padding: 8px 12px; }
+  .spatial-room .active-player .transport { grid-column: 1 / -1; grid-row: 2; grid-template-rows: 44px 24px; }
+  .spatial-room .volume-control { grid-column: 2; grid-row: 1; }
+  .spatial-room .active-player .transport-seek-field, .spatial-room .transport-progress { height: 24px; }
+  html[data-theme] .spatial-room .active-player .now-playing-title { font-size: 12px; -webkit-line-clamp: 1; }
+  .spatial-room .active-track-copy { gap: 1px; }
+  .spatial-room .active-track-artist { font-size: 8px; }
+  .spatial-room .room-presence { top: 41%; height: 34px; }
+}
+@media (max-width: 800px) and (min-height: 501px), (max-width: 500px) {
+  .spatial-room { --spatial-gutter: 0px; --room-top: 155px; --room-bottom: calc(18px + env(safe-area-inset-bottom, 0px)); --dock-height: 118px; --room-gap: 0px; --toolbar-height: 22px; --catalog-row-min: 58; }
+  .spatial-room .hero { padding: var(--room-top) 0 calc(var(--dock-height) + var(--room-bottom)); }
+  .spatial-room .release-card { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 0; }
+  .spatial-room .release-content { grid-column: 1; height: 100%; }
+  .spatial-room .room-toolbar { width: 100%; height: 54px; padding: 0 10px; gap: 6px; }
+  .spatial-room .room-toolbar :is(.auth-hint, .theme-hint, .chat-hint) { min-width: 44px; min-height: 40px; height: 40px; padding-inline: 10px; font-size: 10px; }
+  .spatial-room .room-toolbar .street-return { margin-top: 8px; }
+  html[data-theme] .spatial-room .street-link { min-height: 38px; padding-inline: 12px; font-size: 14px; gap: 9px; }
+  .spatial-room .street-return::before { top: -18px; height: 18px; }
+  .spatial-room .hero-intro { top: 61px; left: 12px; width: auto; transform: none; }
+  .spatial-room .topline { font-size: 6px; letter-spacing: .1em; }
+  .spatial-room .listening-intro { display: block; position: absolute; inset: 0; padding: 0; height: var(--room-top); text-align: right; }
+  .spatial-room .listening-intro .label { position: absolute; right: 12px; top: 60px; margin: 0; font-size: 6px; }
+  .spatial-room .listening-intro h1 { position: absolute; top: 75px; right: 10px; margin: 0; font-size: clamp(22px, 6.3vw, 34px); letter-spacing: -.065em; }
+  body.spatial-room .logo-wrap.release-logo { position: absolute; top: 116px; left: 10%; width: min(60%, 300px); margin: 0; transform: none; }
+  .spatial-room .room-presence { position: absolute; top: 113px; right: 14px; left: auto; bottom: auto; width: 38px; height: 40px; margin: 0; }
+  .spatial-room .catalog-heading { padding: 0 12px 7px; }
+  .spatial-room .catalog-heading :is(h2, .ours) { font-size: 8px; }
+  .spatial-room .track-fold { grid-template-columns: 32px minmax(0, 1fr); gap: 12px; }
+  .spatial-room .track-select { padding-inline: 14px; }
+  .spatial-room .track-title { font-size: 14px; }
+  .spatial-room .track-art { height: 30px; width: 30px; }
+  .spatial-room .active-player { inset: auto 0 var(--room-bottom); width: 100%; height: var(--dock-height); border-radius: 0; grid-template-columns: minmax(0, 1fr) 72px; grid-template-rows: 28px 68px; align-content: center; gap: 4px 12px; padding: 8px 14px; }
+  .spatial-room .active-track-copy { grid-column: 1; grid-row: 1; gap: 1px; }
+  .spatial-room .volume-control { grid-column: 2; grid-row: 1; }
+  html[data-theme] .spatial-room .active-player .now-playing-title { font-size: 13px; -webkit-line-clamp: 1; }
+  .spatial-room .active-track-artist { font-size: 9px; min-height: 11px; }
+  .spatial-room .active-player .transport { grid-column: 1 / -1; grid-row: 2; grid-template-columns: 1fr 50px 1fr; grid-template-rows: 44px 24px; gap: 0 16px; }
+  .spatial-room .active-player .transport-play { min-width: 46px; min-height: 44px; width: 46px; height: 44px; justify-self: center; }
+  .spatial-room .transport-skip { height: 44px; min-height: 44px; width: 46px; }
+  .spatial-room .active-player .transport-seek-field, .spatial-room .transport-progress { height: 24px; }
+  .spatial-room .active-player .transport-time { font-size: 8px; }
+  .spatial-room .active-player .playback-status { bottom: 0; font-size: 8px; }
+  .spatial-room .text { left: 50%; bottom: calc(4px + env(safe-area-inset-bottom, 0px)); max-width: 90%; font-size: 8px; }
+  .spatial-room :is(.theme-panel, .auth-panel, .chat-panel) { left: 10px; right: 10px; top: 58px; bottom: auto; max-width: calc(100vw - 20px); width: auto; }
+  .logo-ripples { opacity: .65; }
+}
+@media (max-width: 600px) and (min-height: 501px) and (max-height: 650px), (max-width: 500px) and (max-height: 500px) {
+  .spatial-room { --room-top: 143px; --catalog-row-min: 52; --dock-height: 118px; }
+  body.spatial-room .logo-wrap.release-logo { top: 108px; width: 56%; }
+  .spatial-room .room-presence { top: 104px; }
+}
+@media (prefers-reduced-motion: reduce) { html[data-theme] .spatial-room .street-link { animation: none; } }

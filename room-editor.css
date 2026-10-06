@@ -1,0 +1,20 @@
+/* The catalog is a quiet editor pane: line gutter, active row, tab rail. */
+.spatial-room .release-content { box-shadow: inset 1px 0 rgba(var(--interface-ink), .22); }
+.spatial-room .catalog-heading { border-bottom: 1px solid rgba(var(--interface-ink), .25); background: rgba(var(--interface-glass), .24); }
+.spatial-room .catalog-heading h2 { position: relative; font-family: Consolas, "Liberation Mono", monospace; letter-spacing: .08em; }
+.spatial-room .catalog-heading h2::after { content: ''; position: absolute; height: 2px; left: 0; right: 0; bottom: -12px; background: rgb(var(--interface-accent)); }
+.spatial-room :is(.track-title, .track-artist, .now-playing-title, .active-track-artist) { font-family: Consolas, "Liberation Mono", ui-monospace, monospace; }
+.spatial-room .track-title { letter-spacing: -.035em; }
+.spatial-room .track-artist { letter-spacing: .025em; }
+.spatial-room .track-art { position: relative; color: rgb(var(--interface-muted)); font-variant-numeric: tabular-nums; border: 0; background: none; }
+.spatial-room .track-art::after { content: ''; position: absolute; right: -9px; top: -50%; bottom: -50%; width: 1px; background: rgba(var(--interface-ink), .13); }
+.spatial-room .track-select { box-shadow: none; border-bottom-color: rgba(var(--interface-ink), .12); }
+.spatial-room .track-select:focus-visible { outline: 1px solid rgb(var(--interface-accent)); outline-offset: -3px; }
+.spatial-room .track-item.is-playing .track-art { color: rgb(var(--interface-accent)); }
+.spatial-room .room-toolbar { border-bottom: 1px solid rgba(var(--interface-ink), .14); background: rgba(var(--interface-glass), .18); }
+.spatial-room .room-toolbar :is(.auth-hint, .theme-hint, .chat-hint) { border-radius: 3px 3px 0 0; border-bottom-width: 2px; }
+.spatial-room .room-toolbar [aria-expanded="true"] { border-bottom-color: rgb(var(--interface-accent)); background: rgba(var(--interface-ink), .09); }
+@media (max-width: 800px) and (min-height: 501px), (max-width: 500px) {
+  .spatial-room .release-content { box-shadow: none; }
+  .spatial-room .catalog-heading h2::after { bottom: -7px; }
+}

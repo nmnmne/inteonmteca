@@ -1,0 +1,56 @@
+:root {
+  --interface-ink: 249, 244, 233; --interface-muted: 202, 196, 178;
+  --interface-accent: 218, 243, 149; --interface-peach: 232, 178, 125; --interface-sage: 191, 211, 151;
+  --interface-glass: 12, 14, 14; --interface-control: 230, 237, 232; --interface-on-control: 12, 15, 17;
+  --logo-brightness: 1.15; --field-opacity: .27; --field-strength: .17;
+}
+body.spatial-room {
+  --ui-ink: var(--interface-ink); --ui-blue: var(--interface-accent); --ui-peach: var(--interface-peach); --ui-violet: var(--interface-sage);
+  --theme-panel-rgb: var(--interface-glass); transition: none;
+}
+html[data-theme] .spatial-room .perception-field { background: radial-gradient(ellipse 90% 100% at 12% 30%, rgba(var(--theme-a-rgb), var(--field-strength)), transparent 76%), radial-gradient(ellipse 95% 85% at 95% 75%, rgba(var(--theme-c-rgb), .11), transparent 78%), var(--theme-bg); }
+html.is-theme-shifting .spatial-room .theme-lights { animation: none; filter: none; }
+html[data-theme] .spatial-room .theme-lights { filter: none; }
+html[data-theme] .spatial-room .perception-visual { transition: filter 15s ease; }
+html.is-theme-shifting .spatial-room :is(.track-title, .now-playing-title, .listening-intro h1) { text-shadow: 0 1px 1px #0005, 0 -1px 1px #ffffff40; }
+.spatial-room .listening-intro h1 { color: rgb(var(--interface-ink)); font-weight: 650; text-shadow: 0 1px 0 rgba(var(--interface-glass), .22); }
+.spatial-room :is(.listening-intro h1 em, .listening-intro .label, .topline, .catalog-heading h2, .theme-hint > span[aria-hidden]) { color: rgb(var(--interface-accent)); }
+.spatial-room :is(.track-title, .now-playing-title) { font-weight: 650; }
+.spatial-room :is(.track-artist, .active-track-artist, .catalog-heading .ours, .text) { color: rgb(var(--interface-muted)); }
+.spatial-room :is(.track-select, .active-player) {
+  background: linear-gradient(115deg, rgba(var(--interface-ink), .045), transparent 65%), rgba(var(--interface-glass), .64);
+  border-color: rgba(var(--interface-ink), .2);
+  box-shadow: inset 0 1px 0 rgba(var(--interface-ink), .1), 0 6px 25px #00000010;
+}
+.spatial-room .track-item.is-playing .track-select {
+  border-color: rgba(var(--tile-accent), .75);
+  background: linear-gradient(110deg, rgba(var(--tile-accent), .13), transparent 72%), rgba(var(--interface-glass), .78);
+  box-shadow: inset 3px 0 rgb(var(--tile-accent)), 0 0 22px rgba(var(--tile-accent), .065);
+}
+.spatial-room .track-select:hover { border-color: rgba(var(--interface-accent), .65); }
+.spatial-room :is(.auth-hint, .theme-hint, .chat-hint, .street-link) { background: rgba(var(--interface-glass), .5); border-color: rgba(var(--interface-ink), .22); font-weight: 650; }
+.spatial-room .chat-hint::before { background: rgb(var(--interface-ink)); box-shadow: 0 0 8px rgba(var(--interface-ink), .2); }
+.spatial-room :is(.auth-panel, .theme-panel, .chat-panel) { background: rgba(var(--interface-glass), .98); border-color: rgba(var(--interface-ink), .3); }
+.spatial-room :is(.theme-select, .auth-input, .chat-input) { color: rgb(var(--interface-ink)); background: rgba(var(--interface-glass), .8); border-color: rgba(var(--interface-ink), .35); }
+.spatial-room :is(.auth-submit, .chat-send, .theme-random) { color: rgb(var(--interface-ink)); background: rgba(var(--interface-ink), .06); border-color: rgba(var(--interface-ink), .35); }
+.spatial-room .active-player .transport-play { background: rgb(var(--interface-control)); color: rgb(var(--interface-on-control)); border-color: rgba(var(--interface-ink), .65); box-shadow: 0 0 0 5px rgba(var(--interface-ink), .055); }
+.spatial-room .active-player .transport-play:hover:not(:disabled) { background: rgb(var(--interface-accent)); }
+.spatial-room .transport-skip, .spatial-room .active-player .transport-time { color: rgb(var(--interface-muted)); }
+.spatial-room .volume-control::before { background: rgb(var(--interface-ink)); }
+.spatial-room .volume-control input::-webkit-slider-runnable-track { background: rgba(var(--interface-ink), .38); }
+.spatial-room .volume-control input::-moz-range-track { background: rgba(var(--interface-ink), .38); }
+.spatial-room .volume-control input::-webkit-slider-thumb { background: rgb(var(--interface-ink)); }
+.spatial-room .volume-control input::-moz-range-thumb { background: rgb(var(--interface-ink)); }
+.spatial-room .transport-seek-field::before { background: linear-gradient(to right, rgb(var(--interface-ink)) var(--seek), rgba(var(--interface-ink), .3) var(--seek)); }
+.spatial-room .transport-progress::-webkit-slider-thumb { background: rgb(var(--interface-ink)); box-shadow: 0 0 12px rgba(var(--interface-ink), .3); }
+.spatial-room .transport-progress::-moz-range-thumb { background: rgb(var(--interface-ink)); box-shadow: 0 0 12px rgba(var(--interface-ink), .3); }
+.spatial-room .reactive-logo { filter: brightness(var(--logo-brightness)); }
+.spatial-room :is(.logo-particles, .logo-symbol-echo, .logo-reactive-canvas, .logo-ripples) { filter: brightness(var(--logo-brightness)); }
+.spatial-room .resident-mark { background: rgb(var(--interface-accent)); }
+.spatial-room .resident-face i { background: rgb(var(--interface-ink)); box-shadow: 0 0 6px rgba(var(--interface-ink), .4); }
+.material-field { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; opacity: var(--field-opacity); transition: opacity 3s; }
+body.is-interlude .material-field { opacity: 0; }
+body.is-interlude.scene-energy .material-field { opacity: 1; z-index: 30; }
+body.is-interlude.scene-energy.scene-energy-out .material-field { opacity: 0; }
+body.is-interlude.scene-dawn .material-field { opacity: var(--field-opacity); transition-duration: 12s; }
+@media (prefers-reduced-motion: reduce) { .material-field { display: none; } html[data-theme] .spatial-room .perception-visual { transition: none; } }

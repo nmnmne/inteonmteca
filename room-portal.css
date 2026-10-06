@@ -1,0 +1,22 @@
+@view-transition { navigation: auto; }
+::view-transition { pointer-events: none; }
+::view-transition-group(root) { animation: none; z-index: 0; }
+::view-transition-image-pair(root) { isolation: auto; }
+::view-transition-old(root), ::view-transition-new(root) { mix-blend-mode: normal; animation: none; }
+::view-transition-old(root) { z-index: 2; }
+::view-transition-new(root) { z-index: 1; }
+html[data-portal-arrival]::view-transition-old(root) { animation: portal-dissolve 4.6s cubic-bezier(.32, 0, .4, 1) both; }
+html[data-portal-arrival="yard"]::view-transition-old(root) { animation-duration: var(--portal-exit-fade, 1350ms); mask-image: var(--portal-holes); mask-mode: alpha; mask-size: 100% 100%; mask-repeat: no-repeat; }
+html[data-portal-arrival="home"] #logo-wrap { view-transition-name: portal-logo; }
+::view-transition-group(portal-logo) { z-index: 3; animation: none; }
+::view-transition-new(portal-logo) { mix-blend-mode: normal; animation: portal-logo-materialize 1.5s ease both; }
+@keyframes portal-dissolve { 0%, 8% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes portal-logo-materialize { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: blur(0); } }
+.portal-shards { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1000; pointer-events: none; }
+body.portal-leaving :is(#logo-wrap, .room-resident, .logo-storm) { visibility: hidden !important; }
+body.portal-leaving { cursor: progress; }
+body.portal-leaving a, body.portal-leaving button { pointer-events: none; }
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+  .portal-shards { display: none; }
+}
