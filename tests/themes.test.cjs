@@ -27,16 +27,10 @@ const sandbox = { document: { documentElement, createElement: element }, themeSe
 vm.createContext(sandbox);
 vm.runInContext(`${registry}\n${behavior}\nglobalThis.api = { themeRegistry, themeNames, setTheme, randomizeTheme, initializeThemeSystem };`, sandbox);
 const api = sandbox.api;
-assert.equal(api.themeRegistry.length, 20);
-assert.equal(new Set(api.themeNames).size, 20);
-assert.equal(new Set(api.themeRegistry.map(t => t.name)).size, 20);
-assert.equal(new Set(api.themeRegistry.map(t => JSON.stringify(t.tokens))).size, 20);
-assert.equal(api.themeRegistry.filter(t => t.mood === 'color').length, 16);
-assert.equal(new Set(api.themeRegistry.map(t => t.group)).size, 10);
-for (const group of new Set(api.themeRegistry.map(t => t.group))) assert.equal(api.themeRegistry.filter(t => t.group === group).length, 2);
-assert.equal(api.themeRegistry.filter(t => t.group === 'мрачные').length, 2);
-const legacy = ['desert', 'sunset', 'abyss', 'moss', 'infrared', 'amethyst', 'glacier'];
-for (const id of legacy) assert.ok(api.themeRegistry.some(t => t.id === id));
+assert.equal(api.themeRegistry.length, 9);
+assert.equal(new Set(api.themeNames).size, 9);
+assert.equal(new Set(api.themeRegistry.map(t => t.name)).size, 9);
+assert.equal(new Set(api.themeRegistry.map(t => JSON.stringify(t.tokens))).size, 9);
 assert.equal(api.themeRegistry.filter(t => t.mood === 'light').length, 2);
 const luminance = hex => {
   const c = hex.match(/[a-f\d]{2}/gi).map(x => parseInt(x, 16) / 255).map(x => x <= .04045 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4);
@@ -60,22 +54,21 @@ for (const theme of api.themeRegistry) {
   api.initializeThemeSystem();
   assert.equal(documentElement.dataset.theme, theme.id, 'persisted IDs restore');
 }
-assert.equal(select.children.length, 10);
-assert.deepEqual(select.children.map(g => g.children.length), Array(10).fill(2));
-assert.deepEqual(select.children.flatMap(g => g.children.map(o => o.value)).sort(), Array.from(api.themeNames).sort());
+assert.equal(select.children.length, 9);
+assert.deepEqual(select.children.map(o => o.value).sort(), Array.from(api.themeNames).sort());
 const reachable = new Set();
-for (let i = 0; i < 19; i++) {
-  api.setTheme('desert');
-  sandbox.Math.random = () => (i + .5) / 19;
+for (let i = 0; i < 8; i++) {
+  api.setTheme('graphite');
+  sandbox.Math.random = () => (i + .5) / 8;
   api.randomizeTheme();
-  assert.notEqual(documentElement.dataset.theme, 'desert');
+  assert.notEqual(documentElement.dataset.theme, 'graphite');
   reachable.add(documentElement.dataset.theme);
 }
-assert.equal(reachable.size, 19, 'random picker reaches every other theme');
-api.setTheme('glacier'); sandbox.Math.random = () => 0; api.randomizeTheme();
-assert.equal(documentElement.dataset.theme, 'desert');
+assert.equal(reachable.size, 8, 'random picker reaches every other theme');
+api.setTheme('abyss'); sandbox.Math.random = () => 0; api.randomizeTheme();
+assert.equal(documentElement.dataset.theme, 'graphite');
 stored.set('inteonmteca-theme', 'missing'); api.initializeThemeSystem();
-assert.equal(documentElement.dataset.theme, 'desert');
+assert.equal(documentElement.dataset.theme, 'graphite');
 const before = documentElement.dataset.theme; scheduled();
 assert.notEqual(documentElement.dataset.theme, before, 'rotation advances');
 assert.match(html, /<select[^>]+id="theme-select"/);
@@ -86,4 +79,4 @@ for (const pseudo of ['before', 'after']) {
   assert.ok(!block.includes('clip-path'));
   assert.ok(block.includes('radial-gradient'));
 }
-console.log('PASS: 20 distinct palettes; 16 colorful + 2 dark + 2 light; all persisted IDs, CSS tokens, select, random and rotation; soft logo depth.');
+console.log('PASS: nine unique flat palettes, persistence and readable tokens');

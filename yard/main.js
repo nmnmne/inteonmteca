@@ -1,8 +1,8 @@
 import * as THREE from "./vendor/three.module.js";
 import { distanceToWall, isWalkable, moveCircle } from "./navigation.js";
 import { createInputController } from "./input-controller.js";
-import { createQualityMeter, createRenderGate, pixelRatioCap } from "./quality.js";
-import { createYardScene, drawScheme } from "./scene.js?v=five-storey-20261006-4";
+import { createQualityMeter, createRenderGate, pixelRatioCap, createAdaptiveQuality } from "./quality.js?v=optimization-20261009";
+import { createYardScene, drawScheme } from "./scene.js?v=digital-shells-20261009-5";
 import { createWallPlayer } from "./wall-player.js?v=seek-fade-20261006-2";
 import { createBoundaryMusic } from "./boundary-music.js";
 import { createLightingCycle, addBakedLighting } from "./baked-lighting.js";
@@ -20,7 +20,7 @@ const meter = createQualityMeter();
 try {
 let layout = null;
 if (location.protocol !== "file:") {
-  layout = await fetch(new URL("./data/site-layout.json?v=five-storey-20261006-4", import.meta.url)).then((response) => {
+  layout = await fetch(new URL("./data/site-layout.json?v=digital-shells-20261009-5", import.meta.url)).then((response) => {
     if (!response.ok) throw new Error(`site-layout ${response.status}`);
     return response.json();
   });
@@ -44,6 +44,7 @@ if (location.protocol === "file:") {
   let disposed = false;
   // Draw and enable input before fetching the optional projected-depth enhancement.
   const shouldRender = createRenderGate(matchMedia("(max-width: 800px), (pointer: coarse)").matches);
+  const quality = createAdaptiveQuality(pixelRatioCap(), matchMedia("(max-width: 800px), (pointer: coarse)").matches);
 
   const params = new URLSearchParams(location.search);
   const resumed = window.inteonStreet?.resumePose?.();
@@ -58,6 +59,7 @@ if (location.protocol === "file:") {
     yaw: start.yaw,
     pitch: start.pitch || 0,
   };
+  let flightPromise = null;
   let returnPose = null, flightEye = layout.movement.eyeM, flightRoll = 0;
   const boundaryMusic = createBoundaryMusic(layout.walkable, body, () => player.playBoundaryTrack());
   const input = createInputController(window, {
@@ -91,7 +93,7 @@ if (location.protocol === "file:") {
     const height = canvas.clientHeight || window.innerHeight;
     camera.aspect = width / Math.max(1, height);
     camera.updateProjectionMatrix();
-    renderer.setPixelRatio(pixelRatioCap());
+    renderer.setPixelRatio(quality.resize(pixelRatioCap()));
     renderer.setSize(width, height, false);
   };
   resize();
@@ -198,6 +200,28 @@ if (location.protocol === "file:") {
   canvas.addEventListener("pointerup", releasePointer);
   canvas.addEventListener("pointercancel", releasePointer);
 
+  const journeyKey = 'inteon-yard-journey-v1';
+  let journey; try { journey = JSON.parse(localStorage.getItem(journeyKey)) || {}; } catch { journey = {}; }
+  journey.walkMs = Number(journey.walkMs) || 0;
+  journey.entries = Number(journey.entries) || 0;
+  if (performance.getEntriesByType('navigation')[0]?.type !== 'reload') journey.entries++;
+  let lastJourneySave = 0, autoReturning = false;
+  const saveJourney = () => {
+    window.inteonStreet?.savePose(returnPose || body);
+    try { localStorage.setItem(journeyKey,JSON.stringify(journey)); } catch {}
+  };
+  window.addEventListener('pagehide',saveJourney);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)saveJourney();});
+  const updateJourney = (now,dt) => {
+    if (!document.hidden && !window.inteonPortal?.busy && !returnPose) journey.walkMs += dt*1000;
+    if (now-lastJourneySave>1000) {lastJourneySave=now;saveJourney();}
+    if (!autoReturning && !returnPose && !window.inteonPortal?.busy && window.__yard && (journey.entries>=11 || journey.walkMs>=1200000)) {
+      autoReturning=true;
+      window.__yard.flyToSpawn({stay:true}).then(()=>{
+        journey.walkMs=0;journey.entries=1;autoReturning=false;saveJourney();
+      });
+    }
+  };
   let marked = null;
   const scheduleFrame = () => {
     if (!disposed && !document.hidden && frameHandle === null) frameHandle = requestAnimationFrame(frame);
@@ -207,6 +231,7 @@ if (location.protocol === "file:") {
     meter.tick(now);
     const dt = Math.min(layout.movement.maxDeltaSec, (now - last) / 1000);
     last = now;
+    updateJourney(now,dt);
     if (input.mode === "walking" && !reading && !document.hidden && !returnPose) {
       const move = input.sample();
       const length = Math.hypot(move.forward, move.strafe);
@@ -225,6 +250,8 @@ if (location.protocol === "file:") {
         body.z = next.z;
       }
     }
+    const range = Math.hypot(body.x-39,body.z+2.5)+1200;
+    if (Math.abs(camera.far-range)>100) {camera.far=range;camera.updateProjectionMatrix();}
     placeCamera();
     edgeEffect?.update(body.x, body.z);
     if (lightingTransition.update()) renderRevision += 1;
@@ -236,7 +263,13 @@ if (location.protocol === "file:") {
       schemeMap.drawMarker(body.x, body.z, body.yaw);
       lastMapDraw = now;
     }
-    if (!document.hidden && !renderer.getContext().isContextLost() && shouldRender(body, canvas.width, canvas.height, `${renderRevision}:${logo.material.map?.version || 0}`)) {
+    const dirty = shouldRender(body, canvas.width, canvas.height, `${renderRevision}:${logo.material.map?.version || 0}`);
+    const ratio = quality.sample(now, dirty && !returnPose);
+    if (ratio !== null) {
+      renderer.setPixelRatio(ratio);
+      renderRevision += 1;
+    }
+    if (!returnPose && !document.hidden && !renderer.getContext().isContextLost() && dirty) {
       renderer.render(scene, camera);
       document.documentElement.dataset.yardReady = "true";
     }
@@ -248,6 +281,7 @@ if (location.protocol === "file:") {
     if (!document.hidden) {
       renderRevision += 1;
       last = performance.now();
+      quality.reset();
       scheduleFrame();
     }
   });
@@ -301,12 +335,14 @@ if (location.protocol === "file:") {
     lightingTransition,
     body,
     meter,
+    quality,
     renderer,
     scene,
     camera,
     rememberedPose: () => returnPose || {x: body.x, z: body.z, yaw: body.yaw, pitch: body.pitch},
-    flyToSpawn: () => {
-      if (returnPose) return Promise.resolve();
+    flyToSpawn: ({ stay = false } = {}) => {
+      if (returnPose) return flightPromise || Promise.resolve();
+      const previousMode = input.mode;
       returnPose = {x: body.x, z: body.z, yaw: body.yaw, pitch: body.pitch};
       window.inteonStreet?.savePose(returnPose);
       input.setMode('idle');
@@ -314,7 +350,7 @@ if (location.protocol === "file:") {
       const turn = Math.atan2(Math.sin(target.yaw-origin.yaw), Math.cos(target.yaw-origin.yaw));
       const started = performance.now();
       const duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1150;
-      return new Promise(resolve => {
+      return flightPromise = new Promise(resolve => {
         const fly = now => {
           const t = duration ? Math.min(1, (now-started)/duration) : 1;
           const blend = t*t*(3-2*t);
@@ -334,7 +370,12 @@ if (location.protocol === "file:") {
           if (t<1 && !disposed) requestAnimationFrame(fly);
           else {
             Object.assign(body, target); flightEye = layout.movement.eyeM; placeCamera();
-            renderer.render(scene, camera); requestAnimationFrame(() => resolve());
+            if (stay) {
+              returnPose = null; flightRoll = 0; camera.fov = 60; camera.updateProjectionMatrix();
+              appliedLook = { ...input.sample().look }; input.setMode(previousMode); placeCamera();
+              window.inteonStreet?.savePose(body);
+            }
+            renderer.render(scene, camera); requestAnimationFrame(() => { flightPromise = null; resolve(); });
           }
         };
         requestAnimationFrame(fly);

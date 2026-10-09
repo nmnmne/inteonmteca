@@ -40,7 +40,7 @@ try:
         def pose(x):
             evaluate(f'__yard.body.x={x};__yard.body.z=0;');page.wait_for_timeout(150)
         def state():return json.loads(evaluate("localStorage.getItem('inteonmteca-street-walk-v1')"))
-        ready();pose(163.9);assert evaluate('playAttempts')==0
+        ready();original_deadline=state()['deadline'];pose(163.9);assert evaluate('playAttempts')==0
         pose(164)
         for _ in range(80):
             if evaluate('!!document.querySelector("#yard-boundary-play") && !document.querySelector("#yard-boundary-play").hidden'):break
@@ -51,7 +51,8 @@ try:
         assert not evaluate('navigator.userActivation.hasBeenActive')
         page.locator('#yard-boundary-play').click()
         page.wait_for_function('document.querySelector("audio").currentTime>.2 && !document.querySelector("audio").paused')
-        first=state(); assert 1195000<first['deadline']-evaluate('Date.now()')<=1200000
+        first=state(); assert first['deadline']==original_deadline+240000
+        assert evaluate('inteonStreet.seconds()')==260
         exact=page.evaluate('decodeURI(document.querySelector("audio").currentSrc)')
         assert exact.endswith('/media/God Is Dead/Матт - God Is Dead.flac')
         # Same active track remains uninterrupted, another active track is replaced.
@@ -61,13 +62,14 @@ try:
         pose(163);pose(165);page.wait_for_function('document.querySelector("audio").currentTime>.2')
         assert page.evaluate('decodeURI(document.querySelector("audio").src)')==exact
         assert state()['deadline']==first['deadline']
-        # Reload five device-clock minutes later keeps exactly the same deadline.
-        evaluate("sessionStorage.setItem('clockOffset','300000')")
+        # Reload one device-clock minute later keeps exactly the same deadline.
+        evaluate("sessionStorage.setItem('clockOffset','60000')")
         page.reload();ready();assert state()['deadline']==first['deadline']
-        assert 890000<state()['deadline']-evaluate('Date.now()')<901000
+        assert 0<state()['deadline']-evaluate('Date.now()')<200000
         # Actual home navigation forfeits, later switch still works without bonus.
         page.goto(url+'/index.html'); assert state()['ended'] and state()['deadline'] is None
         page.evaluate('inteonStreet.noteExit()');page.goto(url+'/yard/');ready()
+        assert evaluate('inteonStreet.seconds()')==380
         ordinary=state()['deadline'];pose(163);pose(165)
         retry=page.locator('#yard-boundary-play')
         if retry.is_visible():retry.click()

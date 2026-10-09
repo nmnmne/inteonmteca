@@ -1,9 +1,12 @@
+import { createDigitalBoundary } from './digital-boundary.js';
 import * as THREE from "./vendor/three.module.js";
+import { batchStaticDecoration } from './static-batches.js';
 import { addFiveStoreyReference } from './five-storey-reference.js?v=20261006-3';
-import { addHouseRelief } from "./house14-relief.js?v=20261006-1";
+import { addHouseRelief } from "./house14-relief.js?v=refinement-20261009-2";
+import { addTowerReference } from './tower-reference.js?v=20261009-2';
 import { facadeNormal } from "./facade-frame.js";
 import { createYardMaterials } from "./materials.js";
-import { facadeSpec, openingsForFacade } from "./models.js?v=bars-20261006-3";
+import { facadeSpec, openingsForFacade } from "./models.js?v=refinement-20261009-2";
 import { addHruDetails } from "./hru-details.js";
 import { addRoadDetails } from "./road-details.js";
 import { addReferenceUtilities, addUtilityStructures } from "./site-structures.js";
@@ -52,7 +55,7 @@ function collectOpenings(list, a, b, building, edgeIndex) {
   const dx = b[0] - a[0];
   const dz = b[1] - a[1];
   const length = Math.hypot(dx, dz);
-  if (length < 8 || (building.floors || 0) < 2) return;
+  if (length < (building.id === 'house-14' ? 2 : 8) || (building.floors || 0) < 2) return;
   const tx = dx / length;
   const tz = dz / length;
   const normal = facadeNormal(a, b, building.footprint);
@@ -347,71 +350,6 @@ function distanceToBoundary(x, z, ring) {
   return nearest;
 }
 
-function addMatrixBoundary(scene, layout, fixedSun, outsidePlane, groundMaterials) {
-  const bounds = layout.walkable.reduce((result, point) => ({
-    minX: Math.min(result.minX, point[0]),
-    maxX: Math.max(result.maxX, point[0]),
-    minZ: Math.min(result.minZ, point[1]),
-    maxZ: Math.max(result.maxZ, point[1]),
-  }), { minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity });
-  const centerX = (bounds.minX + bounds.maxX) / 2;
-  const centerZ = (bounds.minZ + bounds.maxZ) / 2;
-  const span = Math.max(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ) + 120;
-
-  const groundGrid = new THREE.GridHelper(span, 72, 0x6f8e85, 0x314942);
-  groundGrid.position.set(centerX, 0.055, centerZ);
-  groundGrid.material.transparent = true;
-  groundGrid.material.opacity = 0;
-  groundGrid.material.depthWrite = false;
-  scene.add(groundGrid);
-
-  const skyMaterial = new THREE.MeshBasicMaterial({
-    color: 0x38564f,
-    wireframe: true,
-    transparent: true,
-    opacity: 0,
-    depthWrite: false,
-    side: THREE.BackSide,
-    fog: false,
-  });
-  const skyGrid = new THREE.Mesh(new THREE.SphereGeometry(span * 0.62, 32, 14), skyMaterial);
-  skyGrid.position.set(centerX, 18, centerZ);
-  scene.add(skyGrid);
-
-  const baseSky = new THREE.Color(fixedSun.skyColor);
-  const edgeSky = new THREE.Color(0x050908);
-  const baseFog = new THREE.Color(fixedSun.fogColor);
-  const edgeFog = new THREE.Color(0x07100e);
-  let current = -1;
-
-  return {
-    update(x, z) {
-      const outsideBoundary = !pointInsideBoundary(x, z, layout.walkable);
-      const distance = distanceToBoundary(x, z, layout.walkable);
-      const target = outsideBoundary ? 1 : THREE.MathUtils.smoothstep(34 - distance, 0, 34);
-      const amount = Math.round(target * 1000) / 1000;
-      const cell = span / 72;
-      const followX = outsideBoundary ? Math.round(x / cell) * cell : centerX;
-      const followZ = outsideBoundary ? Math.round(z / cell) * cell : centerZ;
-      groundGrid.position.x = followX;
-      groundGrid.position.z = followZ;
-      skyGrid.position.x = x;
-      skyGrid.position.z = z;
-      outsidePlane.position.x = outsideBoundary ? Math.round(x / 240) * 240 : 0;
-      outsidePlane.position.z = outsideBoundary ? Math.round(z / 240) * 240 : 0;
-      if (amount === current) return;
-      current = amount;
-      groundGrid.material.opacity = amount * 0.72;
-      skyMaterial.opacity = amount * 0.5;
-      scene.background.copy(baseSky).lerp(edgeSky, amount * 0.92);
-      scene.fog.color.copy(baseFog).lerp(edgeFog, amount * 0.92);
-      scene.fog.near = THREE.MathUtils.lerp(90, 26, amount);
-      scene.fog.far = THREE.MathUtils.lerp(260, 118, amount);
-      const shade = THREE.MathUtils.lerp(1, 0.3, amount);
-      groundMaterials.forEach((material) => material.color.setRGB(shade, shade, shade));
-    },
-  };
-}
 export function createYardScene(layout, fixedSun = fixedSunForLayout(layout)) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(fixedSun.skyColor);
@@ -435,7 +373,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout)) {
   ground.position.y = 0;
   scene.add(ground);
 
-  const edgeEffect = addMatrixBoundary(scene, layout, fixedSun, outside, [outside.material, ground.material]);
+  const edgeEffect = createDigitalBoundary(scene, layout, fixedSun, outside, [outside.material, ground.material]);
 
   for (const surface of layout.surfaces || []) {
     const shape = new THREE.Shape();
@@ -451,6 +389,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout)) {
   }
   addRoadDetails(scene, materials, layout.roads || []);
   const openings = { windows: [], balconies: [], entrances: [] };
+  const buildingStart = scene.children.length;
   for (const building of layout.buildings) {
     const ring = building.footprint;
     for (let index = 0; index < ring.length; index += 1) {
@@ -465,14 +404,16 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout)) {
       const onSegment = (same(a, music.segment[0]) && same(b, music.segment[1])) || (same(a, music.segment[1]) && same(b, music.segment[0]));
       const isMusic = building.id === music.buildingId && onSegment;
       if (building.id === music.buildingId && onSegment) mesh.name = "music-wall";
-      if (!isMusic && !building.facadeProject?.referenceStyle && !building.facadeProject?.reliefSections?.some(section => section.edgeIndex === index)) collectOpenings(openings, a, b, building, index);
+      if (!isMusic && building.id !== 'tower-34' && !building.facadeProject?.referenceStyle && !building.facadeProject?.reliefSections?.some(section => section.edgeIndex === index)) collectOpenings(openings, a, b, building, index);
     }
     addRoof(scene, ring, building.heightM + 0.05, ROOF_COLOR[building.roof] || 0x8d9298, building.roof === "red");
     addHouseRelief(scene, solids, materials, layout, building);
+    if(building.id==='tower-34')addTowerReference(scene,materials,building);
     addFiveStoreyReference(scene, materials, building);
   }
   addOpeningMeshes(scene, materials, openings);
   addHruDetails(scene, materials, openings);
+  scene.children.slice(buildingStart).forEach(mesh => { mesh.userData.digitalBuilding = true; });
   addUtilityStructures(scene, materials, layout.utilityStructures || []);
   addReferenceUtilities(scene, materials);
   addSiteEntrances(scene, materials, layout);
@@ -515,6 +456,9 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout)) {
     fixedSun.sunVectorXYZ[2] * 84,
   );
   scene.add(sun);
+
+  batchStaticDecoration(scene, solids);
+  edgeEffect.attachBuildings();
 
   return { scene, solids, logo, edgeEffect };
 }

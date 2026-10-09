@@ -160,6 +160,21 @@ export function createWindowMaterial() {
   });
 }
 
+export function createPhotoWindowMaterial(kind = 'casement') {
+  return new THREE.MeshStandardMaterial({
+    map: texture(192,256,(ctx,w,h)=>{
+      ctx.fillStyle='#dbd8ce';ctx.fillRect(0,0,w,h);
+      const glass=ctx.createLinearGradient(0,0,w,h);glass.addColorStop(0,'#89938e');glass.addColorStop(.42,'#586561');glass.addColorStop(1,'#273435');
+      ctx.fillStyle=glass;ctx.fillRect(8,8,w-16,h-16);
+      ctx.fillStyle='#d9d8d0';
+      if(kind==='casement')ctx.fillRect(w*.58,8,6,h-16);
+      ctx.fillRect(8,h*(kind==='stair'?.28:.22),w-16,5);
+      ctx.fillStyle='#d8d4c238';ctx.fillRect(w*.72,16,w*.18,h-30);
+      ctx.fillStyle='#fff5';ctx.fillRect(10,10,2,h-20);
+    }),roughness:.58,metalness:.02,
+  });
+}
+
 export function createBalconyMaterial() {
   return new THREE.MeshStandardMaterial({ color: 0xa8aaa5, roughness: 0.72, metalness: 0.18 });
 }

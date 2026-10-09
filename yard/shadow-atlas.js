@@ -3,7 +3,7 @@ import * as THREE from "./vendor/three.module.js";
 // Precomputed light-space depth, NOT per-object UV lightmaps. No render target,
 // scene rasterization or shadow-map generation occurs in this runtime module.
 export function isBakedReceiver(mesh) {
-  return mesh.isMesh && mesh.name !== "music-logo" &&
+  return mesh.isMesh && !mesh.userData.digitalProxy && mesh.name !== "music-logo" &&
     (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).some(m => !m.wireframe && (!m.transparent || m.opacity === 1));
 }
 
@@ -43,6 +43,7 @@ export async function loadBakedShadows(scene, preset) {
     for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
       if (patched.has(material)) continue;
       patched.add(material);
+      const originalKey = material.customProgramCacheKey();
       const original = material.onBeforeCompile;
       material.onBeforeCompile = (shader, renderer) => {
         original.call(material, shader, renderer);
@@ -84,7 +85,7 @@ export async function loadBakedShadows(scene, preset) {
           shader.fragmentShader = shader.fragmentShader.replace('#include <lights_fragment_begin>', THREE.ShaderChunk.lights_fragment_begin.replace('getDirectionalLightInfo( directionalLight, directLight );', 'getDirectionalLightInfo( directionalLight, directLight );\ndirectLight.color *= bakedLightVisibility;'));
         }
       };
-      material.customProgramCacheKey = () => 'offline-depth-v1';
+      material.customProgramCacheKey = () => 'offline-depth-v1:' + originalKey;
       material.needsUpdate = true;
     }
   });

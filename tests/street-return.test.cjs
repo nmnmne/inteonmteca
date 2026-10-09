@@ -55,40 +55,37 @@ assert.equal(load(new Map(), "2026-10-04T12:00:00").street.formatWatch(20), "00:
 assert.equal(load(new Map(), "2026-10-04T12:00:00").street.formatWatch(65), "01:05");
 
 const day = load(new Map(), "2026-10-04T12:00:00");
-assert.equal(day.street.seconds(), 10);
-assert.equal(day.street.noteExit(), 10, "the first exit of the day waits 10 seconds");
-assert.equal(day.street.noteExit(), 15, "each later exit adds 5 seconds");
-assert.equal(day.street.noteExit(), 20);
-while (day.street.seconds() < 65) day.street.noteExit();
-assert.equal(day.street.seconds(), 65, "the walk grows to 1:05");
-assert.equal(day.street.noteExit(), 60, "after the peak the walk gets shorter");
-while (day.street.seconds() > 10) day.street.noteExit();
-assert.equal(day.street.seconds(), 10, "the walk shrinks back to 10 seconds");
-assert.equal(day.street.noteExit(), 15, "the next walk starts growing again");
+assert.equal(day.street.seconds(), 20);
+assert.equal(day.street.noteExit(), 20, "the first exit of the day waits 20 seconds");
+assert.equal(day.street.noteExit(), 120, "the second exit lasts two minutes");
+assert.equal(day.street.noteExit(), 240, "later exits add two minutes");
+assert.equal(day.street.noteExit(), 360);
+for (let visit = 0; visit < 20; visit += 1) day.street.noteExit();
+assert.equal(day.street.seconds(), 2760, "duration keeps growing without the old peak or downward cycle");
 
 const memory = new Map();
 const morning = load(memory, "2026-10-04T12:00:00");
-assert.equal(morning.street.noteExit(), 10);
+assert.equal(morning.street.noteExit(), 20);
 morning.street.savePose({ x: 3, z: -4, yaw: 1.2, pitch: 0.1 });
 assert.equal(morning.street.resumePose().x, 3, "visits before the tenth keep the saved place");
 assert.equal(morning.street.resumePose().z, -4);
-assert.equal(morning.street.noteExit(), 15);
+assert.equal(morning.street.noteExit(), 120);
 assert.equal(morning.street.resumePose().x, 3);
 morning.street.noteExit();
 assert.equal(morning.street.resumePose().x, 3, "the third visit still returns to the saved place");
 
 const evening = load(memory, "2026-10-04T21:00:00");
-assert.equal(evening.street.seconds(), 20, "the same day keeps the grown duration");
+assert.equal(evening.street.seconds(), 240, "the same day keeps the grown duration");
 evening.street.armReturn({ replace() {} }, "https:", null, () => ({ x: 8, z: 2, yaw: 0.4, pitch: 0 }));
-assert.equal(evening.scheduled[0].ms, 20000);
+assert.equal(evening.scheduled[0].ms, 240000);
 assert.equal(evening.intervals[0].ms, 1000);
 evening.scheduled[0].fn();
 assert.equal(evening.street.resumePose().x, 8, "a visit before the tenth keeps the place saved on the way home");
 
 const tomorrow = load(memory, "2026-10-05T08:00:00");
-assert.equal(tomorrow.street.seconds(), 10, "the next day starts again at 10 seconds");
-assert.equal(tomorrow.street.noteExit(), 10);
-assert.equal(tomorrow.street.resumePose(), null, "a new day forgets yesterday's place");
+assert.equal(tomorrow.street.seconds(), 20, "the next day starts again at 20 seconds");
+assert.equal(tomorrow.street.noteExit(), 20);
+assert.equal(tomorrow.street.resumePose().x, 8, "a new day preserves the saved place");
 
 const tenth = load(new Map(), "2026-10-04T12:00:00");
 for (let visit = 0; visit < 9; visit += 1) tenth.street.noteExit();
@@ -97,7 +94,7 @@ assert.equal(tenth.street.visits(), 9);
 assert.equal(tenth.street.resumePose().x, 6);
 tenth.street.noteExit();
 assert.equal(tenth.street.visits(), 10);
-assert.equal(tenth.street.resumePose(), null, "the tenth visit starts at the beginning");
+assert.equal(tenth.street.resumePose().x, 6, "restore position before the in-yard scheduled flight");
 
 let shown = "";
 const first = load(new Map(), "2026-10-04T12:00:00");
@@ -105,8 +102,8 @@ first.street.noteExit();
 first.street.armReturn({ replace() {} }, "http:", (left) => {
   shown = first.street.formatWatch(left);
 });
-assert.equal(shown, "00:10");
-assert.equal(first.scheduled.at(-1).ms, 10000);
+assert.equal(shown, "00:20");
+assert.equal(first.scheduled.at(-1).ms, 20000);
 
 const blocked = load(new Map(), "2026-10-04T12:00:00");
 blocked.street.armReturn({ replace() { throw new Error("file mode must stay put"); } }, "file:");

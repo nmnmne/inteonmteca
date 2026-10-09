@@ -3,12 +3,11 @@
   const secondsKey = "inteonmteca-street-return-sec";
   const visitsKey = "inteonmteca-street-visits";
   const poseKey = "inteonmteca-street-pose";
-  const directionKey = "inteonmteca-street-dir";
   const ruleKey = "inteonmteca-street-rule";
-  const rule = "10..65";
-  const baseSeconds = 10;
-  const peakSeconds = 65;
-  const stepSeconds = 5;
+  const rule = "20,120,+120;boundary+240";
+  const baseSeconds = 20;
+  const stepSeconds = 120;
+  const boundaryBonusSeconds = 240;
 
   const read = (key) => {
     try {
@@ -37,8 +36,7 @@
     write(ruleKey, rule);
     write(secondsKey, "");
     write(visitsKey, "");
-    write(poseKey, "");
-    write(directionKey, "");
+
   };
 
   const visits = () => {
@@ -116,10 +114,13 @@
       const state = walkState();
       if (!visit || visit !== armedVisit || state.visit !== visit || state.ended || state.consumedDay === today()
           || !Number.isFinite(state.deadline) || state.deadline <= Date.now()) return false;
-      // One atomic record contains both consumption and the absolute deadline.
+      const duration = this.seconds();
+      // Keep elapsed walking time: the daily bonus extends the existing deadline.
+      // One record contains both consumption and the absolute deadline.
       state.consumedDay = today();
-      state.deadline = Date.now() + 4 * 60 * 1000;
+      state.deadline += boundaryBonusSeconds * 1000;
       putWalk(state);
+      write(secondsKey, duration + boundaryBonusSeconds);
       reschedule?.();
       return true;
     },
@@ -129,17 +130,14 @@
     visits,
     formatWatch,
     noteExit() {
-      newVisit();
       resetIfNewDay();
+      newVisit();
       const previous = storedSeconds();
-      const direction = read(directionKey) === "down" ? -1 : 1;
-      let next = previous === null ? baseSeconds : previous + direction * stepSeconds;
-      if (next > peakSeconds) next = peakSeconds;
-      if (next < baseSeconds) next = baseSeconds;
-      const turn = next >= peakSeconds ? "down" : next <= baseSeconds ? "up" : direction < 0 ? "down" : "up";
+      // The short first visit is followed by two minutes. Once a boundary bonus
+      // has grown that duration, every later visit adds two minutes to that base.
+      const next = previous === null ? baseSeconds : previous === baseSeconds ? stepSeconds : previous + stepSeconds;
       write(dayKey, today());
       write(ruleKey, rule);
-      write(directionKey, turn);
       write(secondsKey, String(next));
       write(visitsKey, String(visits() + 1));
       return next;
@@ -154,7 +152,6 @@
       }));
     },
     resumePose() {
-      if (visits() === 0 || visits() % 10 === 0) return null;
       return recall();
     },
     armReturn(locationObject, protocol, onTick, remember) {

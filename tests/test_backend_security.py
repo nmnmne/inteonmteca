@@ -90,20 +90,20 @@ class BackendSecurityTests(unittest.TestCase):
                 status, _, _ = self.request(method, path, headers={"Range": "bytes=0-4"})
                 self.assertEqual(status, 404)
 
-    def test_history_returns_only_latest_100_in_chronological_order(self):
+    def test_history_returns_only_latest_50_in_chronological_order(self):
         self.start(smtp=None)
         for index in range(105):
             self.store.add_message("history@example.com", str(index))
         status, _, body = self.request("GET", "/api/chat")
         messages = json.loads(body)["messages"]
         self.assertEqual(status, 200)
-        self.assertEqual([item["text"] for item in messages], [str(index) for index in range(5, 105)])
+        self.assertEqual([item["text"] for item in messages], [str(index) for index in range(55, 105)])
         for limit in (None, -1, 100000):
-            self.assertEqual(len(self.store.messages(limit)), 100)
+            self.assertEqual(len(self.store.messages(limit)), 50)
         token = self.store.create_session("history@example.com")
         status, _, body = self.request("POST", "/api/chat", {"text": "latest"}, {"Cookie": f"{app.COOKIE_NAME}={token}"})
         self.assertEqual(status, 200)
-        self.assertEqual(len(json.loads(body)["messages"]), 100)
+        self.assertEqual(len(json.loads(body)["messages"]), 50)
         self.assertEqual(json.loads(body)["messages"][-1]["text"], "latest")
 
     def test_chat_posting_is_limited_per_account_and_ip(self):

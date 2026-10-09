@@ -12,6 +12,7 @@ const immersiveTitle = document.getElementById("immersive-title");
 const immersiveArtist = document.getElementById("immersive-artist");
 const playbackStatus = document.getElementById("playback-status");
 const activePlayer = document.getElementById("active-player");
+const playerCaption = activePlayer?.querySelector(".player-caption");
 const activeTrackArtist = document.getElementById("active-track-artist");
 const immersiveBack = document.getElementById("immersive-back");
 const immersivePlay = document.getElementById("immersive-play");
@@ -89,6 +90,7 @@ const chatHint = document.getElementById("chat-hint");
 const chatPanel = document.getElementById("chat-panel");
 const inlineChat = chatPanel?.classList.contains("chat-inline");
 const chatStream = document.getElementById("chat-stream");
+const chatStatus = document.getElementById("chat-status");
 const chatForm = document.getElementById("chat-form");
 const chatInput = document.getElementById("chat-input");
 const chatClose = document.getElementById("chat-close");
@@ -153,24 +155,13 @@ const themeCoreFilters = Object.freeze({
   oxblood: { canvas: "hue-rotate(-18deg) saturate(1.2)", logo: "hue-rotate(-16deg) saturate(1.16)", fog: "18px", opacity: ".84" },
 });
 const themeRegistry = Object.freeze([
-  "desert|пустынная ртуть|3b2a19 23180e f3b966 d78855 c7d87a d3ff69 fff4df|color",
-  "sunset|перегретый закат|492329 291b20 ff9556 ed5971 e8bd68 ffdb96 fff0e9|color",
-  "moss|радиоактивный мох|263b15 15250f b7ee4b 64b454 e1c46a d5ff66 f3ffdc|color",
-  "infrared|инфракрасный сон|4b192b 2a1320 ff626b e54836 ffaf6e ffb18f ffe9e4|color",
-  "amethyst|аметистовый мираж|352452 211632 cb8cf0 9078e7 ec9bbb e3c0ff f9edff|color",
-  "glacier|ледяная память|1c3d53 132936 98e8f3 4ba3dc 9fbaff c6fff9 e8fbff|color",
-  "terracotta|пыльная терракота|4c3228 2d211a e9a076 c9826a f2c697 ebd0a3 fff1e2|color",
-  "saffron|нить шафрана|3d4318 252b11 b4d34b 8d9b32 77ba48 aaff3c 91ff2e|color",
-  "pistachio|скорлупа фисташки|35422a 232c1e bddd99 8ebf97 d8b68d d9eab7 f5f8e9|color",
-  "mint-copper|мята и медь|1c483b 153024 8ee6b4 5eb6a6 e2aa7f d9ead0 f1faed|color",
-  "petrol|петролевая эмаль|16464c 112f33 69d9df 4c9fba e5c994 b8f0eb e4faff|color",
-  "ceramic-blue|синяя керамика|223c63 15243e 82b5f3 678ce1 e5b48d bed7ff eaf4ff|color",
-  "indigo|потёртый индиго|303364 20213d 989fee 7278cc dda5be c8d2ff f0f0ff|color",
-  "wisteria|сухая глициния|453552 2b2233 cdb0e7 9f8dc9 e3c8a8 e6d1ef f8efff|color",
-  "hibiscus|чай каркаде|502b46 301c2a e78cb5 c16d9c efb19b f2c1dc ffedf7|color",
-  "apricot|абрикосовая замша|4b382a 30251c efba8b d39c79 d7dca0 f2d0a9 fff3e4|color",
   "abyss|ультрамариновая глубина|030914 070c19 296dba 183b74 583777 9cb9d6 e8efff|dark",
   "graphite|мягкий графит|0c0e10 17191c 576267 323d44 76685f c2cdce eff1f0|dark",
+  "smoked-slate|дымчатый сланец|101317 1b2026 53616f 323b47 6b7075 bdcbd6 e5ebef|dark",
+  "quiet-olive|тихая олива|111511 1b211b 596657 374638 747368 c4cfba e7ebe1|dark",
+  "warm-carbon|тёплый уголь|161310 24201c 71665c 4d4036 81766b d6c8b7 f0e9df|dark",
+  "night-silver|ночное серебро|101216 1c1f25 626974 3c414e 777889 c9cedb eceef5|dark",
+  "deep-ink|глубокие чернила|0c1419 17232b 496775 294451 69767e b4cfd9 e1edf1|dark",
   "porcelain|тёплый фарфор|e8dfca f6efdf e6b982 cab894 c6d6b4 526c37 282b26|light",
   "chalk|цветной мел|dce9ed eff6f6 9fcfd5 aab9df e6b8c3 356570 23353d|light",
 ].map((row) => {
@@ -194,13 +185,6 @@ const themeRegistry = Object.freeze([
     id,
     name,
     mood,
-    group: {
-      desert: "янтарные", saffron: "янтарные", terracotta: "земляные", apricot: "земляные",
-      sunset: "розовые", hibiscus: "розовые", moss: "электрические", infrared: "электрические",
-      pistachio: "зелёные", "mint-copper": "зелёные", glacier: "бирюзовые", petrol: "бирюзовые",
-      "ceramic-blue": "синие", indigo: "синие", amethyst: "фиолетовые", wisteria: "фиолетовые",
-      abyss: "мрачные", graphite: "мрачные", porcelain: "светлые", chalk: "светлые",
-    }[id],
     tokens: Object.freeze({
       ...(id === 'saffron' ? {'--interface-ink': '145, 255, 46', '--interface-muted': '116, 191, 65', '--interface-accent': '170, 255, 60', '--interface-peach': '151, 223, 48', '--interface-sage': '119, 211, 69'} : {}),
       "--theme-bg": `#${bg}`,
@@ -223,22 +207,18 @@ const themesById = new Map(themeRegistry.map((theme) => [theme.id, theme]));
 const populateThemeSelect = () => {
   if (!themeSelect) return;
   themeSelect.replaceChildren();
-  const groups = Object.fromEntries(["мрачные", "светлые", "янтарные", "земляные", "розовые", "электрические", "зелёные", "бирюзовые", "синие", "фиолетовые"].map(label => {
-    const group = document.createElement("optgroup"); group.label = label; return [label, group];
-  }));
   for (const theme of themeRegistry) {
     const option = document.createElement("option");
-    option.value = theme.id;
-    option.textContent = theme.name;
-    groups[theme.group].append(option);
+    option.value = theme.id; option.textContent = theme.name;
+    themeSelect.append(option);
   }
-  themeSelect.append(...Object.values(groups));
 };
 const themeStorageKey = "inteonmteca-theme";
 const themeDurationStorageKey = "inteonmteca-theme-duration";
 const localSessionStorageKey = "inteonmteca-local-session";
 const localAccountsStorageKey = "inteonmteca-local-accounts";
 const localChatStorageKey = "inteonmteca-local-chat";
+const CHAT_HISTORY_LIMIT = 50;
 const emailFormat = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 let tracks = [];
@@ -283,6 +263,8 @@ let playlistSignature = "";
 let themeRotationTimer = 0;
 let themeShiftTimer = 0;
 let slowFrameScore = 0;
+let stableFrameTime = 0;
+let qualityCooldownUntil = 0;
 let motionLastFrame = performance.now();
 let trackItemNodes = [];
 let trackTitleNodes = [];
@@ -299,7 +281,8 @@ const refreshTrackNodes = () => {
   trackTitleNodes = trackItemNodes.map((item) => item.querySelector(".track-title")).filter(Boolean);
 };
 
-const renderInterval = () => animationQuality === "low" ? 52 : 34;
+// Keep motion tied to the display refresh rate; quality reduces work, not FPS.
+const renderInterval = () => 0;
 
 const rebuildQualityDependentState = () => {
   particleGrid = animationQuality === "low" ? { cols: 12, rows: 4 } : { cols: 18, rows: 6 };
@@ -317,14 +300,23 @@ const rebuildQualityDependentState = () => {
 const setAnimationQuality = (quality) => {
   if (animationQuality === quality) return;
   animationQuality = quality;
+  slowFrameScore = 0;
+  stableFrameTime = 0;
+  qualityCooldownUntil = performance.now() + 5000;
   document.documentElement.dataset.animationQuality = quality;
   rebuildQualityDependentState();
 };
 
 const recordFramePacing = (delta) => {
-  if (document.hidden || animationQuality === "low") return;
-  slowFrameScore = delta > 72 ? slowFrameScore + 1 : Math.max(0, slowFrameScore - .2);
-  if (slowFrameScore > 20) setAnimationQuality("low");
+  if (document.hidden || !Number.isFinite(delta) || delta <= 0 || delta > 250) return;
+  if (performance.now() < qualityCooldownUntil) return;
+  if (animationQuality === "high") {
+    slowFrameScore = delta > 22 ? slowFrameScore + delta : Math.max(0, slowFrameScore - delta * 1.5);
+    if (slowFrameScore >= 2000) setAnimationQuality("low");
+  } else if (!lowPowerDevice) {
+    stableFrameTime = delta < 18 ? stableFrameTime + delta : Math.max(0, stableFrameTime - delta * 2);
+    if (stableFrameTime >= 8000) setAnimationQuality("high");
+  }
 };
 
 const setMotion = (x, y, strength = 1) => {
@@ -1195,9 +1187,9 @@ const renderPlayingLetters = (now) => {
 const renderTitleMutation = (now) => {
   if (playlistList?.dataset?.layout === "catalog") return;
   if (prefersReducedMotion) return;
-  if (now - titleLastFrame < (animationQuality === "low" ? 120 : 68)) return;
+  if (now - titleLastFrame < (animationQuality === "low" ? 60 : 34)) return;
   titleLastFrame = now;
-  const frame = Math.floor(now / (prefersReducedMotion ? 210 : 76));
+  const frame = Math.floor(now / (animationQuality === "low" ? 60 : 34));
   const titles = trackTitleNodes.length ? trackTitleNodes : document.querySelectorAll(".track-title");
   const mutateTitle = (element, index) => {
     const original = element.dataset.originalText || element.textContent || "";
@@ -1224,11 +1216,12 @@ const renderLogoSymbolEcho = (now, energy) => {
     : 0;
   const intensity = Math.min(.94, mutationWave * .82 + energy.high * .16);
   const frame = Math.floor(now / (prefersReducedMotion ? 240 : 68));
-  logoSymbolEcho.textContent = intensity > .04
+  const text = intensity > .04
     ? mutateGlyphString(logoText, intensity, frame, 47)
     : logoText;
-  logoSymbolEcho.style.setProperty("--symbol-opacity", (.035 + mutationWave * .19 + energy.avg * .14).toFixed(3));
-  logoSymbolEcho.style.setProperty("--symbol-blur", `${(1.1 + mutationWave * 2.8 + energy.bass * 2).toFixed(2)}px`);
+  if (logoSymbolEcho.textContent !== text) logoSymbolEcho.textContent = text;
+  writeLogoVariable(logoSymbolEcho, "--symbol-opacity", (.035 + mutationWave * .19 + energy.avg * .14).toFixed(3));
+  writeLogoVariable(logoSymbolEcho, "--symbol-blur", `${(1.1 + mutationWave * 2.8 + energy.bass * 2).toFixed(2)}px`);
 };
 
 const updateTrackFold = () => {
@@ -1324,8 +1317,8 @@ const shuffle = (items) => {
 
 const setPlaybackStatus = (text = "", state = "") => {
   if (!playbackStatus) return;
-  playbackStatus.textContent = text;
-  playbackStatus.dataset.state = state;
+  if (playbackStatus.textContent !== text) playbackStatus.textContent = text;
+  if (playbackStatus.dataset.state !== state) playbackStatus.dataset.state = state;
 };
 
 const resolveTrackUrl = (track) => {
@@ -1417,90 +1410,15 @@ const visibleTrackCount = () => Math.max(1, visibleTrackIndexes().length);
 // the selected row, so selection never changes neighbours or scroll position.
 const shuffledTrackIndexes = () => visibleTrackIndexes();
 
-const appendWheelCycle = () => {
-  if (!playlistList || !tracks.length) return 0;
-  const before = playlistList.scrollHeight;
-  const start = playlistList.lastElementChild ? Number(playlistList.lastElementChild.dataset.wheelNumber) + 1 : -visibleTrackCount();
-  shuffledTrackIndexes().forEach((index, offset) => playlistList.append(createTrackItem(tracks[index], index, start + offset)));
-  return playlistList.scrollHeight - before;
-};
-
-const prependWheelCycle = () => {
-  if (!playlistList || !tracks.length) return 0;
-  const before = playlistList.scrollHeight;
-  const fragment = document.createDocumentFragment();
-  const start = Number(playlistList.firstElementChild?.dataset.wheelNumber || 0) - visibleTrackCount();
-  shuffledTrackIndexes().forEach((index, offset) => fragment.append(createTrackItem(tracks[index], index, start + offset)));
-  playlistList.prepend(fragment);
-  const added = playlistList.scrollHeight - before;
-  playlistList.scrollTop += added;
-  playlistScrollTarget += added;
-  return added;
-};
-
-const trimInfiniteWheel = () => {
-  if (!playlistList || !tracks.length) return;
-  const cycle = visibleTrackCount();
-  const limit = cycle * 8;
-  if (playlistList.children.length <= limit) return;
-  const cycleH = cycle * trackRowHeight();
-  if (playlistList.scrollTop > cycleH * 2.4) {
-    for (let index = 0; index < cycle; index += 1) playlistList.firstElementChild?.remove();
-    playlistList.scrollTop = Math.max(0, playlistList.scrollTop - cycleH);
-    playlistScrollTarget = Math.max(0, playlistScrollTarget - cycleH);
-  } else if (playlistList.scrollHeight - playlistList.scrollTop - playlistList.clientHeight > cycleH * 2.4) {
-    for (let index = 0; index < cycle; index += 1) playlistList.lastElementChild?.remove();
-  }
-};
-
-const balanceInfiniteWheel = () => {
-  if (wheelBalancing || !playlistList || !tracks.length) return;
-  wheelBalancing = true;
-  const cycleH = Math.max(trackRowHeight(), visibleTrackCount() * trackRowHeight());
-  let guard = 0;
-  while (guard < 6 && playlistScrollTarget < cycleH * 0.8) {
-    prependWheelCycle();
-    guard += 1;
-  }
-  guard = 0;
-  while (guard < 6 && playlistScrollTarget + playlistList.clientHeight > playlistList.scrollHeight - cycleH * 0.8) {
-    appendWheelCycle();
-    guard += 1;
-  }
-  trimInfiniteWheel();
-  refreshTrackNodes();
-  wheelBalancing = false;
-};
-
+// A finite catalogue: each track has one stable row and real scroll endpoints.
+const balanceInfiniteWheel = () => {};
 const fillInfiniteWheel = () => {
-  if (!playlistList || !tracks.length) return;
-  wheelBalancing = true;
-  try {
-    playlistList.replaceChildren();
-    appendWheelCycle();
-    appendWheelCycle();
-    appendWheelCycle();
-    let extra = 0;
-    while (
-      extra < 8
-      && playlistList.scrollHeight > 0
-      && playlistList.clientHeight > 0
-      && (playlistList.children.length <= TRACK_VIEW
-        || playlistList.scrollHeight <= playlistList.clientHeight + trackRowHeight())
-    ) {
-      appendWheelCycle();
-      extra += 1;
-    }
-    refreshTrackNodes();
-    const cycleH = visibleTrackCount() * trackRowHeight();
-    playlistList.scrollTop = cycleH;
-    playlistScrollTarget = playlistList.scrollTop;
-    playlistScrollVelocity = 0;
-  } catch {
-    playlistList.replaceChildren(...tracks.map((track, index) => createTrackItem(track, index)));
-    refreshTrackNodes();
-  }
-  wheelBalancing = false;
+  if (!playlistList) return;
+  playlistList.replaceChildren(...tracks.map((track, index) => createTrackItem(track, index)));
+  refreshTrackNodes();
+  playlistList.scrollTop = 0;
+  playlistScrollTarget = 0;
+  playlistScrollVelocity = 0;
 };
 
 const nearestItemForTrackIndex = (index) => {
@@ -1845,41 +1763,55 @@ const formatTime = (value) => {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 };
 
+const writeTransportProperty = (element, name, value) => {
+  if (element && element[name] !== value) element[name] = value;
+};
+const writeTransportAttribute = (element, name, value) => {
+  if (element && element.getAttribute(name) !== value) element.setAttribute(name, value);
+};
+const writeTransportSeek = (element, value) => {
+  if (element && element.style.getPropertyValue("--seek") !== value) element.style.setProperty("--seek", value);
+};
+
 const syncTransport = () => {
   if (!player) return;
   const selected = Boolean(currentTrack);
   const loading = selected && !player.paused && player.readyState < 3;
   const playing = selected && !player.paused && !player.ended && !player.error && !loading;
-  if (activePlayer) activePlayer.dataset.state = !selected ? "empty" : player.error ? "error" : loading ? "loading" : playing ? "playing" : "paused";
-  if (immersivePlay) immersivePlay.disabled = !selected;
-  if (previousTrack) previousTrack.disabled = !selected || tracks.length < 2;
-  if (nextTrack) nextTrack.disabled = !selected || tracks.length < 2;
-  if (trackProgress) trackProgress.disabled = !selected || !Number.isFinite(player.duration) || player.duration <= 0;
-  if (trackVolume) trackVolume.disabled = !selected || !volumeSupported;
-  const caption = activePlayer?.querySelector(".player-caption");
-  if (caption) caption.textContent = !selected ? "Плеер" : loading ? "Загрузка" : playing ? "Сейчас играет" : "Пауза";
+  const state = !selected ? "empty" : player.error ? "error" : loading ? "loading" : playing ? "playing" : "paused";
+  if (activePlayer && activePlayer.dataset.state !== state) activePlayer.dataset.state = state;
+  writeTransportProperty(immersivePlay, "disabled", !selected);
+  writeTransportProperty(previousTrack, "disabled", !selected || tracks.length < 2);
+  writeTransportProperty(nextTrack, "disabled", !selected || tracks.length < 2);
+  writeTransportProperty(trackProgress, "disabled", !selected || !Number.isFinite(player.duration) || player.duration <= 0);
+  writeTransportProperty(trackVolume, "disabled", !selected || !volumeSupported);
+  // Equality keeps text-wave spans intact when timeupdate repeats the same label.
+  writeTransportProperty(playerCaption, "textContent", !selected ? "Плеер" : loading ? "Загрузка" : playing ? "Сейчас играет" : "Пауза");
   const duration = Number.isFinite(player.duration) ? player.duration : 0;
   const progress = duration > 0 ? player.currentTime / duration : 0;
   const seekValue = `${(progress * 100).toFixed(2)}%`;
-  trackProgress?.parentElement?.style.setProperty("--seek", seekValue);
+  writeTransportSeek(trackProgress?.parentElement, seekValue);
   if (trackProgress && document.activeElement !== trackProgress) {
-    trackProgress.value = String(Math.round(progress * 1000));
-    trackProgress.style.setProperty("--seek", seekValue);
+    writeTransportProperty(trackProgress, "value", String(Math.round(progress * 1000)));
+    writeTransportSeek(trackProgress, seekValue);
   }
-  if (currentTime) currentTime.textContent = formatTime(player.currentTime);
-  if (durationTime) durationTime.textContent = formatTime(duration);
-  trackProgress?.setAttribute("aria-valuetext", `${formatTime(player.currentTime)} из ${formatTime(duration)}`);
-  if (immersivePlayIcon) immersivePlayIcon.dataset.state = playing ? "playing" : "paused";
-  if (immersivePlay) immersivePlay.setAttribute("aria-label", player.paused ? "Воспроизвести" : "Пауза");
+  const elapsedText = formatTime(player.currentTime);
+  const durationText = formatTime(duration);
+  writeTransportProperty(currentTime, "textContent", elapsedText);
+  writeTransportProperty(durationTime, "textContent", durationText);
+  writeTransportAttribute(trackProgress, "aria-valuetext", `${elapsedText} из ${durationText}`);
+  const iconState = playing ? "playing" : "paused";
+  if (immersivePlayIcon && immersivePlayIcon.dataset.state !== iconState) immersivePlayIcon.dataset.state = iconState;
+  writeTransportAttribute(immersivePlay, "aria-label", player.paused ? "Воспроизвести" : "Пауза");
   const signal = playing;
   if (document.body.classList.contains("is-signal") !== signal) {
     document.body.classList.toggle("is-signal", signal);
   }
   if (nowPlayingTitle) {
     const title = currentTrack?.title || "Выберите трек";
-    nowPlayingTitle.title = title;
+    writeTransportProperty(nowPlayingTitle, "title", title);
     if (nowPlayingTitle.dataset.track !== title) {
-      nowPlayingTitle.textContent = title;
+      writeTransportProperty(nowPlayingTitle, "textContent", title);
       nowPlayingTitle.dataset.track = title;
     }
   }
@@ -2098,6 +2030,13 @@ const panelOpeners = new WeakMap();
 const setPanelOpen = (panel, open, { focus = true } = {}) => {
   if (!panel || panel.hidden === !open) return;
   if (open && panel !== chatPanel && compactChatViewport.matches && !chatPanel?.hidden) closeChat();
+  if (open) {
+    for (const other of [...openPanels]) {
+      if (other === panel || (other === chatPanel && inlineChat)) continue;
+      if (other === chatPanel) closeChat();
+      else setPanelOpen(other, false, { focus: false });
+    }
+  }
   const trigger = document.getElementById(panel.id.replace("-panel", "-hint"));
   if (open) panelOpeners.set(panel, document.activeElement);
   const index = openPanels.indexOf(panel);
@@ -2105,6 +2044,9 @@ const setPanelOpen = (panel, open, { focus = true } = {}) => {
   panel.hidden = !open;
   if (panel === themePanel) {
     document.body.classList.toggle('is-theme-menu-open', open);
+  }
+  if (panel === authPanel) {
+    document.body.classList.toggle('is-auth-menu-open', open);
   }
   panel.setAttribute("aria-hidden", String(!open));
   trigger?.setAttribute("aria-expanded", String(open));
@@ -2115,7 +2057,7 @@ const setPanelOpen = (panel, open, { focus = true } = {}) => {
   } else {
     panel.style.zIndex = "";
     const opener = panelOpeners.get(panel);
-    if (panel.contains(document.activeElement)) {
+    if (focus && panel.contains(document.activeElement)) {
       (opener?.isConnected ? opener : trigger)?.focus({ preventScroll: true });
     }
     panelOpeners.delete(panel);
@@ -2199,14 +2141,16 @@ const updateThemeDurationLabel = () => {
 };
 
 const setTheme = (name, { animate = true, persist = true } = {}) => {
-  const nextTheme = themesById.has(name) ? name : "desert";
+  const nextTheme = themesById.has(name) ? name : "graphite";
   const root = document.documentElement;
   const changed = root.dataset.theme !== nextTheme;
   const theme = themesById.get(nextTheme);
-  if (window.inteonThemeMorph) window.inteonThemeMorph.apply(theme.tokens, theme.mood, changed && animate);
-  else for (const [property, value] of Object.entries(theme.tokens)) root.style.setProperty(property, value);
-  root.dataset.theme = nextTheme;
-  root.dataset.themeMood = theme.mood;
+  if (window.inteonThemeMorph) window.inteonThemeMorph.apply(theme.tokens, theme.mood, changed && animate, {name: nextTheme});
+  else {
+    for (const [property, value] of Object.entries(theme.tokens)) root.style.setProperty(property, value);
+    root.dataset.theme = nextTheme;
+    root.dataset.themeMood = theme.mood;
+  }
   if (themeSelect) themeSelect.value = nextTheme;
   if (persist) storeValue(themeStorageKey, nextTheme);
   if (changed && themeStatus) {
@@ -2217,7 +2161,7 @@ const setTheme = (name, { animate = true, persist = true } = {}) => {
 const randomizeTheme = () => {
   const current = document.documentElement.dataset.theme;
   const available = themeNames.filter((name) => name !== current);
-  setTheme(available[Math.floor(Math.random() * available.length)] || "desert");
+  setTheme(available[Math.floor(Math.random() * available.length)] || "graphite");
 };
 
 const scheduleThemeRotation = () => {
@@ -2227,7 +2171,7 @@ const scheduleThemeRotation = () => {
   themeRotationTimer = window.setTimeout(() => {
     randomizeTheme();
     scheduleThemeRotation();
-  }, duration + (window.inteonThemeMorph?.active ? 15000 : 0));
+  }, duration + (window.inteonThemeMorph?.active ? window.inteonThemeMorph.duration : 0));
 };
 
 const initializeThemeSystem = () => {
@@ -2242,7 +2186,7 @@ const initializeThemeSystem = () => {
 themeHint?.addEventListener("click", () => {
   const opening = Boolean(themePanel?.hidden);
   setPanelOpen(themePanel, opening);
-  if (opening) themeSelect?.focus();
+  if (opening) (document.querySelector(".theme-picker-toggle") || themeSelect)?.focus();
 });
 themeClose?.addEventListener("click", () => setPanelOpen(themePanel, false));
 themeSelect?.addEventListener("change", () => {
@@ -2269,8 +2213,7 @@ const setAuthStatus = (text) => {
 };
 
 const refreshAuthHint = () => {
-  if (!authHint) return;
-  authHint.textContent = sessionEmail ? sessionEmail.split("@")[0] : "вход";
+  if (authHint) authHint.textContent = sessionEmail ? sessionEmail.split("@")[0] : "вход";
   if (authLogout) authLogout.hidden = !sessionEmail;
   if (authEmailForm) authEmailForm.hidden = Boolean(sessionEmail);
   if (sessionEmail && authCodeForm) authCodeForm.hidden = true;
@@ -2296,11 +2239,16 @@ const requestJson = async (path, options = {}) => {
     throw new Error("API входа не подключён к этому адресу сайта");
   }
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || "request failed");
+  if (!response.ok) {
+    const error = new Error(data.error || "request failed");
+    error.status = response.status;
+    throw error;
+  }
   return data;
 };
 
-const useLocalPass = () => isFileMode || passIsLocal;
+// The direct-file preview is the only explicitly local demo. HTTP uses the shared server.
+const useLocalPass = () => isFileMode;
 
 const showLocalCode = () => {
   if (!emailFormat.test(pendingEmail)) throw new Error("нужна почта: имя@example.com");
@@ -2322,8 +2270,6 @@ const acceptLocalCode = () => {
   setAuthStatus("");
 };
 
-const apiMissing = (error) => /не подключён|недоступен|local-auth/.test(error?.message || "");
-
 const loadSession = async () => {
   if (isFileMode) {
     sessionEmail = readStoredValue(localSessionStorageKey) || "";
@@ -2335,14 +2281,9 @@ const loadSession = async () => {
     const data = await requestJson("/api/auth/me");
     sessionEmail = data.email || "";
     passIsLocal = false;
-  } catch (error) {
-    if (apiMissing(error)) {
-      passIsLocal = true;
-      sessionEmail = readStoredValue(localSessionStorageKey) || "";
-    } else {
-      passIsLocal = false;
-      sessionEmail = "";
-    }
+  } catch {
+    passIsLocal = false;
+    sessionEmail = "";
   }
   refreshAuthHint();
 };
@@ -2371,7 +2312,6 @@ authLogout?.addEventListener("click", async () => {
   sessionEmail = "";
   refreshAuthHint();
   setPanelOpen(authPanel, false);
-  closeChat();
   setAuthStatus("вышли");
 });
 
@@ -2398,14 +2338,6 @@ authEmailForm?.addEventListener("submit", async (event) => {
     setAuthStatus(directCode ? `код входа: ${directCode}` : `код отправлен на ${pendingEmail}`);
     authCode?.focus();
   } catch (error) {
-    if (apiMissing(error)) {
-      try {
-        showLocalCode();
-      } catch (localError) {
-        setAuthStatus(localError.message);
-      }
-      return;
-    }
     setAuthStatus(error.message === "request failed" ? "сервер входа недоступен" : error.message);
   } finally {
     if (submit) submit.disabled = false;
@@ -2457,9 +2389,17 @@ const animateChatGlyphs = (now) => {
 
 let chatSnapshot = "";
 let chatLoading = false;
+let chatRequestVersion = 0;
+let chatSending = false;
+let chatRows = new Map();
+const setChatStatus = (text = "") => {
+  if (!chatStatus) return;
+  if (chatStatus.textContent !== text) chatStatus.textContent = text;
+  if (chatStatus.hidden !== !text) chatStatus.hidden = !text;
+};
 const renderChatMessages = (messages) => {
   if (!chatStream) return;
-  const all = Array.isArray(messages) ? messages : [];
+  const all = Array.isArray(messages) ? messages.slice(-CHAT_HISTORY_LIMIT) : [];
   const animateGlyphs = !inlineChat && animationQuality !== "low" && !prefersReducedMotion && !compactChatViewport.matches;
   const snapshot = JSON.stringify([animateGlyphs, all]);
   if (snapshot === chatSnapshot) {
@@ -2471,33 +2411,53 @@ const renderChatMessages = (messages) => {
   chatSnapshot = snapshot;
   cancelAnimationFrame(chatAnimationFrame);
   chatAnimationFrame = 0;
-  chatStream.replaceChildren();
   chatGlyphs = [];
+  const nextRows = new Map();
+  let animatedCount = 0;
 
   all.forEach((message, index) => {
-    const line = document.createElement("div");
-    line.className = "chat-line";
-    const meta = document.createElement("div");
-    meta.className = "chat-meta";
-    meta.textContent = (message.email || "").split("@")[0] || "гость";
-    line.append(meta);
-    const recent = animateGlyphs && index >= all.length - 8 && chatGlyphs.length + String(message.text || "").length <= 320;
-    if (recent) {
-      [...String(message.text || "")].forEach((char) => {
-        const glyph = document.createElement("span");
-        glyph.className = "chat-glyph";
-        glyph.textContent = char === " " ? "\u00a0" : char;
-        line.append(glyph);
-        chatGlyphs.push(glyph);
-      });
-    } else {
-      const body = document.createElement("span");
-      body.className = "chat-text";
-      body.textContent = message.text || "";
-      line.append(body);
+    const text = String(message.text || "");
+    const recent = animateGlyphs && index >= all.length - 8 && animatedCount + text.length <= 320;
+    if (recent) animatedCount += text.length;
+    const key = message.id ?? `row-${index}`;
+    const signature = JSON.stringify([message.email, text, recent]);
+    let row = chatRows.get(key);
+    if (!row || row.signature !== signature) {
+      const line = document.createElement("div");
+      line.className = "chat-line";
+      const meta = document.createElement("div");
+      meta.className = "chat-meta";
+      meta.textContent = String(message.email || "").split("@")[0] || "гость";
+      line.append(meta);
+      const glyphs = [];
+      if (recent) {
+        for (const char of text) {
+          const glyph = document.createElement("span");
+          glyph.className = "chat-glyph";
+          glyph.textContent = char === " " ? "\u00a0" : char;
+          line.append(glyph);
+          glyphs.push(glyph);
+        }
+      } else {
+        const body = document.createElement("span");
+        body.className = "chat-text";
+        body.textContent = text;
+        line.append(body);
+      }
+      row = { line, signature, glyphs };
     }
-    chatStream.append(line);
+    nextRows.set(key, row);
+    chatGlyphs.push(...row.glyphs);
   });
+  for (const [key, row] of chatRows) {
+    if (nextRows.get(key) !== row) row.line.remove();
+  }
+  let index = 0;
+  for (const { line } of nextRows.values()) {
+    if (chatStream.children[index] !== line) chatStream.insertBefore(line, chatStream.children[index] || null);
+    index += 1;
+  }
+  chatRows = nextRows;
   chatStream.scrollTop = atBottom ? chatStream.scrollHeight : scrollTop;
   if (chatGlyphs.length) chatAnimationFrame = requestAnimationFrame(animateChatGlyphs);
 };
@@ -2509,16 +2469,14 @@ const loadChat = async () => {
     return;
   }
   chatLoading = true;
+  const version = ++chatRequestVersion;
   try {
     const data = await requestJson("/api/chat");
+    if (version !== chatRequestVersion) return;
     renderChatMessages(data.messages || data);
-  } catch (error) {
-    if (apiMissing(error)) {
-      passIsLocal = true;
-      renderChatMessages(readStoredJson(localChatStorageKey, []));
-    } else if (!chatStream.childElementCount) {
-      renderChatMessages([{ email: "inteonmteca", text: "чат временно недоступен — нет связи с сервером" }]);
-    }
+    setChatStatus();
+  } catch {
+    if (version === chatRequestVersion) setChatStatus("чат временно недоступен — нет связи с сервером");
   } finally {
     chatLoading = false;
   }
@@ -2612,6 +2570,7 @@ chatInput?.addEventListener("input", event => { if (!event.isComposing) fitChatD
 chatInput?.addEventListener("compositionend", fitChatDraft);
 chatForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (chatSending) return;
   if (!sessionEmail) {
     setPanelOpen(authPanel, true);
     setAuthStatus("сначала почта");
@@ -2620,9 +2579,13 @@ chatForm?.addEventListener("submit", async (event) => {
   fitChatDraft();
   const text = chatInput?.value.trim();
   if (!text) return;
+  chatSending = true;
+  const submit = event.submitter || chatForm.querySelector('button[type="submit"]');
+  if (submit) submit.disabled = true;
   try {
     if (useLocalPass()) {
-      const messages = readStoredJson(localChatStorageKey, []);
+      const saved = readStoredJson(localChatStorageKey, []);
+      const messages = Array.isArray(saved) ? saved.slice(-(CHAT_HISTORY_LIMIT - 1)) : [];
       messages.push({
         id: Date.now(),
         email: sessionEmail,
@@ -2634,25 +2597,22 @@ chatForm?.addEventListener("submit", async (event) => {
       renderChatMessages(messages);
       return;
     }
-    await requestJson("/api/chat", { method: "POST", body: JSON.stringify({ text }) });
-    chatInput.value = "";
-    await loadChat();
+    const data = await requestJson("/api/chat", { method: "POST", body: JSON.stringify({ text }) });
+    chatRequestVersion += 1;
+    if (chatInput.value.trim() === text) chatInput.value = "";
+    renderChatMessages(data.messages);
+    setChatStatus();
   } catch (error) {
-    if (apiMissing(error)) {
-      passIsLocal = true;
-      const messages = readStoredJson(localChatStorageKey, []);
-      messages.push({
-        id: Date.now(),
-        email: sessionEmail,
-        text,
-        created_at: Math.floor(Date.now() / 1000),
-      });
-      storeValue(localChatStorageKey, JSON.stringify(messages));
-      chatInput.value = "";
-      renderChatMessages(messages);
-      return;
+    if (error.status === 401) {
+      sessionEmail = "";
+      refreshAuthHint();
+      setPanelOpen(authPanel, true);
+      setAuthStatus("сначала почта");
     }
-    renderChatMessages([{ email: "система", text: error.message === "request failed" ? "нет связи" : error.message }]);
+    setChatStatus(error.message === "request failed" ? "нет связи" : error.message);
+  } finally {
+    chatSending = false;
+    if (submit) submit.disabled = false;
   }
 });
 
@@ -2827,18 +2787,30 @@ const setupLogoSlices = () => {
   }
 };
 
+let logoCanvasMetrics = null;
+let logoPointerBounds = null;
+let logoFilamentGradients = null;
+const refreshLogoPointerBounds = () => {
+  logoPointerBounds = !isMobileViewport && logoWrap ? logoWrap.getBoundingClientRect() : null;
+};
 const resizeLogoCanvas = () => {
-  if (isMobileViewport) return;
+  refreshLogoPointerBounds();
+  if (isMobileViewport) { logoCanvasMetrics = null; return; }
   if (!logoReactiveCanvas || !logoReactiveContext) return;
   const bounds = logoReactiveCanvas.getBoundingClientRect();
   const scale = isListeningRoom ? .75 : Math.min(devicePixelRatio || 1, 1.5);
-  logoReactiveCanvas.width = Math.max(1, Math.round(bounds.width * scale));
-  logoReactiveCanvas.height = Math.max(1, Math.round(bounds.height * scale));
+  const pixelWidth = Math.max(1, Math.round(bounds.width * scale));
+  const pixelHeight = Math.max(1, Math.round(bounds.height * scale));
+  if (logoReactiveCanvas.width !== pixelWidth) logoReactiveCanvas.width = pixelWidth;
+  if (logoReactiveCanvas.height !== pixelHeight) logoReactiveCanvas.height = pixelHeight;
+  logoCanvasMetrics = bounds.width && bounds.height
+    ? { width: bounds.width, height: bounds.height, scale: pixelWidth / bounds.width }
+    : null;
 };
 
 const updateLogoPointer = (event) => {
-  if (!logoWrap) return;
-  const bounds = logoWrap.getBoundingClientRect();
+  const bounds = logoPointerBounds;
+  if (!bounds) return;
   const x = (event.clientX - (bounds.left + bounds.width * .5)) / Math.max(1, bounds.width * .5);
   const y = (event.clientY - (bounds.top + bounds.height * .5)) / Math.max(1, bounds.height * .5);
   const distance = Math.hypot(x * .75, y);
@@ -2848,6 +2820,13 @@ const updateLogoPointer = (event) => {
 };
 
 window.addEventListener("pointermove", updateLogoPointer, { passive: true });
+window.addEventListener("scroll", refreshLogoPointerBounds, { capture: true, passive: true });
+if (typeof ResizeObserver === "function") {
+  const logoResizeObserver = new ResizeObserver(resizeLogoCanvas);
+  if (logoReactiveCanvas) logoResizeObserver.observe(logoReactiveCanvas);
+  if (logoWrap) logoResizeObserver.observe(logoWrap);
+}
+document.fonts?.ready.then(resizeLogoCanvas);
 logoWrap?.addEventListener("pointerleave", () => {
   logoReactiveState.proximity *= .35;
 });
@@ -2855,13 +2834,11 @@ logoWrap?.addEventListener("pointerleave", () => {
 const drawLogoFilaments = (now, profile) => {
   if (!logoReactiveCanvas || !logoReactiveContext) return;
   // The low-quality stylesheet hides this canvas; do not measure/draw it.
-  if (isMobileViewport && animationQuality === "low") return;
-  const bounds = logoReactiveCanvas.getBoundingClientRect();
-  if (!bounds.width || !bounds.height) return;
-  const scale = logoReactiveCanvas.width / bounds.width;
+  if (animationQuality === "low") return;
+  const metrics = logoCanvasMetrics;
+  if (!metrics) return;
   const ctx = logoReactiveContext;
-  const width = bounds.width;
-  const height = bounds.height;
+  const { width, height, scale } = metrics;
   const t = now * .001;
   const pointerX = (.5 + logoReactiveState.x * .34) * width;
   const pointerY = (.5 + logoReactiveState.y * .28) * height;
@@ -2869,6 +2846,22 @@ const drawLogoFilaments = (now, profile) => {
   ctx.clearRect(0, 0, width, height);
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
+  if (!logoFilamentGradients || logoFilamentGradients.context !== ctx
+      || logoFilamentGradients.width !== width || logoFilamentGradients.scale !== scale) {
+    const createFade = (tint) => {
+      const fade = ctx.createLinearGradient(width * .08, 0, width * .92, 0);
+      fade.addColorStop(0, `rgba(${tint},0)`);
+      fade.addColorStop(.22, `rgba(${tint},1)`);
+      fade.addColorStop(.78, `rgba(${tint},1)`);
+      fade.addColorStop(1, `rgba(${tint},0)`);
+      return fade;
+    };
+    logoFilamentGradients = { context: ctx, width, scale, green: createFade('204,255,105'), warm: createFade('224,112,64') };
+  }
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = .35 + profile.bass * 1.2;
+  ctx.shadowBlur = 4 + profile.high * 16;
 
   const strandCount = animationQuality === "low" ? 5 : 9;
   for (let strand = 0; strand < strandCount; strand += 1) {
@@ -2889,21 +2882,14 @@ const drawLogoFilaments = (now, profile) => {
       else ctx.lineTo(x, y);
     }
     const green = strand % 3 === 0;
-    const tint = green ? '204,255,105' : '224,112,64';
     const alpha = .025 + (green ? profile.high * .18 : profile.mid * .14);
-    const fade = ctx.createLinearGradient(width * .08, 0, width * .92, 0);
-    fade.addColorStop(0, `rgba(${tint},0)`);
-    fade.addColorStop(.22, `rgba(${tint},${alpha})`);
-    fade.addColorStop(.78, `rgba(${tint},${alpha})`);
-    fade.addColorStop(1, `rgba(${tint},0)`);
-    ctx.strokeStyle = fade;
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.lineWidth = .35 + profile.bass * 1.2;
-    ctx.shadowBlur = 4 + profile.high * 16;
+    ctx.strokeStyle = green ? logoFilamentGradients.green : logoFilamentGradients.warm;
+    ctx.globalAlpha = alpha;
     ctx.shadowColor = green ? "rgba(201,255,97,.55)" : "rgba(224,92,51,.5)";
     ctx.stroke();
   }
 
+  ctx.globalAlpha = 1;
   logoFilamentSeeds.forEach((particle, index) => {
     const bandEnergy = particle.band === 0 ? profile.bass : particle.band === 1 ? profile.mid : profile.high;
     const orbit = t * (.18 + particle.band * .12) + particle.phase;
@@ -2938,6 +2924,9 @@ const drawLogoFilaments = (now, profile) => {
 const logoAmbientUpdates = new Map();
 const writeLogoVariable = (element, name, value) => {
   if (element && element.style.getPropertyValue(name) !== value) element.style.setProperty(name, value);
+};
+const writeLogoAttribute = (element, name, value) => {
+  if (element && element.getAttribute(name) !== value) element.setAttribute(name, value);
 };
 const setLogoCssVariable = (name, value) => {
   if (!isListeningRoom) {
@@ -3004,14 +2993,14 @@ const renderReactiveLogo = (now) => {
 
   if (logoGaze) {
     const size = 150 + bass * 72 + logoReactiveState.proximity * 26;
-    logoGaze.setAttribute("x", String(267 + x * 224 - size * .5));
-    logoGaze.setAttribute("y", String(53.5 + y * 58 - size * .5));
-    logoGaze.setAttribute("width", String(size));
-    logoGaze.setAttribute("height", String(size));
-    logoGaze.setAttribute("rx", String(size * .5));
+    writeLogoAttribute(logoGaze, "x", String(267 + x * 224 - size * .5));
+    writeLogoAttribute(logoGaze, "y", String(53.5 + y * 58 - size * .5));
+    writeLogoAttribute(logoGaze, "width", String(size));
+    writeLogoAttribute(logoGaze, "height", String(size));
+    writeLogoAttribute(logoGaze, "rx", String(size * .5));
   }
   if (logoTurbulence) {
-    logoTurbulence.setAttribute(
+    writeLogoAttribute(logoTurbulence,
       "baseFrequency",
       `${(.0035 + high * .012).toFixed(4)} ${(.031 + mid * .075).toFixed(4)}`,
     );
@@ -3019,7 +3008,7 @@ const renderReactiveLogo = (now) => {
   if (logoDisplacement) {
     const chaos = logoChaosActive ? 12 : 0;
     const liveWarp = immersiveState.active ? 8 : 0;
-    logoDisplacement.setAttribute("scale", String(1.4 + bass * 13 + high * 8 + profile.flux * 14 + chaos + liveWarp));
+    writeLogoAttribute(logoDisplacement, "scale", String(1.4 + bass * 13 + high * 8 + profile.flux * 14 + chaos + liveWarp));
   }
 
   const sliceForce = high * 8 + profile.flux * 13 + musicAccent * 3 + (logoChaosActive ? 12 : 0) + (immersiveState.active ? 7 : 0);
@@ -3029,8 +3018,10 @@ const renderReactiveLogo = (now) => {
     const dx = Math.sin(phase) * sliceForce * (.3 + Math.abs(normalized)) + x * normalized * 9;
     const dy = Math.cos(phase * .73) * sliceForce * .11 + y * normalized * 3;
     const skew = Math.sin(phase * .41) * (high * 3 + (logoChaosActive ? 5 : 0));
-    slice.style.transform = `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) skewX(${skew.toFixed(2)}deg)`;
-    slice.style.opacity = String(Math.min(.9, .06 + high * .34 + profile.flux * .45 + (logoChaosActive ? .18 : 0)));
+    const transform = `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) skewX(${skew.toFixed(2)}deg)`;
+    const opacity = String(Math.min(.9, .06 + high * .34 + profile.flux * .45 + (logoChaosActive ? .18 : 0)));
+    if (slice.style.transform !== transform) slice.style.transform = transform;
+    if (slice.style.opacity !== opacity) slice.style.opacity = opacity;
   });
 
   drawLogoFilaments(now, profile);
@@ -3142,6 +3133,10 @@ const resetLogoChaosCountdown = () => {
 let logoCycleVariant = 0;
 const runLogoCycle = () => {
   if (isMobileViewport) return;
+  if (window.inteonHomeEffects?.ambientBlocked) {
+    logoCycleTimeout = scheduleLogo(runLogoCycle, 1000);
+    return;
+  }
   if (logoChaosActive) {
     logoCycleTimeout = scheduleLogo(runLogoCycle, 1200);
     return;
@@ -3156,7 +3151,7 @@ const runLogoCycle = () => {
     if (acid) {
       acid.then(() => {
         renderLogoMatrix(true);
-        logoCycleTimeout = scheduleLogo(runLogoCycle, randomRange(3000, 7000));
+        if (!window.inteonHomeEffects) logoCycleTimeout = scheduleLogo(runLogoCycle, randomRange(3000, 7000));
       });
       return;
     }
@@ -3180,7 +3175,7 @@ matrixElements.forEach((element) => {
 });
 
 if (matrixElements.length && !prefersReducedMotion) window.setInterval(() => {
-  if (!document.hidden) matrixElements.forEach(renderMatrixNoise);
+  if (!document.hidden && !window.inteonHomeEffects?.ambientBlocked) matrixElements.forEach(renderMatrixNoise);
 }, prefersReducedMotion ? 360 : animationQuality === "low" ? 180 : 95);
 window.setTimeout(runReadableWave, 1200);
 window.setInterval(runReadableWave, 6200);
@@ -3196,25 +3191,21 @@ const scheduleLogo = (callback, delay) => {
 };
 // Text is intentionally live, but never driven by the decorative frame loop.
 if (!prefersReducedMotion) window.setInterval(() => {
-  if (!isMobileViewport || document.hidden || (!inlineChat && !chatPanel?.hidden)) return;
+  if (!isMobileViewport || document.hidden || window.inteonHomeEffects?.ambientBlocked || (!inlineChat && !chatPanel?.hidden)) return;
   const now = performance.now();
   renderTitleMutation(now);
   renderPlayingLetters(now);
-}, 150);
+}, 50);
 
-let roomLastRaf = 0, roomVisualCost = 0;
+let roomLastRaf = 0;
 const tickVisuals = (now) => {
   sceneRaf = 0;
-  if (isMobileViewport) return;
+  if (isMobileViewport || document.hidden || window.inteonHomeEffects?.ambientBlocked) return;
   sceneRaf = requestAnimationFrame(tickVisuals);
-  if (document.hidden) return;
   // One sparse particle field; skip hidden ink/logo canvases and DOM-wide style writes.
   if (isListeningRoom) {
     if (roomLastRaf) recordFramePacing(now-roomLastRaf);
     roomLastRaf = now;
-    const roomInterval = Math.max(renderInterval(), Math.min(100, roomVisualCost * 2.5));
-    if (now - lastVisualTick < roomInterval) return;
-    const roomFrameStart = performance.now();
     lastVisualTick = now;
     motionState.x += (motionTarget.x - motionState.x) * .025;
     motionState.y += (motionTarget.y - motionState.y) * .025;
@@ -3222,7 +3213,6 @@ const tickVisuals = (now) => {
     renderReactiveLogo(now);
     renderTitleMutation(now);
     renderPlayingLetters(now);
-    roomVisualCost += (performance.now()-roomFrameStart-roomVisualCost)*.12;
     return;
   }
   if (lastVisualTick) recordFramePacing(now - lastVisualTick);
@@ -3252,7 +3242,7 @@ const syncBackgroundRenderer = () => {
   window.removeEventListener("pointermove", setPointerMotion);
   window.removeEventListener("devicemotion", handleDeviceMotion);
   window.removeEventListener("deviceorientation", handleDeviceOrientation);
-  if (isMobileViewport) return;
+  if (isMobileViewport || document.hidden || window.inteonHomeEffects?.ambientBlocked) return;
   if (isListeningRoom) {
     if (document.hidden || reducedMotionPreference.matches) return;
     perceptionContext ||= perceptionVisual?.getContext("2d");
@@ -3306,6 +3296,13 @@ const syncBackgroundRenderer = () => {
   sceneRaf = requestAnimationFrame(tickVisuals);
 };
 backgroundViewport.addEventListener("change", syncBackgroundRenderer);
+let ambientWasBlocked = Boolean(window.inteonHomeEffects?.ambientBlocked);
+window.addEventListener("inteon-effects-change", () => {
+  const blocked = Boolean(window.inteonHomeEffects?.ambientBlocked);
+  if (blocked === ambientWasBlocked) return;
+  ambientWasBlocked = blocked;
+  syncBackgroundRenderer();
+});
 reducedMotionPreference.addEventListener("change", () => {
   if (isListeningRoom) syncBackgroundRenderer();
 });

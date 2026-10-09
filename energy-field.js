@@ -4,9 +4,26 @@
   const ctx=canvas.getContext('2d'), reduced=matchMedia('(prefers-reduced-motion: reduce)');
   const mask=document.createElement('canvas'); mask.width=534; mask.height=107;
   const image=new Image(); image.src='assets/logo-wordmark.svg';
-  let particles=[],frame=0,last=0,w=innerWidth,h=innerHeight,energy=false,origin=0,ink='218, 243, 149';
+  let particles=[],frame=0,w=innerWidth,h=innerHeight,energy=false,origin=0,ink='218, 243, 149',paletteDirty=true;
   const fragments=['0x','[',']','{','}','::','=>','01','11','00','&&','/','+','f(x)','vec','0.01','< >','||'];
   let streams=[],logoBox=null;
+  const labels=new Map();
+  const drawLabel=(text,font,x,y)=>{
+    const key=`${font}|${text}`;
+    let label=labels.get(key);
+    if(!label){
+      if(labels.size>=1024)labels.clear();
+      const bitmap=document.createElement('canvas'),inkContext=bitmap.getContext('2d');
+      const ratio=Math.min(devicePixelRatio,document.documentElement.dataset.animationQuality==='low'?1:1.5);
+      inkContext.font=`500 ${font}px Consolas, monospace`;
+      const width=Math.ceil(inkContext.measureText(text).width+2),height=Math.ceil(Number(font)*2),baseline=Number(font)*1.5;
+      bitmap.width=Math.ceil(width*ratio);bitmap.height=Math.ceil(height*ratio);
+      inkContext.scale(ratio,ratio);inkContext.font=`500 ${font}px Consolas, monospace`;inkContext.fillStyle=`rgb(${ink})`;
+      inkContext.fillText(text,0,baseline);
+      label={bitmap,width,height,baseline};labels.set(key,label);
+    }
+    ctx.drawImage(label.bitmap,x,y-label.baseline,label.width,label.height);
+  };
   const measureLogo=()=>{logoBox=document.querySelector('#logo-wrap')?.getBoundingClientRect();};
   const buildStreams=()=>{
     streams=Array.from({length:w<801?12:28},(_,i)=>({
@@ -23,10 +40,11 @@
     }
     canvas.dataset.pixels=String(particles.length);
   };
-  const palette=()=>{ink=getComputedStyle(document.documentElement).getPropertyValue('--interface-accent').trim()||ink;};
-  const resize=()=>{w=innerWidth;h=innerHeight;const d=Math.min(devicePixelRatio,1.5);canvas.width=w*d;canvas.height=h*d;ctx.setTransform(d,0,0,d,0,0);buildStreams();measureLogo();};
+  const palette=()=>{ink=getComputedStyle(document.documentElement).getPropertyValue('--interface-accent').trim()||ink;paletteDirty=false;labels.clear();};
+  const resize=()=>{w=innerWidth;h=innerHeight;const d=Math.min(devicePixelRatio,document.documentElement.dataset.animationQuality==='low'?1:1.5);canvas.width=w*d;canvas.height=h*d;ctx.setTransform(d,0,0,d,0,0);labels.clear();buildStreams();measureLogo();};
   const draw=now=>{
-    frame=requestAnimationFrame(draw); if(now-last<(w<801?66:42)) return; last=now;
+    frame=0;if(blocked())return;frame=requestAnimationFrame(draw);
+    if(paletteDirty)palette();
     ctx.clearRect(0,0,w,h);
     const t=now/1000;
     if(energy) {
@@ -57,13 +75,14 @@
     for(let i=0;i<streams.length;i++){
       const stream=streams[i],head=(stream.phase+t*stream.speed)%(h+240)-100;
       const x=stream.x*w+Math.sin(t*.07+i)*12,font=8+stream.depth*5;
-      ctx.font=`500 ${font.toFixed(1)}px Consolas, monospace`;ctx.fillStyle=`rgb(${ink})`;
+      ctx.fillStyle=`rgb(${ink})`;
       for(let line=0;line<stream.symbols.length;line++){
-        const y=head-line*(font+9),pulse=(Math.sin(t*.8-line*.7+i)+1)/2;
+        const y=head-line*(font+9);if(y < -font || y > h+font)continue;
+        const pulse=(Math.sin(t*.8-line*.7+i)+1)/2;
         ctx.globalAlpha=(.12+stream.depth*.35)*(1-line/10)*(.35+pulse*.65);
         const token=stream.symbols[(line+Math.floor(t/7+i))%stream.symbols.length];
-        ctx.fillText(token,x,y);
-        if(line===2&&i%4===0){ctx.globalAlpha=.12;ctx.fillText('· '+((i*47+Math.floor(t/3))%65535).toString(16).padStart(4,'0')+' /',x+34,y);}
+        drawLabel(token,font.toFixed(1),x,y);
+        if(line===2&&i%4===0){ctx.globalAlpha=.12;drawLabel('· '+((i*47+Math.floor(t/3))%65535).toString(16).padStart(4,'0')+' /',font.toFixed(1),x+34,y);}
       }
       ctx.globalAlpha=.35*stream.depth;ctx.fillRect(x-5,head-font,2,2);
     }
@@ -81,10 +100,15 @@
     }
     ctx.globalAlpha=1;
   };
-  const sync=()=>{cancelAnimationFrame(frame);frame=0;if(!document.hidden&&!reduced.matches)frame=requestAnimationFrame(draw);else ctx.clearRect(0,0,w,h);};
-  window.inteonPixelEnergy={start(){measureLogo();energy=true;origin=performance.now();canvas.dataset.mode='pixels';},stop(){energy=false;canvas.dataset.mode='field';}};
-  window.addEventListener('inteon-theme-frame',palette);
+  const blocked=()=>document.hidden||reduced.matches||window.inteonHomeEffects?.suspended||
+    (window.inteonHomeEffects?.active && !(window.inteonHomeEffects.active==='interlude' && (energy||document.body.classList.contains('scene-dawn'))));
+  const sync=()=>{cancelAnimationFrame(frame);frame=0;if(!blocked())frame=requestAnimationFrame(draw);};
+  window.inteonPixelEnergy={start(){measureLogo();energy=true;origin=performance.now();canvas.dataset.mode='pixels';sync();},stop(){energy=false;canvas.dataset.mode='field';sync();}};
+  window.addEventListener('inteon-theme-frame',()=>{paletteDirty=true;});
+  window.addEventListener('inteon-effects-change',sync);
+  window.addEventListener('inteon-interlude',sync);
   window.addEventListener('resize',resize);document.addEventListener('visibilitychange',sync);reduced.addEventListener('change',sync);
+  new MutationObserver(resize).observe(document.documentElement,{attributes:true,attributeFilter:['data-animation-quality']});
   window.addEventListener('pagehide',()=>cancelAnimationFrame(frame));window.addEventListener('pageshow',sync);
   palette();resize();sync();
 })();

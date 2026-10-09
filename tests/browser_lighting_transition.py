@@ -1,5 +1,6 @@
 """Edge/WebGL: real walk clock, all 12 pairs, unchanged hold pixels and GPU lifecycle."""
 import json
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -8,7 +9,7 @@ from PIL import Image, ImageChops, ImageStat
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / 'tests/artifacts/lighting-transition'
+OUT = ROOT / os.environ.get('YARD_TRANSITION_OUTPUT', 'tests/artifacts/lighting-transition')
 OUT.mkdir(parents=True, exist_ok=True)
 URL = 'http://127.0.0.1:8080'
 BASE = datetime(2026, 10, 4, 12, tzinfo=timezone.utc)
@@ -53,7 +54,7 @@ def snapshot(page):
     }''')
 
 
-def new_visit(browser, slot=0, mobile=True, exits=5):
+def new_visit(browser, slot=0, mobile=True, exits=1):
     page = browser.new_page(viewport={'width': 390, 'height': 844} if mobile else {'width': 1000, 'height': 800},
                             device_scale_factor=3 if mobile else 1, is_mobile=mobile, has_touch=mobile)
     page.route('**/*', lambda route: route.continue_() if route.request.url.startswith(URL + '/')
@@ -77,6 +78,9 @@ def new_visit(browser, slot=0, mobile=True, exits=5):
     page.goto(URL + '/yard/?photo')
     page.add_style_tag(content='body > :not(canvas) { visibility: hidden !important; }')
     wait(page, 'window.__yard?.scene.userData.bakedLightingStatus === "ready" && __yard.scene.getObjectByName("music-logo").material.map')
+    # TextureLoader completion precedes the next render/upload on an idle scene.
+    # Count resident GPU resources only after that frame has actually been drawn.
+    page.evaluate('__yard.renderer.render(__yard.scene, __yard.camera)')
     return page
 
 
@@ -111,7 +115,7 @@ try:
                                                 Image.open(OUT / (name + '-hold-10s.png')).convert('RGB'))
                     hold['pixelDifferenceBounds'] = diff.getbbox()
                     assert diff.getbbox() is None, (name, diff.getbbox())
-                advance_to(page, 20000)
+                advance_to(page, 15000)
                 mid = snapshot(page)
                 assert mid['progress'] == .5 and mid['mix'] == .5, mid
                 assert mid['frames'] > hold['frames'], 'stationary mobile must render the transition'
@@ -128,7 +132,7 @@ try:
                 assert end['mix'] == 1 and end['atlasIndex'] == (slot + 1) % 12, end
                 assert end['residentSets'] == 1 and end['bytes'] == start['bytes']
                 assert end['textures'] == start['textures'] and page.evaluate('releases') == 1, end
-                assert end['durationMs'] == end['clock']['deadline'] - end['holdUntil'] == 20000
+                assert end['durationMs'] == end['clock']['deadline'] - end['holdUntil'] == 10000
                 assert page.evaluate('''async()=>{
                   const next=(await import('./baked-lighting.js')).lightingPresetForLayout(__yard.layout,(__yard.lighting.presetIndex+1)%12);
                   const sun=__yard.scene.children.find(x=>x.isDirectionalLight);
@@ -156,27 +160,32 @@ try:
                 page.close()
                 print(mode, slot, 'PASS', flush=True)
 
-        # The ten-second visit has no spare time; the real return still happens.
+        # The first twenty-second visit fades after its hold and returns on time.
         short = new_visit(browser, exits=1)
-        advance_to(short, 9990)
-        assert snapshot(short)['mix'] == 0 and snapshot(short)['residentSets'] == 1
+        advance_to(short, 7100)
+        wait(short, '__yard.scene.userData.bakedLighting.transition.status === "ready"')
+        advance_to(short, 19990)
+        assert snapshot(short)['mix'] > .99 and snapshot(short)['residentSets'] == 2
         short.clock.fast_forward(30)
-        short.wait_for_url('**/index.html')
-        report['shortVisitReturnedWithoutFade'] = True
+        # The return now includes an animated camera flight and portal transition.
+        short.clock.run_for(2500)
+        short.wait_for_url('**/index.html', wait_until='domcontentloaded')
+        report['firstVisitReturnedAfterFade'] = True
         short.close()
 
         # Live bonus during blending must preserve the current image and extend its endpoint.
         bonus = new_visit(browser)
         advance_to(bonus, 7100)
         wait(bonus, '__yard.scene.userData.bakedLighting.transition.status === "ready"')
-        advance_to(bonus, 20000)
+        advance_to(bonus, 15000)
         before = snapshot(bonus)
         assert bonus.evaluate('inteonStreet.boundaryPlaybackSucceeded()')
         bonus.evaluate('__yard.lightingTransition.update()')
         after = snapshot(bonus)
         assert after['mix'] == before['mix'] == .5
-        assert after['deadline'] - bonus.evaluate('Date.now()') == 1200000
-        bonus.clock.fast_forward(600000)
+        assert after['deadline'] == before['deadline'] + 240000
+        assert after['deadline'] - bonus.evaluate('Date.now()') == 245000
+        bonus.clock.fast_forward(122500)
         later = snapshot(bonus)
         assert later['progress'] == .75
         report['bonus'] = {'before': before, 'after': after, 'later': later}
@@ -188,7 +197,7 @@ try:
         before = snapshot(failed)
         advance_to(failed, 7100)
         wait(failed, '__yard.scene.userData.bakedLighting.transition.status === "unavailable"')
-        advance_to(failed, 20000)
+        advance_to(failed, 15000)
         after = snapshot(failed)
         assert after['mix'] == 0 and after['sun'] == before['sun'] and after['bytes'] == before['bytes']
         report['missingNextKeepsOriginal'] = after
@@ -200,7 +209,7 @@ try:
         delayed.route('**/shadows/mobile/sun-01.png', lambda route: pending_routes.append(route))
         advance_to(delayed, 7100)
         wait(delayed, '__yard.scene.userData.bakedLighting.transition.status === "loading"')
-        advance_to(delayed, 15000)
+        advance_to(delayed, 12500)
         assert snapshot(delayed)['mix'] == 0
         assert pending_routes
         pending_routes[0].fulfill(status=200, content_type='image/png', body=(ROOT/'yard/data/shadows/mobile/sun-01.png').read_bytes())
@@ -208,7 +217,7 @@ try:
         delayed.evaluate('__yard.lightingTransition.update()')
         joined = snapshot(delayed)
         assert joined['mix'] < .00001, joined  # At most one 20 ms test frame after joining.
-        advance_to(delayed, 20000)
+        advance_to(delayed, 15000)
         middle = snapshot(delayed)
         assert 0 < middle['mix'] < .5, middle
         delayed.evaluate('__yard.lightingTransition.update(yardWalkClock.deadline)')

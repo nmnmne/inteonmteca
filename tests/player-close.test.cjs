@@ -16,7 +16,7 @@ test('Escape without a dialog retains playback and the persistent panel', () => 
   const script = fs.readFileSync(path.join(root, 'script.js'), 'utf8');
   const start = script.indexOf('const handlePanelKeydown =');
   const source = script.slice(start, script.indexOf('\n};', start) + 3);
-  const context = {openPanels: [], immersiveState: {active: true}, event: {key:'Escape'}};
+  const context = {openPanels: [], inlineChat: true, immersiveState: {active: true}, event: {key:'Escape'}};
   vm.runInNewContext(source + '\nhandlePanelKeydown(event);', context);
   assert.equal(context.immersiveState.active, true);
 });

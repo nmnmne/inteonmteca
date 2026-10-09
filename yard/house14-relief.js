@@ -9,7 +9,7 @@ export function addHouseRelief(scene, solids, materials, layout, building) {
   layout.obstacles = (layout.obstacles || []).filter(item => !item.id?.startsWith('house14-relief-'));
   const depth = building.facadeProject.reliefDepthM || 1.25;
   const height = building.heightM, floorHeight = height / building.floors;
-  const palette = {brick: materials.facade(building.facadeMaterialId), glass: materials.window(), concrete: materials.flat(0xb5b2a6), panel: materials.flat(0xa2a9a5)};
+  const palette = {brick: materials.facade(building.facadeMaterialId), glass: materials.photoWindow(), glazing:materials.photoWindow('glazing'), stair:materials.photoWindow('stair'), concrete: materials.flat(0xbcb7a9), panel: materials.flat(0xc9c1b4), band:materials.flat(0x9d6050)};
   const batches = new Map(), dummy = new THREE.Object3D();
   for (const section of sections) {
     const a = building.footprint[section.edgeIndex], b = building.footprint[(section.edgeIndex + 1) % building.footprint.length];
@@ -25,6 +25,7 @@ export function addHouseRelief(scene, solids, materials, layout, building) {
       dummy.rotation.set(0,yaw,0); dummy.updateMatrix();
       batches.get(key).matrices.push(dummy.matrix.clone());
     };
+    add(point(length/2),'band',0,height-.55,.07,length,.42,.08);
     for (const center of section.centersM) {
       const origin = point(center);
       // Central masonry and the two outer cheeks form one projecting volume.
@@ -34,11 +35,13 @@ export function addHouseRelief(scene, solids, materials, layout, building) {
         add(origin,'brick',side*2.9,height/2,depth/2,.25,height,depth);
       }
       add(origin,'concrete',0,height+.06,depth/2,16.85,.18,depth+.12);
+      add(origin,'band',0,height-.55,depth+.015,16.5,.42,.08);
       for (let floor=0;floor<building.floors;floor++) {
         const base=.45+floor*floorHeight, windowY=base+1.6;
         for (const x of [-1.4,1.4]) {
           if (section.entrances && floor===0 && x===-1.4) continue;
-          add(origin,'glass',x,windowY,depth+.055,1.4,1.45,.035);
+          const stair=section.entrances && x===-1.4;
+          add(origin,stair?'stair':'glass',x,stair?windowY-.42:windowY,depth+.055,stair?.78:1.4,1.45,.035);
           add(origin,'concrete',x,windowY-.77,depth+.1,1.55,.09,.24);
         }
         for (const side of [-1,1]) {
@@ -46,7 +49,7 @@ export function addHouseRelief(scene, solids, materials, layout, building) {
           add(origin,'concrete',x,base,depth/2,5.2,.15,depth);
           add(origin,'panel',x,base+.48,depth-.18,5.05,.82,.12);
           // Glazing sits behind the brick cheeks, not on an external balcony.
-          for (let pane=0;pane<5;pane++) add(origin,'glass',x+(pane-2)*.99,base+1.63,depth-.3,.94,1.45,.035);
+          for (let pane=0;pane<5;pane++) add(origin,'glazing',x+(pane-2)*.99,base+1.63,depth-.3,.94,1.45,.035);
           add(origin,'concrete',x,base+2.43,depth/2,5.2,.12,depth);
         }
       }

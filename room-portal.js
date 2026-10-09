@@ -1,5 +1,4 @@
-/* Native page snapshots retain the actual canvas, text and glass. Only the
-   shard-shaped alpha mask crosses documents; no screen-capture permission. */
+/* Step through a quiet doorway into the yard; retain the existing homeward flight. */
 (() => {
   const root = document.documentElement;
   const key = 'inteon-room-portal-v1';
@@ -18,23 +17,26 @@
     overflowRestores.forEach(([element, value, priority]) => value ? element.style.setProperty('overflow', value, priority) : element.style.removeProperty('overflow')); overflowRestores = [];
     cancelAnimationFrame(frame); layer?.remove(); layer = null; busy = false; navigating = false;
     document.body?.classList.remove('portal-leaving'); root.removeAttribute('aria-busy');
+    const wasYardArrival = root.dataset.portalArrival === 'yard';
     delete root.dataset.portalArrival; delete root.dataset.portalPhase;
+    if (wasYardArrival) window.dispatchEvent(new Event('inteon-yard-entered'));
     root.style.removeProperty('--portal-holes');
     root.style.removeProperty('--portal-exit-fade');
   };
   const prepareArrival = () => {
     const data = read(), direction = inYard ? 'yard' : 'home';
-    if (!data || data.to !== direction || Date.now() - data.at > 15000 || reduced.matches) return null;
+    if (!data || data.to !== direction || Date.now() - data.at > 120000 || reduced.matches) return null;
     root.dataset.portalArrival = direction;
     if (direction === 'home') root.style.setProperty('--portal-aspect', Math.max(innerWidth / innerHeight, innerHeight / innerWidth));
     if (direction === 'yard') root.style.setProperty('--portal-exit-fade', `${Math.max(0, Math.min(1350, (data.deadline || Date.now() + 1350) - Date.now()))}ms`);
     if (direction === 'yard' && data.mask?.startsWith('data:image/png;base64,')) root.style.setProperty('--portal-holes', `url("${data.mask}")`);
     return data;
   };
-  prepareArrival();
+  const arrival = prepareArrival();
   // Parser-blocking in both heads: this listener exists before first paint.
   window.addEventListener('pagereveal', event => {
     const data = prepareArrival();
+    if (inYard && data?.poster) { event.viewTransition?.ready.catch(() => {}); event.viewTransition?.skipTransition(); return; }
     clear();
     if (!data || !event.viewTransition || reduced.matches) {
       event.viewTransition?.ready.catch(() => {});
@@ -50,7 +52,7 @@
   });
   window.addEventListener('pageshow', event => {
     if (event.persisted) cleanup();
-    if (!('onpagereveal' in window)) { clear(); cleanup(); }
+    if (!('onpagereveal' in window) && !(inYard && arrival?.poster)) { clear(); cleanup(); }
   });
   window.navigation?.addEventListener('navigateerror', () => { clear(); cleanup(); });
   const navigate = (url, replace = false) => {
@@ -66,138 +68,116 @@
     window.__yard?.renderSnapshot?.();
     navigate(url, replace);
   };
-  const image = new Image();
-  if (!inYard) image.src = new URL('assets/logo-wordmark.svg', location.href).href;
-  const warmYard = url => {
-    const target = new URL(url, location.href);
-    if (target.origin !== location.origin) return;
-    if (HTMLScriptElement.supports?.('speculationrules')) {
-      const rules = document.createElement('script'); rules.type = 'speculationrules';
-      rules.textContent = JSON.stringify({prerender: [{source: 'list', urls: [target.href], eagerness: 'immediate'}]});
-      document.head.append(rules);
-    } else {
-      const preload = document.createElement('link'); preload.rel = 'prefetch'; preload.href = target.href;
-      document.head.append(preload);
-    }
+  const delay = ms => new Promise(resolve => setTimeout(resolve, Math.max(0, ms)));
+  const posterUrl = () => {
+    const ratio = innerWidth / innerHeight;
+    const variant = ratio < .7 ? 'phone' : ratio < 1 ? 'tablet' : ratio > 1.95 ? 'landscape' : ratio > 1.7 ? 'hd' : 'wide';
+    return new URL(`yard/assets/portal-${variant}.jpg`, new URL(inYard ? '../' : './', location.href)).href;
   };
-  const scatterObjects = () => {
-    const selectors = '.topline, .listening-intro, .catalog-heading, .track-item, #active-player, #chat-panel, .mobile-sections, .theme-hint, .theme-panel, .street-return, .auth-hint, .auth-panel, .room-resident, .mirage-layer, .visit-counter, .vr-reticle, .development-debug-toggle, .development-animation-menu, .text.matrix-text';
-    const visible = [...document.querySelectorAll(selectors)].filter(element => {
-      const box = element.getBoundingClientRect(), css = getComputedStyle(element);
-      if (!box.width || !box.height || css.visibility === 'hidden' || css.display === 'none' || Number(css.opacity) === 0 || box.bottom <= 0 || box.top >= innerHeight || box.right <= 0 || box.left >= innerWidth) return false;
-      for (let parent = element.parentElement; parent && parent !== document.body; parent = parent.parentElement) {
-        const style = getComputedStyle(parent);
-        if (/(hidden|clip|auto|scroll)/.test(style.overflowY)) {
-          const clip = parent.getBoundingClientRect();
-          if (box.bottom <= clip.top || box.top >= clip.bottom) return false;
-        }
-      }
-      return true;
-    });
-    // Freeze visible rows outside every scrolling/masking ancestor. Keep the real
-    // infinite playlist in place so scrolling cannot expose unanimated copies.
-    playlistFlightLayer = document.createElement('div');
-    playlistFlightLayer.setAttribute('aria-hidden', 'true');
-    playlistFlightLayer.style.cssText = 'position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:999';
-    document.body.append(playlistFlightLayer);
-    visible.forEach((element, index) => {
-      if (visible.some(parent => parent !== element && parent.contains(element))) return;
-      const box = element.getBoundingClientRect();
-      let target = element;
-      if (element.matches('.track-item')) {
-        target = element.cloneNode(true);
-        const sources = [element, ...element.querySelectorAll('*')];
-        const copies = [target, ...target.querySelectorAll('*')];
-        sources.forEach((source, i) => {
-          const style = getComputedStyle(source), copy = copies[i];
-          copy.removeAttribute('id'); copy.removeAttribute('onclick');
-          for (const property of style) copy.style.setProperty(property, style.getPropertyValue(property));
-          copy.style.setProperty('animation', 'none');
-          copy.style.setProperty('transition', 'none');
-        });
-        Object.assign(target.style, {position:'fixed', left:`${box.left}px`, top:`${box.top}px`, width:`${box.width}px`, height:`${box.height}px`, margin:'0', transform:'none', translate:'none', rotate:'none', scale:'none'});
-        target.dataset.portalTrack = 'true';
-        playlistFlightLayer.append(target);
-        hiddenTracks.push([element, element.style.getPropertyValue('visibility'), element.style.getPropertyPriority('visibility')]);
-        element.style.setProperty('visibility', 'hidden', 'important');
-      }
-      const x = box.left + box.width / 2 - innerWidth / 2;
-      const y = box.top + box.height / 2 - innerHeight / 2;
-      const dx = (x < 0 ? -1 : 1) * (innerWidth * .25 + Math.random() * innerWidth * .35);
-      const dy = (y < 0 ? -1 : 1) * (innerHeight * .2 + Math.random() * innerHeight * .3);
-      objectFlights.push(target.animate([
-        {translate: '0px 0px', rotate: '0deg', scale: '1', opacity: getComputedStyle(element).opacity},
-        {translate: `${dx}px ${dy}px`, rotate: `${Math.random()*70-35}deg`, scale: '.65', opacity: 0}
-      ], {duration: 1500, delay: (index % 4) * 500, easing: 'cubic-bezier(.2,.7,.25,1)', fill: 'forwards'}));
-    });
+  // Warm the actual module graph and one lighting texture, without executing a
+  // second yard, consuming a walk, starting audio or rendering a live preview.
+  const warmYard = async url => {
+    const base = new URL(url, location.href), seen = new Set();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 18000);
+    const get = async url => { const r = await fetch(url, {signal:controller.signal}); if (!r.ok) throw Error(r.status); return r; };
+    const module = async url => {
+      if (seen.has(url)) return; seen.add(url);
+      const source = await (await get(url)).text();
+      const imports = [...source.matchAll(/(?:from\s*|import\s*)["'](\.[^"']+)["']/g)];
+      await Promise.allSettled(imports.map(m => module(new URL(m[1],url).href)));
+    };
+    try {
+      const html = await (await get(base)).text();
+      const main = html.match(/src=["']([^"']*main\.js[^"']*)/);
+      const shadowBase = new URL(`data/shadows/${matchMedia('(max-width:800px), (pointer:coarse)').matches?'mobile/':''}`,base);
+      await Promise.allSettled([
+        main ? module(new URL(main[1],base).href) : Promise.resolve(),
+        ...[...html.matchAll(/href=["']([^"']+\.css[^"']*)/g)].map(m=>get(new URL(m[1],base))),
+        (async()=>{
+          const manifest = await (await get(new URL('manifest.json',shadowBase))).json();
+          let next = 0; try { next = Number(localStorage.getItem('inteon.yard.lighting.next.v1')) || 0; } catch {}
+          const preset = manifest.presets[next % manifest.presets.length];
+          await get(new URL(preset.file,shadowBase)).then(r=>r.arrayBuffer());
+        })()
+      ]);
+    } catch {} finally { clearTimeout(timeout); }
   };
+  const makePoster = poster => {
+    const node = document.createElement('div'); node.className='portal-doorway'; node.setAttribute('aria-hidden','true');
+    node.style.backgroundImage = `url("${poster}")`; document.body.append(node); return node;
+  };
+  const finishArrival = async () => {
+    if (!arrival?.poster || !inYard) return;
+    busy = true; root.setAttribute('aria-busy','true'); root.dataset.portalPhase='loading-yard';
+    layer = makePoster(arrival.poster);
+    const began = performance.now();
+    while ((!root.dataset.yardReady || window.__yard?.scene.userData.bakedLightingStatus === 'loading') && performance.now()-began < 12000 && !document.body.classList.contains('yard-unavailable')) await delay(60);
+    // Keep the ready scene hidden until both the minimum duration and startup finish.
+    await delay(1000 - (Date.now()-arrival.at));
+    if (!root.dataset.yardReady) { clear(); cleanup(); return; }
+    root.dataset.portalPhase='entering-yard';
+    const fade = layer.animate([{opacity:1},{opacity:0}],{duration:200,easing:'ease-out',fill:'forwards'});
+    objectFlights.push(fade); try { await fade.finished; } catch {}
+    clear(); cleanup();
+  };
+  if (inYard && arrival?.poster) {
+    root.style.setProperty('--portal-poster', `url("${arrival.poster}")`);
+    if (document.readyState==='loading') document.addEventListener('DOMContentLoaded',finishArrival,{once:true}); else finishArrival();
+  }
   const exit = async url => {
     if (busy) return;
     busy = true; root.setAttribute('aria-busy', 'true');
-    warmYard(url);
-    const deadline = Date.now() + 4500;
-    if (reduced.matches || !('onpagereveal' in window)) { navigate(url); return; }
+    window.inteonLogoStorm?.stop(); window.inteonLogoAcid?.stop(); window.inteonAtmosphere?.stop();
+    if (reduced.matches) { navigate(url); return; }
+    const at = Date.now(), poster = posterUrl(), loading = warmYard(url);
+    const image = new Image(); image.src=poster;
+    await Promise.race([image.decode().catch(()=>{}), delay(800)]);
+    const button = document.querySelector('#street-link');
+    const box = button.getBoundingClientRect();
+    const inset = [box.top, innerWidth-box.right, innerHeight-box.bottom, box.left].map(n=>Math.max(0,n));
+    layer = makePoster(poster);
+    // A small blurred alpha mask feathers the reveal by roughly 90–150 CSS px.
+    // Only this mask is rasterised; the yard picture is the existing static JPEG.
+    const mask=document.createElement('canvas');
+    const ratio=Math.min(1,384/Math.max(innerWidth,innerHeight));
+    mask.width=Math.ceil(innerWidth*ratio);mask.height=Math.ceil(innerHeight*ratio);
+    const ctx=mask.getContext('2d');
+    const paintMask=scale=>{
+      const finish=1-Math.min(1,scale/.12), feather=26*(1-finish*.7);
+      const pad=finish*feather*4;
+      ctx.clearRect(0,0,mask.width,mask.height);ctx.filter=`blur(${feather}px)`;ctx.fillStyle='#fff';
+      ctx.beginPath();ctx.roundRect(inset[3]*scale*ratio-pad,inset[0]*scale*ratio-pad,
+        (innerWidth-(inset[1]+inset[3])*scale)*ratio+pad*2,
+        (innerHeight-(inset[0]+inset[2])*scale)*ratio+pad*2,Math.max(2,18*(1-scale)));ctx.fill();
+      const url=`url("${mask.toDataURL()}")`;layer.style.maskImage=url;layer.style.webkitMaskImage=url;
+    };
+    const code=document.createElement('div');code.className='portal-code';layer.append(code);
+    const alphabet='01アイウエカキクケコサシスセソ∴⊹';
+    for(let i=0;i<(innerWidth<600?10:22);i++){
+      const column=document.createElement('span');column.textContent=Array.from({length:15},()=>alphabet[Math.floor(Math.random()*alphabet.length)]).join('\n');
+      column.style.cssText=`left:${i*100/(innerWidth<600?10:22)}%;--rain-time:${1.2+Math.random()*1.3}s;--rain-delay:${-Math.random()*2}s`;code.append(column);
+    }
+    paintMask(1);
+    document.body.classList.add('portal-leaving'); root.dataset.portalPhase='doorway';
+    const run = (from,to,duration) => new Promise(resolve=>{
+      const start=performance.now();let lastPaint=-Infinity;
+      const tick=now=>{
+        const t=Math.min(1,(now-start)/duration),ease=t*t*(3-2*t),scale=from+(to-from)*ease;
+        if(now-lastPaint>=32 || t===1){paintMask(scale);lastPaint=now;code.style.opacity=String(Math.min(1,scale/.15)*.65);}
+        if(t<1)frame=requestAnimationFrame(tick);else resolve();
+      };
+      frame=requestAnimationFrame(tick);
+    });
     try {
-      await Promise.race([image.decode(), new Promise((_, reject) => setTimeout(() => reject(new Error('wordmark timeout')), 800))]);
-      const box = document.querySelector('#logo-wrap').getBoundingClientRect();
-      const width = innerWidth, height = innerHeight, ratio = Math.min(devicePixelRatio, 1.5);
-      const source = document.createElement('canvas'); source.width = 1068; source.height = 214;
-      const ink = source.getContext('2d'); ink.drawImage(image, 0, 0, 1068, 214);
-      ink.globalCompositeOperation = 'source-in';
-      const palette = getComputedStyle(root), color = palette.getPropertyValue('--interface-ink').trim() || '230, 232, 209';
-      const tint = ink.createLinearGradient(0, 0, 1068, 214);
-      tint.addColorStop(0, `rgb(${color})`); tint.addColorStop(.55, `rgb(${palette.getPropertyValue('--interface-peach').trim() || color})`); tint.addColorStop(1, `rgb(${color})`);
-      ink.fillStyle = tint; ink.fillRect(0, 0, 1068, 214);
-      const cols = width < 600 ? 12 : 18, rows = width < 600 ? 4 : 6, shards = [];
-      const order = Array.from({length: cols*rows}, (_, index) => index);
-      for (let i=order.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [order[i],order[j]]=[order[j],order[i]]; }
-      for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
-        const sw = source.width / cols, sh = source.height / rows;
-        const piece = document.createElement('canvas'); piece.width = Math.ceil(sw); piece.height = Math.ceil(sh);
-        const pc = piece.getContext('2d'); pc.drawImage(source, -col * sw, -row * sh);
-        if (!pc.getImageData(0, 0, piece.width, piece.height).data.some((v, i) => i % 4 === 3 && v > 100)) continue;
-        // Different staggered lanes from the storm's rectangular scatter field.
-        const cell = order[row*cols+col], across = width < 600 ? 5 : 10;
-        const lane = Math.floor(cell/across);
-        const tx = (((cell%across)+.15+Math.random()*.55+(lane%2)*.4)/across*1.12-.06)*width;
-        const ty = ((lane+.2+Math.random()*.6)/Math.ceil(order.length/across)*1.12-.06)*height;
-        const depth = Math.min(1, Math.hypot(tx-box.left-col*box.width/cols,ty-box.top-row*box.height/rows)/Math.hypot(width,height));
-        shards.push({piece, x: box.left + (col + .5) * box.width / cols, y: box.top + (row + .5) * box.height / rows,
-          w: box.width / cols, h: box.height / rows, tx, ty,
-          delay: (cell % 4) * 500,
-          spin: (Math.random()*150-75)*Math.PI/180, depth: .85-depth*.5, opacity: .55-depth*.36});
-      }
-      layer = document.createElement('canvas'); layer.className = 'portal-shards'; layer.setAttribute('aria-hidden', 'true');
-      layer.width = width * ratio; layer.height = height * ratio;
-      const ctx = layer.getContext('2d'); ctx.scale(ratio, ratio);
-      document.body.append(layer); document.body.classList.add('portal-leaving'); root.dataset.portalPhase = 'scattering';
-      scatterObjects();
-      const paint = (context, elapsed, holes = false) => {
-        for (const s of shards) {
-          const t = holes ? 1 : Math.max(0, Math.min(1, (elapsed - s.delay) / 1500));
-          const progress = 1 - Math.pow(1 - t, 3);
-          context.save();
-          context.translate(s.x + (s.tx - s.x) * progress, s.y + (s.ty - s.y) * progress);
-          context.rotate(s.spin * progress); context.scale(1 - progress * (1 - s.depth), 1 - progress * (1 - s.depth));
-          context.globalAlpha = holes ? 1 : .9+progress*(s.opacity-.9);
-          context.drawImage(s.piece, -s.w / 2, -s.h / 2, s.w, s.h); context.restore();
-        }
-      };
-      const start = performance.now();
-      const tick = now => {
-        const elapsed = now - start;
-        ctx.clearRect(0, 0, width, height); paint(ctx, elapsed);
-        if (elapsed < 3000) { frame = requestAnimationFrame(tick); return; }
-        const mask = document.createElement('canvas'); mask.width = Math.round(width); mask.height = Math.round(height);
-        const mc = mask.getContext('2d'); mc.fillStyle = '#fff'; mc.fillRect(0, 0, width, height);
-        mc.globalCompositeOperation = 'destination-out'; paint(mc, 1, true);
-        save({to: 'yard', at: Date.now(), deadline, mask: mask.toDataURL('image/png')});
-        root.dataset.portalPhase = 'frozen';
-        // One full frame displays the dispersed fragments before the browser captures it.
-        frame = requestAnimationFrame(() => requestAnimationFrame(() => navigate(url)));
-      };
-      frame = requestAnimationFrame(tick);
-    } catch { save({to: 'yard', at: Date.now(), deadline}); navigate(url); }
+      await run(1,.12,700);
+      root.dataset.portalPhase='loading-resources';
+      await loading;
+      root.dataset.portalPhase='opening-yard';
+      await run(.12,0,Math.max(300,1000-(Date.now()-at)));
+    } catch { cleanup(); return; }
+    layer.style.maskImage='none';layer.style.webkitMaskImage='none';
+    save({to:'yard',at,poster}); navigate(url);
   };
   window.inteonPortal = { exit, returnHome, get busy() { return busy; } };
   document.addEventListener('click', event => {

@@ -24,10 +24,29 @@ html[data-portal-arrival="home"]::view-transition-old(root) {
 }
 @keyframes portal-logo-materialize { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: blur(0); } }
 .portal-shards { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1000; pointer-events: none; }
-body.portal-leaving :is(#logo-wrap, .room-resident, .logo-storm) { visibility: hidden !important; }
+
 body.portal-leaving { cursor: progress; }
 body.portal-leaving a, body.portal-leaving button { pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
   @view-transition { navigation: none; }
   .portal-shards { display: none; }
 }
+
+.portal-doorway { position:fixed; inset:0; z-index:1000; pointer-events:none; background:#87958d url('yard/assets/spawn-desktop.jpg') center/cover no-repeat; box-shadow:inset 0 0 80px #10221c44; }
+.portal-doorway::after { content:''; position:absolute; inset:0; background:linear-gradient(100deg,#e1ead222,transparent 50%,#0b1b2522); }
+@media(max-width:800px){.portal-doorway{background-image:url('yard/assets/spawn-mobile.jpg');}}
+html[data-portal-arrival="yard"]::view-transition-old(root) { mask-image:none; animation:portal-dissolve 450ms ease-out both; }
+@media(prefers-reduced-motion:reduce){.portal-doorway{display:none;}}
+
+/* The selected still persists across navigation, while the real yard boots. */
+html[data-portal-arrival="yard"] body::after { content:''; position:fixed; inset:0; z-index:999; background:#87958d var(--portal-poster) center/cover no-repeat; pointer-events:none; }
+html[data-portal-arrival="yard"] #yard-loading { visibility:hidden; }
+html[data-portal-arrival="yard"][data-portal-phase="entering-yard"] body::after { display:none; }
+.portal-doorway { box-shadow:none; }
+.portal-doorway::after { display:none; }
+
+/* Soft alpha reveal and a small, compositor-driven code rain. */
+.portal-doorway { mask-size:100% 100%; mask-repeat:no-repeat; -webkit-mask-size:100% 100%; -webkit-mask-repeat:no-repeat; }
+.portal-code { position:absolute; inset:0; overflow:hidden; pointer-events:none; background:linear-gradient(0deg,#06251b25,transparent); }
+.portal-code span { position:absolute; top:-35%; white-space:pre; color:#b5f0b9; font:14px/1.65 Consolas,monospace; text-shadow:0 0 7px #49d49a; animation:portal-code-fall var(--rain-time) linear var(--rain-delay) infinite; mask-image:linear-gradient(transparent,#000 35%,#000 85%,transparent); }
+@keyframes portal-code-fall { from {transform:translateY(-25%);opacity:0;} 20%,75% {opacity:.8;} to {transform:translateY(90vh);opacity:0;} }

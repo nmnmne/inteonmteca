@@ -41,7 +41,14 @@ def main():
                 row=page.evaluate('(i)=>baker.bake(i)',index)
                 image=Image.open(io.BytesIO(base64.b64decode(row.pop('png')))).convert('RGB')
                 row['file']=f'sun-{index:02d}.png'
-                image.save(output/row['file'],optimize=True)
+                buffer = io.BytesIO()
+                image.save(buffer, format='PNG', optimize=True)
+                target = output/row['file']
+                payload = buffer.getvalue()
+                if not target.exists() or target.read_bytes() != payload:
+                    temporary = target.with_suffix('.png.tmp')
+                    temporary.write_bytes(payload)
+                    temporary.replace(target)
                 row['bytes']=(output/row['file']).stat().st_size
                 row['sha256']=hashlib.sha256((output/row['file']).read_bytes()).hexdigest()
                 manifest['presets'].append(row)

@@ -16,12 +16,12 @@
     "status": "as-drawn-on-osm-plan"
   },
   "movement": {
-    "eyeM": 1.65,
+    "eyeM": 1.35,
     "speedMps": 2.6,
     "radiusM": 0.3,
     "maxStepM": 0.2,
     "maxDeltaSec": 0.05,
-    "sprintMps": 3.8
+    "sprintMps": 11.4
   },
   "approach": {
     "enterM": 5,
@@ -1086,7 +1086,7 @@
         ],
         "balconyEvery": 1,
         "balconyMode": "mixed",
-        "source": "user panorama confirms courtyard balcony rhythm; the two music-wall edges remain the separately confirmed blank facade"
+        "source": "Supplied street and courtyard photos: beige balcony slab fronts, white casement/glazing frames, red roof band, narrower stairwell windows on entrance elevations; curved short edges also have window columns. No interior plan verified."
       }
     },
     {
@@ -1319,7 +1319,7 @@
       "plinthMaterialId": "unknown-plinth",
       "roofMaterialId": "unknown-flat-gray",
       "source": "osm-way-228135825",
-      "confidence": "footprint-confirmed-facade-unknown",
+      "confidence": "user-photo-exterior-20261009",
       "facadeProject": {
         "kind": "tower",
         "balconyEdges": [
@@ -1330,7 +1330,7 @@
           15
         ],
         "balconyEvery": 2,
-        "source": "14-storey count and stepped footprint from OSM; balcony stacks are a restrained visual estimate"
+        "source": "Supplied street photo: warm stone panels, red recessed balcony walls, pale slabs and mixed glazing. Exterior only; no verified interior plan."
       },
       "footprint": [
         [
@@ -1509,5 +1509,129 @@
         ]
       ]
     }
-  ]
+  ],
+  "virtualBoundary": {
+    "noticeableRing": [
+      [
+        -95.9,
+        140.25
+      ],
+      [
+        -90.98,
+        103.36
+      ],
+      [
+        -98.36,
+        68.45
+      ],
+      [
+        -100.33,
+        33.53
+      ],
+      [
+        -93.93,
+        5.0
+      ],
+      [
+        -96.39,
+        -35.33
+      ],
+      [
+        -75.24,
+        -69.26
+      ],
+      [
+        -36.39,
+        -96.31
+      ],
+      [
+        6.4,
+        -125.33
+      ],
+      [
+        51.64,
+        -151.39
+      ],
+      [
+        91.48,
+        -149.43
+      ],
+      [
+        111.64,
+        -140.57
+      ],
+      [
+        127.87,
+        -111.07
+      ],
+      [
+        158.37,
+        -85.0
+      ],
+      [
+        171.64,
+        -60.41
+      ],
+      [
+        178.53,
+        -32.87
+      ],
+      [
+        195.74,
+        -17.13
+      ],
+      [
+        190.33,
+        -0.9
+      ],
+      [
+        153.45,
+        18.77
+      ],
+      [
+        121.97,
+        31.56
+      ],
+      [
+        97.87,
+        37.95
+      ],
+      [
+        75.25,
+        57.13
+      ],
+      [
+        72.3,
+        73.86
+      ],
+      [
+        62.46,
+        88.61
+      ],
+      [
+        34.43,
+        101.4
+      ],
+      [
+        3.94,
+        111.73
+      ],
+      [
+        -13.77,
+        127.95
+      ],
+      [
+        -30.98,
+        148.12
+      ],
+      [
+        -59.01,
+        150.58
+      ]
+    ],
+    "insideFadeM": 18,
+    "noticeableAmount": 0.4,
+    "fullOutsideM": 52,
+    "source": "User green outline, 2026-10-09; centerline of broad brush."
+  }
 }

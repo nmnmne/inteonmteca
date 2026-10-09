@@ -15,28 +15,60 @@ test('hover alone cannot scroll the playlist', () => {
   assert.match(script, /trackViewport\?\.addEventListener\("wheel"/);
 });
 test('panels move focus in, restore opener and expose expanded state', () => {
-  let focused = null;
-  const opener = { isConnected: true, focus: () => { focused = opener; }, setAttribute: (k, v) => { opener[k] = v; } };
-  const input = { focus: () => { focused = input; } };
-  const panel = { id: 'theme-panel', hidden: true, style: {}, setAttribute() {}, querySelector: () => input, contains: el => el === input };
-  const document = { activeElement: opener, getElementById: () => opener };
-  const context = { document, panel, openPanels: [], panelOpeners: new WeakMap(), chatPanel: {hidden:true}, compactChatViewport: {matches:false} };
-  vm.runInNewContext(functionSource('setPanelOpen') + '\nsetPanelOpen(panel, true);', context);
-  assert.equal(focused, input);
-  assert.equal(opener['aria-expanded'], 'true');
-  document.activeElement = input;
-  vm.runInNewContext('setPanelOpen(panel, false);', context);
-  assert.equal(focused, opener);
-  assert.equal(opener['aria-expanded'], 'false');
+  for (const name of ['auth', 'theme']) {
+    const context = panelFixture();
+    const panel = context[`${name}Panel`], opener = context[`${name}Hint`];
+    opener.focus();
+    vm.runInNewContext(`setPanelOpen(${name}Panel, true);`, context);
+    assert.equal(context.document.activeElement, panel.input);
+    assert.equal(opener['aria-expanded'], 'true');
+    assert.equal(panel['aria-hidden'], 'false');
+    assert.equal(context.bodyClasses.has(`is-${name}-menu-open`), true);
+    vm.runInNewContext(`setPanelOpen(${name}Panel, false);`, context);
+    assert.equal(context.document.activeElement, opener);
+    assert.equal(opener['aria-expanded'], 'false');
+    assert.equal(panel['aria-hidden'], 'true');
+    assert.equal(context.bodyClasses.has(`is-${name}-menu-open`), false);
+    assert.equal(context.openPanels.length, 0);
+  }
 });
-test('Escape closes only the latest panel before immersive playback', () => {
-  const theme = { hidden: false }, auth = { hidden: false }, chat = { hidden: true };
-  const context = { openPanels: [theme, auth], chatPanel: chat, immersiveState: { active: true },
-    setPanelOpen: p => { p.hidden = true; context.openPanels.pop(); }, closeChat: () => {},
-    exitImmersiveMode: () => { context.immersiveState.active = false; } };
-  context.event = { key: 'Escape', preventDefault() {} };
+test('auth and theme replace each other; a repeated trigger closes its own panel', () => {
+  const context = panelFixture();
+  for (const name of ['theme', 'auth', 'theme']) {
+    context[`${name}Hint`].focus();
+    context.handlers[name]();
+    const other = name === 'theme' ? 'auth' : 'theme';
+    assert.equal(context[`${name}Panel`].hidden, false);
+    assert.equal(context[`${other}Panel`].hidden, true);
+    assert.equal(context[`${name}Hint`]['aria-expanded'], 'true');
+    assert.equal(context[`${other}Hint`]['aria-expanded'], 'false');
+    assert.equal(context.openPanels.length, 1, 'only one popup is open');
+    assert.equal(context.document.activeElement, context[`${name}Panel`].input);
+    assert.equal(context.chatPanel.hidden, false, 'public inline chat remains available');
+  }
+  context.themeHint.focus();
+  context.handlers.theme();
+  assert.equal(context.themePanel.hidden, true);
+  assert.equal(context.openPanels.length, 0);
+  assert.equal(context.document.activeElement, context.themeHint);
+});
+test('Escape closes the current popup and restores focus without interrupting playback', () => {
+  const context = panelFixture();
+  context.immersiveState = { active: true };
+  context.authHint.focus();
+  context.handlers.auth();
+  let prevented = 0;
+  context.event = { key: 'Escape', preventDefault() { prevented++; } };
   vm.runInNewContext(functionSource('handlePanelKeydown') + '\nhandlePanelKeydown(event);', context);
-  assert.equal(auth.hidden, true); assert.equal(theme.hidden, false); assert.equal(context.immersiveState.active, true);
+  assert.equal(context.authPanel.hidden, true);
+  assert.equal(context.themePanel.hidden, true);
+  assert.equal(context.document.activeElement, context.authHint);
+  assert.equal(context.openPanels.length, 0);
+  assert.equal(context.immersiveState.active, true);
+  assert.equal(context.chatPanel.hidden, false);
+  assert.equal(prevented, 1);
+  vm.runInNewContext('handlePanelKeydown(event);', context);
+  assert.equal(prevented, 1, 'Escape without a popup is left to the page');
   assert.ok(!script.includes('if (event.key === "Escape") exitImmersiveMode();'), 'no competing Escape listener');
 });
 test('controls have a shared 44px hit area and visible keyboard focus', () => {
@@ -49,11 +81,15 @@ test('controls have a shared 44px hit area and visible keyboard focus', () => {
 });
 test('panel triggers declare their controls before JavaScript loads', () => {
   const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
-  for (const name of ['auth', 'chat', 'theme']) {
+  for (const name of ['auth', 'theme']) {
     const tag = html.match(new RegExp(`<button[^>]+id="${name}-hint"[^>]*>`))?.[0] || '';
     assert.ok(tag.includes(`aria-controls="${name}-panel"`), name);
     assert.ok(tag.includes('aria-expanded="false"'), name);
   }
+  const slider = html.match(/<input[^>]+id="mobile-section-slider"[^>]*>/)?.[0] || '';
+  assert.ok(slider.includes('aria-controls="mobile-track-section chat-panel"'));
+  assert.ok(slider.includes('aria-label="Треки или чат"'));
+  assert.ok(slider.includes('aria-valuetext="Треки"'));
 });
 test('a late chat response cannot steal focus or restart polling after close', () => {
   const source = functionSource('openChat');
@@ -64,6 +100,35 @@ function functionSource(name) {
   const start = script.indexOf(`const ${name} =`);
   assert.ok(start >= 0, `${name} exists`);
   return script.slice(start, script.indexOf('\n};', start) + 3);
+}
+function panelFixture() {
+  const bodyClasses = new Set(), handlers = {}, nodes = {};
+  const document = { activeElement: null, querySelector: () => null, getElementById: id => nodes[id], body: {
+    classList: { toggle: (name, active) => active ? bodyClasses.add(name) : bodyClasses.delete(name) },
+  } };
+  const context = { document, bodyClasses, handlers, openPanels: [], panelOpeners: new WeakMap(),
+    chatPanel: { hidden: false }, inlineChat: true, compactChatViewport: { matches: false },
+    sessionEmail: '', setAuthStatus() {}, closeChat() { throw Error('Opening a popup must preserve the desktop inline chat'); } };
+  for (const name of ['auth', 'theme']) {
+    const opener = { isConnected: true, 'aria-expanded': 'false',
+      focus() { document.activeElement = opener; },
+      setAttribute(k, v) { this[k] = v; },
+      addEventListener(event, fn) { if (event === 'click') handlers[name] = fn; } };
+    const input = { focus() { document.activeElement = input; } };
+    const panel = { id: `${name}-panel`, hidden: true, style: {}, input,
+      setAttribute(k, v) { this[k] = v; }, querySelector: () => input, contains: el => el === input };
+    nodes[`${name}-hint`] = opener;
+    context[`${name}Hint`] = opener;
+    context[`${name}Panel`] = panel;
+    context[name === 'auth' ? 'authEmail' : 'themeSelect'] = input;
+  }
+  vm.runInNewContext(functionSource('setPanelOpen'), context);
+  for (const name of ['auth', 'theme']) {
+    const start = script.indexOf(`${name}Hint?.addEventListener("click"`);
+    assert.ok(start >= 0, `${name} trigger exists`);
+    vm.runInNewContext(script.slice(start, script.indexOf('\n});', start) + 4), context);
+  }
+  return context;
 }
 test('visible wheel tracks remain sharp at every position', () => {
   const cards = [];

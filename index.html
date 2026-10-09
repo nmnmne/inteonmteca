@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="desert">
+<html lang="ru" data-theme="graphite">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="Content-Language" content="ru">
@@ -9,8 +9,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="prefetch" as="image" href="yard/assets/spawn-mobile.jpg" media="(orientation: portrait)">
   <link rel="prefetch" as="image" href="yard/assets/spawn-desktop.jpg" media="(orientation: landscape)">
-  <link rel="stylesheet" href="room-portal.css?v=return-cover-20261006-5">
-  <script src="room-portal.js?v=playlist-scatter-20261006-9"></script>
+  <link rel="stylesheet" href="room-portal.css?v=portal-mist-20261009-10">
+  <script src="room-portal.js?v=portal-mist-20261009-10"></script>
   <title>inteonmteca</title>
   <meta name="description" content="Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри.">
   <meta name="inteonmteca-api" content="">
@@ -44,12 +44,12 @@
   <link rel="stylesheet" href="home-player.css?v=frosted-20261005-1">
   <link rel="stylesheet" href="text-waves.css?v=20261005-3">
   <link rel="stylesheet" href="room-finish.css?v=ink-radius-20261006-2">
-  <link rel="stylesheet" href="atmosphere-events.css?v=20261005-5">
+  <link rel="stylesheet" href="atmosphere-events.css?v=digital-shells-20261009-5">
   <link rel="stylesheet" href="room-composition.css?v=20261005-3">
   <link rel="stylesheet" href="charged-material.css?v=20261005-1">
   <link rel="stylesheet" href="room-grid.css?v=20261005-2">
   <link rel="stylesheet" href="room-editor.css?v=20261005-1">
-  <link rel="stylesheet" href="room-recesses.css?v=logo-contrast-20261006-9">
+  <link rel="stylesheet" href="room-recesses.css?v=active-row-20261009-7">
 </head>
 <body class="perception-interface listening-room spatial-room">
   <div class="perception-field" aria-hidden="true"></div>
@@ -67,6 +67,7 @@
     <div class="street-return">
     <a class="street-link" id="street-link" href="yard/">на улицу</a>
   </div>
+    <div class="visit-counter" aria-label="Посетители и посещения"><span title="Уникальные посетители">u:<b id="unique-count">--</b></span><span title="Посещения">v:<b id="visit-count">--</b></span></div>
   </nav>
   <main class="page">
     <p class="visually-hidden">Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри.</p>
@@ -214,7 +215,6 @@
   </section>
   <audio id="album-player" preload="metadata" playsinline></audio>
   <div class="vr-reticle" aria-hidden="true"></div>
-  <div class="visit-counter" aria-label="site visits"><span>u:<b id="unique-count">--</b></span><span>v:<b id="visit-count">--</b></span></div>
   <section class="auth-panel" id="auth-panel" aria-hidden="true" hidden>
     <p class="auth-kicker">виртуальный пропуск</p>
     <form class="auth-form" id="auth-email-form">
@@ -240,6 +240,7 @@
   <section class="chat-panel chat-inline" id="chat-panel" role="region" aria-label="Чат">
     <div class="chat-aura" aria-hidden="true"></div>
     <div class="chat-stream" id="chat-stream" aria-live="polite"></div>
+    <p id="chat-status" class="chat-status" role="status" hidden></p>
     <form class="chat-compose" id="chat-form">
       <span class="chat-prompt" aria-hidden="true">&gt;_</span>
       <label class="visually-hidden" for="chat-input">сообщение</label>
@@ -255,7 +256,7 @@
     <label class="theme-label" for="theme-select">палитра</label>
     <select class="theme-select" id="theme-select">
       <!-- Complete grouped options come from the embedded script.js registry. -->
-      <option value="desert">пустынная ртуть</option>
+      <option value="graphite">мягкий графит</option>
     </select>
     <label class="theme-label" for="theme-duration">случайная смена через</label>
     <input class="theme-duration" id="theme-duration" type="range" min="0" max="1000" value="58" step="1" data-min-seconds="4" data-max-seconds="604800">
@@ -267,19 +268,21 @@
   </section>
   <script src="playlist-data.js?v=tracks-20261006-1"></script>
   <script src="track-play.js?v=vr-room-20261004-2"></script>
-  <script src="street-return.js?v=boundary-four-minutes-20261006-2"></script>
+  <script src="street-return.js?v=pose-20261009-5"></script>
   <script src="playback-link.js?v=seek-fade-20261006-2"></script>
-  <script src="theme-morph.js?v=logo-contrast-20261006-4"></script>
-  <script src="script.js?v=exit-fade-20261006-7"></script>
-  <script src="logo-acid.js?v=20261006-1"></script>
+  <script src="home-effects.js?v=20261009-1"></script>
+  <script src="theme-morph.js?v=home-20261009-1"></script>
+  <script src="script.js?v=digital-shells-20261009-5"></script>
+  <script src="theme-picker.js?v=20261009-2"></script>
+  <script src="logo-acid.js?v=home-20261009-1"></script>
   <script data-development-only src="development-debug.js?v=effects-toggle-20261006-4"></script>
   <script src="mobile-sections.js?v=20261006-3"></script>
   <script src="room-resident.js?v=inline-chat-20261005-1"></script>
-  <script src="logo-storm.js?v=debug-replay-20261006-2"></script>
-  <script src="text-waves.js?v=20261005-3"></script>
-  <script src="room-finish.js?v=20261005-4"></script>
-  <script src="energy-field.js?v=20261005-3"></script>
-  <script src="atmosphere-events.js?v=debug-replay-20261006-2"></script>
-  <script src="logo-ripples.js?v=20261005-3"></script>
+  <script src="logo-storm.js?v=digital-shells-20261009-5"></script>
+  <script src="text-waves.js?v=digital-shells-20261009-5"></script>
+  <script src="room-finish.js?v=short-list-20261009-11"></script>
+  <script src="energy-field.js?v=home-20261009-1"></script>
+  <script src="atmosphere-events.js?v=digital-shells-20261009-5"></script>
+  <script src="logo-ripples.js?v=home-20261009-1"></script>
 </body>
 </html>

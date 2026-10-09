@@ -27,7 +27,11 @@ body.is-interlude::before, body.is-interlude::after { opacity: 0; }
 body.is-interlude .active-player { background: transparent; border-color: transparent; box-shadow: none; backdrop-filter: none; transition: background-color 2.5s, border-color 2.5s; }
 body.is-interlude .active-player > :not(.transport), body.is-interlude .transport > :not(.transport-seek-field) { opacity: 0; pointer-events: none; transition: opacity 2.5s; }
 body.spatial-room.is-interlude .track-list .track-item { opacity: 0 !important; pointer-events: none; transition: opacity 2.5s; }
-body.spatial-room.is-interlude.scene-peek .track-list .track-item.scene-peek-track { opacity: 1 !important; transition: opacity 2s ease var(--return-delay, 0ms); }
+body.spatial-room.is-interlude.scene-peek .track-list .track-item.scene-peek-track { opacity:1 !important; pointer-events:auto; transition:opacity 1.2s ease var(--return-delay,0ms); }
+body.spatial-room.is-interlude:is(.scene-void,.scene-energy) .track-list .track-item { opacity:0 !important; pointer-events:none; }
+body.spatial-room.is-interlude .playlist-shell { z-index:5; }
+body.spatial-room.is-interlude .text-wave-char { color:inherit !important; }
+body.spatial-room.is-interlude .text-wave-mask { visibility:hidden; }
 body.spatial-room.is-interlude.scene-dawn .track-list .track-item { opacity: 1 !important; pointer-events: auto; transition: opacity 8s ease; }
 body.spatial-room.is-interlude .listening-intro > :not(h1) { opacity: 0; transition: opacity 2.5s; }
 body.is-interlude.scene-heading .listening-intro { opacity: 1 !important; transition: opacity 6s ease; }

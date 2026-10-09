@@ -1,43 +1,38 @@
-/* Interpolate the actual palette, including glass and ink, for fifteen seconds. */
+/* Apply a palette once, then crossfade browser snapshots on the compositor. */
 (() => {
   const root = document.documentElement;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  let frame = 0, target = null, last = 0, started = 0, pairs = [];
-  const parse = value => {
-    if (/^#[\da-f]{6}$/i.test(value)) return {v:value.slice(1).match(/../g).map(x=>parseInt(x,16)),kind:'hex'};
-    if (/^\d+(?:\.\d+)?,/.test(value)) return {v:value.split(',').map(Number),kind:'rgb'};
-    if (/^[\d.]+(?:px)?$/.test(value)) return {v:[parseFloat(value)],kind:value.endsWith('px')?'px':'number'};
-    return null;
-  };
-  const write = (property, value) => root.style.setProperty(property, value);
-  const finish = () => {
-    cancelAnimationFrame(frame); frame = 0;
-    if (target) Object.entries(target).forEach(([key,value])=>write(key,value));
-    root.classList.remove('is-theme-shifting');
+  const duration = 1600;
+  let transition = null, target = null, metadata = null, active = false, generation = 0;
+  const commit = () => {
+    if (target) for (const [property, value] of Object.entries(target)) {
+      if (root.style.getPropertyValue(property) !== value) root.style.setProperty(property, value);
+    }
+    if (metadata?.name) {
+      root.dataset.theme = metadata.name;
+      root.dataset.themeMood = metadata.mood;
+    }
     window.dispatchEvent(new Event('inteon-theme-frame'));
   };
-  const draw = now => {
-    const progress = Math.min(1,(now-started)/15000);
-    if (progress === 1) { finish(); return; }
-    if (now-last>40) {
-      last=now;
-      const t=progress*progress*(3-2*progress);
-      for (const [key,from,to] of pairs) {
-        const logoProgress = Math.min(1, (now-started)/1000);
-        const blend = key.startsWith('--logo-') ? logoProgress*logoProgress*(3-2*logoProgress) : t;
-        const values=from.v.map((v,i)=>v+(to.v[i]-v)*blend);
-        write(key,to.kind==='hex' ? '#'+values.map(v=>Math.round(v).toString(16).padStart(2,'0')).join('')
-          : to.kind==='rgb' ? values.map(v=>v.toFixed(2)).join(', ') : values[0].toFixed(4)+(to.kind==='px'?'px':''));
-      }
-      window.dispatchEvent(new Event('inteon-theme-frame'));
-    }
-    frame=requestAnimationFrame(draw);
+  const complete = token => {
+    if (token !== generation) return;
+    transition = null; active = false;
+    root.classList.remove('is-theme-crossfading', 'is-theme-shifting');
+    window.inteonHomeEffects?.release('theme');
+  };
+  const finish = () => {
+    const token = ++generation, previous = transition;
+    transition = null; active = false;
+    previous?.skipTransition();
+    commit(); complete(token);
   };
   window.inteonThemeMorph = {
-    apply(tokens,mood,animate) {
-      cancelAnimationFrame(frame); frame=0;
-      const light=mood==='light';
-      target={...tokens,
+    duration,
+    apply(tokens, mood, animate, options = {}) {
+      const token = ++generation;
+      transition?.skipTransition(); transition = null; active = false;
+      const light = mood === 'light';
+      target = {...tokens,
         '--interface-ink':tokens['--interface-ink'] || (light?'12, 15, 17':'249, 244, 233'),
         '--interface-muted':tokens['--interface-muted'] || (light?'38, 42, 43':'202, 196, 178'),
         '--interface-accent':tokens['--interface-accent'] || (light?'12, 15, 17':'218, 243, 149'),
@@ -50,17 +45,37 @@
         '--field-opacity':light?'.19':'.27',
         '--field-strength':mood==='dark'?'.07':'.17',
       };
-      if (!animate || reduced.matches) { finish(); return; }
-      const css=getComputedStyle(root); pairs=[];
-      for (const [key,value] of Object.entries(target)) {
-        const to=parse(value),from=parse(css.getPropertyValue(key).trim());
-        if (from&&to&&from.kind===to.kind) pairs.push([key,from,to]); else write(key,value);
+      metadata = {name: options.name, mood};
+      const controller = window.inteonHomeEffects;
+      const immediate = !animate || reduced.matches || document.hidden ||
+        typeof document.startViewTransition !== 'function' || controller?.suspended ||
+        (controller && controller.active !== 'theme' && !controller.claim('theme'));
+      if (immediate) { commit(); complete(token); return; }
+      active = true;
+      root.classList.add('is-theme-crossfading');
+      try {
+        transition = document.startViewTransition(() => {
+          // A skipped, superseded callback must never put an older palette back.
+          if (token === generation) commit();
+        });
+        transition.ready.catch(() => {});
+        transition.finished.then(() => complete(token), () => {
+          if (token === generation) { commit(); complete(token); }
+        });
+      } catch {
+        commit(); complete(token);
       }
-      started=performance.now(); last=0;
-      root.classList.add('is-theme-shifting'); frame=requestAnimationFrame(draw);
     },
-    get active() { return Boolean(frame); },
+    get active() { return active; },
   };
-  reduced.addEventListener('change',()=>{if(reduced.matches) finish();});
-  window.addEventListener('pagehide',finish);
+  reduced.addEventListener('change', () => { if (reduced.matches) finish(); });
+  window.addEventListener('pagehide', finish);
+  window.addEventListener('inteon-effects-change', () => {
+    if (window.inteonHomeEffects?.suspended && active) finish();
+  });
+  // A user's next action immediately reveals the live controls, including typed
+  // text and the playback state, instead of leaving them behind a frozen image.
+  for (const event of ['pointerdown', 'keydown', 'input']) {
+    document.addEventListener(event, () => { if (active) finish(); }, {capture: true, passive: true});
+  }
 })();

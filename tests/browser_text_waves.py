@@ -108,7 +108,10 @@ with sync_playwright() as p:
     assert mobile.evaluate("matchMedia('(pointer: coarse)').matches")
     assert mobile.locator(".is-wave-noisy").count() > 0
     mobile.screenshot(path=str(OUT / "phone-wave.png"))
-    mobile.locator(".listening-intro h1").tap()
+    # The heading is decorative (pointer-events:none); touch its screen position
+    # so the real window-level pointer handler receives the same event as a user.
+    heading = mobile.locator(".listening-intro h1").bounding_box()
+    mobile.touchscreen.tap(heading["x"] + heading["width"] / 2, heading["y"] + heading["height"] / 2)
     mobile.wait_for_timeout(200)
     assert mobile.locator(".listening-intro h1 .is-wave-noisy").count() <= 1
     mobile.screenshot(path=str(OUT / "phone-touch-calm.png"))

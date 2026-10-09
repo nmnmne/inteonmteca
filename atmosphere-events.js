@@ -19,8 +19,10 @@
     curtain?.remove(); digits?.remove(); curtain = digits = null;
     document.querySelectorAll('.track-item').forEach(el => { el.style.removeProperty('--return-delay'); el.classList.remove('scene-peek-track'); });
     window.dispatchEvent(new Event('inteon-interlude'));
+    window.inteonHomeEffects?.release('interlude');
   };
   const startInterlude = () => {
+    if (curtain || document.hidden || reduced.matches || (window.inteonHomeEffects && !window.inteonHomeEffects.claim('interlude'))) return;
     body.dataset.interludeStartedAt = String(Date.now());
     interludeAt = Date.now() + 720000; write('inteon-interlude-next', interludeAt); publish();
     curtain = document.createElement('div'); curtain.className = 'scene-curtain'; curtain.setAttribute('aria-hidden', 'true');
@@ -39,12 +41,12 @@
       const list = document.querySelector('.track-list');
       const bounds = list.getBoundingClientRect();
       const visible = [...list.children].filter(el => { const r=el.getBoundingClientRect(); return r.top >= bounds.top-.5 && r.top < bounds.bottom; });
-      visible.slice(0, 2).forEach((el, i) => { el.classList.add('scene-peek-track'); el.style.setProperty('--return-delay', `${i * 2500}ms`); });
+      [...list.children].forEach((el, i) => { el.classList.add('scene-peek-track'); el.style.setProperty('--return-delay', `${Math.min(i, visible.length) * 90}ms`); });
       body.classList.add('scene-peek'); body.dataset.interludePhase = 'tracks';
     }, 5000);
     later(() => { body.classList.add('scene-heading'); body.dataset.interludePhase = 'heading'; }, 12000);
     later(() => {
-      body.classList.remove('scene-peek', 'scene-heading'); body.classList.add('scene-void'); body.dataset.interludePhase = 'void';
+      body.classList.remove('scene-heading', 'scene-peek'); body.classList.add('scene-void'); body.dataset.interludePhase = 'void';
     }, 21000);
     later(() => {
       body.classList.add('scene-energy'); body.dataset.interludePhase = 'energy'; window.inteonPixelEnergy?.start();
@@ -56,12 +58,14 @@
       later(stopInterlude, 12500);
     }, 45000);
   };
+  const stopCloud = () => { clearTimeout(cloudTimer); cloud?.remove(); cloud = null; window.inteonHomeEffects?.release('cloud'); };
   const startCloud = () => {
+    if (cloud || document.hidden || reduced.matches || (window.inteonHomeEffects && !window.inteonHomeEffects.claim('cloud'))) return;
     cloudAt = Date.now() + 260000; write('inteon-cloud-next', cloudAt); publish();
     cloud = document.createElement('div'); cloud.className = 'sky-clouds'; cloud.setAttribute('aria-hidden', 'true');
     cloud.innerHTML = '<svg viewBox="0 0 900 300" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><defs><filter id="passing-cloud-noise" x="-10%" y="-20%" width="120%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".006 .017" numOctaves="3" seed="17"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.6 0 0 0 -.55"/><feGaussianBlur stdDeviation="3"/><feComposite in="SourceGraphic" operator="in"/></filter></defs><rect width="900" height="300" fill="currentColor" filter="url(#passing-cloud-noise)"/></svg>';
     body.append(cloud);
-    cloudTimer = setTimeout(() => { cloud?.remove(); cloud = null; }, 80000);
+    cloudTimer = setTimeout(stopCloud, 80000);
   };
   const planFirst = () => {
     if (!interludeAt && !music?.paused) {
@@ -72,9 +76,9 @@
   const tick = () => {
     if (!document.hidden && !reduced.matches) {
       const panelOpen = [...document.querySelectorAll('#chat-panel:not(.chat-inline),#theme-panel,#auth-panel')].some(el => !el.hidden);
-      const busy = body.classList.contains('is-interlude') || body.classList.contains('storm-priming') || document.querySelector('.logo-storm');
+      const busy = window.inteonHomeEffects?.ambientBlocked || body.classList.contains('is-interlude') || body.classList.contains('storm-priming') || document.querySelector('.logo-storm');
       if (!busy && !panelOpen && !music?.paused && interludeAt && Date.now() >= interludeAt) startInterlude();
-      if (!cloud && !body.classList.contains('is-interlude') && Date.now() >= cloudAt) startCloud();
+      if (!busy && !panelOpen && !cloud && !body.classList.contains('is-interlude') && Date.now() >= cloudAt) startCloud();
     }
     poll = setTimeout(tick, 1000);
   };
@@ -83,18 +87,19 @@
   music?.addEventListener('error', () => { if (curtain) stopInterlude(); });
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && curtain) stopInterlude(); });
   const suspend = () => {
-    if (document.hidden || reduced.matches) {
-      if (curtain) stopInterlude(); clearTimeout(cloudTimer); cloud?.remove(); cloud = null;
+    if (document.hidden || reduced.matches || window.inteonHomeEffects?.suspended) {
+      if (curtain) stopInterlude(); stopCloud();
     }
   };
   document.addEventListener('visibilitychange', suspend);
   reduced.addEventListener('change', suspend);
+  window.addEventListener('inteon-effects-change', suspend);
   window.addEventListener('pagehide', () => { clearTimeout(poll); suspend(); });
   window.addEventListener('pageshow', event => { if (event.persisted) { clearTimeout(poll); tick(); } });
   window.inteonAtmosphere = {
-    stop: () => { stopInterlude(); clearTimeout(cloudTimer); cloud?.remove(); cloud = null; },
+    stop: () => { stopInterlude(); stopCloud(); },
     replayScene: () => { stopInterlude(); if (!reduced.matches) startInterlude(); },
-    replayCloud: () => { clearTimeout(cloudTimer); cloud?.remove(); cloud = null; if (!reduced.matches) startCloud(); },
+    replayCloud: () => { stopCloud(); if (!reduced.matches) startCloud(); },
   };
   planFirst(); publish(); tick();
 })();

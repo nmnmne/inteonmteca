@@ -1,6 +1,8 @@
 from http.cookiejar import CookieJar
+from contextlib import closing
 from pathlib import Path
 import json
+import sqlite3
 import tempfile
 import threading
 import unittest
@@ -100,6 +102,44 @@ class AuthChatServerTests(unittest.TestCase):
         status, body = self._json("POST", "/api/auth/request-code", {"email": "not-mail"})
         self.assertEqual(status, 400)
         self.assertIn("почта", body["error"])
+
+
+class ChatRetentionTests(unittest.TestCase):
+    def test_insertion_deletes_old_messages_and_survives_restart(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db_path = Path(tmp) / "chat.db"
+            store = Store(db_path)
+            for index in range(75):
+                store.add_message("reader@example.test", f"message {index}")
+            store.close()
+            with closing(sqlite3.connect(db_path)) as connection:
+                self.assertEqual(connection.execute("SELECT COUNT(*) FROM messages").fetchone()[0], 50)
+            store = Store(db_path)
+            try:
+                self.assertEqual([item["text"] for item in store.messages()], [f"message {index}" for index in range(25, 75)])
+                self.assertEqual(store.messages(0), [])
+                self.assertEqual(len(store.messages(5)), 5)
+            finally:
+                store.close()
+
+    def test_startup_trims_history_from_an_existing_database(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db_path = Path(tmp) / "old-chat.db"
+            store = Store(db_path)
+            store.close()
+            with closing(sqlite3.connect(db_path)) as connection:
+                connection.executemany(
+                    "INSERT INTO messages(email, text, created_at) VALUES(?, ?, ?)",
+                    [("old@example.test", str(index), index) for index in range(120)],
+                )
+                connection.commit()
+            store = Store(db_path)
+            try:
+                self.assertEqual([item["text"] for item in store.messages()], [str(index) for index in range(70, 120)])
+                with closing(sqlite3.connect(db_path)) as connection:
+                    self.assertEqual(connection.execute("SELECT COUNT(*) FROM messages").fetchone()[0], 50)
+            finally:
+                store.close()
 
 
 if __name__ == "__main__":

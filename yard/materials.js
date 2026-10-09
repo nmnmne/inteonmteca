@@ -1,5 +1,5 @@
 import * as THREE from "./vendor/three.module.js";
-import { createBalconyMaterial, createFacadeMaterial, createWindowMaterial } from "./material-textures.js";
+import { createBalconyMaterial, createFacadeMaterial, createWindowMaterial, createPhotoWindowMaterial } from "./material-textures.js";
 
 const BRICK_W = 1.04;
 const BRICK_H = 0.6;
@@ -118,6 +118,8 @@ export function createYardMaterials() {
   };
 
   const facades = new Map();
+  const photoWindows = new Map();
+  const flatMaterials = new Map();
   const windowMaterial = createWindowMaterial();
   const balconyMaterial = createBalconyMaterial();
 
@@ -131,6 +133,10 @@ export function createYardMaterials() {
     },
     window() {
       return windowMaterial;
+    },
+    photoWindow(kind='casement') {
+      if(!photoWindows.has(kind))photoWindows.set(kind,createPhotoWindowMaterial(kind));
+      return photoWindows.get(kind);
     },
     balcony() {
       return balconyMaterial;
@@ -157,7 +163,8 @@ export function createYardMaterials() {
       });
     },
     flat(color) {
-      return new THREE.MeshLambertMaterial({ color });
+      if (!flatMaterials.has(color)) flatMaterials.set(color, new THREE.MeshLambertMaterial({ color }));
+      return flatMaterials.get(color);
     },
   };
 }

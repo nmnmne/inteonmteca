@@ -13,8 +13,8 @@ export const FACADE_SPECS = Object.freeze({
   "tower34-panel": Object.freeze({
     id: "tower34-panel",
     kind: "panel",
-    baseColor: "#aeb5b5",
-    accentColor: "#798386",
+    baseColor: "#c2bcaa",
+    accentColor: "#9b9587",
     tileM: [3.2, 2.8],
     windowSpacingM: 3.15,
     balconyEvery: 2,

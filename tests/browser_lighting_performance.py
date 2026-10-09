@@ -1,12 +1,13 @@
 """Real-clock mobile-profile Edge walk: ground views, frame intervals, and automatic return."""
 import json
+import os
 import time
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 from PIL import Image, ImageChops
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT/'tests/artifacts/lighting-transition'
+OUT = ROOT / os.environ.get('YARD_TRANSITION_OUTPUT', 'tests/artifacts/lighting-transition')
 OUT.mkdir(parents=True, exist_ok=True)
 with sync_playwright() as p:
     browser = p.chromium.launch(channel='msedge', headless=True)
@@ -21,7 +22,7 @@ with sync_playwright() as p:
     page.on('console', lambda m: errors.append(m.text) if m.type == 'error'
             and not (m.location.get('url', '').endswith('/api/auth/me') and '401' in m.text) else None)
     page.goto('http://127.0.0.1:8080/index.html')
-    page.evaluate("localStorage.setItem('inteon.yard.lighting.next.v1','0'); for(let i=0;i<5;i++) inteonStreet.noteExit()")
+    page.evaluate("localStorage.setItem('inteon.yard.lighting.next.v1','0'); inteonStreet.noteExit()")
     started = time.monotonic()
     page.goto('http://127.0.0.1:8080/yard/')
     page.wait_for_function('window.__yard?.scene.userData.bakedLightingStatus === "ready" && __yard.scene.getObjectByName("music-logo").material.map')
@@ -46,7 +47,7 @@ with sync_playwright() as p:
     difference = ImageChops.difference(Image.open(OUT/'ground-original.png').convert('RGB'), Image.open(OUT/'ground-hold.png').convert('RGB'))
     report['groundHoldDifferenceBounds'] = difference.getbbox()
     assert difference.getbbox() is None
-    page.wait_for_function('Date.now()-yardWalkClock.enteredAt >= 20000')
+    page.wait_for_function('Date.now()-yardWalkClock.enteredAt >= 15000')
     page.locator('#yard-view').screenshot(path=str(OUT/'ground-middle.png'))
     report['middle'] = page.evaluate('''() => ({state:{...__yard.lightingTransition.state},
       frameIntervals:__yard.meter.snapshot(),bytes:__yard.scene.userData.bakedLighting.gpuBytes,
@@ -60,7 +61,7 @@ with sync_playwright() as p:
     assert report['initialBytes'] == 4*1024**2 and report['middle']['bytes'] == 8*1024**2
     page.wait_for_url('**/index.html', timeout=15000)
     report['automaticReturnAfterNavigationSeconds'] = time.monotonic()-started
-    assert 29 <= report['automaticReturnAfterNavigationSeconds'] <= 33
+    assert 19 <= report['automaticReturnAfterNavigationSeconds'] <= 24
     report['errors'] = errors
     report['httpErrors'] = http_errors
     unexpected_http = [error for error in http_errors if not (error['status'] == 401 and error['url'].endswith('/api/auth/me'))]

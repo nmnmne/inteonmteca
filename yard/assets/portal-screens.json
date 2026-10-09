@@ -1,0 +1,62 @@
+[
+  {
+    "file": "portal-phone.jpg",
+    "viewport": [
+      390,
+      844
+    ],
+    "pixels": [
+      390,
+      844
+    ],
+    "bytes": 20941
+  },
+  {
+    "file": "portal-tablet.jpg",
+    "viewport": [
+      768,
+      1024
+    ],
+    "pixels": [
+      768,
+      1024
+    ],
+    "bytes": 48623
+  },
+  {
+    "file": "portal-wide.jpg",
+    "viewport": [
+      1440,
+      900
+    ],
+    "pixels": [
+      1440,
+      900
+    ],
+    "bytes": 82008
+  },
+  {
+    "file": "portal-hd.jpg",
+    "viewport": [
+      1920,
+      1080
+    ],
+    "pixels": [
+      1440,
+      810
+    ],
+    "bytes": 73188
+  },
+  {
+    "file": "portal-landscape.jpg",
+    "viewport": [
+      844,
+      390
+    ],
+    "pixels": [
+      844,
+      390
+    ],
+    "bytes": 22817
+  }
+]

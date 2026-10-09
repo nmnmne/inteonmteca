@@ -10,7 +10,7 @@
   try { lastStarted = Number(sessionStorage.getItem('inteon-storm-last')) || 0; } catch {}
   const signal = (phase, detail = {}) => window.dispatchEvent(new CustomEvent('inteon-storm', {detail: {phase, ...detail}}));
   let layer, timer, animations = [], running = false, debugRun = false;
-  const later = (fn, delay) => { timer = setTimeout(fn, delay); };
+  const later = (fn, delay) => { clearTimeout(timer); timer = setTimeout(fn, delay); };
   const stop = () => {
     clearTimeout(timer);
     animations.forEach(a => a.cancel()); animations = [];
@@ -20,6 +20,7 @@
     rebuild?.replaceChildren();
     document.body.classList.remove('storm-priming');
     signal('end');
+    window.inteonHomeEffects?.release('storm');
   };
   const start = (options = {}) => {
     const force = options.force === true;
@@ -29,6 +30,7 @@
     document.body.dataset.stormNextAt = String(lastStarted + cooldown);
     if (!force && remaining > 0) { later(start, remaining); return; }
     if (document.body.classList.contains('is-interlude')) { later(start, 10000); return; }
+    if (window.inteonHomeEffects && !window.inteonHomeEffects.claim('storm')) { later(start, 1000); return; }
     lastStarted = Date.now();
     document.body.dataset.stormNextAt = String(lastStarted + cooldown);
     try { sessionStorage.setItem('inteon-storm-last', String(lastStarted)); } catch {}
@@ -54,11 +56,26 @@
     const bolts = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     bolts.setAttribute('viewBox', `0 0 ${innerWidth} ${innerHeight}`);
     bolts.setAttribute('preserveAspectRatio', 'none'); bolts.classList.add('logo-storm-bolts');
-    for (let n = 0; n < 3; n++) {
-      let x = innerWidth * (.2 + n * .3), y = 0, d = `M ${x} 0`;
-      while (y < innerHeight) { x += (Math.random() - .5) * innerWidth * .18; y += innerHeight / 11; d += ` L ${x} ${y}`; }
-      const path = document.createElementNS(bolts.namespaceURI, 'path');
-      path.setAttribute('d', d); bolts.append(path);
+    const lightning = (x0,y0,x1,y1,spread,depth=6) => {
+      if(!depth)return [[x0,y0],[x1,y1]];
+      const dx=x1-x0,dy=y1-y0,length=Math.hypot(dx,dy)||1,jitter=(Math.random()-.5)*spread;
+      const mx=(x0+x1)/2-dy/length*jitter,my=(y0+y1)/2+dx/length*jitter;
+      return [...lightning(x0,y0,mx,my,spread*.55,depth-1).slice(0,-1),...lightning(mx,my,x1,y1,spread*.55,depth-1)];
+    };
+    const stroke = (points,width,opacity,core=false) => {
+      const path=document.createElementNS(bolts.namespaceURI,'path');
+      path.setAttribute('d',points.map(([x,y],i)=>`${i?'L':'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' '));
+      path.style.strokeWidth=String(width);path.style.opacity=String(opacity);path.style.stroke=core?'#f3f8ff':'#9ebbdc';
+      path.style.strokeLinecap='round';path.style.strokeLinejoin='round';bolts.append(path);
+    };
+    for(let n=0;n<3;n++){
+      const x=innerWidth*(.18+n*.32),points=lightning(x,-20,x+innerWidth*(Math.random()-.5)*.25,innerHeight*(.68+Math.random()*.28),innerWidth*.19);
+      stroke(points,5,.2);stroke(points,1.4,.95,true);
+      for(const i of [17,31,43]){
+        const [sx,sy]=points[i],side=(n+i)%2?1:-1;
+        const branch=lightning(sx,sy,sx+side*innerWidth*(.06+Math.random()*.08),sy+innerHeight*.18,innerWidth*.055,4);
+        stroke(branch,.7,.55,true);
+      }
     }
     layer.append(bolts);
     const order = Array.from({length: count}, (_, i) => i);
@@ -129,4 +146,10 @@
   document.addEventListener('visibilitychange', () => { stop(); if (!document.hidden) start(); });
   window.addEventListener('resize', () => { stop(); if (!music.paused) later(start, 500); });
   reduced.addEventListener('change', () => { stop(); start(); });
+  window.addEventListener('inteon-effects-change', () => {
+    const effects = window.inteonHomeEffects;
+    if (effects?.suspended) stop();
+    else if (!effects?.active && !music.paused && !running) later(start, Math.max(0, lastStarted + cooldown - Date.now()));
+  });
+  window.addEventListener('pagehide', stop);
 })();

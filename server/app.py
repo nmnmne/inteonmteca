@@ -32,6 +32,7 @@ COOKIE_NAME = "inteonmteca_session"
 CODE_TTL_SEC = 10 * 60
 SESSION_TTL_SEC = 30 * 24 * 3600
 MAX_CHAT_LEN = 280
+CHAT_HISTORY_LIMIT = 50
 
 
 def _load_dotenv(path: Path) -> None:
@@ -123,7 +124,15 @@ class Store:
             row = self._db.execute("SELECT value FROM meta WHERE key = 'secret'").fetchone()
             if row is None:
                 self._db.execute("INSERT INTO meta(key, value) VALUES('secret', ?)", (secrets.token_hex(24),))
+            self._prune_messages()
             self._db.commit()
+
+    def _prune_messages(self) -> None:
+        # Called under the store lock, in the same transaction as insertion.
+        self._db.execute(
+            "DELETE FROM messages WHERE id NOT IN (SELECT id FROM messages ORDER BY id DESC LIMIT ?)",
+            (CHAT_HISTORY_LIMIT,),
+        )
 
     def secret(self) -> str:
         with self._lock:
@@ -221,6 +230,7 @@ class Store:
                 "INSERT INTO messages(email, text, created_at) VALUES(?, ?, ?)",
                 (email, text, created),
             )
+            self._prune_messages()
             self._db.commit()
             message_id = int(cursor.lastrowid)
         return {"id": message_id, "email": email.split("@", 1)[0] or "гость", "text": text, "created_at": created}
@@ -230,7 +240,7 @@ class Store:
             self._db.close()
 
     def messages(self, limit: int | None = None) -> list[dict[str, Any]]:
-        limit = 100 if limit is None or limit < 0 else min(limit, 100)
+        limit = CHAT_HISTORY_LIMIT if limit is None or limit < 0 else min(limit, CHAT_HISTORY_LIMIT)
         with self._lock:
             rows = self._db.execute(
                 "SELECT id, email, text, created_at FROM messages ORDER BY id DESC LIMIT ?",

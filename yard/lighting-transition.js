@@ -69,9 +69,8 @@ export function createLightingTransition(scene, layout, initial, clock) {
         apply(mix);
         lastMix = mix;
       }
-      // The existing boundary effect expresses its strength through fog.near.
-      // Reapply that same tint after it updates; never reset its fog range or ground.
-      const boundary = THREE.MathUtils.clamp((90 - scene.fog.near) / 64, 0, 1) * 0.92;
+      // Use the explicit digital transition; fog range now expands to retain silhouettes.
+      const boundary = THREE.MathUtils.clamp(scene.userData.virtuality ?? (90 - scene.fog.near) / 64, 0, 1) * 0.98;
       const boundaryChanged = boundary !== lastBoundary;
       if (changed || boundaryChanged) {
         blendColor(scene.background, 'skyColor', mix).lerp(edgeSky, boundary);

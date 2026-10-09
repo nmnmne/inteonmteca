@@ -8,7 +8,7 @@ const layout = JSON.parse(fs.readFileSync(path.join(root, 'yard/data/site-layout
 
 test('hold is ten seconds; every real walk duration ends exactly at its deadline', async () => {
   const { createWalkLightingTimeline } = await import('../yard/walk-lighting.js');
-  for (let seconds = 10; seconds <= 65; seconds += 5) {
+  for (const seconds of [10, 20, 120, 240, 260, 360, 380, 480, 600, 2760]) {
     const timeline = createWalkLightingTimeline(1000);
     const end = 1000 + seconds * 1000;
     for (const time of [1000, 10999, 11000]) assert.equal(timeline.sample(time, end).progress, 0);
@@ -44,18 +44,18 @@ test('actual street-return ticks and its boundary bonus retime continuously with
   context.window = context;
   vm.runInNewContext(fs.readFileSync(path.join(root, 'street-return.js'), 'utf8'), context);
   const street = context.inteonStreet;
-  for (let i = 0; i < 5; i++) street.noteExit(); // existing progression: 10, 15, 20, 25, 30
+  street.noteExit(); // first visit: 20 seconds
   let deadline;
   street.armReturn({ replace() {} }, 'http:', left => { deadline = now + left * 1000; });
   const enteredAt = now;
   const timeline = createWalkLightingTimeline(enteredAt);
-  assert.equal(timeline.sample(now, deadline).durationMs, 20000);
-  now += 20000;
+  assert.equal(timeline.sample(now, deadline).durationMs, 10000);
+  now += 15000;
   assert.equal(timeline.sample(now, deadline).progress, 0.5);
   assert.equal(street.boundaryPlaybackSucceeded(), true);
-  assert.equal(deadline - now, 20 * 60 * 1000);
+  assert.equal(deadline - now, 245000, 'four minutes are added to the five remaining seconds');
   assert.equal(timeline.sample(now, deadline).progress, 0.5, 'extension does not reverse the light');
-  assert.equal(timeline.sample(now + 600000, deadline).progress, 0.75);
+  assert.equal(timeline.sample(now + 122500, deadline).progress, 0.75);
   assert.equal(timeline.sample(deadline, deadline).progress, 1);
 });
 
@@ -139,7 +139,10 @@ test('missing next map retains the original depth texture and shader', async () 
   assert.deepEqual(f.counts, [1, 0]);
 });
 
-test('restored atlas remains byte-for-byte identical to the saved original', () => {
-  assert.deepEqual(fs.readFileSync(path.join(root, 'yard/shadow-atlas.js')),
-    fs.readFileSync(path.join(root, 'tests/artifacts/vr-final/start/yard/shadow-atlas.js')));
+test('digital proxy buildings do not receive photographic baked shadows', async () => {
+  const { isBakedReceiver } = await import('../yard/shadow-atlas.js');
+  const mesh = {isMesh:true,name:'house',userData:{},material:{wireframe:false,transparent:false}};
+  assert.equal(isBakedReceiver(mesh),true);
+  mesh.userData.digitalProxy=true;
+  assert.equal(isBakedReceiver(mesh),false);
 });

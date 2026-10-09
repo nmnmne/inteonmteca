@@ -49,13 +49,46 @@ export function pixelRatioCap() {
 
 // The courtyard is static: only pose, viewport and the async logo texture
 // change its image. Keep input/minimap polling independent of GPU submissions.
-export function createRenderGate(mobile) {
+export function createRenderGate() {
   let previous = "";
   return (pose, width, height, textureVersion) => {
-    if (!mobile) return true;
     const key = `${pose.x},${pose.z},${pose.yaw},${pose.pitch},${width},${height},${textureVersion}`;
     if (key === previous) return false;
     previous = key;
     return true;
+  };
+}
+
+// Resolution adapts to sustained active-frame pressure, never by limiting FPS.
+// Idle gaps, shader startup and isolated stalls must not lower visual quality.
+export function createAdaptiveQuality(cap, mobile) {
+  let ratio = cap, last = 0, activeSince = 0, changedAt = 0;
+  const samples = [];
+  const floor = Math.min(cap, 0.7);
+  const reset = () => { last = 0; activeSince = 0; samples.length = 0; };
+  return {
+    reset,
+    resize(nextCap) { cap = nextCap; ratio = Math.min(ratio, cap); reset(); return ratio; },
+    snapshot: () => ({ pixelRatio: ratio, cap, samples: samples.length }),
+    sample(now, active) {
+      if (!active) { reset(); return null; }
+      const interval = last ? now - last : 0;
+      last = now;
+      if (!activeSince) activeSince = now;
+      if (interval <= 0 || interval > 100) { samples.length = 0; return null; }
+      if (now - activeSince < 2500 || now - changedAt < 5000) return null;
+      samples.push(interval);
+      if (samples.length < 90) return null;
+      const sorted = samples.splice(0).sort((a,b) => a-b);
+      const p80 = sorted[Math.floor(sorted.length * .8)];
+      let next = ratio;
+      if (p80 > (mobile ? 28 : 22)) next = Math.max(floor, ratio - .15);
+      else if (p80 < 17.5 && ratio < cap) next = Math.min(cap, ratio + .15);
+      next = Math.round(next * 100) / 100;
+      if (next === ratio) return null;
+      ratio = next;
+      changedAt = now;
+      return ratio;
+    },
   };
 }

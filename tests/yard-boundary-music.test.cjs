@@ -10,7 +10,7 @@ class Element extends EventTarget {
   appendChild() {}
   remove() { this.hidden = true; }
 }
-async function setup(deny = false) {
+async function setup(deny = false, store = new Map()) {
   const audio = new Element();
   Object.assign(audio, {paused:true, ended:false, readyState:0, currentTime:0, plays:0, src:''});
   audio.load = () => {};
@@ -31,13 +31,12 @@ async function setup(deny = false) {
   window.INTEONMTECA_PLAYLIST = JSON.parse(fs.readFileSync(path.join(root,'playlist.json')));
   const document = {baseURI:'https://example.test/yard/', body:new Element(), createElement() {const e=new Element(); buttons.push(e); return e;}};
   const ctx = vm.createContext({window, document, URL, location:{protocol:'file:'}});
-  const store = new Map();
   ctx.localStorage = {getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v)};
   vm.runInContext(fs.readFileSync(path.join(root,'playback-link.js'),'utf8'),ctx);
   vm.runInContext(source('wall-player.js').replaceAll('export ', ''), ctx);
   const player = ctx.createWallPlayer({querySelector: s => elements.get(s)});
   await player.load();
-  return {player, audio, buttons, elements, grants: () => grants, allow: () => {deny=false;}};
+  return {player, audio, buttons, elements, store, grants: () => grants, allow: () => {deny=false;}};
 }
 test('boundary session stops at end; manual next resumes normal playlist without bonus replay', async () => {
   const {player,audio,elements,grants}=await setup();
@@ -54,21 +53,23 @@ test('boundary session stops at end; manual next resumes normal playlist without
   assert.equal(audio.plays,3);
   assert.equal(grants(),1);
 });
-test('exit selects exact track and replaces other active audio, not the same active track', async () => {
-  const {player,audio} = await setup();
-  assert.equal(typeof player.playBoundaryTrack, 'function');
+test('boundary track starts once per local day, survives reload and permits a new day', async () => {
+  const {player,audio,store} = await setup();
   player.playBoundaryTrack();
-  await Promise.resolve();
   assert.equal(decodeURI(audio.src), 'https://example.test/media/God Is Dead/Матт - God Is Dead.flac');
   assert.equal(audio.plays,1);
   audio.src='https://example.test/other.flac'; audio.currentTime=42;
   player.playBoundaryTrack();
-  assert.equal(decodeURI(audio.src), 'https://example.test/media/God Is Dead/Матт - God Is Dead.flac');
-  assert.equal(audio.plays,2);
-  audio.currentTime=42;
-  player.playBoundaryTrack();
-  assert.equal(audio.currentTime,42); assert.equal(audio.plays,2);
+  assert.equal(audio.src, 'https://example.test/other.flac');
+  assert.equal(audio.plays,1);
+  const reloaded = await setup(false,store);
+  reloaded.player.playBoundaryTrack();
+  assert.equal(reloaded.audio.plays,0);
+  store.set('inteon-boundary-track-day','2000-1-1');
+  reloaded.player.playBoundaryTrack();
+  assert.equal(reloaded.audio.plays,1);
 });
+
 test('denied crossing remains paused with one attempt until explicit retry gesture', async () => {
   const {player,audio,buttons,allow,grants} = await setup(true);
   player.playBoundaryTrack();

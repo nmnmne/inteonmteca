@@ -17,6 +17,12 @@ export function createWallPlayer(root) {
   let pendingBoundary = null;
   let selection = 0;
   let leaving = false;
+  const boundaryDayKey = 'inteon-boundary-track-day';
+  const localDay = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; };
+  let playedDay = '';
+  const playedToday = () => { try { return (localStorage.getItem(boundaryDayKey) || playedDay) === localDay(); } catch { return playedDay === localDay(); } };
+  const markBoundaryPlayed = () => { playedDay = localDay(); try { localStorage.setItem(boundaryDayKey, playedDay); } catch {} };
+
   const hideBoundaryRetry = () => { if (boundaryRetry) boundaryRetry.hidden = true; };
   const offerBoundaryRetry = () => {
     if (!boundaryRetry) {
@@ -173,6 +179,7 @@ export function createWallPlayer(root) {
     // discard on any different selection or departure, consume only on playback.
     const pending = pendingBoundary;
     if (!leaving && pending && pending.request === selection && !audio.paused && !audio.ended && audio.src === pending.src) {
+      markBoundaryPlayed();
       pendingBoundary = null;
       window.inteonStreet?.boundaryPlaybackSucceeded?.(pending.visit);
     }
@@ -217,7 +224,7 @@ export function createWallPlayer(root) {
     load,
     playBoundaryTrack() {
       // Check the media element itself, not UI or persisted playback state.
-      if (!audio) return;
+      if (!audio || playedToday()) return;
       const index = tracks.findIndex((track) => pathOf(track) === "media/God Is Dead/Матт - God Is Dead.flac");
       if (index < 0 || (!audio.paused && !audio.ended && audio.src === rootUrl(pathOf(tracks[index])))) return;
       playIndex(index, { boundary: true });
