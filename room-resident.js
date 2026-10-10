@@ -332,4 +332,43 @@
   window.addEventListener('inteon-interlude', sync);
   window.addEventListener("pageshow",sync);
   sync();
+  // One brief comic speech per browser and local calendar day.
+  const speech = document.createElement('div');
+  speech.className = 'resident-speech'; speech.hidden = true;
+  speech.setAttribute('role', 'status');
+  document.body.append(speech);
+  const speechKey = 'inteonmteca-resident-speech-day';
+  let speechTimer = 0, hideSpeech = 0, speechPosition = 0, spokenToday = '';
+  const day = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; };
+  const previousDay = () => { try { return localStorage.getItem(speechKey) || spokenToday; } catch { return spokenToday; } };
+  const hide = () => { speech.hidden = true; clearTimeout(hideSpeech); clearInterval(speechPosition); };
+  const attempt = () => {
+    if (previousDay() === day()) return;
+    if (document.hidden || resident.hidden || cinematic || window.inteonHomeEffects?.ambientBlocked) {
+      speechTimer = setTimeout(attempt, 5000); return;
+    }
+    const prior = previousDay();
+    spokenToday = day();
+    try { localStorage.setItem(speechKey, spokenToday); } catch {}
+    speech.textContent = prior && Math.random() < .5 ? 'на счет чего?' : 'привет';
+    speech.hidden = false;
+    const placeSpeech = () => {
+    if (resident.hidden || cinematic) { hide(); return; }
+    const rect = resident.getBoundingClientRect();
+    speech.style.left = `${Math.max(8, Math.min(innerWidth - speech.offsetWidth - 8, rect.left + rect.width / 2 - speech.offsetWidth / 2))}px`;
+    speech.style.top = `${Math.max(8, rect.top - speech.offsetHeight - 12)}px`;
+    };
+    placeSpeech();
+    speechPosition = setInterval(placeSpeech, 100);
+    hideSpeech = setTimeout(hide, 5000);
+  };
+  const scheduleSpeech = () => {
+    clearTimeout(speechTimer);
+    if (!document.hidden && previousDay() !== day()) speechTimer = setTimeout(attempt, random(12000,25000));
+  };
+  document.addEventListener('visibilitychange', () => { hide(); scheduleSpeech(); });
+  window.addEventListener('storage', event => { if (event.key === speechKey) { clearTimeout(speechTimer); hide(); } });
+  window.addEventListener('pagehide', () => { clearTimeout(speechTimer); hide(); });
+  window.addEventListener('pageshow', scheduleSpeech);
+  scheduleSpeech();
 })();

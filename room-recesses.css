@@ -250,10 +250,10 @@ html.is-theme-crossfading::view-transition-group(root) { animation: none; }
 html.is-theme-crossfading::view-transition-image-pair(root) { isolation: auto; }
 html.is-theme-crossfading::view-transition-old(root),
 html.is-theme-crossfading::view-transition-new(root) {
-  pointer-events: none; mix-blend-mode: normal; animation-duration: 1600ms;
+  pointer-events: none; mix-blend-mode: normal; animation-duration: 4000ms;
 }
 html.is-theme-crossfading::view-transition-old(root) {
-  z-index: 2; animation: theme-snapshot-fade 1600ms ease both;
+  z-index: 2; animation: theme-snapshot-fade 4000ms ease both;
 }
 html.is-theme-crossfading::view-transition-new(root) { z-index: 1; animation: none; opacity: 1; }
 @keyframes theme-snapshot-fade { from { opacity: 1; } to { opacity: 0; } }
@@ -270,3 +270,8 @@ body.spatial-room .logo-grain { opacity:.15; }
 body.spatial-room .logo-wrap.is-ink-rebuilt .logo-vector-core { opacity:1; }
 @keyframes reactiveLogoBreath { 0%,100% {opacity:1;} 48% {opacity:.96;} 53% {opacity:.9;} 58% {opacity:1;} }
 @keyframes logoVectorDissolve { 0%,37%,100% {opacity:1;} 44% {opacity:.94;} 47% {opacity:.78;} 51%,72% {opacity:1;} }
+
+/* A short, quiet comic bubble above the resident. */
+.resident-speech { position: fixed; z-index: 39; pointer-events: none; padding: 9px 14px; border: 1px solid rgba(var(--theme-accent-rgb), .4); border-radius: 15px 15px 15px 5px; background: rgb(var(--theme-panel-rgb)); color: rgb(var(--theme-text-rgb)); font: 13px/1.4 Consolas, ui-monospace, monospace; box-shadow: 0 4px 16px #0003; }
+.resident-speech[hidden] { display: none; }
+.resident-speech::after { content: ''; position: absolute; left: 50%; bottom: -6px; width: 10px; height: 10px; background: inherit; border-right: 1px solid rgba(var(--theme-accent-rgb), .4); border-bottom: 1px solid rgba(var(--theme-accent-rgb), .4); transform: rotate(45deg); }

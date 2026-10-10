@@ -49,6 +49,9 @@ window.inteonDebugReady = (async () => {
     effectsButton.textContent = open ? 'Эффекты лого ▴' : 'Эффекты лого ▾';
   };
   effectsButton.addEventListener('click', () => showEffects(menu.hidden));
+  document.addEventListener('pointerdown', event => {
+    if (!menu.contains(event.target) && !effectsButton.contains(event.target)) showEffects(false);
+  });
   if (copy) document.body.append(effectsButton, menu);
   const resetEffects = async () => {
     window.inteonLogoAcid?.stop(); window.inteonLogoStorm?.stop(); window.inteonAtmosphere?.stop();

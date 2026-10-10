@@ -2026,6 +2026,20 @@ scrollbarThumb?.addEventListener("pointerup", () => {
 });
 
 const openPanels = [];
+// Outside clicks dismiss floating panels without disturbing the inline chat.
+document.addEventListener("pointerdown", event => {
+  if (!(event.target instanceof Element)) return;
+  if (event.target.closest('.theme-panel, .auth-panel, .chat-panel, [aria-controls], .development-animation-menu')) return;
+  if ([...document.querySelectorAll('.theme-panel:not([hidden]), .auth-panel:not([hidden]), .chat-panel:not([hidden])')].some(panel => {
+    const r = panel.getBoundingClientRect();
+    return event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom;
+  })) return;
+  for (const panel of [...openPanels]) {
+    if (panel === chatPanel && inlineChat) continue;
+    if (panel === chatPanel) closeChat();
+    else setPanelOpen(panel, false, { focus: false });
+  }
+});
 const panelOpeners = new WeakMap();
 const setPanelOpen = (panel, open, { focus = true } = {}) => {
   if (!panel || panel.hidden === !open) return;
@@ -2247,8 +2261,8 @@ const requestJson = async (path, options = {}) => {
   return data;
 };
 
-// The direct-file preview is the only explicitly local demo. HTTP uses the shared server.
-const useLocalPass = () => isFileMode;
+// Temporary browser pass: show the code on screen without an authentication API.
+const useLocalPass = () => true;
 
 const showLocalCode = () => {
   if (!emailFormat.test(pendingEmail)) throw new Error("нужна почта: имя@example.com");
@@ -2262,7 +2276,7 @@ const showLocalCode = () => {
 };
 
 const acceptLocalCode = () => {
-  if (authCode?.value.trim() !== localLoginCode) throw new Error("код не подошёл");
+  if (!localLoginCode || authCode?.value.trim() !== localLoginCode) throw new Error("код не подошёл");
   sessionEmail = pendingEmail;
   storeValue(localSessionStorageKey, sessionEmail);
   refreshAuthHint();
@@ -2271,7 +2285,7 @@ const acceptLocalCode = () => {
 };
 
 const loadSession = async () => {
-  if (isFileMode) {
+  if (useLocalPass()) {
     sessionEmail = readStoredValue(localSessionStorageKey) || "";
     passIsLocal = true;
     refreshAuthHint();

@@ -16,7 +16,11 @@
         const extra = shell.clientHeight - rowHeight * slots;
         shell.style.setProperty('--tile-height', `${rowHeight}px`);
         [...list.children].forEach((item, index) => item.style.setProperty('--tile-height', `${rowHeight + (index % slots < extra ? 1 : 0)}px`));
-        shell.style.setProperty('--catalog-height', `${Math.max(rowHeight, shell.clientHeight - rowHeight)}px`);
+        // Leave one additional row below the desktop catalog, without deleting tracks.
+        const reservedRows = matchMedia('(min-width: 801px), (min-width: 501px) and (max-height: 500px)').matches ? 2 : 1;
+        const visibleSlots = Math.max(1, slots - reservedRows);
+        const catalogHeight = rowHeight * visibleSlots + Math.min(extra, visibleSlots);
+        shell.style.setProperty("--catalog-height", `${catalogHeight}px`);
         const top = list.getBoundingClientRect().top, scroll = list.scrollTop;
         const offsets = [...list.children].map(item => item.getBoundingClientRect().top - top + scroll);
         list.scrollTop = offsets.reduce((nearest, offset) => Math.abs(offset-scroll)<Math.abs(nearest-scroll)?offset:nearest, 0);

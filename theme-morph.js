@@ -2,7 +2,7 @@
 (() => {
   const root = document.documentElement;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  const duration = 1600;
+  const duration = 4000;
   let transition = null, target = null, metadata = null, active = false, generation = 0;
   const commit = () => {
     if (target) for (const [property, value] of Object.entries(target)) {
@@ -48,7 +48,7 @@
       metadata = {name: options.name, mood};
       const controller = window.inteonHomeEffects;
       const immediate = !animate || reduced.matches || document.hidden ||
-        typeof document.startViewTransition !== 'function' || controller?.suspended ||
+        typeof document.startViewTransition !== 'function' ||
         (controller && controller.active !== 'theme' && !controller.claim('theme'));
       if (immediate) { commit(); complete(token); return; }
       active = true;
@@ -71,11 +71,27 @@
   reduced.addEventListener('change', () => { if (reduced.matches) finish(); });
   window.addEventListener('pagehide', finish);
   window.addEventListener('inteon-effects-change', () => {
-    if (window.inteonHomeEffects?.suspended && active) finish();
+    if (active && (document.hidden || reduced.matches || document.body.classList.contains('portal-leaving'))) finish();
   });
   // A user's next action immediately reveals the live controls, including typed
   // text and the playback state, instead of leaving them behind a frozen image.
   for (const event of ['pointerdown', 'keydown', 'input']) {
-    document.addEventListener(event, () => { if (active) finish(); }, {capture: true, passive: true});
+    document.addEventListener(event, input => {
+      if (!active) return;
+      // Snapshot hit-testing can retarget a menu click to <html>. Resolve the
+      // live button by its visible bounds before removing the snapshot.
+      let button;
+      if (event === 'pointerdown' && input.target === root) {
+        button = [...document.querySelectorAll('#theme-panel:not([hidden]) button, #auth-panel:not([hidden]) button, .development-animation-menu:not([hidden]) button')].find(el => {
+          const r = el.getBoundingClientRect();
+          return r.width && r.height && input.clientX >= r.left && input.clientX <= r.right && input.clientY >= r.top && input.clientY <= r.bottom;
+        });
+      }
+      finish();
+      if (button) {
+        input.preventDefault(); input.stopImmediatePropagation();
+        button.focus({preventScroll: true}); button.click();
+      }
+    }, {capture: true});
   }
 })();

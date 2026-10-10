@@ -11,20 +11,20 @@
   <link rel="prefetch" as="image" href="yard/assets/spawn-desktop.jpg" media="(orientation: landscape)">
   <link rel="stylesheet" href="room-portal.css?v=portal-mist-20261009-10">
   <script src="room-portal.js?v=portal-mist-20261009-10"></script>
-  <title>inteonmteca</title>
+  <title>inteonmteca — Погрузись в глубину звука</title>
   <meta name="description" content="Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри.">
   <meta name="inteonmteca-api" content="">
   <link rel="canonical" href="https://inteonmteca.online/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="ru_RU">
   <meta property="og:site_name" content="inteonmteca">
-  <meta property="og:title" content="inteonmteca">
+  <meta property="og:title" content="inteonmteca — Погрузись в глубину звука">
   <meta property="og:description" content="Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри.">
   <meta property="og:url" content="https://inteonmteca.online/">
   <meta property="og:image" content="https://inteonmteca.online/assets/og-image.png">
   <meta property="og:image:alt" content="inteonmteca">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="inteonmteca">
+  <meta name="twitter:title" content="inteonmteca — Погрузись в глубину звука">
   <meta name="twitter:description" content="Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри.">
   <meta name="twitter:image" content="https://inteonmteca.online/assets/og-image.png">
   <meta name="twitter:image:alt" content="inteonmteca">
@@ -49,7 +49,7 @@
   <link rel="stylesheet" href="charged-material.css?v=20261005-1">
   <link rel="stylesheet" href="room-grid.css?v=20261005-2">
   <link rel="stylesheet" href="room-editor.css?v=20261005-1">
-  <link rel="stylesheet" href="room-recesses.css?v=active-row-20261009-7">
+  <link rel="stylesheet" href="room-recesses.css?v=resident-pass-20261010">
 </head>
 <body class="perception-interface listening-room spatial-room">
   <div class="perception-field" aria-hidden="true"></div>
@@ -180,7 +180,8 @@
               <div class="volume-control"><label for="track-volume">Громкость</label><input id="track-volume" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="Громкость" disabled><span id="volume-note" class="volume-note" hidden>Кнопками устройства</span></div>
               <p class="playback-status" id="playback-status" aria-live="polite"></p>
             </section>
-            <div class="playlist-shell" id="playlist-shell">
+            <!--noindex-->
+            <div class="playlist-shell" id="playlist-shell" data-nosnippet>
               <div class="track-viewport" id="track-viewport">
                 <ol class="track-list" id="track-list" data-layout="catalog" aria-label="Треки">
                   <li class="track-item" data-track-title="Light Of The Night"><button class="track-select" type="button" onclick="window.inteonPick && window.inteonPick(event)"><span class="track-fold"><span class="track-meta"><span class="track-title" data-ink="Light Of The Night">Light Of The Night</span><span class="track-artist">Sonyx</span></span></span></button></li>
@@ -194,6 +195,7 @@
                 </div>
               </div>
             </div>
+            <!--/noindex-->
           </div>
         </section>
       </article>
@@ -270,17 +272,17 @@
   <script src="track-play.js?v=vr-room-20261004-2"></script>
   <script src="street-return.js?v=pose-20261009-5"></script>
   <script src="playback-link.js?v=seek-fade-20261006-2"></script>
-  <script src="home-effects.js?v=20261009-1"></script>
-  <script src="theme-morph.js?v=home-20261009-1"></script>
-  <script src="script.js?v=digital-shells-20261009-5"></script>
-  <script src="theme-picker.js?v=20261009-2"></script>
+  <script src="home-effects.js?v=theme-menu-20261010"></script>
+  <script src="theme-morph.js?v=theme-menu-20261010"></script>
+  <script src="script.js?v=resident-pass-20261010"></script>
+  <script src="theme-picker.js?v=theme-menu-20261010"></script>
   <script src="logo-acid.js?v=home-20261009-1"></script>
   <script data-development-only src="development-debug.js?v=effects-toggle-20261006-4"></script>
   <script src="mobile-sections.js?v=20261006-3"></script>
-  <script src="room-resident.js?v=inline-chat-20261005-1"></script>
+  <script src="room-resident.js?v=resident-pass-20261010"></script>
   <script src="logo-storm.js?v=digital-shells-20261009-5"></script>
   <script src="text-waves.js?v=digital-shells-20261009-5"></script>
-  <script src="room-finish.js?v=short-list-20261009-11"></script>
+  <script src="room-finish.js?v=catalog-limit-20261010"></script>
   <script src="energy-field.js?v=home-20261009-1"></script>
   <script src="atmosphere-events.js?v=digital-shells-20261009-5"></script>
   <script src="logo-ripples.js?v=home-20261009-1"></script>

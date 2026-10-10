@@ -20,7 +20,8 @@
   };
   window.inteonHomeEffects = Object.freeze({
     claim(name) {
-      if (!name || active || suspended) return false;
+      const paletteAllowed = name === 'theme' && !away && !document.hidden && !reduced.matches && !document.body.classList.contains('portal-leaving');
+      if (!name || active || (suspended && !paletteAllowed)) return false;
       active = name;
       publish();
       return true;

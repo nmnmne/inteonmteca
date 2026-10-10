@@ -9,7 +9,7 @@
   select.after(host); host.append(toggle,menu); select.hidden = true;
   const options = [...select.options].map(option => {
     const button = document.createElement('button'); button.type='button'; button.tabIndex=-1; button.setAttribute('role','option'); button.dataset.value=option.value; button.textContent=option.textContent;
-    button.addEventListener('click',()=>{select.value=option.value;select.dispatchEvent(new Event('change',{bubbles:true}));open(false);toggle.focus();}); menu.append(button);return button;
+    button.addEventListener('click',()=>{select.value=option.value;select.dispatchEvent(new Event('change',{bubbles:true}));button.focus({preventScroll:true});}); menu.append(button);return button;
   });
   const sync=()=>{toggle.textContent=`${select.selectedOptions[0]?.textContent || 'мягкий графит'} ${menu.hidden?'▾':'▴'}`;options.forEach(o=>o.setAttribute('aria-selected',String(o.dataset.value===select.value)));};
   const open=value=>{menu.hidden=!value;toggle.setAttribute('aria-expanded',String(value));sync();};
@@ -21,7 +21,7 @@
     if(wasClosed||i<0)i=Math.max(0,options.findIndex(o=>o.dataset.value===select.value));else i=event.key==='ArrowDown'?Math.min(options.length-1,i+1):Math.max(0,i-1);
     if(event.key==='Home')i=0;if(event.key==='End')i=options.length-1;options[i]?.focus();options[i]?.scrollIntoView({block:'nearest'});
   });
-  document.addEventListener('pointerdown',event=>{if(!host.contains(event.target))open(false);});
+  document.addEventListener('pointerdown',event=>{const r=host.getBoundingClientRect(),m=menu.getBoundingClientRect();const inside=b=>event.clientX>=b.left&&event.clientX<=b.right&&event.clientY>=b.top&&event.clientY<=b.bottom;if(!host.contains(event.target)&&!inside(r)&&(menu.hidden||!inside(m)))open(false);});
   const panel=select.closest('#theme-panel');new MutationObserver(()=>{if(panel.hidden)open(false);}).observe(panel,{attributes:true,attributeFilter:['hidden']});
   new MutationObserver(sync).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
   window.addEventListener('inteon-theme-frame',sync);select.addEventListener('change',sync);open(false);
