@@ -27,6 +27,7 @@
     return out;
   };
   const draw=now=>{
+    window.inteonHomeEffects?.beat('ripples');
     frame=0; if(blocked())return; frame=requestAnimationFrame(draw);
     if(paletteDirty)palette();
     ctx.clearRect(0,0,width,height);
@@ -73,6 +74,7 @@
   new MutationObserver(resize).observe(document.documentElement,{attributes:true,attributeFilter:['data-animation-quality']});
   new MutationObserver(resize).observe(document.documentElement,{attributes:true,attributeFilter:['data-animation-quality']});
   window.addEventListener('inteon-theme-frame',()=>{paletteDirty=true;});
+  window.inteonHomeEffects?.watch('ripples', {blocked, restart: sync});
   window.addEventListener('inteon-effects-change',sync);
   reduced.addEventListener('change',sync);document.addEventListener('visibilitychange',sync);
   window.addEventListener('pagehide',()=>cancelAnimationFrame(frame));window.addEventListener('pageshow',sync);

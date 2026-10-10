@@ -9,9 +9,10 @@
   let lastStarted = 0;
   try { lastStarted = Number(sessionStorage.getItem('inteon-storm-last')) || 0; } catch {}
   const signal = (phase, detail = {}) => window.dispatchEvent(new CustomEvent('inteon-storm', {detail: {phase, ...detail}}));
-  let layer, timer, animations = [], running = false, debugRun = false;
+  let layer, timer, deadline, animations = [], running = false, debugRun = false;
   const later = (fn, delay) => { clearTimeout(timer); timer = setTimeout(fn, delay); };
   const stop = () => {
+    clearTimeout(deadline); deadline = 0;
     clearTimeout(timer);
     animations.forEach(a => a.cancel()); animations = [];
     layer?.remove(); layer = null; running = false;
@@ -47,6 +48,8 @@
     signal('burst', {x: box.left + box.width / 2, y: box.top + box.height / 2});
     const cols = innerWidth < 600 ? 12 : 18, rows = innerWidth < 600 ? 4 : 6;
     const count = cols * rows, flight = 4000, hold = 5000, step = 190, returnTime = 1600;
+    // Finish even if a compositor animation never reports its completion.
+    deadline = setTimeout(stop, flight + hold + count * step + returnTime + 1500);
     let landed = 0;
     layer = document.createElement('div');
     const cycleLayer = layer;

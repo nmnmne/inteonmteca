@@ -9,21 +9,22 @@
       const first = list.querySelector('.track-item');
       const fill = getComputedStyle(shell);
       if (fill.getPropertyValue('--catalog-fill').trim() === '1' && first && shell.clientHeight) {
-        const minimum = Number(fill.getPropertyValue('--catalog-row-min')) || 66;
-        const slots = Math.max(1, Math.floor(shell.clientHeight / minimum));
-        // Repeat an integer-pixel pattern: any complete group fills the viewport exactly.
-        const rowHeight = Math.floor(shell.clientHeight / slots);
-        const extra = shell.clientHeight - rowHeight * slots;
+        const desktop = matchMedia('(min-width: 801px), (min-width: 501px) and (max-height: 500px)').matches;
+        const override = fill.getPropertyValue('--catalog-bottom-space').trim();
+        const bottomSpace = override ? Number(override) : desktop ? Math.min(96, Math.max(32, innerHeight * .07)) : 8;
+        const catalogHeight = Math.max(1, Math.floor(shell.clientHeight - bottomSpace));
+        // Seven generous tiles; keep five readable rows when vertical space is tight.
+        const slots = Math.min(list.children.length, catalogHeight >= 7 * 56 ? 7 : 5);
+        const oldRow = first.getBoundingClientRect().height;
+        const rowPosition = oldRow ? list.scrollTop / oldRow : 0;
+        // Equal fractional rows make each repeated catalogue cycle identical.
+        const rowHeight = catalogHeight / Math.max(1, slots);
         shell.style.setProperty('--tile-height', `${rowHeight}px`);
-        [...list.children].forEach((item, index) => item.style.setProperty('--tile-height', `${rowHeight + (index % slots < extra ? 1 : 0)}px`));
-        // Leave one additional row below the desktop catalog, without deleting tracks.
-        const reservedRows = matchMedia('(min-width: 801px), (min-width: 501px) and (max-height: 500px)').matches ? 2 : 1;
-        const visibleSlots = Math.max(1, slots - reservedRows);
-        const catalogHeight = rowHeight * visibleSlots + Math.min(extra, visibleSlots);
-        shell.style.setProperty("--catalog-height", `${catalogHeight}px`);
-        const top = list.getBoundingClientRect().top, scroll = list.scrollTop;
-        const offsets = [...list.children].map(item => item.getBoundingClientRect().top - top + scroll);
-        list.scrollTop = offsets.reduce((nearest, offset) => Math.abs(offset-scroll)<Math.abs(nearest-scroll)?offset:nearest, 0);
+        [...list.children].forEach(item => item.style.removeProperty('--tile-height'));
+        shell.style.setProperty('--catalog-height', `${catalogHeight}px`);
+        const actualRow = first.getBoundingClientRect().height;
+        list.scrollTop = Math.round(rowPosition) * actualRow;
+        list.dispatchEvent(new Event('inteon-catalog-fit'));
         return;
       }
       const tile = first?.querySelector('.track-select')?.getBoundingClientRect().height;
@@ -34,6 +35,7 @@
       const height = Math.min(Math.max(1, slots - 1), list.children.length) * row - gap;
       shell.style.setProperty('--catalog-height', `${height}px`);
       list.scrollTop = Math.round(list.scrollTop / row) * row;
+      list.dispatchEvent(new Event('inteon-catalog-fit'));
     });
   };
   new ResizeObserver(fit).observe(shell);
@@ -46,6 +48,7 @@
   let frame = 0, last = 0, level = 0, floor = 0;
   const blocked = () => document.hidden || reduced.matches || window.inteonHomeEffects?.ambientBlocked;
   const animate = now => {
+    window.inteonHomeEffects?.beat('seek');
     if (!music || music.paused || blocked()) { stop(); return; }
     {
       const elapsed = Math.min(80, last ? now - last : 16.67); last = now;
@@ -64,6 +67,7 @@
   };
   const stop = () => { cancelAnimationFrame(frame); frame = 0; last = 0; level = 0; floor = 0; progress?.style.setProperty('--seek-bass', '0'); };
   const start = () => { stop(); if (!music?.paused && !blocked()) frame = requestAnimationFrame(animate); };
+  window.inteonHomeEffects?.watch('seek', {blocked: () => !music || music.paused || blocked(), restart: start});
   music?.addEventListener('playing', start);
   music?.addEventListener('pause', stop);
   music?.addEventListener('ended', stop);

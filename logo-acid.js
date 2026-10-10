@@ -3,8 +3,9 @@
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const source = new Image();
   source.src = 'assets/logo-wordmark.svg';
-  let frame = 0, finish = null, canvas = null;
+  let frame = 0, finish = null, canvas = null, deadline = 0;
   const stop = () => {
+    clearTimeout(deadline); deadline = 0;
     cancelAnimationFrame(frame); frame = 0;
     canvas?.remove(); canvas = null;
     logo?.classList.remove('is-acid');
@@ -19,6 +20,7 @@
     if (window.inteonHomeEffects && !window.inteonHomeEffects.claim('acid')) return null;
     return new Promise(resolve => {
       finish = resolve;
+      deadline = setTimeout(stop, 11850);
       const box = logo.getBoundingClientRect(), pad = 90, cols = 18, rows = 6;
       const w = box.width / cols, h = box.height / rows;
       canvas = document.createElement('canvas');

@@ -97,6 +97,7 @@
   };
   const blocked = () => document.hidden || reduced.matches || window.inteonHomeEffects?.ambientBlocked || document.body.classList.contains('is-interlude');
   const tick = now => {
+    window.inteonHomeEffects?.beat('text');
     frameId = 0;
     if (blocked()) { restore(); return; }
     frameId = requestAnimationFrame(tick);
@@ -162,6 +163,7 @@
   document.addEventListener('scroll', () => { dirty = true; }, {capture: true, passive: true});
   window.addEventListener('resize', () => { dirty = true; });
   const resume = () => { cancelAnimationFrame(frameId); frameId = 0; waves = []; modeUntil = 0; lastGlyphFrame = -1; dirty = true; focusTarget = null; restore(); if (!blocked()) frameId = requestAnimationFrame(tick); };
+  window.inteonHomeEffects?.watch('text', {blocked, restart: resume});
   document.addEventListener('visibilitychange', resume);
   reduced.addEventListener('change', resume);
   document.addEventListener('selectionchange', () => { selected = !getSelection()?.isCollapsed; if (selected) restore(); });

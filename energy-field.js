@@ -43,6 +43,7 @@
   const palette=()=>{ink=getComputedStyle(document.documentElement).getPropertyValue('--interface-accent').trim()||ink;paletteDirty=false;labels.clear();};
   const resize=()=>{w=innerWidth;h=innerHeight;const d=Math.min(devicePixelRatio,document.documentElement.dataset.animationQuality==='low'?1:1.5);canvas.width=w*d;canvas.height=h*d;ctx.setTransform(d,0,0,d,0,0);labels.clear();buildStreams();measureLogo();};
   const draw=now=>{
+    window.inteonHomeEffects?.beat('field');
     frame=0;if(blocked())return;frame=requestAnimationFrame(draw);
     if(paletteDirty)palette();
     ctx.clearRect(0,0,w,h);
@@ -100,11 +101,11 @@
     }
     ctx.globalAlpha=1;
   };
-  const blocked=()=>document.hidden||reduced.matches||window.inteonHomeEffects?.suspended||
-    (window.inteonHomeEffects?.active && !(window.inteonHomeEffects.active==='interlude' && (energy||document.body.classList.contains('scene-dawn'))));
+  const blocked=()=>document.hidden||reduced.matches||window.inteonHomeEffects?.suspended;
   const sync=()=>{cancelAnimationFrame(frame);frame=0;if(!blocked())frame=requestAnimationFrame(draw);};
   window.inteonPixelEnergy={start(){measureLogo();energy=true;origin=performance.now();canvas.dataset.mode='pixels';sync();},stop(){energy=false;canvas.dataset.mode='field';sync();}};
   window.addEventListener('inteon-theme-frame',()=>{paletteDirty=true;});
+  window.inteonHomeEffects?.watch('field', {blocked, restart: sync});
   window.addEventListener('inteon-effects-change',sync);
   window.addEventListener('inteon-interlude',sync);
   window.addEventListener('resize',resize);document.addEventListener('visibilitychange',sync);reduced.addEventListener('change',sync);

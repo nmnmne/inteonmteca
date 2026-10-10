@@ -197,8 +197,7 @@
   const sync = () => {
     if (cinematic) return;
     const hidden = document.hidden || !anchor.getBoundingClientRect().width
-      || document.body.classList.contains('is-interlude')
-      || [...document.querySelectorAll('#chat-panel:not(.chat-inline),#theme-panel,#auth-panel')].some(el=>!el.hidden);
+      || document.body.classList.contains('is-interlude');
     suspend(); chaseUntil=0; encounter=0; hoverArmed=true; resident.dataset.behavior="independent"; blocked = hidden; resident.hidden = hidden;
     if (hidden) return;
     resident.style.transform = position(home());
@@ -311,8 +310,6 @@
   document.addEventListener("visibilitychange",sync);
   reduced.addEventListener("change",sync);
   compact.addEventListener("change",sync);
-  const panels = new MutationObserver(sync);
-  document.querySelectorAll('#chat-panel:not(.chat-inline),#theme-panel,#auth-panel').forEach(el=>panels.observe(el,{attributes:true,attributeFilter:['hidden']}));
   window.addEventListener("pagehide",suspend);
   window.addEventListener('inteon-storm', event => {
     const {phase, x, y} = event.detail;

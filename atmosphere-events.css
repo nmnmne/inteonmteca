@@ -38,12 +38,12 @@ body.is-interlude.scene-heading .listening-intro { opacity: 1 !important; transi
 body.is-interlude.scene-heading .listening-intro h1 { color: #e8edda; }
 body.is-interlude.scene-heading .listening-intro h1 em { color: #d0e3a3; }
 body.is-interlude:is(.scene-void, .scene-energy) :is(.active-player, .scene-digits) { opacity: 0; pointer-events: none; transition: opacity 2.5s; }
-body.is-interlude.scene-energy .active-player { opacity: 1; pointer-events: auto; background: rgba(var(--interface-glass), .75); border-color: rgba(var(--interface-ink), .2); transition: opacity 12s ease, background-color 12s ease, border-color 12s ease; }
+body.is-interlude.scene-energy .active-player { opacity: 1; pointer-events: auto; transition: opacity 12s ease, background-color 12s ease, border-color 12s ease; }
 body.is-interlude.scene-energy .active-player > :not(.transport), body.is-interlude.scene-energy .transport > :not(.transport-seek-field) { opacity: 1; pointer-events: auto; transition: opacity 12s ease; }
 body.spatial-room.is-interlude.scene-dawn .listening-intro > :not(h1) { opacity: 1; transition: opacity 10s ease; }
 body.is-interlude.scene-dawn :is(.hero-intro, .listening-intro, .catalog-heading, .text, .auth-hint, .street-return, .chat-hint, .theme-hint, .room-resident) { opacity: 1 !important; pointer-events: auto; transition: opacity 10s ease; }
 body.is-interlude.scene-dawn .active-player > :not(.transport), body.is-interlude.scene-dawn .transport > :not(.transport-seek-field) { opacity: 1; pointer-events: auto; transition: opacity 10s; }
-body.is-interlude.scene-dawn .active-player { opacity: 1; background: rgba(var(--interface-glass), .75); border-color: rgba(var(--interface-ink), .2); transition: opacity 10s, background-color 10s; }
+body.is-interlude.scene-dawn .active-player { opacity: 1; transition: opacity 10s, background-color 10s; }
 body.is-interlude .transport-seek-field::before { background: linear-gradient(to right, #e6edcf var(--seek), #e6edcf44 var(--seek)); }
 body.is-interlude .transport-progress::-webkit-slider-thumb { background: #e6edcf; }
 body.is-interlude .transport-progress::-moz-range-thumb { background: #e6edcf; }

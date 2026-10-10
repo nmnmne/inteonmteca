@@ -29,7 +29,6 @@ html[data-theme] .spatial-room .street-link { background: #00000006; border-colo
   background: #00000008; color: rgb(var(--interface-ink)); border-color: rgba(var(--interface-ink), .12); box-shadow: inset 0 2px 5px #0000001c;
 }
 .spatial-room .theme-select option, .spatial-room .theme-select optgroup { background: var(--theme-bg); color: rgb(var(--interface-ink)); }
-body.spatial-room.is-interlude:is(.scene-energy, .scene-dawn) .active-player { background: #00000006; border-color: rgba(var(--interface-ink), .07); box-shadow: var(--recess-shadow); }
 body.spatial-room.is-interlude.scene-energy .active-player { --interface-ink: 235, 239, 220; --interface-muted: 195, 202, 180; --interface-accent: 218, 243, 149; --ui-ink: 235, 239, 220; --theme-text-rgb: 235, 239, 220; }
 body.spatial-room.is-interlude.scene-dawn .active-player :is(.now-playing-title, .active-track-artist, .transport-skip, .transport-play, .transport-time) { transition: color 10s, opacity 10s, background-color 10s; }
 @media (max-width: 800px) and (min-height: 501px), (max-width: 500px) { .spatial-room .release-content { box-shadow: none; } }
@@ -211,10 +210,10 @@ body.spatial-room .reactive-logo { animation-name: logoContrastBreath; }
 html[data-theme] .spatial-room :is(.auth-panel, .theme-panel) {
   background: var(--theme-bg);
 }
-/* Keep ambient layers still while a foreground scene owns the frame budget. */
-html:is([data-home-effect], [data-home-effects-suspended="true"]) .spatial-room :is(.theme-light, .reactive-logo, .logo-vector, .logo-vector-core, .logo-vector-outline, .logo-ink-base, .logo-grain, .logo-grain *),
-html:is([data-home-effect], [data-home-effects-suspended="true"]) .spatial-room .logo-wrap::before,
-html:is([data-home-effect], [data-home-effects-suspended="true"]) .room-resident:not(.is-detonating) * {
+/* Only a hidden page or reduced-motion preference suspends ambient CSS motion. */
+html[data-home-effects-suspended="true"] .spatial-room :is(.theme-light, .reactive-logo, .logo-vector, .logo-vector-core, .logo-vector-outline, .logo-ink-base, .logo-grain, .logo-grain *),
+html[data-home-effects-suspended="true"] .spatial-room .logo-wrap::before,
+html[data-home-effects-suspended="true"] .room-resident:not(.is-detonating) * {
   animation-play-state: paused !important;
 }
 @media (min-width: 801px) and (max-height: 540px) {
@@ -232,14 +231,14 @@ html:is([data-home-effect], [data-home-effects-suspended="true"]) .room-resident
 }
 
 .theme-picker { position:relative; width:100%; }
-.theme-picker-toggle { width:100%; padding:10px; border:1px solid rgba(var(--interface-ink),.22); border-radius:5px; background:#10151180; color:rgb(var(--interface-ink)); text-align:left; font:12px/1.4 Consolas,monospace; cursor:pointer; }
-.theme-options { max-height:min(210px,35vh); overflow-y:auto; margin-top:5px; padding:7px; border:1px solid #bac48b55; border-radius:6px; background:#101511ed; scrollbar-color:#bac48b80 #bac48b0c; scrollbar-width:thin; }
+.theme-picker-toggle { width:100%; padding:10px; border:1px solid rgba(var(--interface-ink),.22); border-radius:5px; background:rgba(var(--theme-panel-rgb),.65); color:rgb(var(--theme-text-rgb)); text-align:left; font:12px/1.4 Consolas,monospace; cursor:pointer; }
+.theme-options { max-height:min(210px,35vh); overflow-y:auto; margin-top:5px; padding:7px; border:1px solid rgba(var(--theme-accent-rgb),.32); border-radius:6px; background:rgb(var(--theme-panel-rgb)); scrollbar-color:rgba(var(--theme-accent-rgb),.65) rgba(var(--theme-text-rgb),.06); scrollbar-width:thin; }
 .theme-options[hidden], #theme-select[hidden] { display:none !important; }
-.theme-options button { display:block; width:100%; padding:8px; border:0; border-radius:3px; background:transparent; color:#dce4cc; text-align:left; font:11px/1.4 Consolas,monospace; cursor:pointer; }
-.theme-options button:is(:hover,:focus-visible,[aria-selected="true"]) { background:#bac48b22; }
+.theme-options button { display:block; width:100%; padding:8px; border:0; border-radius:3px; background:transparent; color:rgb(var(--theme-text-rgb)); text-align:left; font:11px/1.4 Consolas,monospace; cursor:pointer; }
+.theme-options button:is(:hover,:focus-visible,[aria-selected="true"]) { background:rgba(var(--theme-accent-rgb),.14); }
 .theme-options::-webkit-scrollbar { width:5px; }
-.theme-options::-webkit-scrollbar-track { background:#bac48b0c; border-radius:8px; }
-.theme-options::-webkit-scrollbar-thumb { background:#bac48b80; border-radius:8px; border:1px solid #101511; }
+.theme-options::-webkit-scrollbar-track { background:rgba(var(--theme-text-rgb),.06); border-radius:8px; }
+.theme-options::-webkit-scrollbar-thumb { background:rgba(var(--theme-accent-rgb),.65); border-radius:8px; border:1px solid rgb(var(--theme-panel-rgb)); }
 html[data-theme] .spatial-room .theme-panel { max-height:calc(100dvh - 100px); }
 body.spatial-room .logo-wrap.release-logo::before { inset:-85% -22%; background:radial-gradient(ellipse at 43% 49%, #02060888, #050a0a55 30%, #070c0c20 53%, transparent 72%); border-radius:50%; filter:none; }
 @keyframes logo-darkness { 0%,19%,68%,100% { opacity:0; transform:scale(.92) rotate(-3deg); } 34%,48% { opacity:.7; transform:scale(1.07) rotate(2deg); } }
@@ -275,3 +274,152 @@ body.spatial-room .logo-wrap.is-ink-rebuilt .logo-vector-core { opacity:1; }
 .resident-speech { position: fixed; z-index: 39; pointer-events: none; padding: 9px 14px; border: 1px solid rgba(var(--theme-accent-rgb), .4); border-radius: 15px 15px 15px 5px; background: rgb(var(--theme-panel-rgb)); color: rgb(var(--theme-text-rgb)); font: 13px/1.4 Consolas, ui-monospace, monospace; box-shadow: 0 4px 16px #0003; }
 .resident-speech[hidden] { display: none; }
 .resident-speech::after { content: ''; position: absolute; left: 50%; bottom: -6px; width: 10px; height: 10px; background: inherit; border-right: 1px solid rgba(var(--theme-accent-rgb), .4); border-bottom: 1px solid rgba(var(--theme-accent-rgb), .4); transform: rotate(45deg); }
+
+/* Pinned palette controls change color only when the live room transition ends. */
+#theme-panel.is-palette-pinned, #theme-panel.is-palette-pinned * { transition: none !important; }
+
+/* Shared room design for every palette and every scene. Keep component styling here. */
+@media (min-width: 801px) and (min-height: 541px) {
+  html[data-theme] body.spatial-room {
+    --catalog-edge-gap: clamp(12px, 1.2vw, 36px);
+    --reference-play-size: clamp(36px, min(4.8vw, 7dvh), 156px);
+    --reference-icon-scale: clamp(1, min(calc(100vw / 1150px), calc(100dvh / 750px)), 3);
+  }
+  html[data-theme] body.spatial-room .release-card { grid-template-columns: 60.4% 39.6%; }
+  html[data-theme] body.spatial-room .release-content { height: 81dvh; }
+  html[data-theme] body.spatial-room .catalog-heading { flex-basis: max(64px, 11dvh); padding: 0 2vw .7dvh; }
+  html[data-theme] body.spatial-room .playlist-shell {
+    --catalog-bottom-space: 0;
+    mask-image: linear-gradient(90deg, #000 0%, #000 62%, rgba(0,0,0,.68) 84%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 62%, rgba(0,0,0,.68) 84%, transparent 100%);
+  }
+  html[data-theme] body.spatial-room .track-item { padding: 0; }
+  html[data-theme] body.spatial-room .track-select {
+    height: calc(var(--tile-height) - .75dvh); width: 100%; margin: 0;
+    padding: .7dvh 2.1vw; border-radius: clamp(10px, 1.35vw, 46px);
+    background: linear-gradient(110deg, rgba(var(--theme-text-rgb), .07), rgba(var(--theme-text-rgb), .014)), rgba(var(--theme-panel-rgb), .24);
+    border: 1px solid rgba(var(--theme-text-rgb), .12);
+    box-shadow: inset 0 1px 0 rgba(var(--theme-text-rgb), .055);
+  }
+  html[data-theme] body.spatial-room .track-select::before { opacity: .24; }
+  html[data-theme] body.spatial-room .track-item.is-playing .track-select {
+    background: linear-gradient(110deg, rgba(var(--theme-accent-rgb), .21), rgba(var(--theme-panel-rgb), .2));
+    border-color: rgba(var(--theme-accent-rgb), .35); box-shadow: inset 0 1px 0 rgba(var(--theme-accent-rgb), .12);
+  }
+  html[data-theme] body.spatial-room .track-meta { gap: .45dvh; }
+  html[data-theme] body.spatial-room .track-title { font-size: clamp(14px, min(1.48vw, 2.6dvh), 50px); line-height: 1.13; font-weight: 550; }
+  html[data-theme] body.spatial-room .track-artist { font-size: clamp(10px, min(1.05vw, 1.8dvh), 35px); line-height: 1.1; letter-spacing: .1em; opacity: .75; }
+  html[data-theme] body.spatial-room .listening-intro h1 {
+    top: 23dvh; right: var(--catalog-edge-gap); width: auto; max-width: 56vw;
+    text-align: right; font-size: clamp(34px, 5vw, 170px); line-height: 1.1;
+  }
+  html[data-theme] body.spatial-room #logo-wrap { left: 8%; top: 49%; width: 79.8%; }
+  html[data-theme] body.spatial-room #active-player {
+    left: 2.5vw; right: auto; top: 85dvh; bottom: auto; width: 73vw;
+    height: 13dvh; padding: 0; border: 0; border-radius: 0;
+    background: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none;
+    display: block;
+  }
+  html[data-theme] body.spatial-room #active-player .active-track-copy {
+    position: absolute; left: 0; top: .9dvh; width: 25vw; gap: .65dvh;
+  }
+  html[data-theme] body.spatial-room #active-player .now-playing-title { font-size: clamp(16px, min(2.3vw, 3.5dvh), 72px); line-height: 1.16; }
+  html[data-theme] body.spatial-room #active-player .active-track-artist { font-size: clamp(10px, min(1.05vw, 1.8dvh), 35px); line-height: 1.2; letter-spacing: .025em; }
+  html[data-theme] body.spatial-room #active-player .transport {
+    position: absolute; left: 26.5vw; top: 0; width: 41.4vw;
+    grid-template-columns: 1fr var(--reference-play-size) 1fr;
+    grid-template-rows: var(--reference-play-size) max(24px, min(3vw, 4dvh)); gap: 0 2.2vw;
+  }
+  html[data-theme] body.spatial-room #active-player .transport-play {
+    width: var(--reference-play-size); height: var(--reference-play-size); min-width: 0; min-height: 0;
+    border-radius: 50%; border: 1px solid rgba(var(--theme-text-rgb), .18);
+    color: rgb(var(--theme-text-rgb)); background: rgba(var(--theme-panel-rgb), .16); box-shadow: none;
+  }
+  html[data-theme] body.spatial-room #active-player .transport-play:hover:not(:disabled) { background: rgba(var(--theme-accent-rgb), .12); border-color: rgba(var(--theme-accent-rgb), .5); }
+  html[data-theme] body.spatial-room #active-player .transport-skip {
+    width: 4vw; min-width: 32px; height: var(--reference-play-size); min-height: 0;
+    border: 0; border-radius: 0; background: transparent; box-shadow: none;
+  }
+  html[data-theme] body.spatial-room #active-player :is(.play-mark, .skip-mark) { transform: scale(var(--reference-icon-scale)); }
+  html[data-theme] body.spatial-room #active-player .play-mark[data-state="paused"]::before { clip-path: polygon(0 0, 100% 50%, 0 100%); }
+  html[data-theme] body.spatial-room #active-player .skip-mark::before { clip-path: polygon(0 0, 100% 50%, 0 100%); }
+  html[data-theme] body.spatial-room #active-player .transport-seek-field { margin-inline: 4vw; height: max(24px, min(3vw, 4dvh)); }
+  html[data-theme] body.spatial-room #active-player .transport-time { font-size: clamp(9px, 1vw, 30px); }
+  html[data-theme] body.spatial-room #active-player .volume-control { position: absolute; left: 69.5vw; top: 1.5dvh; width: 5vw; opacity: .65; }
+  html[data-theme] body.spatial-room #active-player .playback-status { bottom: 0; left: 0; width: 100%; }
+  html[data-theme] body.spatial-room #chat-panel.chat-inline {
+    left: 2vw; right: auto; bottom: 17.3dvh; width: 54vw;
+  }
+  html[data-theme] body.spatial-room .chat-inline .chat-compose { border-radius: .6vw; background: rgba(var(--theme-panel-rgb), .18); }
+  html[data-theme] body.spatial-room .chat-inline .chat-input { height: max(42px, 6dvh); font-size: clamp(12px, 1.35vw, 40px); padding-left: 4vw; }
+  html[data-theme] body.spatial-room .chat-inline .chat-prompt { left: 1.2vw; font-size: clamp(14px, 1.5vw, 44px); }
+  html[data-theme] body.spatial-room .chat-inline .chat-send { width: 4vw; min-width: 40px; height: max(32px, 4dvh); font-size: clamp(20px, 2vw, 56px); border-left: 0; }
+  html[data-theme] body.spatial-room .room-toolbar { width: 39.6%; padding-left: 0; }
+  html[data-theme] body.spatial-room :is(.theme-panel, .auth-panel) {
+    right: calc(39.6vw + var(--catalog-edge-gap)); left: auto;
+    top: max(78px, 11dvh); width: var(--theme-menu-width);
+  }
+  html[data-theme] body.spatial-room .listening-intro .label { right: var(--catalog-edge-gap); }
+  html[data-theme] body.spatial-room:is(.is-theme-menu-open, .is-auth-menu-open) .listening-intro :is(h1, .label) {
+    right: calc(var(--theme-menu-width) + var(--catalog-edge-gap) * 2);
+  }
+  html[data-theme] body.spatial-room:is(.is-theme-menu-open, .is-auth-menu-open) .listening-intro h1 {
+    font-size: min(clamp(22px, calc((60.4vw - var(--theme-menu-width) - var(--catalog-edge-gap) * 2 - 24px) / 8.4), 170px), clamp(24px, 3.5vw, 119px));
+  }
+}
+
+/* Local code typography retains each artist's original spelling and case. */
+@font-face {
+  font-family: 'JetBrains Mono'; font-style: normal; font-weight: 400;
+  font-display: swap; src: url('assets/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+}
+html[data-theme] body.spatial-room :is(.track-artist, #active-player .active-track-artist) {
+  font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+  font-weight: 400; text-transform: none; letter-spacing: .025em;
+}
+/* A recycled cycle must not inherit a browser's animated scroll behavior. */
+.spatial-room .track-list { scroll-behavior: auto; overflow-anchor: none; }
+
+html[data-theme] body.spatial-room.is-chat-open::after,
+html[data-theme] body.spatial-room.is-chat-open .theme-light { animation-play-state: running; }
+
+/* Explicit compact width is shared too, so changing its scene anchor cannot
+   trigger shrink-to-fit and silently change the internal grid. */
+@media (min-width: 501px) and (max-height: 540px) {
+  html[data-theme] body.spatial-room #active-player { width: calc(50vw - 20px); }
+}
+
+/* Scene choreography only: reuse the complete player above, with no second set
+   of typography, controls, cards or internal grids to maintain. */
+html[data-theme] body.spatial-room.is-interlude.scene-energy {
+  --scene-logo-width: min(58vw, 1250px);
+  --scene-logo-top: 46dvh;
+  --scene-player-scale: .7;
+}
+html[data-theme] body.spatial-room.is-interlude.scene-energy #logo-wrap {
+  position: fixed; left: 50%; top: var(--scene-logo-top); width: var(--scene-logo-width); height: auto;
+  margin: 0; transform: translate(-50%, -50%);
+}
+html[data-theme] body.spatial-room.is-interlude.scene-energy #active-player {
+  left: 50%; right: auto; top: calc(var(--scene-logo-top) + var(--scene-logo-width) * .1002 + 28px); bottom: auto;
+  transform-origin: top center;
+  transform: translateX(-50%) scale(var(--scene-player-scale));
+}
+@media (max-width: 800px), (max-height: 540px) {
+  html[data-theme] body.spatial-room.is-interlude.scene-energy {
+    --scene-logo-width: 80vw; --scene-logo-top: 36dvh; --scene-player-scale: 1;
+  }
+}
+@media (max-width: 500px) {
+  html[data-theme] body.spatial-room.is-interlude.scene-energy {
+    --scene-logo-width: 90vw; --scene-logo-top: 42dvh;
+  }
+}
+
+/* Fade only the message history; the composer remains fully readable. */
+html[data-theme] .chat-inline .chat-stream {
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.18) 20%, rgba(0,0,0,.55) 55%, #000 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.18) 20%, rgba(0,0,0,.55) 55%, #000 100%);
+}
+html[data-theme] .spatial-room .auth-kicker { color: rgb(var(--theme-accent-rgb)); }
+html[data-theme] .spatial-room .auth-status { color: rgba(var(--theme-text-rgb), .8); overflow-wrap: anywhere; }

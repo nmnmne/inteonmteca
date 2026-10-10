@@ -140,7 +140,7 @@ const TRACK_VIEW = 5;
 const THEME_MIN_MS = 4 * 1000;
 const THEME_MAX_MS = 7 * 24 * 60 * 60 * 1000;
 const THEME_DEFAULT_MS = 8 * 1000;
-// Curated collection: sixteen colorful atmospheres, two nights and two daylight palettes.
+// Curated dark and light palettes using the existing room materials.
 // Row: id | Russian label | background panel light-a light-b light-c accent text | mood.
 const themeCoreFilters = Object.freeze({
   desert: { canvas: "none", logo: "none", fog: "18px", opacity: ".82" },
@@ -157,13 +157,10 @@ const themeCoreFilters = Object.freeze({
 const themeRegistry = Object.freeze([
   "abyss|ультрамариновая глубина|030914 070c19 296dba 183b74 583777 9cb9d6 e8efff|dark",
   "graphite|мягкий графит|0c0e10 17191c 576267 323d44 76685f c2cdce eff1f0|dark",
-  "smoked-slate|дымчатый сланец|101317 1b2026 53616f 323b47 6b7075 bdcbd6 e5ebef|dark",
-  "quiet-olive|тихая олива|111511 1b211b 596657 374638 747368 c4cfba e7ebe1|dark",
   "warm-carbon|тёплый уголь|161310 24201c 71665c 4d4036 81766b d6c8b7 f0e9df|dark",
-  "night-silver|ночное серебро|101216 1c1f25 626974 3c414e 777889 c9cedb eceef5|dark",
   "deep-ink|глубокие чернила|0c1419 17232b 496775 294451 69767e b4cfd9 e1edf1|dark",
-  "porcelain|тёплый фарфор|e8dfca f6efdf e6b982 cab894 c6d6b4 526c37 282b26|light",
-  "chalk|цветной мел|dce9ed eff6f6 9fcfd5 aab9df e6b8c3 356570 23353d|light",
+  "coral-obsidian|коралловый обсидиан|101114 1c1d22 9b514c 51383c 716265 f18b79 f5eae6|dark",
+  "cobalt-tile|кобальтовый кафель|eef0f2 f9fafc b8ccec d5dfef e1e5ee 204ac8 111c38|light",
 ].map((row) => {
   const [id, name, palette, mood] = row.split("|");
   const [bg, panel, a, b, c, accent, text] = palette.toLowerCase().split(" ");
@@ -186,6 +183,8 @@ const themeRegistry = Object.freeze([
     name,
     mood,
     tokens: Object.freeze({
+      ...(id === 'cobalt-tile' ? {'--interface-ink': '17, 28, 56', '--interface-muted': '71, 85, 113', '--interface-accent': '32, 74, 200', '--interface-peach': '32, 74, 200', '--interface-sage': '32, 74, 200'} : {}),
+      ...(id === 'coral-obsidian' ? {'--interface-accent': '241, 139, 121', '--interface-peach': '241, 139, 121', '--interface-sage': '213, 169, 158'} : {}),
       ...(id === 'saffron' ? {'--interface-ink': '145, 255, 46', '--interface-muted': '116, 191, 65', '--interface-accent': '170, 255, 60', '--interface-peach': '151, 223, 48', '--interface-sage': '119, 211, 69'} : {}),
       "--theme-bg": `#${bg}`,
       "--theme-panel-rgb": rgb(panel),
@@ -1410,16 +1409,45 @@ const visibleTrackCount = () => Math.max(1, visibleTrackIndexes().length);
 // the selected row, so selection never changes neighbours or scroll position.
 const shuffledTrackIndexes = () => visibleTrackIndexes();
 
-// A finite catalogue: each track has one stable row and real scroll endpoints.
-const balanceInfiniteWheel = () => {};
+// Three identical cycles keep native wheel/touch scrolling away from endpoints.
+// Recenter by exactly one cycle, preserving the visible rows and their order.
+const balanceInfiniteWheel = () => {
+  const count = tracks.length;
+  if (!playlistList || wheelBalancing || !count || playlistList.children.length !== count * 3) return;
+  const first = playlistList.children[0];
+  const middle = playlistList.children[count];
+  const cycle = middle.offsetTop - first.offsetTop;
+  if (cycle <= playlistList.clientHeight) return;
+  const before = playlistList.scrollTop;
+  const shift = before < cycle - .5 ? cycle : before >= cycle * 2 - .5 ? -cycle : 0;
+  if (!shift) return;
+  wheelBalancing = true;
+  playlistList.scrollTop = before + shift;
+  const moved = playlistList.scrollTop - before;
+  playlistScrollTarget += moved;
+  if (draggingScroll) draggingScroll.startTop += moved;
+  const focused = document.activeElement?.closest('.track-item');
+  if (focused?.parentElement === playlistList) {
+    const index = [...playlistList.children].indexOf(focused) + (shift > 0 ? count : -count);
+    playlistList.children[index]?.querySelector('.track-select')?.focus({ preventScroll: true });
+  }
+  wheelBalancing = false;
+};
 const fillInfiniteWheel = () => {
   if (!playlistList) return;
-  playlistList.replaceChildren(...tracks.map((track, index) => createTrackItem(track, index)));
+  const rows = Array.from({ length: 3 }, (_, cycle) => tracks.map((track, index) =>
+    createTrackItem(track, index, cycle * tracks.length + index))).flat();
+  playlistList.replaceChildren(...rows);
   refreshTrackNodes();
-  playlistList.scrollTop = 0;
-  playlistScrollTarget = 0;
+  playlistList.scrollTop = tracks.length ? rows[tracks.length].offsetTop - rows[0].offsetTop : 0;
+  playlistScrollTarget = playlistList.scrollTop;
   playlistScrollVelocity = 0;
 };
+playlistList?.addEventListener('inteon-catalog-fit', () => {
+  balanceInfiniteWheel();
+  playlistScrollTarget = playlistList.scrollTop;
+  updateScrollbar();
+});
 
 const nearestItemForTrackIndex = (index) => {
   const items = [...(playlistList?.querySelectorAll(`[data-track-index="${index}"]`) || [])];
@@ -2002,6 +2030,25 @@ playlistList?.addEventListener("scroll", () => {
   updateScrollbar();
 }, { passive: true });
 
+// Native snapping can be cancelled when a touch/wheel gesture crosses a cycle.
+// Settle once the gesture ends so the viewport still contains whole cards.
+const settlePlaylistCycle = () => {
+  if (!playlistList || playlistScrollRaf || draggingScroll) return;
+  const row = playlistList.firstElementChild?.getBoundingClientRect().height;
+  if (!row) return;
+  const nearest = Math.round(playlistList.scrollTop / row) * row;
+  if (Math.abs(nearest - playlistList.scrollTop) > .75) playlistList.scrollTop = nearest;
+  balanceInfiniteWheel();
+};
+playlistList?.addEventListener('scrollend', settlePlaylistCycle);
+let playlistSettleTimer = 0;
+if (playlistList && !('onscrollend' in playlistList)) {
+  playlistList.addEventListener('scroll', () => {
+    clearTimeout(playlistSettleTimer);
+    playlistSettleTimer = setTimeout(settlePlaylistCycle, 220);
+  }, { passive: true });
+}
+
 scrollbarThumb?.addEventListener("pointerdown", (event) => {
   event.preventDefault();
   cancelAnimationFrame(playlistScrollRaf);
@@ -2155,7 +2202,8 @@ const updateThemeDurationLabel = () => {
 };
 
 const setTheme = (name, { animate = true, persist = true } = {}) => {
-  const nextTheme = themesById.has(name) ? name : "graphite";
+  const requestedTheme = name === "chalk" ? "cobalt-tile" : name;
+  const nextTheme = themesById.has(requestedTheme) ? requestedTheme : "graphite";
   const root = document.documentElement;
   const changed = root.dataset.theme !== nextTheme;
   const theme = themesById.get(nextTheme);
@@ -3213,6 +3261,7 @@ if (!prefersReducedMotion) window.setInterval(() => {
 
 let roomLastRaf = 0;
 const tickVisuals = (now) => {
+  window.inteonHomeEffects?.beat('room');
   sceneRaf = 0;
   if (isMobileViewport || document.hidden || window.inteonHomeEffects?.ambientBlocked) return;
   sceneRaf = requestAnimationFrame(tickVisuals);
@@ -3324,6 +3373,11 @@ document.addEventListener("visibilitychange", () => {
   if (isListeningRoom) syncBackgroundRenderer();
 });
 syncBackgroundRenderer();
+window.inteonHomeEffects?.watch('room', {
+  blocked: () => isMobileViewport || document.hidden || reducedMotionPreference.matches || window.inteonHomeEffects?.suspended,
+  restart: syncBackgroundRenderer,
+});
+window.addEventListener('pageshow', syncBackgroundRenderer);
 window.addEventListener("resize", resizeLogoCanvas, { passive: true });
 
 try { initializeThemeSystem(); } catch {}

@@ -1,4 +1,4 @@
-"""Exercise exclusive scenes, ambient suspension and readable fast text in a browser."""
+"""Exercise exclusive scenes, continuous ambient motion and readable text in a browser."""
 import sys
 from playwright.sync_api import sync_playwright
 
@@ -41,8 +41,7 @@ with sync_playwright() as p:
         page.wait_for_timeout(350)
         after = page.evaluate("({...__effectDraws})")
         for name in ("material-field", "logo-ripples"):
-            assert before.get(name) == after.get(name), (name, before, after)
-        assert page.locator(".is-wave-noisy").count() == 0
+            assert after.get(name, 0) > before.get(name, 0), (name, before, after)
         assert not page.evaluate("inteonHomeEffects.claim('second')")
         page.evaluate("inteonHomeEffects.release('wrong')")
         assert page.evaluate("inteonHomeEffects.active") == "test"
@@ -73,8 +72,8 @@ with sync_playwright() as p:
         page.wait_for_timeout(100)
         page.evaluate("inteonThemeMorph.apply({'--theme-a-rgb':'100, 120, 150'}, 'dark', true)")
         assert page.evaluate("inteonHomeEffects.active") == "theme"
-        # Native snapshot preparation precedes the 1600 ms compositor animation.
-        page.wait_for_function("!inteonThemeMorph.active && inteonHomeEffects.active !== 'theme'", timeout=3000)
+        # Live palette interpolation runs for four seconds.
+        page.wait_for_function("!inteonThemeMorph.active && inteonHomeEffects.active !== 'theme'", timeout=6000)
         state = page.evaluate("({owner: inteonHomeEffects.active, active: inteonThemeMorph.active, errors: __ownershipErrors})")
         assert state == {"owner": None, "active": False, "errors": []}, state
         assert page.locator(".listening-intro h1").text_content() == "Выбери свой звук"
@@ -82,7 +81,7 @@ with sync_playwright() as p:
             page.locator("#mobile-section-slider").focus()
             page.keyboard.press("End")
             page.wait_for_timeout(100)
-            assert page.evaluate("inteonHomeEffects.suspended")
+            assert not page.evaluate("inteonHomeEffects.suspended")
             page.keyboard.press("Home")
             page.wait_for_timeout(100)
             assert not page.evaluate("inteonHomeEffects.suspended")
