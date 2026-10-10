@@ -68,7 +68,7 @@
     }
     ctx.globalAlpha=1;
   };
-  const blocked=()=>document.hidden||reduced.matches||window.inteonHomeEffects?.ambientBlocked;
+  const blocked=()=>document.hidden||window.inteonHomeEffects?.ambientBlocked;
   const sync=()=>{cancelAnimationFrame(frame);frame=0;if(blocked())return;frame=requestAnimationFrame(draw);};
   new ResizeObserver(resize).observe(canvas);
   new MutationObserver(resize).observe(document.documentElement,{attributes:true,attributeFilter:['data-animation-quality']});

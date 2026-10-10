@@ -210,7 +210,14 @@ body.spatial-room .reactive-logo { animation-name: logoContrastBreath; }
 html[data-theme] .spatial-room :is(.auth-panel, .theme-panel) {
   background: var(--theme-bg);
 }
-/* Only a hidden page or reduced-motion preference suspends ambient CSS motion. */
+/* Reduced motion keeps a gentle opacity cycle instead of freezing the room. */
+@keyframes ambient-logo-opacity { 0%,100% { opacity:1; } 50% { opacity:.92; } }
+@keyframes ambient-light-opacity { 0%,100% { opacity:.3; } 50% { opacity:.4; } }
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme] body.spatial-room .reactive-logo { animation: ambient-logo-opacity 16s ease-in-out infinite !important; }
+  html[data-theme] body.spatial-room .theme-light { animation: ambient-light-opacity 24s ease-in-out infinite alternate !important; }
+}
+/* Suspend ambient CSS motion only while the document is away. */
 html[data-home-effects-suspended="true"] .spatial-room :is(.theme-light, .reactive-logo, .logo-vector, .logo-vector-core, .logo-vector-outline, .logo-ink-base, .logo-grain, .logo-grain *),
 html[data-home-effects-suspended="true"] .spatial-room .logo-wrap::before,
 html[data-home-effects-suspended="true"] .room-resident:not(.is-detonating) * {
@@ -660,7 +667,9 @@ body.is-interlude .sky-clouds { visibility:visible; }
   html[data-theme] body.spatial-room .track-item.is-playing .track-select::before { background:rgba(var(--theme-accent-rgb),.44); }
   html[data-theme] body.spatial-room .track-select { background:rgba(var(--theme-panel-rgb),.12); box-shadow:none; }
   html[data-theme] body.spatial-room .logo-wrap.release-logo::before { display:none; }
-  html[data-theme] body.spatial-room :is(.reactive-logo,.logo-vector,.logo-grain rect) { animation:none; }
+  html[data-theme] body.spatial-room .reactive-logo { animation: reactiveLogoBreath 11s ease-in-out infinite; }
+  html[data-theme] body.spatial-room .logo-vector { animation: logoVectorDissolve 10.5s ease-in-out infinite; }
+  html[data-theme] body.spatial-room .logo-grain rect { animation:none; }
   html[data-theme] body.spatial-room :is(.logo-ripples,.logo-symbol-echo,.logo-vector-slices) { display:none; }
   .mobile-logo-shards { position:absolute;inset:0;z-index:5;pointer-events:none; }
   .mobile-logo-shards i { position:absolute;background-image:url('assets/logo-wordmark.svg');background-repeat:no-repeat;will-change:transform,opacity; }

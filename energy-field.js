@@ -124,7 +124,7 @@
     }
     ctx.globalAlpha=1;
   };
-  const blocked=()=>document.hidden||reduced.matches||window.inteonHomeEffects?.suspended;
+  const blocked=()=>document.hidden||window.inteonHomeEffects?.suspended;
   const sync=()=>{cancelAnimationFrame(frame);frame=0;if(!blocked())frame=requestAnimationFrame(draw);};
   window.inteonPixelEnergy={start(){measureLogo();energy=true;origin=performance.now();canvas.dataset.mode='pixels';sync();},stop(){energy=false;canvas.dataset.mode='field';sync();}};
   window.addEventListener('inteon-theme-frame',()=>{paletteDirty=true;});

@@ -5,6 +5,20 @@
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const duration = 4000;
   let target = null, metadata = null, active = false, frame = 0, generation = 0, deadline = 0;
+  let pending = null, retry = 0;
+  const clearPending = () => { clearTimeout(retry); retry = 0; pending = null; };
+  const flushPending = () => {
+    clearTimeout(retry); retry = 0;
+    if (!pending) return;
+    const controller = window.inteonHomeEffects;
+    if (controller?.active && controller.active !== 'theme') {
+      retry = setTimeout(flushPending, 100);
+      return;
+    }
+    const request = pending;
+    pending = null;
+    window.inteonThemeMorph.apply(request.tokens, request.mood, request.animate, request.options);
+  };
   const pinned = new Map();
   const pinPanel = () => {
     if (!panel || pinned.size) return;
@@ -36,7 +50,7 @@
     root.classList.remove('is-theme-crossfading', 'is-theme-shifting');
     window.inteonHomeEffects?.release('theme');
   };
-  const finish = () => complete(generation);
+  const finish = () => { clearPending(); if (active) complete(generation); };
   const interpolate = (from, to) => {
     const hex = value => /^#[0-9a-f]{6}$/i.test(value) ? value.slice(1).match(/../g).map(v => parseInt(v, 16)) : null;
     const a = hex(from), b = hex(to);
@@ -51,6 +65,16 @@
   window.inteonThemeMorph = {
     duration,
     apply(tokens, mood, animate, options = {}) {
+      const controller = window.inteonHomeEffects;
+      // A busy logo scene must defer the palette, never turn a smooth change
+      // into a one-frame dark/light flash. Keep only the newest request.
+      if (animate && !reduced.matches && !document.hidden && controller?.active && controller.active !== 'theme') {
+        pending = {tokens, mood, animate, options};
+        clearTimeout(retry);
+        retry = setTimeout(flushPending, 100);
+        return;
+      }
+      clearPending();
       const token = ++generation;
       clearTimeout(deadline); deadline = 0;
       cancelAnimationFrame(frame); frame = 0;
@@ -69,7 +93,6 @@
         '--field-strength':mood==='dark'?'.07':'.17',
       };
       metadata = {name: options.name, mood};
-      const controller = window.inteonHomeEffects;
       const immediate = !animate || reduced.matches || document.hidden ||
         (controller && controller.active !== 'theme' && !controller.claim('theme'));
       if (immediate) { complete(token); return; }
@@ -94,11 +117,13 @@
     },
     finish,
     get active() { return active; },
+    get pending() { return Boolean(pending); },
   };
   reduced.addEventListener('change', () => { if (reduced.matches) finish(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden && active) finish(); });
   window.addEventListener('pagehide', finish);
   window.addEventListener('inteon-effects-change', () => {
-    if (active && document.body.classList.contains('portal-leaving')) finish();
+    if (document.body.classList.contains('portal-leaving')) finish();
+    else if (pending && !window.inteonHomeEffects?.active) flushPending();
   });
 })();

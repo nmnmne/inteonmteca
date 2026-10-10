@@ -15,7 +15,6 @@ with sync_playwright() as p:
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     page.add_init_script("localStorage.setItem('inteonmteca-theme-duration', '604800000')")
-    page.clock.install()
     page.goto(URL, wait_until="domcontentloaded")
     page.wait_for_selector(".text-wave-char")
     original = page.locator(".listening-intro h1").text_content()
@@ -46,10 +45,10 @@ with sync_playwright() as p:
     assert page.locator(".track-title").all_text_contents() == titles
     page.screenshot(path=str(OUT / "desktop-cursor-calm.png"))
 
-    page.clock.fast_forward(18000)
+    page.wait_for_function("document.documentElement.dataset.textWaveMode === 'quiet'", timeout=45000)
     assert page.locator("html").get_attribute("data-text-wave-mode") == "quiet"
     assert page.locator(".is-wave-noisy").count() < 30
-    page.clock.fast_forward(10000)
+    page.wait_for_function("document.documentElement.dataset.textWaveMode === 'surge'", timeout=15000)
     assert page.locator("html").get_attribute("data-text-wave-mode") == "surge"
     page.wait_for_timeout(1400)
     page.screenshot(path=str(OUT / "desktop-surge.png"))
@@ -94,8 +93,9 @@ with sync_playwright() as p:
         page.screenshot(path=str(OUT / f"layout-{width}x{height}.png"))
 
     page.emulate_media(reduced_motion="reduce")
-    page.wait_for_timeout(200)
-    assert page.locator(".is-wave-noisy").count() == 0
+    page.wait_for_timeout(2400)
+    assert not page.evaluate("inteonHomeEffects.suspended")
+    assert page.locator(".is-wave-noisy").count() > 0
     assert page.locator(".listening-intro h1").text_content() == original
     page.emulate_media(reduced_motion="no-preference")
     page.wait_for_timeout(2400)

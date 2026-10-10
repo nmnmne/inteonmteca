@@ -103,7 +103,7 @@
     chars.forEach(char => { if (!char.visible) paint(char); });
     dirty = false; measuredAt = now;
   };
-  const blocked = () => document.hidden || reduced.matches || window.inteonHomeEffects?.ambientBlocked || document.body.classList.contains('is-interlude');
+  const blocked = () => document.hidden || window.inteonHomeEffects?.ambientBlocked;
   const tick = now => {
     window.inteonHomeEffects?.beat('text');
     frameId = 0;
@@ -114,7 +114,7 @@
     // Glyphs are discrete: keep RAF in sync with the display but only evaluate
     // a new symbol state when its normal-speed or brief-burst time bucket changes.
     const burst = now % 19000 > 18250;
-    const frame = Math.floor(now / (coarse.matches ? 50 : (burst ? 20 : 60)));
+    const frame = Math.floor(now / (reduced.matches ? 180 : coarse.matches ? 50 : (burst ? 20 : 60)));
     if (frame === lastGlyphFrame) return;
     lastGlyphFrame = frame;
     if (!modeUntil) { modeUntil = now + modes[0].duration; nextWave = now + 650; }
@@ -176,8 +176,13 @@
   document.addEventListener('visibilitychange', resume);
   reduced.addEventListener('change', resume);
   document.addEventListener('selectionchange', () => { selected = !getSelection()?.isCollapsed; if (selected) restore(); });
-  window.addEventListener('inteon-effects-change', resume);
-  window.addEventListener('inteon-interlude', resume);
+  let wasBlocked = blocked();
+  window.addEventListener('inteon-effects-change', () => {
+    const next = blocked();
+    if (next === wasBlocked) return;
+    wasBlocked = next;
+    resume();
+  });
   window.addEventListener('pagehide', () => { cancelAnimationFrame(frameId); frameId = 0; restore(); });
   window.addEventListener('pageshow', resume);
   document.fonts?.ready.then(() => { dirty = true; });

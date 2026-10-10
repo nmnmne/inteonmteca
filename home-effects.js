@@ -5,16 +5,19 @@
   let active = null, suspended = false, away = false, claimedAt = 0;
   const renderers = new Map();
   const recover = () => {
+    // Mobile browsers can restore a visible document without a second pageshow.
+    if (!document.hidden && !document.body.classList.contains('portal-leaving')) away = false;
     sync();
     if (suspended) return;
     const now = performance.now();
-    const limits = {theme: 6000, acid: 16000, storm: 90000, interlude: 65000, cloud: 85000};
+    const limits = {theme: 6000, acid: 16000, storm: 90000, interlude: 65000, cloud: 85000, 'mobile-scatter': 6000};
     if (active && now - claimedAt > (limits[active] || 90000)) {
       const stale = active;
       if (stale === 'acid') window.inteonLogoAcid?.stop();
       else if (stale === 'storm') window.inteonLogoStorm?.stop();
       else if (stale === 'interlude' || stale === 'cloud') window.inteonAtmosphere?.stop();
       else if (stale === 'theme') window.inteonThemeMorph?.finish();
+      else if (stale === 'mobile-scatter') window.inteonMobileLogo?.stop();
       if (active === stale) { active = null; publish(); }
     }
     for (const renderer of renderers.values()) {
@@ -31,7 +34,7 @@
     window.dispatchEvent(new Event('inteon-effects-change'));
   };
   const sync = () => {
-    const next = away || document.hidden || reduced.matches || document.body.classList.contains('portal-leaving');
+    const next = away || document.hidden || document.body.classList.contains('portal-leaving');
     if (next === suspended) return;
     suspended = next;
     publish();
@@ -58,9 +61,10 @@
   const observer = new MutationObserver(sync);
   observer.observe(document.body, {attributes: true, attributeFilter: ['class', 'data-mobile-section']});
   document.querySelectorAll('#chat-panel, #theme-panel, #auth-panel').forEach(panel => observer.observe(panel, {attributes: true, attributeFilter: ['hidden', 'class']}));
-  document.addEventListener('visibilitychange', sync);
+  document.addEventListener('visibilitychange', recover);
   reduced.addEventListener('change', sync);
   window.addEventListener('focus', recover);
+  document.addEventListener('resume', recover);
   setInterval(recover, 1000);
   window.addEventListener('pagehide', () => { away = true; sync(); });
   window.addEventListener('pageshow', () => { away = false; sync(); });

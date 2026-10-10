@@ -5,8 +5,9 @@
  let timer=0,end=0,layer=null,variant=0,active=false;
  const eligible=()=>mobile.matches&&!reduced.matches&&!document.hidden;
  const schedule=(delay=12000)=>{clearTimeout(timer);if(eligible())timer=setTimeout(run,delay);};
- const stop=()=>{clearTimeout(timer);clearTimeout(end);layer?.remove();layer=null;active=false;delete wrap.dataset.mobileEffect;window.inteonHomeEffects?.release('mobile-scatter');};
+ const stop=()=>{clearTimeout(timer);timer=0;clearTimeout(end);layer?.remove();layer=null;active=false;delete wrap.dataset.mobileEffect;window.inteonHomeEffects?.release('mobile-scatter');};
  const run=()=>{
+  clearTimeout(timer);timer=0;
   if(!eligible())return;
   if(active||window.inteonHomeEffects?.active){schedule(1500);return;}
   if(variant++%2){
@@ -29,5 +30,7 @@
  const sync=()=>{stop();if(!mobile.matches) return;window.inteonLogoStorm?.stop();window.inteonLogoMaterials?.stop();window.inteonAtmosphere?.stopScene();schedule(2200);};
  mobile.addEventListener('change',sync);reduced.addEventListener('change',sync);
  document.addEventListener('visibilitychange',sync);window.addEventListener('pagehide',stop);window.addEventListener('pageshow',sync);
+ const recover=()=>{if(eligible()&&!active&&!timer)schedule(2200);};
+ window.addEventListener('focus',recover);document.addEventListener('resume',recover);
  window.inteonMobileLogo={run,stop};sync();
 })();
