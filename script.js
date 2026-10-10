@@ -155,12 +155,12 @@ const themeCoreFilters = Object.freeze({
   oxblood: { canvas: "hue-rotate(-18deg) saturate(1.2)", logo: "hue-rotate(-16deg) saturate(1.16)", fog: "18px", opacity: ".84" },
 });
 const themeRegistry = Object.freeze([
-  "abyss|ультрамариновая глубина|030914 070c19 296dba 183b74 583777 9cb9d6 e8efff|dark",
-  "graphite|мягкий графит|0c0e10 17191c 576267 323d44 76685f c2cdce eff1f0|dark",
-  "warm-carbon|тёплый уголь|161310 24201c 71665c 4d4036 81766b d6c8b7 f0e9df|dark",
-  "deep-ink|глубокие чернила|0c1419 17232b 496775 294451 69767e b4cfd9 e1edf1|dark",
-  "coral-obsidian|коралловый обсидиан|101114 1c1d22 9b514c 51383c 716265 f18b79 f5eae6|dark",
-  "cobalt-tile|кобальтовый кафель|eef0f2 f9fafc b8ccec d5dfef e1e5ee 204ac8 111c38|light",
+  "abyss|Глубокий ультрамарин|030914 070c19 296dba 183b74 583777 9cb9d6 e8efff|dark",
+  "graphite|Матовый углерод|0c0e10 17191c 576267 323d44 76685f c2cdce eff1f0|dark",
+  "warm-carbon|Песочный сумрак|161310 24201c 71665c 4d4036 81766b d6c8b7 f0e9df|dark",
+  "deep-ink|Чернильный туман|0c1419 17232b 496775 294451 69767e b4cfd9 e1edf1|dark",
+  "coral-obsidian|Медный обсидиан|101114 1c1d22 9b514c 51383c 716265 f18b79 f5eae6|dark",
+  "cobalt-tile|Холодная глазурь|eef0f2 f9fafc b8ccec d5dfef e1e5ee 204ac8 111c38|light",
 ].map((row) => {
   const [id, name, palette, mood] = row.split("|");
   const [bg, panel, a, b, c, accent, text] = palette.toLowerCase().split(" ");
@@ -2087,6 +2087,13 @@ document.addEventListener("pointerdown", event => {
     else setPanelOpen(panel, false, { focus: false });
   }
 });
+window.addEventListener('inteon-close-popups', () => {
+  for (const panel of [...openPanels]) {
+    if (panel === chatPanel && inlineChat) continue;
+    if (panel === chatPanel) closeChat();
+    else setPanelOpen(panel, false, { focus: false });
+  }
+});
 const panelOpeners = new WeakMap();
 const setPanelOpen = (panel, open, { focus = true } = {}) => {
   if (!panel || panel.hidden === !open) return;
@@ -2202,6 +2209,7 @@ const updateThemeDurationLabel = () => {
 };
 
 const setTheme = (name, { animate = true, persist = true } = {}) => {
+  if(document.body.classList.contains("is-interlude")){name="graphite";animate=false;persist=false;}
   const requestedTheme = name === "chalk" ? "cobalt-tile" : name;
   const nextTheme = themesById.has(requestedTheme) ? requestedTheme : "graphite";
   const root = document.documentElement;
@@ -2923,7 +2931,7 @@ const drawLogoFilaments = (now, profile) => {
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.lineWidth = .35 + profile.bass * 1.2;
-  ctx.shadowBlur = 4 + profile.high * 16;
+  ctx.shadowBlur = 0;
 
   const strandCount = animationQuality === "low" ? 5 : 9;
   for (let strand = 0; strand < strandCount; strand += 1) {
@@ -2966,7 +2974,7 @@ const drawLogoFilaments = (now, profile) => {
     ctx.fillStyle = particle.band === 2
       ? `rgba(214,255,118,${alpha})`
       : `rgba(239,168,104,${alpha})`;
-    ctx.shadowBlur = 5 + bandEnergy * 18;
+    ctx.shadowBlur = 0;
     ctx.shadowColor = particle.band === 2 ? "#d6ff76" : "#dc7042";
     ctx.beginPath();
     ctx.arc(x, y, particle.size * (1 + bandEnergy * 1.8), 0, Math.PI * 2);
@@ -3102,9 +3110,11 @@ const scatterLogoParticles = () => {
     particle.style.setProperty("--bg-y", particleGrid.rows === 1 ? "0%" : `${((cell.row / (particleGrid.rows - 1)) * 100).toFixed(4)}%`);
     particle.style.setProperty("--scatter-x", `${randomRange(-110, 110).toFixed(1)}px`);
     particle.style.setProperty("--scatter-y", `${randomRange(-64, 64).toFixed(1)}px`);
-    particle.style.setProperty("--scatter-z", `${randomRange(-160, 160).toFixed(1)}px`);
+    const depth = Math.random();
+    particle.style.setProperty("--shard-opacity", (.52 + depth * .3).toFixed(2));
+    particle.style.setProperty("--scatter-z", `${(-65 + depth * 130).toFixed(1)}px`);
     particle.style.setProperty("--scatter-r", `${randomRange(-34, 34).toFixed(1)}deg`);
-    particle.style.setProperty("--scatter-scale", randomRange(0.62, 1.28).toFixed(2));
+    particle.style.setProperty("--scatter-scale", (.78 + depth * .34).toFixed(2));
   });
 };
 

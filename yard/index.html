@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="../room-portal.css?v=portal-mist-20261009-10">
-  <script src="../room-portal.js?v=portal-mist-20261009-10"></script>
+  <link rel="stylesheet" href="../room-portal.css?v=ready-inversion-20261010">
+  <script src="../room-portal.js?v=ready-inversion-20261010"></script>
   <title>inteonmteca — двор</title>
   <link rel="icon" href="../assets/logo-inteonmteca.svg" type="image/svg+xml">
   <link rel="preload" as="image" href="./assets/spawn-mobile.jpg" media="(orientation: portrait)">
@@ -50,12 +50,13 @@
   </section>
   <audio id="album-player" preload="none" playsinline></audio>
   <script src="../playlist-data.js?v=tracks-20261006-1"></script>
-  <script src="../playback-link.js?v=seek-fade-20261006-2"></script>
-  <script src="../street-return.js?v=pose-20261009-5"></script>
+  <script src="../playback-link.js?v=walk-minute-20261010"></script>
+  <script src="../street-return.js?v=walk-minute-20261010"></script>
   <script>
     // Consume the actual return timer, including reloads and boundary extensions.
     window.yardWalkClock = { enteredAt: Date.now(), deadline: null };
     const startYardClock = () => {
+    if (new URLSearchParams(location.search).has("portal-preview")) return;
     window.yardWalkClock.enteredAt = Date.now();
     window.inteonStreet?.armReturn({ replace: url => window.inteonPortal ? window.inteonPortal.returnHome(url, true) : location.replace(url) }, location.protocol, (left) => {
       window.yardWalkClock.deadline = Date.now() + left * 1000;
@@ -81,7 +82,7 @@
       document.getElementById("yard-view").hidden = true;
     }
   </script>
-  <script type="module" src="./main.js?v=digital-shells-20261009-5"></script>
+  <script type="module" src="./main.js?v=walk-minute-20261010"></script>
   <script data-development-only src="../development-debug.js?v=20261006-1"></script>
   <script data-development-only src="./debug-pose.js?v=20261006-2"></script>
 </body>

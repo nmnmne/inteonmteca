@@ -8,6 +8,7 @@ import { createBoundaryMusic } from "./boundary-music.js";
 import { createLightingCycle, addBakedLighting } from "./baked-lighting.js";
 import { createLightingTransition } from "./lighting-transition.js";
 
+const portalPreview = new URLSearchParams(location.search).has('portal-preview');
 const fallback = document.querySelector("#file-fallback");
 const canvas = document.querySelector("#yard-view");
 const prompt = document.querySelector("#open-player");
@@ -31,14 +32,14 @@ if (location.protocol === "file:") {
   canvas.hidden = true;
 } else {
   const schemeMap = drawScheme(schemeCanvas, layout);
-  void player.load();
+  if (!portalPreview) void player.load();
   const camera = new THREE.PerspectiveCamera(60, 1, 0.08, 400);
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
   renderer.setPixelRatio(pixelRatioCap());
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = false;
   // Consume exactly one preset on entrance, never on walking/player/visibility events.
-  const lighting = createLightingCycle().next(layout);
+  const lighting = createLightingCycle(portalPreview ? () => ({getItem: key => localStorage.getItem(key), setItem: () => {}}) : undefined).next(layout);
   const { scene, solids, logo, edgeEffect } = createYardScene(layout, lighting);
   const lightingTransition = createLightingTransition(scene, layout, lighting, window.yardWalkClock);
   let disposed = false;
@@ -205,22 +206,19 @@ if (location.protocol === "file:") {
   journey.walkMs = Number(journey.walkMs) || 0;
   journey.entries = Number(journey.entries) || 0;
   if (performance.getEntriesByType('navigation')[0]?.type !== 'reload') journey.entries++;
-  let lastJourneySave = 0, autoReturning = false;
+  let lastJourneySave = 0;
   const saveJourney = () => {
+    if (portalPreview) return;
     window.inteonStreet?.savePose(returnPose || body);
     try { localStorage.setItem(journeyKey,JSON.stringify(journey)); } catch {}
   };
   window.addEventListener('pagehide',saveJourney);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)saveJourney();});
   const updateJourney = (now,dt) => {
+    if (portalPreview) return;
     if (!document.hidden && !window.inteonPortal?.busy && !returnPose) journey.walkMs += dt*1000;
     if (now-lastJourneySave>1000) {lastJourneySave=now;saveJourney();}
-    if (!autoReturning && !returnPose && !window.inteonPortal?.busy && window.__yard && (journey.entries>=11 || journey.walkMs>=1200000)) {
-      autoReturning=true;
-      window.__yard.flyToSpawn({stay:true}).then(()=>{
-        journey.walkMs=0;journey.entries=1;autoReturning=false;saveJourney();
-      });
-    }
+
   };
   let marked = null;
   const scheduleFrame = () => {

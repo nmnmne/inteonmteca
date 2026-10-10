@@ -70,7 +70,8 @@
   const compact = matchMedia("(max-width: 800px), (pointer: coarse)");
   const random = (a, b) => a + Math.random() * (b - a);
   const timers = new Set();
-  let journey = null, decision = 0, stillness = 0, resizeTimer = 0;
+  let journey = null, destination = null, decision = 0, stillness = 0, resizeTimer = 0;
+  let reactionUntil = 0;
   let blocked = false, lastPointerWork = 0, lastEncounter = -60000;
   let cinematic = false;
   let encounter = 0, hoverArmed = true, ignoreUntil = 0, chaseUntil = 0;
@@ -98,24 +99,40 @@
     const here = center();
     journey.cancel();
     journey = null;
+    destination = null;
     resident.style.transform = position(here);
   };
   const refreshObstacles = () => {
     obstacles = [...document.querySelectorAll(
       '.logo-wrap, .listening-intro h1, .listening-intro .label, .hero-intro, '
-      + '.catalog-heading, #track-list, #active-player, .text, '
-      + '#auth-hint, #theme-hint, #chat-hint, #street-link, .street-return, .chat-compose, .chat-stream:not(:empty)'
-    )].map(el => el.getBoundingClientRect()).filter(r => r.width && r.height);
+      + '.catalog-heading, .playlist-shell, #active-player, .text, '
+      + '#auth-hint, #theme-hint, #chat-hint, #street-link, .street-return, .chat-compose, .chat-stream:not(:empty), '
+      + '#theme-panel, #auth-panel, .theme-options, .visit-counter, .development-animation-menu, .development-debug-toggle'
+    )].filter(el => el.checkVisibility({checkVisibilityCSS:true, checkOpacity:true}))
+      .map(el => el.getBoundingClientRect()).filter(r => r.width && r.height && r.bottom > 0 && r.top < innerHeight);
   };
-  const safe = p => p.x > 38 && p.x < innerWidth - 38 && p.y > 75 && p.y < innerHeight - 55
-    && !obstacles.some(r => p.x > r.left - 34 && p.x < r.right + 34
-      && p.y > r.top - 34 && p.y < r.bottom + 34);
+  const safe = p => {
+    const padX=compact.matches ? 24 : 32, padY=compact.matches ? 27 : 34;
+    return p.x >= padX && p.x <= innerWidth-padX && p.y >= padY && p.y <= innerHeight-padY
+      && !obstacles.some(r => p.x > r.left-padX && p.x < r.right+padX
+        && p.y > r.top-padY && p.y < r.bottom+padY);
+  };
   const clearPath = (from, to) => {
-    for (let i = 1; i <= 16; i++) {
-      const t = i / 16;
+    const steps = Math.max(1, Math.ceil(Math.hypot(to.x-from.x,to.y-from.y)/8));
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
       if (!safe({x:from.x+(to.x-from.x)*t,y:from.y+(to.y-from.y)*t})) return false;
     }
     return true;
+  };
+  const nearestFree = from => {
+    if (safe(from)) return from;
+    let best = null, distance = Infinity;
+    for (let y = 28; y < innerHeight-27; y += 8) for (let x = 24; x < innerWidth-24; x += 8) {
+      const p = {x,y}, d = Math.hypot(x-from.x,y-from.y);
+      if (d < distance && safe(p)) { best=p; distance=d; }
+    }
+    return best;
   };
   const look = point => {
     const here = center();
@@ -127,12 +144,13 @@
   const pose = name => { resident.dataset.state = name; };
   const schedule = (delay = random(6500, 17000)) => {
     clear(decision);
-    if (!blocked && !reduced.matches && !compact.matches) decision = later(think, delay);
+    if (!blocked && !reduced.matches) decision = later(think, delay);
   };
   const walk = (target, arrive, duration) => {
     const from = center();
     if (!clearPath(from, target)) return false;
     stopJourney();
+    destination = target;
     clear(decision);
     look(target);
     pose("walking");
@@ -142,7 +160,7 @@
       easing: "cubic-bezier(.38,0,.3,1)",
     });
     resident.style.transform = end;
-    journey.onfinish = () => { journey = null; arrive(); };
+    journey.onfinish = () => { journey = null; destination = null; arrive(); };
     return true;
   };
   const wander = () => {
@@ -156,11 +174,11 @@
     return false;
   };
   function think() {
-    if (blocked || reduced.matches || compact.matches || journey) return;
+    if (blocked || reduced.matches || journey || performance.now()<reactionUntil) return;
     refreshObstacles();
     const mood = Math.random();
-    if (musicPlaying() && mood < .48 && explore()) return;
-    if (mood < .38 && wander()) return;
+    if (mood < .5 && explore()) return;
+    if (mood < .85 && wander()) return;
     if (mood > .88 && safe(home()) && walk(home(), () => { pose(Math.random()<.5 ? "letter" : "cube"); schedule(random(15000,32000)); })) return;
     pose(mood < .62 ? "thinking" : mood < .82 ? "watching" : "cube");
     look({x:random(0,innerWidth),y:random(0,innerHeight*.7)});
@@ -200,13 +218,16 @@
       || document.body.classList.contains('is-interlude');
     suspend(); chaseUntil=0; encounter=0; hoverArmed=true; resident.dataset.behavior="independent"; blocked = hidden; resident.hidden = hidden;
     if (hidden) return;
-    resident.style.transform = position(home());
+    refreshObstacles();
+    const startingPoint = nearestFree(home());
+    if (startingPoint) resident.style.transform = position(startingPoint);
+    resident.hidden = !startingPoint;
     pose("cube");
     resident.style.setProperty("--look-x", "0px");
     resident.style.setProperty("--look-y", "0px");
     if (!reduced.matches) {
       later(blink, random(4000,9000));
-      if (!compact.matches) {
+      if (startingPoint) {
         later(() => {
           if (!journey) { pose("thinking"); schedule(random(4500,10000)); }
         }, random(3000,6500));
@@ -221,7 +242,7 @@
   const flee = () => {
     refreshObstacles();
     const here = center(), angle = Math.atan2(here.y-pointer.y, here.x-pointer.x);
-    for (const distance of [125,90,60]) for (const offset of [0,.6,-.6,1.2,-1.2,2,-2,Math.PI]) {
+    for (const distance of [125,90,60,40]) for (const offset of [0,.6,-.6,Math.PI/2,-Math.PI/2,1.2,-1.2,2,-2,Math.PI]) {
       const target = {x:here.x+Math.cos(angle+offset)*distance,y:here.y+Math.sin(angle+offset)*distance};
       if (walk(target, () => { pose("watching"); schedule(); }, 1000+distance*4)) {
         resident.dataset.behavior="escaping"; return true;
@@ -263,7 +284,7 @@
   };
   const explore = () => {
     refreshObstacles();
-    const selectors=['#track-list','.transport-play','#track-progress','#track-volume'];
+    const selectors=['.playlist-shell','.logo-wrap','.listening-intro h1','.chat-compose','.transport-play','#track-progress'];
     const interest=document.querySelector(selectors[Math.floor(Math.random()*selectors.length)]);
     const target=interest?.closest('#active-player') || interest;
     if (!target) return false;
@@ -288,18 +309,43 @@
     lastPointerWork=now;
     pointer={x:event.clientX,y:event.clientY,at:now};
     clear(stillness);
-    if (now<ignoreUntil || chaseUntil || resident.dataset.behavior==="circling") return;
+    if (now<reactionUntil || now<ignoreUntil || chaseUntil || resident.dataset.behavior==="circling") return;
     const here=center(), distance=Math.hypot(pointer.x-here.x,pointer.y-here.y);
     if (distance>115) hoverArmed=true;
     if (distance<280) look(pointer);
-    if (distance<55 && hoverArmed) {
-      hoverArmed=false;lastEncounter=now;clear(decision);
-      if (encounter===0) {encounter=1;flee();}
-      else {encounter=2;circle();}
-      return;
-    }
+    // Let the pointer reach the resident; reactions happen on an actual press.
     stillness=later(investigate,random(2400,4000));
   }, {passive:true});
+  window.addEventListener('pointerdown', event => {
+    if (blocked || resident.hidden || cinematic) return;
+    const here=center(), now=performance.now();
+    if (Math.hypot(event.clientX-here.x,event.clientY-here.y)>34 || now<reactionUntil) return;
+    pointer={x:event.clientX,y:event.clientY,at:now};
+    stopJourney(); clear(decision); clear(stillness);
+    reactionUntil=now+2200; ignoreUntil=now+4000;
+    if (!reduced.matches && Math.random()<.55 && flee()) return;
+    resident.classList.remove('is-blinking');
+    resident.dataset.behavior='annoyed'; pose('angry'); look(pointer);
+    later(()=>{pose('watching');resident.dataset.behavior='independent';schedule(1200);},2300);
+  }, {passive:true});
+  // Menus, heading shifts and responsive layout can invalidate a route mid-walk.
+  const guardSpace = () => {
+    if (blocked || cinematic || document.hidden) return;
+    refreshObstacles();
+    const here=center();
+    if (!safe(here)) {
+      stopJourney();
+      const free=nearestFree(here);
+      resident.hidden=!free;
+      if (free) {resident.style.transform=position(free); schedule(1400);}
+    } else {
+      resident.hidden=false;
+      if (journey && destination && !clearPath(here,destination)) {stopJourney();schedule(500);}
+    }
+  };
+  let spaceGuard=setInterval(guardSpace,240);
+  window.addEventListener('pagehide',()=>clearInterval(spaceGuard));
+  window.addEventListener('pageshow',()=>{clearInterval(spaceGuard);spaceGuard=setInterval(guardSpace,240);});
   document.documentElement.addEventListener("pointerleave", () => {
     pointer={x:-9999,y:-9999,at:0}; clear(stillness);
   });

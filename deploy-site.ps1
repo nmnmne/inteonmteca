@@ -67,6 +67,8 @@ $syncArgs = @(
   "--include", "logo-ripples.js",
   "--include", "logo-storm.js",
   "--include", "logo-acid.js",
+  "--include", "logo-materials.js",
+  "--include", "mobile-logo-effects.js",
   "--include", "room-composition.css",
   "--include", "room-editor.css",
   "--include", "room-finish.css",

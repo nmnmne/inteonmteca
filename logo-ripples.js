@@ -1,6 +1,6 @@
 /* Pigment leaves the wordmark's contour, follows a curl field and returns to it. */
 (() => {
-  const wrap=document.querySelector('#logo-wrap'); if(!wrap) return;
+  const wrap=document.querySelector('#logo-wrap'); if(!wrap || matchMedia('(max-width: 800px), (pointer: coarse)').matches) return;
   const canvas=document.createElement('canvas');canvas.className='logo-ripples';canvas.setAttribute('aria-hidden','true');wrap.prepend(canvas);
   const ctx=canvas.getContext('2d'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
   const mask=document.createElement('canvas');mask.width=534;mask.height=107;
@@ -62,9 +62,9 @@
         ctx.quadraticCurveTo(2*mid.x-(q.x+tail.x)/2,2*mid.y-(q.y+tail.y)/2,tail.x,tail.y);
         ctx.stroke();
       }
-      ctx.fillStyle=colors[i%5===0?2:i%2?0:1];ctx.globalAlpha=fade*(.16+p.depth*.38);
+      ctx.fillStyle=colors[i%5===0?2:i%2?0:1];ctx.globalAlpha=fade*(.9+p.depth*.1);
       const size=.45+p.depth*.9;ctx.fillRect(q.x,q.y,size,size);
-      if(i%37===0){ctx.globalAlpha=fade*.1;ctx.fillRect(q.x-2,q.y-2,4,4);}
+
     }
     ctx.globalAlpha=1;
   };

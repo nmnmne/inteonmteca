@@ -127,57 +127,36 @@
   }
   const exit = async url => {
     if (busy) return;
-    busy = true; root.setAttribute('aria-busy', 'true');
-    window.inteonLogoStorm?.stop(); window.inteonLogoAcid?.stop(); window.inteonAtmosphere?.stop();
-    if (reduced.matches) { navigate(url); return; }
-    const at = Date.now(), poster = posterUrl(), loading = warmYard(url);
-    const image = new Image(); image.src=poster;
-    await Promise.race([image.decode().catch(()=>{}), delay(800)]);
-    const button = document.querySelector('#street-link');
-    const box = button.getBoundingClientRect();
-    const inset = [box.top, innerWidth-box.right, innerHeight-box.bottom, box.left].map(n=>Math.max(0,n));
-    layer = makePoster(poster);
-    // A small blurred alpha mask feathers the reveal by roughly 90–150 CSS px.
-    // Only this mask is rasterised; the yard picture is the existing static JPEG.
-    const mask=document.createElement('canvas');
-    const ratio=Math.min(1,384/Math.max(innerWidth,innerHeight));
-    mask.width=Math.ceil(innerWidth*ratio);mask.height=Math.ceil(innerHeight*ratio);
-    const ctx=mask.getContext('2d');
-    const paintMask=scale=>{
-      const finish=1-Math.min(1,scale/.12), feather=26*(1-finish*.7);
-      const pad=finish*feather*4;
-      ctx.clearRect(0,0,mask.width,mask.height);ctx.filter=`blur(${feather}px)`;ctx.fillStyle='#fff';
-      ctx.beginPath();ctx.roundRect(inset[3]*scale*ratio-pad,inset[0]*scale*ratio-pad,
-        (innerWidth-(inset[1]+inset[3])*scale)*ratio+pad*2,
-        (innerHeight-(inset[0]+inset[2])*scale)*ratio+pad*2,Math.max(2,18*(1-scale)));ctx.fill();
-      const url=`url("${mask.toDataURL()}")`;layer.style.maskImage=url;layer.style.webkitMaskImage=url;
-    };
-    const code=document.createElement('div');code.className='portal-code';layer.append(code);
-    const alphabet='01アイウエカキクケコサシスセソ∴⊹';
-    for(let i=0;i<(innerWidth<600?10:22);i++){
-      const column=document.createElement('span');column.textContent=Array.from({length:15},()=>alphabet[Math.floor(Math.random()*alphabet.length)]).join('\n');
-      column.style.cssText=`left:${i*100/(innerWidth<600?10:22)}%;--rain-time:${1.2+Math.random()*1.3}s;--rain-delay:${-Math.random()*2}s`;code.append(column);
-    }
-    paintMask(1);
-    document.body.classList.add('portal-leaving'); root.dataset.portalPhase='doorway';
-    const run = (from,to,duration) => new Promise(resolve=>{
-      const start=performance.now();let lastPaint=-Infinity;
-      const tick=now=>{
-        const t=Math.min(1,(now-start)/duration),ease=t*t*(3-2*t),scale=from+(to-from)*ease;
-        if(now-lastPaint>=32 || t===1){paintMask(scale);lastPaint=now;code.style.opacity=String(Math.min(1,scale/.15)*.65);}
-        if(t<1)frame=requestAnimationFrame(tick);else resolve();
-      };
-      frame=requestAnimationFrame(tick);
-    });
+    busy=true;root.setAttribute('aria-busy','true');root.dataset.portalPhase='loading-yard';
+    const preview=document.createElement('iframe');
+    const destination=new URL(url,location.href);destination.searchParams.set('portal-preview','1');
+    preview.src=destination.href;preview.title='Загрузка двора';preview.setAttribute('aria-hidden','true');preview.tabIndex=-1;
+    preview.style.cssText='position:fixed;inset:0;width:100vw;height:100vh;border:0;opacity:0;pointer-events:none;z-index:-1';document.body.append(preview);
     try {
-      await run(1,.12,700);
-      root.dataset.portalPhase='loading-resources';
-      await loading;
-      root.dataset.portalPhase='opening-yard';
-      await run(.12,0,Math.max(300,1000-(Date.now()-at)));
-    } catch { cleanup(); return; }
-    layer.style.maskImage='none';layer.style.webkitMaskImage='none';
-    save({to:'yard',at,poster}); navigate(url);
+      const began=performance.now();
+      while(!preview.contentWindow?.__yard || !preview.contentDocument?.documentElement.dataset.yardReady || preview.contentWindow.__yard.scene.userData.bakedLightingStatus==='loading'){
+        if(performance.now()-began>30000||preview.contentDocument?.body?.classList.contains('yard-unavailable'))throw Error('yard unavailable');
+        await delay(80);
+      }
+      const yard=preview.contentWindow.__yard;
+      yard.renderSnapshot();
+      const poster=preview.contentDocument.querySelector('#yard-view').toDataURL('image/jpeg',.88);
+      const image=new Image();image.src=poster;await image.decode();
+      // The old view is a browser-owned screenshot, captured only after a real yard frame exists.
+      const reveal=()=>{layer=makePoster(poster);document.body.classList.add('portal-leaving');};
+      root.dataset.portalPhase='inverting';
+      if(document.startViewTransition&&!reduced.matches){
+        const transition=document.startViewTransition(reveal);
+        await transition.finished;
+      }else{reveal();}
+      preview.remove();
+      save({to:'yard',at:Date.now(),poster});navigate(url);
+    }catch(error){
+      preview.remove();clear();cleanup();
+      const button=document.querySelector('#street-link');
+      if(button){button.setAttribute('title','Двор пока не загрузился. Нажми ещё раз.');button.focus();}
+      console.warn('Yard preview failed',error);
+    }
   };
   window.inteonPortal = { exit, returnHome, get busy() { return busy; } };
   document.addEventListener('click', event => {

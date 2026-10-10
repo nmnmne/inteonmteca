@@ -4,9 +4,10 @@
   const visitsKey = "inteonmteca-street-visits";
   const poseKey = "inteonmteca-street-pose";
   const ruleKey = "inteonmteca-street-rule";
-  const rule = "20,120,+120;boundary+240";
-  const baseSeconds = 20;
-  const stepSeconds = 120;
+  const rule = "60,+60,max900;boundary-capped";
+  const baseSeconds = 60;
+  const maxSeconds = 900;
+  const stepSeconds = 60;
   const boundaryBonusSeconds = 240;
 
   const read = (key) => {
@@ -67,7 +68,7 @@
     if (raw === null || raw === "") return null;
     const value = Number(raw);
     if (!Number.isFinite(value) || value < baseSeconds) return null;
-    return Math.round(value);
+    return Math.min(maxSeconds, Math.round(value));
   };
 
   const formatWatch = (totalSeconds) => {
@@ -118,9 +119,9 @@
       // Keep elapsed walking time: the daily bonus extends the existing deadline.
       // One record contains both consumption and the absolute deadline.
       state.consumedDay = today();
-      state.deadline += boundaryBonusSeconds * 1000;
+      state.deadline = Math.min(state.deadline + boundaryBonusSeconds * 1000, (state.startedAt || state.deadline - duration * 1000) + maxSeconds * 1000);
       putWalk(state);
-      write(secondsKey, duration + boundaryBonusSeconds);
+      write(secondsKey, Math.min(maxSeconds, duration + boundaryBonusSeconds));
       reschedule?.();
       return true;
     },
@@ -132,10 +133,7 @@
     noteExit() {
       resetIfNewDay();
       newVisit();
-      const previous = storedSeconds();
-      // The short first visit is followed by two minutes. Once a boundary bonus
-      // has grown that duration, every later visit adds two minutes to that base.
-      const next = previous === null ? baseSeconds : previous === baseSeconds ? stepSeconds : previous + stepSeconds;
+      const next = Math.min(maxSeconds, baseSeconds + visits() * stepSeconds);
       write(dayKey, today());
       write(ruleKey, rule);
       write(secondsKey, String(next));
@@ -171,7 +169,8 @@
         if (!state.visit || state.ended) state = newVisit();
         armedVisit = state.visit;
         if (!Number.isFinite(state.deadline)) {
-          state.deadline = Date.now() + this.seconds() * 1000;
+          state.startedAt = Date.now();
+          state.deadline = state.startedAt + this.seconds() * 1000;
           putWalk(state);
         }
         const endsAt = state.deadline;

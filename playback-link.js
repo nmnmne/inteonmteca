@@ -4,14 +4,14 @@
   // not gapless audio: navigation destroys the old element and autoplay may fail.
   const sessions = new WeakMap();
   const fades = new WeakMap();
-  const fadeOut = (audio, fade = {until: Date.now()+8000, volume: audio.volume}) => {
+  const fadeOut = (audio, fade = {until: Date.now()+40000, volume: audio.volume}) => {
     if (fades.has(audio)) cancelAnimationFrame(fades.get(audio));
     const state = sessions.get(audio);
     if (!state) return;
     state.fade = fade;
     const tick = () => {
       if (sessions.get(audio) !== state) return;
-      const remaining = Math.max(0, (fade.until-Date.now())/8000);
+      const remaining = Math.max(0, (fade.until-Date.now())/40000);
       if (state.fadeIn && state.fadeInStarted == null && !audio.paused && !audio.seeking) state.fadeInStarted = Date.now();
       const entry = state.fadeIn ? Math.min(1, Math.max(0, (Date.now() - (state.fadeInStarted ?? Date.now())) / 350)) : 1;
       audio.volume = fade.volume * Math.min(1, remaining) * entry;

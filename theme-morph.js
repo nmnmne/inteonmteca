@@ -84,7 +84,8 @@
       const tick = now => {
         if (token !== generation) return;
         const elapsed = Math.min(1, (now-start)/duration);
-        const blend = elapsed*elapsed*(3-2*elapsed);
+        // Ease out immediately: visible color movement in the first frames, then a soft landing.
+        const blend = 1 - Math.pow(1 - elapsed, 3);
         for (const [property, tween] of tweens) root.style.setProperty(property, tween(blend));
         if (elapsed < 1) frame = requestAnimationFrame(tick);
         else complete(token);

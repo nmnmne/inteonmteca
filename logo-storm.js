@@ -9,15 +9,16 @@
   let lastStarted = 0;
   try { lastStarted = Number(sessionStorage.getItem('inteon-storm-last')) || 0; } catch {}
   const signal = (phase, detail = {}) => window.dispatchEvent(new CustomEvent('inteon-storm', {detail: {phase, ...detail}}));
-  let layer, timer, deadline, animations = [], running = false, debugRun = false;
+  let shardLayer, layer, timer, deadline, animations = [], running = false, debugRun = false;
   const later = (fn, delay) => { clearTimeout(timer); timer = setTimeout(fn, delay); };
   const stop = () => {
     clearTimeout(deadline); deadline = 0;
     clearTimeout(timer);
     animations.forEach(a => a.cancel()); animations = [];
+    shardLayer?.remove();shardLayer=null;
     layer?.remove(); layer = null; running = false;
     debugRun = false;
-    logo.classList.remove('is-screen-scattered', 'is-rebuilding');
+    logo.classList.remove('is-screen-scattered', 'is-rebuilding', 'is-ink-rebuilt');
     rebuild?.replaceChildren();
     document.body.classList.remove('storm-priming');
     signal('end');
@@ -25,7 +26,7 @@
   };
   const start = (options = {}) => {
     const force = options.force === true;
-    if (running || (!force && music.paused) || document.hidden || reduced.matches) return;
+    if (matchMedia('(max-width: 800px), (pointer: coarse)').matches || running || (!force && music.paused) || document.hidden || reduced.matches) return;
     clearTimeout(timer);
     const remaining = lastStarted + cooldown - Date.now();
     document.body.dataset.stormNextAt = String(lastStarted + cooldown);
@@ -39,7 +40,7 @@
     debugRun = force;
     document.body.classList.add('storm-priming');
     signal('prepare');
-    later(explode, 1000);
+    if (force) explode(); else later(explode, 1000);
   };
   const explode = () => {
     if ((!debugRun && music.paused) || document.hidden || reduced.matches) { stop(); return; }
@@ -47,7 +48,7 @@
     const box = logo.getBoundingClientRect();
     signal('burst', {x: box.left + box.width / 2, y: box.top + box.height / 2});
     const cols = innerWidth < 600 ? 12 : 18, rows = innerWidth < 600 ? 4 : 6;
-    const count = cols * rows, flight = 4000, hold = 5000, step = 190, returnTime = 1600;
+    const count = cols * rows, flight = debugRun ? 650 : 4000, hold = 5000, step = 190, returnTime = 1600;
     // Finish even if a compositor animation never reports its completion.
     deadline = setTimeout(stop, flight + hold + count * step + returnTime + 1500);
     let landed = 0;
@@ -59,6 +60,7 @@
     const bolts = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     bolts.setAttribute('viewBox', `0 0 ${innerWidth} ${innerHeight}`);
     bolts.setAttribute('preserveAspectRatio', 'none'); bolts.classList.add('logo-storm-bolts');
+    bolts.style.overflow = 'hidden';
     const lightning = (x0,y0,x1,y1,spread,depth=6) => {
       if(!depth)return [[x0,y0],[x1,y1]];
       const dx=x1-x0,dy=y1-y0,length=Math.hypot(dx,dy)||1,jitter=(Math.random()-.5)*spread;
@@ -72,15 +74,19 @@
       path.style.strokeLinecap='round';path.style.strokeLinejoin='round';bolts.append(path);
     };
     for(let n=0;n<3;n++){
-      const x=innerWidth*(.18+n*.32),points=lightning(x,-20,x+innerWidth*(Math.random()-.5)*.25,innerHeight*(.68+Math.random()*.28),innerWidth*.19);
+      // The viewport crops the middle third of a much larger storm.
+      // Main channels start and end off-screen, never visibly stopping in the room.
+      const x=innerWidth*(.05+n*.45);
+      const points=lightning(x,-innerHeight,x+innerWidth*(Math.random()-.5)*.75,innerHeight*2,innerWidth*.57);
       stroke(points,5,.2);stroke(points,1.4,.95,true);
       for(const i of [17,31,43]){
         const [sx,sy]=points[i],side=(n+i)%2?1:-1;
-        const branch=lightning(sx,sy,sx+side*innerWidth*(.06+Math.random()*.08),sy+innerHeight*.18,innerWidth*.055,4);
+        const branch=lightning(sx,sy,sx+side*innerWidth*(.3+Math.random()*.35),sy+innerHeight*.54,innerWidth*.165,4);
         stroke(branch,.7,.55,true);
       }
     }
     layer.append(bolts);
+    shardLayer=document.createElement('div');shardLayer.className='storm-inversion-shards';document.body.append(shardLayer);
     const order = Array.from({length: count}, (_, i) => i);
     for (let i = count - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
     for (let i = 0; i < count; i++) {
@@ -95,23 +101,23 @@
       const tx = (((cell % across) + .15 + Math.random() * .65) / across * 1.2 - .1) * innerWidth;
       const ty = ((Math.floor(cell / across) + .15 + Math.random() * .65) / Math.ceil(count / across) * 1.2 - .1) * innerHeight;
       const depth = Math.min(1, Math.hypot(tx - x, ty - y) / Math.hypot(innerWidth, innerHeight));
-      const scatter = `translate(${tx - x}px, ${ty - y}px) rotate(${Math.random() * 150 - 75}deg) scale(${.85 - depth * .5})`;
-      const farOpacity = .55 - depth * .36;
+      const scatter = `translate(${tx - x}px, ${ty - y}px) rotate(${Math.random() * 150 - 75}deg) scale(${1 - depth * .4})`;
+      const farOpacity = .98 - depth * .04;
       const returnAt = flight + hold + order[i] * step;
       const duration = returnAt + returnTime;
       const home = 'translate(0, 0) rotate(0deg) scale(1)';
-      layer.append(tile);
+      shardLayer.append(tile);
       const movement = tile.animate([
-        {transform: home, opacity: .9, offset: 0, easing: 'cubic-bezier(.16,.72,.12,1)'},
+        {transform: home, opacity: 1, offset: 0, easing: 'cubic-bezier(.16,.72,.12,1)'},
         {transform: scatter, opacity: farOpacity, offset: flight / duration},
         {transform: scatter, opacity: farOpacity, offset: returnAt / duration, easing: 'cubic-bezier(.2,.7,.2,1)'},
         {transform: home, opacity: 1, offset: 1},
       ], {duration, fill: 'forwards'});
       const ink = tile.animate([
-        {filter: 'brightness(.8)', offset: 0},
-        {filter: 'brightness(.8)', offset: returnAt / duration},
-        {filter: 'brightness(0)', offset: (returnAt + returnTime * .65) / duration},
-        {filter: 'brightness(0)', offset: 1},
+        {filter: 'brightness(0) invert(1)', offset: 0},
+        {filter: 'brightness(0) invert(1)', offset: returnAt / duration},
+        {filter: 'brightness(0) invert(1)', offset: (returnAt + returnTime * .65) / duration},
+        {filter: 'brightness(0) invert(1)', offset: 1},
       ], {duration, fill: 'forwards'});
       movement.onfinish = () => {
         if (layer !== cycleLayer) return;
@@ -128,7 +134,7 @@
       };
       animations.push(movement, ink);
     }
-    document.body.append(layer); logo.classList.add('is-screen-scattered', 'is-rebuilding');
+    document.body.append(layer); logo.classList.add('is-screen-scattered', 'is-rebuilding', 'is-ink-rebuilt');
     layer.dataset.phase = 'scattering';
     later(() => {
       layer.dataset.phase = 'storm';
@@ -137,7 +143,7 @@
       animations.push(bolts.animate(flashes.map((offset, i) => ({offset, opacity: [0,1,0,1,0,1,0,0][i]})), {duration: 4200}));
       later(() => {
         layer.dataset.phase = 'assembling';
-        logo.classList.add('is-ink-rebuilt');
+        // Returning tiles keep their pigment until the original contour takes over.
       }, hold);
     }, flight);
   };

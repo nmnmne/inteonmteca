@@ -50,3 +50,7 @@ html[data-portal-arrival="yard"][data-portal-phase="entering-yard"] body::after 
 .portal-code { position:absolute; inset:0; overflow:hidden; pointer-events:none; background:linear-gradient(0deg,#06251b25,transparent); }
 .portal-code span { position:absolute; top:-35%; white-space:pre; color:#b5f0b9; font:14px/1.65 Consolas,monospace; text-shadow:0 0 7px #49d49a; animation:portal-code-fall var(--rain-time) linear var(--rain-delay) infinite; mask-image:linear-gradient(transparent,#000 35%,#000 85%,transparent); }
 @keyframes portal-code-fall { from {transform:translateY(-25%);opacity:0;} 20%,75% {opacity:.8;} to {transform:translateY(90vh);opacity:0;} }
+
+html[data-portal-phase="inverting"]::view-transition-old(root) { animation:portal-invert-exit 950ms ease-in-out both; }
+html[data-portal-phase="inverting"]::view-transition-new(root) { animation:none; }
+@keyframes portal-invert-exit { 0%{filter:invert(0);opacity:1;} 35%{filter:invert(1);opacity:1;} 100%{filter:invert(1);opacity:0;} }

@@ -80,11 +80,11 @@ body.spatial-room .track-viewport { height: var(--catalog-height, 100%) !importa
 .spatial-room .transport-skip { color: #a7b0bf; }
 .spatial-room .active-player .transport { grid-template-columns: 1fr 44px 1fr; grid-template-rows: 44px 36px; gap: 0 14px; }
 .spatial-room .active-player .transport-seek-field { height: 36px; }
-.spatial-room .transport-progress { height: 36px; --seek-bass: 0; }
+.spatial-room .transport-progress { height: 36px; }
 .spatial-room .transport-seek-field::before { height: 1px; background: linear-gradient(to right, #acc8dc var(--seek), #c7d3e027 var(--seek)); }
 .spatial-room .active-player .transport-time { font-size: 10px; color: #9199a9; }
-.spatial-room .transport-progress::-webkit-slider-thumb { width: 8px; height: 8px; margin-top: -2px; border-radius: 6px; background: #c5ddea; box-shadow: 0 0 10px #a0c5df25; transform: scale(calc(1 - var(--seek-bass) * .35), calc(1 + var(--seek-bass) * 2.5)); }
-.spatial-room .transport-progress::-moz-range-thumb { width: 8px; height: 8px; border-radius: 6px; background: #c5ddea; box-shadow: 0 0 10px #a0c5df25; transform: scale(calc(1 - var(--seek-bass) * .35), calc(1 + var(--seek-bass) * 2.5)); }
+.spatial-room .transport-progress::-webkit-slider-thumb { width: 8px; height: 8px; margin-top: -2px; border-radius: 6px; background: #c5ddea; box-shadow: 0 0 10px #a0c5df25; transform: none; }
+.spatial-room .transport-progress::-moz-range-thumb { width: 8px; height: 8px; border-radius: 6px; background: #c5ddea; box-shadow: 0 0 10px #a0c5df25; transform: none; }
 @media (min-width: 801px) and (min-height: 541px) {
   .spatial-room { --dock-height: 104px; }
   .spatial-room .active-player { grid-template-columns: minmax(180px, 1fr) minmax(280px, 1.3fr) 100px; padding: 10px 24px; }
@@ -102,5 +102,4 @@ body.spatial-room .track-viewport { height: var(--catalog-height, 100%) !importa
 }
 @media (prefers-reduced-motion: reduce) {
   .logo-grain rect, .resident-mark, body.spatial-room .logo-wrap.release-logo::before { animation: none !important; }
-  .spatial-room .transport-progress { --seek-bass: 0 !important; }
 }

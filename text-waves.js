@@ -9,7 +9,7 @@
     '.theme-kicker', '.theme-label', '.theme-action', '.theme-duration-output', '.theme-status',
   ].join(',');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  const coarse = matchMedia('(pointer: coarse)');
+  const coarse = matchMedia('(pointer: coarse), (max-width: 800px)');
   const symbols = '01/\\|<>[]{}#$%&*+-=░▒:;';
   const pointer = {x: 0, y: 0, active: false, until: Infinity};
   const modes = [
@@ -20,6 +20,8 @@
   ];
   let chars = [], visibleChars = [], waves = [], frameId = 0, serial = 0, needsScan = true, dirty = true;
   let selected = false, focusTarget = null;
+  let fullScan = true;
+  const pendingOwners = new Set();
   let modeIndex = 0, modeUntil = 0, nextWave = 0, measuredAt = -Infinity, lastGlyphFrame = -1;
   const hash = n => { let value = Math.imul(n | 0, 374761393); value = Math.imul(value ^ (value >>> 13), 1274126177); return ((value ^ (value >>> 16)) >>> 0) / 4294967296; };
   const paint = (char, glyph = '') => {
@@ -34,16 +36,22 @@
     for (const record of records) {
       const element = record.target.nodeType === Node.ELEMENT_NODE ? record.target : record.target.parentElement;
       if (element?.closest('.text-wave-char')) continue;
-      if (record.type === 'attributes' || element?.closest(selector) || [...record.addedNodes].some(node =>
-        node.nodeType === Node.ELEMENT_NODE && (node.matches(selector) || node.querySelector(selector)))) {
-        needsScan = true; break;
+      if (record.type === 'attributes') { fullScan = true; needsScan = true; continue; }
+      const owner = element?.closest(selector);
+      if (owner) { pendingOwners.add(owner); needsScan = true; }
+      for (const node of record.addedNodes) {
+        if (node.nodeType !== Node.ELEMENT_NODE) continue;
+        if (node.matches(selector)) pendingOwners.add(node);
+        node.querySelectorAll(selector).forEach(el => pendingOwners.add(el));
       }
+      if (pendingOwners.size) needsScan = true;
     }
   });
   const scan = () => {
     observer.disconnect();
     chars = chars.filter(char => char.el.isConnected);
-    const owners = [...document.querySelectorAll(selector)].filter(owner => owner.getClientRects().length && !owner.closest('[hidden]'));
+    const owners = [...(fullScan ? document.querySelectorAll(selector) : pendingOwners)].filter(owner => owner.isConnected && owner.getClientRects().length && !owner.closest('[hidden]'));
+    fullScan = false; pendingOwners.clear();
     owners.forEach(owner => {
       const walker = document.createTreeWalker(owner, NodeFilter.SHOW_TEXT, {
         acceptNode(node) {
@@ -102,11 +110,11 @@
     if (blocked()) { restore(); return; }
     frameId = requestAnimationFrame(tick);
     if (needsScan) scan();
-    if (dirty || now - measuredAt > 1200) measure(now);
+    if ((dirty && (!coarse.matches || now - measuredAt >= 100)) || now - measuredAt > 1200) measure(now);
     // Glyphs are discrete: keep RAF in sync with the display but only evaluate
     // a new symbol state when its normal-speed or brief-burst time bucket changes.
     const burst = now % 19000 > 18250;
-    const frame = Math.floor(now / (burst ? (coarse.matches ? 28 : 20) : (coarse.matches ? 105 : 60)));
+    const frame = Math.floor(now / (coarse.matches ? 50 : (burst ? 20 : 60)));
     if (frame === lastGlyphFrame) return;
     lastGlyphFrame = frame;
     if (!modeUntil) { modeUntil = now + modes[0].duration; nextWave = now + 650; }
@@ -116,7 +124,8 @@
       // Let silence arrive without the tail of a previous storm.
       if (modes[modeIndex].name === 'quiet') waves = [];
     }
-    const mode = modes[modeIndex];
+    const baseMode = modes[modeIndex];
+    const mode = coarse.matches ? {...baseMode, gap: Math.min(baseMode.gap, 1600), strength: Math.max(baseMode.strength, .24)} : baseMode;
     if (document.documentElement.dataset.textWaveMode !== mode.name) document.documentElement.dataset.textWaveMode = mode.name;
     if (now >= nextWave) {
       waves.push({at: now, x: innerWidth * (.12 + Math.random() * .76), y: innerHeight * (.1 + Math.random() * .65), ...mode});
@@ -128,7 +137,7 @@
       focusTarget = focus;
       chars.forEach(char => { char.focused = char.owner.contains(focus) || (focus?.matches(':focus-visible') && focus.contains(char.el)); });
     }
-    const calmRadius = coarse.matches ? 150 : 175;
+    const calmRadius = coarse.matches ? 70 : 175;
     visibleChars.forEach(char => {
       if (selected || char.focused) { paint(char); return; }
       let intensity = 0;
@@ -150,14 +159,14 @@
   };
   const calm = event => {
     pointer.x = event.clientX; pointer.y = event.clientY; pointer.active = true;
-    pointer.until = event.pointerType === 'touch' ? performance.now() + 5000 : Infinity;
+    pointer.until = event.pointerType === 'touch' ? performance.now() + 700 : Infinity;
     // Coalesce high-rate mouse events into the next display frame.
   };
   window.addEventListener('pointermove', calm, {passive: true});
   window.addEventListener('pointerdown', calm, {passive: true});
   document.documentElement.addEventListener('pointerleave', event => {
     // Touch sends pointerleave as soon as the finger lifts; keep its calm area
-    // for the promised five seconds, while mouse leave restores normal waves.
+    // briefly after a tap, while mouse leave restores normal waves.
     if (event.pointerType !== 'touch') pointer.active = false;
   });
   document.addEventListener('scroll', () => { dirty = true; }, {capture: true, passive: true});

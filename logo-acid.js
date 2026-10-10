@@ -14,14 +14,15 @@
     window.inteonHomeEffects?.release('acid');
     resolve?.();
   };
-  const run = () => {
+  const run = (options = {}) => {
     if (!logo || finish || !source.complete || !source.naturalWidth || document.hidden || reduced.matches ||
         document.body.classList.contains('is-interlude') || document.body.classList.contains('storm-priming') || document.querySelector('.logo-storm')) return null;
     if (window.inteonHomeEffects && !window.inteonHomeEffects.claim('acid')) return null;
     return new Promise(resolve => {
       finish = resolve;
       deadline = setTimeout(stop, 11850);
-      const box = logo.getBoundingClientRect(), pad = 90, cols = 18, rows = 6;
+      const mobile=matchMedia('(max-width: 800px), (pointer: coarse)').matches;
+      const box = logo.getBoundingClientRect(), pad = mobile ? 44 : 90, cols = mobile ? 10 : 18, rows = mobile ? 3 : 6;
       const w = box.width / cols, h = box.height / rows;
       canvas = document.createElement('canvas');
       canvas.className = 'logo-acid'; canvas.setAttribute('aria-hidden', 'true');
@@ -34,7 +35,16 @@
       // moving a tile must not redraw the SVG or its holes on every display frame.
       const atlas = document.createElement('canvas');
       atlas.width = Math.ceil(box.width*dpr); atlas.height = Math.ceil(box.height*dpr);
-      atlas.getContext('2d').drawImage(source,0,0,atlas.width,atlas.height);
+      const atlasInk = atlas.getContext('2d');
+      atlasInk.drawImage(source,0,0,atlas.width,atlas.height);
+      // Match the live wordmark's pigment instead of introducing white shards.
+      const pigment = atlasInk.createLinearGradient(0,0,atlas.width,atlas.height);
+      document.querySelectorAll('#logo-core-gradient stop').forEach(stop => {
+        pigment.addColorStop(Number(stop.getAttribute('offset')), stop.getAttribute('stop-color'));
+      });
+      atlasInk.globalCompositeOperation = 'source-in';
+      const darkInk = Number(getComputedStyle(document.documentElement).getPropertyValue('--logo-brightness')) === 0;
+      atlasInk.fillStyle = darkInk ? '#18202a' : pigment; atlasInk.fillRect(0,0,atlas.width,atlas.height);
       const diagonal = Math.hypot(w,h);
       const makeTexture = () => {
         const image=document.createElement('canvas');
@@ -43,9 +53,9 @@
       };
       const tiles = Array.from({length: cols*rows}, (_, i) => ({
         x: i % cols * w, y: Math.floor(i/cols)*h, texture:makeTexture(),
-        dx: (Math.random()-.5)*90, dy: (Math.random()-.5)*58,
+        dx: (Math.random()-.5)*(mobile?42:90), dy: (Math.random()-.5)*(mobile?30:58),
         rotation: (Math.random()-.5)*.45, delay: Math.random()*.22,
-        holes: Array.from({length: 9}, () => {
+        holes: Array.from({length: mobile ? 5 : 9}, () => {
           const x=Math.random()*w,y=Math.random()*h,path=new Path2D();
           for(let k=0;k<15;k++){
             const angle=k/14*Math.PI*2,r=1+.18*Math.sin(k*2.7+x);
@@ -57,7 +67,7 @@
         }),
       }));
       document.body.append(canvas); logo.classList.add('is-acid');
-      const started = performance.now();
+      const started = performance.now() - (options.preview ? 700 : 0);
       let previousPhase='',previousReturn='0';
       const paint = now => {
         if (!finish) return;
@@ -76,12 +86,12 @@
         ctx.setTransform(dpr,0,0,dpr,0,0);
         ctx.clearRect(0,0,box.width+pad*2,box.height+pad*2);
         if(elapsed>=9800)return;
-        ctx.globalAlpha=.88;
+        ctx.globalAlpha=1;
         for (const tile of tiles) {
           const erosion = Math.max(0, (dissolve-tile.delay)/(1-tile.delay));
           const radius=erosion*erosion*diagonal;
           if(tile.holes.some(hole=>radius>=hole.cover))continue;
-          const texture=tile.texture,tint=erosion>0?Math.min(.8,erosion+.25):0;
+          const texture=tile.texture,tint=erosion>0?Math.min(.28,erosion*.28):0;
           // Reuse pigment while its contour moves less than half a physical
           // pixel; tile transforms still follow every display refresh.
           if(texture.radius<0 || Math.abs(radius-texture.radius)*dpr>=.45 || Math.abs(tint-texture.tint)>=.015) {
@@ -91,7 +101,7 @@
             ink.drawImage(atlas,tile.x/box.width*atlas.width,tile.y/box.height*atlas.height,
               w/box.width*atlas.width,h/box.height*atlas.height,0,0,w,h);
             ink.globalCompositeOperation='source-atop';
-            ink.fillStyle=tint?`rgba(186,196,139,${tint})`:'rgba(196,188,160,.45)';
+            ink.fillStyle=tint?`rgba(186,196,139,${tint})`:'rgba(196,188,160,.12)';
             ink.fillRect(0,0,w,h);
             ink.globalCompositeOperation='destination-out';
             if(radius>0)for(const hole of tile.holes){
@@ -108,7 +118,7 @@
         }
       };
       logo.style.setProperty('--acid-return', '0');
-      paint(started);
+      paint(performance.now());
     });
   };
   window.inteonLogoAcid = {run, stop, get active() { return Boolean(finish); }};

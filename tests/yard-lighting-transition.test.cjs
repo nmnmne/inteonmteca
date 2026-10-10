@@ -8,7 +8,7 @@ const layout = JSON.parse(fs.readFileSync(path.join(root, 'yard/data/site-layout
 
 test('hold is ten seconds; every real walk duration ends exactly at its deadline', async () => {
   const { createWalkLightingTimeline } = await import('../yard/walk-lighting.js');
-  for (const seconds of [10, 20, 120, 240, 260, 360, 380, 480, 600, 2760]) {
+  for (const seconds of [10, 60, 120, 180, 240, 300, 360, 480, 600, 840, 900]) {
     const timeline = createWalkLightingTimeline(1000);
     const end = 1000 + seconds * 1000;
     for (const time of [1000, 10999, 11000]) assert.equal(timeline.sample(time, end).progress, 0);
@@ -44,18 +44,18 @@ test('actual street-return ticks and its boundary bonus retime continuously with
   context.window = context;
   vm.runInNewContext(fs.readFileSync(path.join(root, 'street-return.js'), 'utf8'), context);
   const street = context.inteonStreet;
-  street.noteExit(); // first visit: 20 seconds
+  street.noteExit(); // first visit: one minute
   let deadline;
   street.armReturn({ replace() {} }, 'http:', left => { deadline = now + left * 1000; });
   const enteredAt = now;
   const timeline = createWalkLightingTimeline(enteredAt);
-  assert.equal(timeline.sample(now, deadline).durationMs, 10000);
-  now += 15000;
+  assert.equal(timeline.sample(now, deadline).durationMs, 50000);
+  now += 35000;
   assert.equal(timeline.sample(now, deadline).progress, 0.5);
   assert.equal(street.boundaryPlaybackSucceeded(), true);
-  assert.equal(deadline - now, 245000, 'four minutes are added to the five remaining seconds');
+  assert.equal(deadline - now, 265000, 'four minutes are added to the twenty-five remaining seconds');
   assert.equal(timeline.sample(now, deadline).progress, 0.5, 'extension does not reverse the light');
-  assert.equal(timeline.sample(now + 122500, deadline).progress, 0.75);
+  assert.equal(timeline.sample(now + 132500, deadline).progress, 0.75);
   assert.equal(timeline.sample(deadline, deadline).progress, 1);
 });
 

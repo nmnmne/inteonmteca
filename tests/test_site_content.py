@@ -66,9 +66,10 @@ class SiteContentTests(unittest.TestCase):
     def test_page_and_social_titles_are_inteonmteca(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
 
-        self.assertIn("<title>inteonmteca</title>", html)
-        self.assertIn('<meta property="og:title" content="inteonmteca">', html)
-        self.assertIn('<meta name="twitter:title" content="inteonmteca">', html)
+        title = "inteonmteca — Погрузись в глубину звука"
+        self.assertIn(f"<title>{title}</title>", html)
+        self.assertIn(f'<meta property="og:title" content="{title}">', html)
+        self.assertIn(f'<meta name="twitter:title" content="{title}">', html)
 
     def test_selected_track_label_is_absent(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
@@ -92,10 +93,11 @@ class SiteContentTests(unittest.TestCase):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         description = "Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри."
 
-        self.assertIn("<title>inteonmteca</title>", html)
+        title = "inteonmteca — Погрузись в глубину звука"
+        self.assertIn(f"<title>{title}</title>", html)
         self.assertIn('<meta name="description" content="' + description + '">', html)
-        self.assertIn('<meta property="og:title" content="inteonmteca">', html)
-        self.assertIn('<meta name="twitter:title" content="inteonmteca">', html)
+        self.assertIn(f'<meta property="og:title" content="{title}">', html)
+        self.assertIn(f'<meta name="twitter:title" content="{title}">', html)
         self.assertIn('<p class="visually-hidden">' + description + '</p>', html)
         self.assertIn('"description": "' + description + '"', html)
         self.assertNotIn("sound / matter / motion", html)
@@ -278,7 +280,7 @@ class SiteContentTests(unittest.TestCase):
         self.assertNotIn('id="refresh-media"', html)
         self.assertIn('value="graphite"', html)
         registry = script.split("const themeRegistry = Object.freeze([", 1)[1].split("].map", 1)[0]
-        self.assertEqual(len(re.findall(r'^  "[a-z-]+\|', registry, re.MULTILINE)), 9)
+        self.assertEqual(len(re.findall(r'^  "[a-z-]+\|', registry, re.MULTILINE)), 6)
         self.assertIn("populateThemeSelect();", script)
         self.assertIn("themeCoreFilters", script)
         self.assertNotIn('grayscale(1)', script)

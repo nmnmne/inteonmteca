@@ -11,7 +11,7 @@
     const button = document.createElement('button'); button.type='button'; button.tabIndex=-1; button.setAttribute('role','option'); button.dataset.value=option.value; button.textContent=option.textContent;
     button.addEventListener('click',()=>{select.value=option.value;select.dispatchEvent(new Event('change',{bubbles:true}));button.focus({preventScroll:true});}); menu.append(button);return button;
   });
-  const sync=()=>{toggle.textContent=`${select.selectedOptions[0]?.textContent || 'мягкий графит'} ${menu.hidden?'▾':'▴'}`;options.forEach(o=>o.setAttribute('aria-selected',String(o.dataset.value===select.value)));};
+  const sync=()=>{toggle.textContent=`${select.selectedOptions[0]?.textContent || 'Матовый углерод'} ${menu.hidden?'▾':'▴'}`;options.forEach(o=>o.setAttribute('aria-selected',String(o.dataset.value===select.value)));};
   const open=value=>{menu.hidden=!value;toggle.setAttribute('aria-expanded',String(value));sync();};
   toggle.addEventListener('click',()=>open(menu.hidden));
   host.addEventListener('keydown',event=>{

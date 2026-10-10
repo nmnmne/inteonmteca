@@ -6,7 +6,29 @@
   const image=new Image(); image.src='assets/logo-wordmark.svg';
   let particles=[],frame=0,w=innerWidth,h=innerHeight,energy=false,origin=0,ink='218, 243, 149',paletteDirty=true;
   const fragments=['0x','[',']','{','}','::','=>','01','11','00','&&','/','+','f(x)','vec','0.01','< >','||'];
-  let streams=[],logoBox=null;
+  let streams=[],logoBox=null,dust=[];
+  // Reuse the ambient canvas and its recovery loop; no extra full-screen layer.
+  const buildDust=()=>{
+    const low=document.documentElement.dataset.animationQuality==='low';
+    const count=Math.min(low?100:280,Math.max(32,Math.round(w*h/(low?14000:8500))));
+    dust=Array.from({length:count},()=>({
+      x:Math.random(),y:Math.random(),phase:Math.random()*Math.PI*2,
+      vx:(Math.random()-.5)*5,vy:2+Math.random()*5,
+      radius:.65+Math.random()*1.15,period:8+Math.random()*12,
+    }));
+  };
+  const drawDust=t=>{
+    ctx.fillStyle=`rgb(${ink})`;
+    for(const p of dust){
+      const spanX=w+48,spanY=h+48;
+      const x=((p.x*spanX+t*p.vx+Math.sin(t*.13+p.phase)*15)%spanX+spanX)%spanX-24;
+      const y=((p.y*spanY-t*p.vy+Math.cos(t*.11+p.phase)*10)%spanY+spanY)%spanY-24;
+      const fade=.5+.5*Math.sin(t*Math.PI*2/p.period+p.phase);
+      ctx.globalAlpha=.12+.82*fade*fade;
+      ctx.beginPath();ctx.arc(x,y,p.radius,0,Math.PI*2);ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  };
   const labels=new Map();
   const drawLabel=(text,font,x,y)=>{
     const key=`${font}|${text}`;
@@ -41,7 +63,7 @@
     canvas.dataset.pixels=String(particles.length);
   };
   const palette=()=>{ink=getComputedStyle(document.documentElement).getPropertyValue('--interface-accent').trim()||ink;paletteDirty=false;labels.clear();};
-  const resize=()=>{w=innerWidth;h=innerHeight;const d=Math.min(devicePixelRatio,document.documentElement.dataset.animationQuality==='low'?1:1.5);canvas.width=w*d;canvas.height=h*d;ctx.setTransform(d,0,0,d,0,0);labels.clear();buildStreams();measureLogo();};
+  const resize=()=>{w=innerWidth;h=innerHeight;const d=Math.min(devicePixelRatio,document.documentElement.dataset.animationQuality==='low'?1:1.5);canvas.width=w*d;canvas.height=h*d;ctx.setTransform(d,0,0,d,0,0);labels.clear();buildStreams();buildDust();measureLogo();};
   const draw=now=>{
     window.inteonHomeEffects?.beat('field');
     frame=0;if(blocked())return;frame=requestAnimationFrame(draw);
@@ -72,6 +94,7 @@
       ctx.globalAlpha=1; return;
     }
     if(document.body.classList.contains('is-interlude')&&!document.body.classList.contains('scene-dawn')) return;
+    drawDust(t);
     // Code arrives in packets at several depths, with gaps and occasional horizontal branches.
     for(let i=0;i<streams.length;i++){
       const stream=streams[i],head=(stream.phase+t*stream.speed)%(h+240)-100;

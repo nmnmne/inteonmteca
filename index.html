@@ -9,8 +9,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="prefetch" as="image" href="yard/assets/spawn-mobile.jpg" media="(orientation: portrait)">
   <link rel="prefetch" as="image" href="yard/assets/spawn-desktop.jpg" media="(orientation: landscape)">
-  <link rel="stylesheet" href="room-portal.css?v=portal-mist-20261009-10">
-  <script src="room-portal.js?v=portal-mist-20261009-10"></script>
+  <link rel="stylesheet" href="room-portal.css?v=ready-inversion-20261010">
+  <script src="room-portal.js?v=ready-inversion-20261010"></script>
   <title>inteonmteca — Погрузись в глубину звука</title>
   <meta name="description" content="Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри.">
   <meta name="inteonmteca-api" content="">
@@ -43,13 +43,13 @@
   <link rel="stylesheet" href="styles.css?v=vr-room-20261004-3">
   <link rel="stylesheet" href="home-player.css?v=frosted-20261005-1">
   <link rel="stylesheet" href="text-waves.css?v=20261005-3">
-  <link rel="stylesheet" href="room-finish.css?v=ink-radius-20261006-2">
+  <link rel="stylesheet" href="room-finish.css?v=static-seek-20261010">
   <link rel="stylesheet" href="atmosphere-events.css?v=shared-scene-design-20261010">
   <link rel="stylesheet" href="room-composition.css?v=20261005-3">
   <link rel="stylesheet" href="charged-material.css?v=20261005-1">
   <link rel="stylesheet" href="room-grid.css?v=20261005-2">
   <link rel="stylesheet" href="room-editor.css?v=20261005-1">
-  <link rel="stylesheet" href="room-recesses.css?v=logo-chat-palette-20261010">
+  <link rel="stylesheet" href="room-recesses.css?v=mobile-composition-20261010">
 </head>
 <body class="perception-interface listening-room spatial-room">
   <div class="perception-field" aria-hidden="true"></div>
@@ -110,20 +110,18 @@
                   <filter id="logo-warp-filter" x="-18%" y="-80%" width="136%" height="260%" color-interpolation-filters="sRGB">
                     <feTurbulence id="logo-turbulence" type="fractalNoise" baseFrequency=".004 .038" numOctaves="3" seed="41" result="noise"/>
                     <feDisplacementMap id="logo-displacement" in="SourceGraphic" in2="noise" scale="2" xChannelSelector="R" yChannelSelector="B" result="warped"/>
-                    <feGaussianBlur stdDeviation=".18" result="soft"/>
-                    <feMerge><feMergeNode in="soft"/><feMergeNode in="warped"/></feMerge>
+
                   </filter>
                   <filter id="logo-edge-filter" x="-20%" y="-80%" width="140%" height="260%">
-                    <feMorphology in="SourceAlpha" operator="dilate" radius="1.15" result="dilated"/>
-                    <feMorphology in="SourceAlpha" operator="erode" radius=".45" result="eroded"/>
+                    <feMorphology in="SourceAlpha" operator="dilate" radius=".5" result="dilated"/>
+                    <feMorphology in="SourceAlpha" operator="erode" radius=".3" result="eroded"/>
                     <feComposite in="dilated" in2="eroded" operator="out" result="edge"/>
                     <feFlood flood-color="#d7d19c" flood-opacity=".45" result="color"/>
                     <feComposite in="color" in2="edge" operator="in" result="colored-edge"/>
-                    <feGaussianBlur in="colored-edge" stdDeviation="1.2" result="glow"/>
-                    <feMerge><feMergeNode in="glow"/><feMergeNode in="colored-edge"/></feMerge>
+
                   </filter>
                   <filter id="logo-ghost-filter" x="-24%" y="-100%" width="148%" height="300%">
-                    <feGaussianBlur stdDeviation="2.4"/>
+                    <feGaussianBlur stdDeviation="0"/>
                     <feColorMatrix values="1 0 0 0 .24  0 .44 0 0 .08  0 0 .18 0 .02  0 0 0 .72 0"/>
                   </filter>
                 </defs>
@@ -177,7 +175,7 @@
                 </div>
                 <span class="transport-time" id="duration-time">0:00</span>
               </div>
-              <div class="volume-control"><label for="track-volume">Громкость</label><input id="track-volume" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="Громкость" disabled><span id="volume-note" class="volume-note" hidden>Кнопками устройства</span></div>
+              <div class="volume-control"><label for="track-volume">Громкость</label><span class="volume-rail" aria-hidden="true"></span><input id="track-volume" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="Громкость" disabled><span id="volume-note" class="volume-note" hidden>Кнопками устройства</span></div>
               <p class="playback-status" id="playback-status" aria-live="polite"></p>
             </section>
             <!--noindex-->
@@ -258,7 +256,7 @@
     <label class="theme-label" for="theme-select">палитра</label>
     <select class="theme-select" id="theme-select">
       <!-- Complete grouped options come from the embedded script.js registry. -->
-      <option value="graphite">мягкий графит</option>
+      <option value="graphite">Матовый углерод</option>
     </select>
     <label class="theme-label" for="theme-duration">случайная смена через</label>
     <input class="theme-duration" id="theme-duration" type="range" min="0" max="1000" value="58" step="1" data-min-seconds="4" data-max-seconds="604800">
@@ -270,21 +268,23 @@
   </section>
   <script src="playlist-data.js?v=tracks-20261006-1"></script>
   <script src="track-play.js?v=vr-room-20261004-2"></script>
-  <script src="street-return.js?v=pose-20261009-5"></script>
-  <script src="playback-link.js?v=seek-fade-20261006-2"></script>
+  <script src="street-return.js?v=walk-minute-20261010"></script>
+  <script src="playback-link.js?v=walk-minute-20261010"></script>
   <script src="home-effects.js?v=motion-recovery-20261010"></script>
-  <script src="theme-morph.js?v=motion-recovery-20261010"></script>
-  <script src="script.js?v=motion-recovery-20261010"></script>
-  <script src="theme-picker.js?v=theme-menu-20261010"></script>
-  <script src="logo-acid.js?v=effect-deadlines-20261010"></script>
-  <script data-development-only src="development-debug.js?v=effects-toggle-20261006-4"></script>
+  <script src="theme-morph.js?v=instant-preview-20261010"></script>
+  <script src="script.js?v=effects-flow-20261010"></script>
+  <script src="theme-picker.js?v=theme-names-20261010"></script>
+  <script src="logo-acid.js?v=mobile-clouds-20261010"></script>
+  <script src="logo-materials.js?v=seamless-logo-20261010"></script>
+  <script data-development-only src="development-debug.js?v=effects-flow-20261010"></script>
   <script src="mobile-sections.js?v=20261006-3"></script>
-  <script src="room-resident.js?v=motion-recovery-20261010"></script>
-  <script src="logo-storm.js?v=effect-deadlines-20261010"></script>
-  <script src="text-waves.js?v=motion-recovery-20261010"></script>
-  <script src="room-finish.js?v=motion-recovery-20261010"></script>
-  <script src="energy-field.js?v=motion-recovery-20261010"></script>
-  <script src="atmosphere-events.js?v=digital-shells-20261009-5"></script>
-  <script src="logo-ripples.js?v=motion-recovery-20261010"></script>
+  <script src="room-resident.js?v=free-space-20261010"></script>
+  <script src="logo-storm.js?v=scene-carbon-20261010"></script>
+  <script src="text-waves.js?v=mobile-steady-20261010"></script>
+  <script src="room-finish.js?v=mobile-seven-flow-20261010"></script>
+  <script src="energy-field.js?v=drifting-dots-20261010"></script>
+  <script src="atmosphere-events.js?v=effects-flow-20261010"></script>
+  <script src="mobile-logo-effects.js?v=mobile-clouds-20261010"></script>
+  <script src="logo-ripples.js?v=mobile-clouds-20261010"></script>
 </body>
 </html>

@@ -313,7 +313,7 @@ body.spatial-room .logo-wrap.is-ink-rebuilt .logo-vector-core { opacity:1; }
     top: 23dvh; right: var(--catalog-edge-gap); width: auto; max-width: 56vw;
     text-align: right; font-size: clamp(34px, 5vw, 170px); line-height: 1.1;
   }
-  html[data-theme] body.spatial-room #logo-wrap { left: 8%; top: 49%; width: 79.8%; }
+  html[data-theme] body.spatial-room #logo-wrap { left: 50%; top: 49%; width: 79.8%; transform: translate(-50%, -50%); }
   html[data-theme] body.spatial-room #active-player {
     left: 2.5vw; right: auto; top: 85dvh; bottom: auto; width: 73vw;
     height: 13dvh; padding: 0; border: 0; border-radius: 0;
@@ -323,7 +323,7 @@ body.spatial-room .logo-wrap.is-ink-rebuilt .logo-vector-core { opacity:1; }
   html[data-theme] body.spatial-room #active-player .active-track-copy {
     position: absolute; left: 0; top: .9dvh; width: 25vw; gap: .65dvh;
   }
-  html[data-theme] body.spatial-room #active-player .now-playing-title { font-size: clamp(16px, min(2.3vw, 3.5dvh), 72px); line-height: 1.16; }
+  html[data-theme] body.spatial-room #active-player .now-playing-title { font-size: clamp(16px, min(2.3vw, 3.5dvh), 72px); line-height: 1.16; max-height: none; padding-bottom: .12em; }
   html[data-theme] body.spatial-room #active-player .active-track-artist { font-size: clamp(10px, min(1.05vw, 1.8dvh), 35px); line-height: 1.2; letter-spacing: .025em; }
   html[data-theme] body.spatial-room #active-player .transport {
     position: absolute; left: 26.5vw; top: 0; width: 41.4vw;
@@ -423,3 +423,352 @@ html[data-theme] .chat-inline .chat-stream {
 }
 html[data-theme] .spatial-room .auth-kicker { color: rgb(var(--theme-accent-rgb)); }
 html[data-theme] .spatial-room .auth-status { color: rgba(var(--theme-text-rgb), .8); overflow-wrap: anywhere; }
+
+/* Change only the control artwork; retain the shared player layout and palette. */
+html[data-theme] body.spatial-room #active-player :is(.transport-play, .transport-skip) {
+  border-color: transparent; background: transparent; box-shadow: none;
+  color: rgb(var(--theme-text-rgb));
+}
+html[data-theme] body.spatial-room #active-player :is(.transport-play, .transport-skip):hover:not(:disabled) {
+  background: transparent; border-color: transparent; box-shadow: none;
+  filter: drop-shadow(0 0 4px rgba(var(--theme-text-rgb), .25));
+}
+html[data-theme] body.spatial-room #active-player :is(.play-mark, .skip-mark) {
+  display: block; width: min(40px, 100%); height: min(40px, 100%);
+  background: currentColor; rotate: none; transform: none;
+  mask: url('assets/player-tags/next.svg') center / contain no-repeat;
+}
+html[data-theme] body.spatial-room #active-player :is(.play-mark, .skip-mark) { scale: .55; }
+html[data-theme] body.spatial-room #active-player .skip-mark-previous { transform: scaleX(-1); }
+html[data-theme] body.spatial-room #active-player .play-mark[data-state="playing"] { mask-image: url('assets/player-tags/pause.svg'); }
+html[data-theme] body.spatial-room #active-player .play-mark[data-state="paused"] { mask-image: url('assets/player-tags/play.svg'); }
+html[data-theme] body.spatial-room #active-player :is(.play-mark, .skip-mark)::before,
+html[data-theme] body.spatial-room #active-player :is(.play-mark, .skip-mark)::after { content: none; }
+html[data-theme] body.spatial-room #active-player .volume-control::before {
+  width: 16px; height: 20px; scale: 2.5; transform-origin: right center; clip-path: none; background: rgb(var(--theme-text-rgb));
+  mask: url('assets/player-tags/speaker.svg') center / contain no-repeat;
+}
+@media (min-width: 801px) and (min-height: 541px) {
+  html[data-theme] body.spatial-room #active-player :is(.play-mark, .skip-mark) {
+    width: min(var(--reference-play-size), 100%); height: var(--reference-play-size);
+  }
+}
+
+/* Static chalk rails share one texture and one hand-drawn cross in every scene. */
+html[data-theme] body.spatial-room #active-player .transport-seek-field::before,
+html[data-theme] body.spatial-room #active-player .volume-rail {
+  height: 6px; border: 0; border-radius: 0; box-shadow: none;
+  background: linear-gradient(to right, rgb(var(--theme-accent-rgb)) var(--seek, 80%), rgba(var(--theme-text-rgb), .38) var(--seek, 80%));
+  mask: url('assets/player-tags/chalk-line.svg') left center / 128px 6px repeat-x;
+  animation: none; transition: none; pointer-events: none;
+}
+html[data-theme] body.spatial-room #active-player .volume-rail { grid-area: 1 / 2; align-self: center; width: 100%; }
+html[data-theme] body.spatial-room #active-player #track-volume { grid-area: 1 / 2; z-index: 1; }
+html[data-theme] body.spatial-room #active-player .volume-control:has(#track-volume[hidden]) .volume-rail { display: none; }
+html[data-theme] body.spatial-room #active-player :is(.transport-progress, #track-volume) { animation: none; transition: none; }
+html[data-theme] body.spatial-room #active-player .transport-progress { height: 100%; margin: 0; padding: 0; box-sizing: border-box; }
+html[data-theme] body.spatial-room #active-player :is(.transport-progress, #track-volume)::-webkit-slider-runnable-track { height: 6px; background: transparent; border: 0; }
+html[data-theme] body.spatial-room #active-player :is(.transport-progress, #track-volume)::-moz-range-track { height: 6px; background: transparent; border: 0; }
+html[data-theme] body.spatial-room #active-player :is(.transport-progress, #track-volume)::-webkit-slider-thumb {
+  appearance: none; width: 18px; height: 24px; margin-top: -9px;
+  border: 0; border-radius: 0; background: rgb(var(--theme-text-rgb));
+  mask: url('assets/player-tags/chalk-cross.svg') center / contain no-repeat;
+  box-shadow: none; transform: none; animation: none; transition: none;
+}
+html[data-theme] body.spatial-room #active-player :is(.transport-progress, #track-volume)::-moz-range-thumb {
+  appearance: none; width: 18px; height: 24px;
+  border: 0; border-radius: 0; background: rgb(var(--theme-text-rgb));
+  mask: url('assets/player-tags/chalk-cross.svg') center / contain no-repeat;
+  box-shadow: none; transform: none; animation: none; transition: none;
+}
+html[data-theme] body.spatial-room #active-player .transport-time {
+  font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+  font-variant-numeric: tabular-nums; letter-spacing: 0;
+}
+
+/* White shards invert the actual logo beneath them instead of washing it out. */
+html[data-theme] body.spatial-room .logo-wrap.release-logo:not(.is-assembled) .logo-particles {
+  mix-blend-mode: difference; filter: none;
+}
+html[data-theme] body.spatial-room .logo-wrap.release-logo:not(.is-assembled) .logo-particle {
+  opacity: var(--shard-opacity, .82); filter: brightness(0) invert(1);
+}
+
+/* Crisp contours, restrained light and continuous near/middle/far separation. */
+html[data-theme] body.spatial-room .logo-wrap.release-logo { isolation: isolate; }
+html[data-theme] body.spatial-room .logo-wrap.release-logo::after { background: none; filter: none; }
+html[data-theme] body.spatial-room .logo-wrap.release-logo.is-charging { filter: none; }
+html[data-theme] body.spatial-room .reactive-logo { filter: brightness(clamp(0, var(--logo-brightness), 1)) contrast(1.03); }
+html[data-theme] body.spatial-room .logo-vector { filter: none; }
+html[data-theme] body.spatial-room .logo-vector-ghost { opacity: .035; }
+html[data-theme] body.spatial-room .logo-vector-outline { animation: none; opacity: calc(.09 + var(--logo-high) * .12); }
+html[data-theme] body.spatial-room .logo-vector-slices { mix-blend-mode: normal; opacity: calc(.18 + var(--logo-high) * .22); }
+html[data-theme] body.spatial-room .logo-ripples { filter: none; opacity: .78; z-index: 1; }
+html[data-theme] body.spatial-room .logo-reactive-canvas { filter: none; mix-blend-mode: normal; opacity: .65; z-index: -1; }
+html[data-theme] body.spatial-room .logo-symbol-echo { filter: none; mix-blend-mode: normal; }
+html[data-theme] body.spatial-room .logo-wrap.release-logo:not(.is-assembled) .reactive-logo { filter: brightness(calc(clamp(0, var(--logo-brightness), 1) * .94)); }
+@keyframes logoContrastBreath {
+  0%, 100% { opacity: .8; }
+  48% { opacity: .88; }
+  53% { opacity: .74; }
+  58% { opacity: .83; }
+}
+html[data-theme] body.spatial-room .logo-storm-sky { z-index: 0; }
+html[data-theme] body.spatial-room .logo-storm-bolts { z-index: 1; filter: drop-shadow(0 0 3px #9baeff66); }
+html[data-theme] body.spatial-room .logo-storm-piece { z-index: 2; }
+
+/* Fine chalk corner marks follow the heading when a menu pushes it aside. */
+html[data-theme] body.spatial-room .listening-intro h1::before {
+  content: ''; position: absolute; inset: -.18em -.16em; pointer-events: none;
+  background: rgb(var(--theme-accent-rgb)); opacity: .65;
+  mask: url('assets/player-tags/heading-corners.svg') center / 100% 100% no-repeat;
+}
+.theme-options button[aria-selected="true"] { box-shadow: inset 2px 0 currentColor; }
+body.is-debug-interlude .scene-curtain,
+body.is-debug-interlude .scene-digits,
+body.is-debug-interlude :is(.hero-intro, .listening-intro, .catalog-heading, .active-player, .track-item) {
+  transition-duration: .3s !important;
+}
+
+/* Reuse the heading's drawn corners, with a crisp offset for shallow relief. */
+html[data-theme] body.spatial-room .track-select {
+  border-color: transparent; box-shadow: none;
+}
+html[data-theme] body.spatial-room .track-select::before {
+  content: ''; position: absolute; inset: 0; width: auto; height: auto;
+  border: 0; border-radius: 0; transform: none; pointer-events: none;
+  background: rgba(var(--theme-text-rgb), .48); opacity: 1;
+  mask: url('assets/player-tags/playlist-double-contour.svg') center / 100% 100% no-repeat;
+}
+html[data-theme] body.spatial-room .track-item.is-playing .track-select {
+  border-color: transparent; box-shadow: none;
+}
+html[data-theme] body.spatial-room .track-item.is-playing .track-select::before,
+html[data-theme] body.spatial-room .track-select:hover::before {
+  background: rgb(var(--theme-accent-rgb));
+}
+.room-resident[data-state="angry"] .resident-body { transform: scale(1.1); }
+.room-resident[data-state="angry"] .resident-face i { width: 7px; height: 2px; border-radius: 0; }
+.room-resident[data-state="angry"] .resident-face i:first-child { transform: rotate(25deg); }
+.room-resident[data-state="angry"] .resident-face i:last-child { transform: rotate(-25deg); }
+.room-resident[data-state="angry"] .resident-mark { opacity: 0; }
+html[data-theme] body.spatial-room .chat-inline .chat-compose {
+  border-color: transparent; border-radius: 0; box-shadow: none;
+  background: rgba(var(--theme-panel-rgb), .18);
+}
+html[data-theme] body.spatial-room .chat-inline .chat-compose::before,
+html[data-theme] body.spatial-room .chat-inline .chat-compose::after {
+  content: ''; position: absolute; inset: -1px; pointer-events: none;
+  background: rgb(var(--theme-accent-rgb));
+  mask: url('assets/player-tags/heading-corners.svg') center / 100% 100% no-repeat;
+  transition: background-color .2s ease;
+}
+html[data-theme] body.spatial-room .chat-inline .chat-compose::before {
+  inset: 0 -2px -2px 0;
+  background: rgba(var(--theme-text-rgb), .35);
+}
+html[data-theme] body.spatial-room .chat-inline .chat-compose:focus-within {
+  border-color: transparent; box-shadow: none;
+}
+html[data-theme] body.spatial-room .chat-inline .chat-compose:focus-within::after {
+  background: rgb(var(--theme-accent-rgb));
+}
+
+/* Explicit, visible material motion; the same animations serve automatic and debug playback. */
+html[data-theme] body.spatial-room .logo-wrap.release-logo::before {
+  background: rgb(var(--theme-accent-rgb)); border-radius: 0;
+  mask: url('assets/logo-ink-blot.svg') center / 100% 100% no-repeat;
+  inset: -32% -8%; filter: none;
+}
+@keyframes logo-darkness {
+  0%,19%,68%,100% { opacity:0; transform:scale(.72) rotate(-5deg); }
+  23% { opacity:.18; transform:scale(.96) rotate(-1deg); }
+  34%,48% { opacity:.28; transform:scale(1.02) rotate(1deg); }
+}
+@keyframes logoVectorDissolve {
+  0%,37%,72%,100% { opacity:1; }
+  43% { opacity:.8; }
+  49%,53% { opacity:.6; }
+  63% { opacity:.9; }
+}
+@keyframes logoContrastBreath {
+  0%,100% { transform:scale(1); opacity:1; }
+  25% { transform:translateY(-1px) scale(1.012,1.018); opacity:1; }
+  50% { transform:translateY(-2px) scale(1.025,1.035); opacity:1; }
+  75% { transform:translateY(-1px) scale(1.012,1.018); opacity:1; }
+}
+html[data-theme] body.spatial-room .reactive-logo { animation-duration:6s; }
+html[data-theme] body.spatial-room .logo-veins { display:none; }
+html[data-theme] body.spatial-room .logo-wrap[data-material-preview="breath"] .logo-ripples { visibility:hidden; }
+html[data-theme] .sky-clouds {
+  color: rgb(var(--theme-text-rgb)); mix-blend-mode:normal;
+  mask-image:radial-gradient(ellipse at 45% 35%, #000 25%, transparent 75%);
+}
+@keyframes sky-cloud-passage {
+  0% { opacity:0; transform:translate(-9%, -8%) scale(.94); }
+  5% { opacity:.3; }
+  25% { opacity:.48; }
+  55% { opacity:.42; }
+  100% { opacity:0; transform:translate(12%, 4%) scale(1.08); }
+}
+html[data-theme] body.spatial-room .logo-wrap.release-logo:not(.is-assembled) .logo-particles {
+  z-index:5; opacity:1; mix-blend-mode:difference;
+}
+html[data-theme] body.spatial-room .logo-wrap.release-logo:not(.is-assembled) .logo-particle {
+  opacity:1; filter:brightness(0) invert(1);
+  mix-blend-mode:difference;
+  transition: transform 4400ms cubic-bezier(.16,.72,.12,1);
+}
+html[data-theme] body.spatial-room .logo-wrap.release-logo:not(.is-assembled) .reactive-logo { opacity:.82; }
+html[data-theme] body.spatial-room .logo-ripples { opacity:1; z-index:4; filter:none; }
+
+/* Each material gets a clean stage; no common dotted contour or competing fragments. */
+html[data-theme] body.spatial-room .logo-wrap[data-material-preview] :is(.logo-ripples,.logo-reactive-canvas,.logo-symbol-echo,.logo-grain,.logo-vector-slices,.logo-vector-outline,.logo-vector-ghost,.logo-particles) { visibility:hidden; }
+html[data-theme] body.spatial-room .logo-wrap[data-material-preview]::before { visibility:hidden; }
+html[data-theme] body.spatial-room .logo-wrap[data-material-preview="dissolve"] .reactive-logo { visibility:hidden; }
+.logo-material-preview { position:absolute;left:-8%;top:-30%;width:116%;height:160%;z-index:4;pointer-events:none; }
+html[data-theme] body.spatial-room .logo-wrap[data-material-preview="ink"] .logo-material-preview { z-index:0; }
+
+/* Ink restored from HEAD; only the mask override is cleared. */
+html[data-theme] body.spatial-room .logo-wrap.release-logo::before {
+  inset:-85% -22%; background:radial-gradient(ellipse at 43% 49%, #02060888, #050a0a55 30%, #070c0c20 53%, transparent 72%);
+  border-radius:50%; filter:none; mask:none;
+}
+@keyframes logo-darkness {
+  0%,19%,68%,100% { opacity:0; transform:scale(.92) rotate(-3deg); }
+  34%,48% { opacity:.7; transform:scale(1.07) rotate(2deg); }
+}
+html[data-theme] body.spatial-room .logo-wrap[data-material-preview="ink"]::before { visibility:visible; }
+html[data-theme] body.spatial-room .logo-wrap[data-material-preview="breath"] .reactive-logo { visibility:hidden; }
+.logo-material-preview { left:-20%;top:-100%;width:140%;height:300%; }
+
+html[data-theme] body.spatial-room .logo-wrap:is([data-material-preview="breath"],[data-material-preview="dissolve"]) .logo-ink-base { visibility:hidden; }
+
+/* Restore the blurred ink texture from before the hard-edge experiment. */
+html[data-theme] body.spatial-room .logo-wrap.release-logo::before {
+  inset:-85% -22%;border-radius:0;background:rgb(var(--theme-accent-rgb));
+  mask:url('assets/logo-ink-blot.svg') center / 100% 100% no-repeat;filter:none;
+}
+.logo-material-preview { left:-16.854%;top:-65.421%;width:133.708%;height:230.841%;overflow:visible; }
+html[data-theme] body.spatial-room .logo-wrap:is([data-material-preview="breath"],[data-material-preview="dissolve"]) .reactive-logo { opacity:0 !important; }
+
+/* Clouds are a separate background layer, including during scene transitions. */
+body.is-interlude .sky-clouds { visibility:visible; }
+@media (max-width:800px), (pointer:coarse) {
+  html[data-theme] body.spatial-room .track-select::before { background:rgba(var(--theme-text-rgb),.19); }
+  html[data-theme] body.spatial-room .track-select:hover::before { background:rgba(var(--theme-text-rgb),.24); }
+  html[data-theme] body.spatial-room .track-item.is-playing .track-select::before { background:rgba(var(--theme-accent-rgb),.44); }
+  html[data-theme] body.spatial-room .track-select { background:rgba(var(--theme-panel-rgb),.12); box-shadow:none; }
+  html[data-theme] body.spatial-room .logo-wrap.release-logo::before { display:none; }
+  html[data-theme] body.spatial-room :is(.reactive-logo,.logo-vector,.logo-grain rect) { animation:none; }
+  html[data-theme] body.spatial-room :is(.logo-ripples,.logo-symbol-echo,.logo-vector-slices) { display:none; }
+  .mobile-logo-shards { position:absolute;inset:0;z-index:5;pointer-events:none; }
+  .mobile-logo-shards i { position:absolute;background-image:url('assets/logo-wordmark.svg');background-repeat:no-repeat;will-change:transform,opacity; }
+}
+@media (max-width:800px) and (min-height:501px), (max-width:500px) {
+  html[data-theme] .mobile-sections { left:12px;right:auto;width:148px;height:26px;border:0;border-radius:0;overflow:visible;background:none; }
+  html[data-theme] .mobile-sections > span:not(.mobile-section-thumb) { font:10px 'JetBrains Mono',monospace;color:rgba(var(--theme-text-rgb),.5); }
+  html[data-theme] .mobile-section-thumb { inset:auto auto 2px 0;width:74px;height:2px;border:0;border-radius:0;background:rgba(var(--theme-accent-rgb),.6);mask:url('assets/player-tags/chalk-line.svg') center / 100% 100% no-repeat; }
+  html[data-theme] #mobile-section-slider { top:-7px;height:40px; }
+}
+
+/* Ink darkens the scene instead of adding light. */
+html[data-theme] body.spatial-room .logo-wrap.release-logo::before {
+  background:#090d12;mix-blend-mode:multiply;
+}
+body.spatial-room.is-interlude.scene-peek .track-list .track-item.scene-peek-track {
+  transition:opacity .65s ease var(--return-delay,0ms) !important;
+}
+
+.breath-screen {position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:40;}
+
+/* Dark ink on light surfaces, brighter translucent pigment on dark surfaces. */
+html[data-theme] body.spatial-room .logo-wrap.release-logo::before {
+  background:rgba(var(--theme-text-rgb),.9);mix-blend-mode:normal;
+}
+html[data-theme="cobalt-tile"] body.spatial-room .logo-wrap.release-logo::before { background:#142344;mix-blend-mode:multiply; }
+
+.storm-inversion-shards {position:fixed;inset:0;z-index:41;pointer-events:none;overflow:hidden;mix-blend-mode:difference;}
+.storm-inversion-shards .logo-storm-piece {opacity:1;}
+html[data-theme] body.spatial-room .logo-wrap.release-logo::before {
+  background:rgb(var(--theme-accent-rgb));filter:brightness(1.35);mix-blend-mode:screen;
+}
+html[data-theme="cobalt-tile"] body.spatial-room .logo-wrap.release-logo::before {background:#142344;filter:none;mix-blend-mode:multiply;}
+
+/* Ink is black in every palette, with no lightening blend or brightness filter. */
+html[data-theme] body.spatial-room .logo-wrap.release-logo::before {background:#000;filter:none;mix-blend-mode:multiply;}
+html[data-logo-snapshot]::view-transition-old(root) {
+  mask:url('assets/logo-wordmark.svg') var(--logo-snapshot-x) var(--logo-snapshot-y) / var(--logo-snapshot-w) var(--logo-snapshot-h) no-repeat;
+  animation:logo-background-dissolve 3.2s ease-in-out both;
+}
+html[data-logo-snapshot]::view-transition-new(root) {animation:none;}
+@keyframes logo-background-dissolve {0%,99%{opacity:1;filter:url(#snapshot-ink-erosion);}100%{opacity:0;filter:url(#snapshot-ink-erosion);}}
+
+/* Compact mobile composition: header, exactly seven rows, then the player. */
+@media (max-width:800px) and (min-height:501px), (max-width:500px) {
+  html[data-theme] body.spatial-room { --room-top:clamp(140px,26dvh,190px); --dock-height:118px; --room-bottom:calc(18px + env(safe-area-inset-bottom,0px)); --tile-gap:0px; }
+  html[data-theme] body.spatial-room .hero { padding-top:var(--room-top); }
+  html[data-theme] body.spatial-room .room-toolbar { height:48px; padding:0 10px; gap:4px; }
+  html[data-theme] body.spatial-room .room-toolbar :is(.auth-hint,.theme-hint) { min-width:36px;padding-inline:7px;font-size:10px; }
+  html[data-theme] body.spatial-room .hero-intro { left:35%;top:31px; }
+  html[data-theme] body.spatial-room .listening-intro .label { position:fixed;left:35%;right:auto;top:18px;font-size:6px; }
+  html[data-theme] body.spatial-room .listening-intro h1 { top:calc(var(--room-top) - 82px);right:10px;left:auto;max-width:calc(100vw - 140px);font-size:clamp(18px,6vw,32px);line-height:1.1; }
+  html[data-theme] body.spatial-room .mobile-sections { top:calc(var(--room-top) - 82px);left:10px;width:120px;height:26px; }
+  html[data-theme] body.spatial-room .mobile-section-thumb { width:60px; }
+  html[data-theme] body.spatial-room #logo-wrap { left:10px;top:calc(var(--room-top) - 52px);width:60%;max-width:310px;transform:none; }
+  html[data-theme] body.spatial-room .catalog-heading { position:fixed;top:calc(var(--room-top) - 108px);right:10px;height:12px;padding:0; }
+  html[data-theme] body.spatial-room .catalog-heading h2 { display:none; }
+  html[data-theme] body.spatial-room .catalog-heading .ours { font-size:7px;white-space:nowrap;width:auto;max-width:none; }
+  html[data-theme] body.spatial-room .playlist-shell { --catalog-bottom-space:0; --catalog-slots:7; margin:0 10px;width:calc(100% - 20px); }
+  html[data-theme] body.spatial-room .track-item { padding:2px 0; }
+  html[data-theme] body.spatial-room .track-select { margin:0;width:100%;height:calc(var(--tile-height) - 4px);padding:2px 10px; }
+  html[data-theme] body.spatial-room .track-meta { gap:1px; }
+  html[data-theme] body.spatial-room .track-title { font-size:12px;line-height:1.15; }
+  html[data-theme] body.spatial-room .track-artist { font-size:11px;line-height:1.1; }
+  html[data-theme] body.spatial-room #active-player { height:var(--dock-height);padding:6px 14px;grid-template-rows:28px 72px;gap:4px 12px; }
+  html[data-theme] body.spatial-room #active-player .transport { grid-template-rows:44px 28px; }
+  html[data-theme] body.spatial-room #active-player :is(.transport-seek-field,.transport-progress) { height:28px; }
+  html[data-theme] body.spatial-room #chat-panel.chat-inline { top:var(--room-top); }
+}
+@media (max-width:360px) {
+  html[data-theme] body.spatial-room .street-link { font-size:12px;padding-inline:8px;gap:6px; }
+  html[data-theme] body.spatial-room .room-toolbar .visit-counter { min-width:42px;font-size:8px; }
+  html[data-theme] body.spatial-room .listening-intro .label { font-size:5px; }
+  html[data-theme] body.spatial-room .hero-intro .topline { font-size:5px; }
+}
+
+@media (max-width:800px) and (min-height:501px), (max-width:500px) {
+  html[data-theme] body.spatial-room .room-toolbar { height:38px;align-items:center; }
+  html[data-theme] body.spatial-room .room-toolbar :is(.auth-hint,.theme-hint) { height:26px;min-height:26px;min-width:32px;padding-inline:6px;font-size:9px; }
+  html[data-theme] body.spatial-room .room-toolbar .street-return { margin-top:0; }
+  html[data-theme] body.spatial-room .street-link { min-height:26px;height:26px;padding:0 8px;font-size:12px; }
+  html[data-theme] body.spatial-room .catalog-heading { left:auto;right:10px;width:max-content;min-width:max-content;max-width:none;display:block; }
+  html[data-theme] body.spatial-room .catalog-heading .ours { display:block;white-space:nowrap;word-break:normal;overflow-wrap:normal; }
+}
+
+/* Effect geometry shares the live logo surface, including its inset and perspective. */
+html[data-theme] body.spatial-room .logo-wrap:is([data-material-preview="breath"],[data-material-preview="dissolve"]) .reactive-logo { visibility:visible;opacity:var(--material-surface-opacity,1) !important; }
+html[data-theme] body.spatial-room .logo-wrap[data-material-preview="breath"] .logo-ink-base { visibility:visible; }
+html[data-theme] body.spatial-room .logo-wrap[data-material-preview="dissolve"] .logo-vector { opacity:var(--material-return,0) !important; }
+html[data-theme] body.spatial-room .logo-wrap[data-material-preview="dissolve"] .logo-ink-base { visibility:visible; }
+html[data-theme] body.spatial-room .reactive-logo > .logo-material-preview { inset:0;width:100%;height:100%;overflow:visible; }
+/* Mobile composition follows the compact reference from left to right. */
+@media (max-width:800px) and (min-height:501px), (max-width:500px) {
+  html[data-theme] body.spatial-room { --room-top:clamp(132px,calc(26dvh - 8px),182px); }
+  html[data-theme] body.spatial-room .catalog-heading { top:36px;left:10px;right:auto; }
+  html[data-theme] body.spatial-room .listening-intro h1 { top:calc(var(--room-top) - 90px); }
+  html[data-theme] body.spatial-room .mobile-sections { top:calc(var(--room-top) - 90px);width:min(30vw,120px); }
+  html[data-theme] body.spatial-room .mobile-section-thumb { width:50%; }
+  html[data-theme] body.spatial-room #logo-wrap { top:calc(var(--room-top) - 49px);width:56%; }
+  html[data-theme] body.spatial-room .room-presence { top:calc(var(--room-top) - 100px);left:calc(38vw - 19px);right:auto;width:38px;height:40px; }
+}
+/* Touch devices retain seven tracks when rotated to landscape. */
+@media (pointer:coarse) {
+  html[data-theme] body.spatial-room .playlist-shell { --catalog-slots:7; }
+}
+@media (pointer:coarse) and (min-width:501px) and (max-height:500px) {
+  html[data-theme] body.spatial-room .track-select { min-height:0;padding:2px 12px; }
+  html[data-theme] body.spatial-room .track-meta { gap:1px; }
+  html[data-theme] body.spatial-room .track-title { font-size:11px;line-height:1.1;-webkit-line-clamp:1; }
+  html[data-theme] body.spatial-room .track-artist { font-size:10px;line-height:1.1; }
+}
