@@ -9,6 +9,7 @@ import { createYardMaterials } from "./materials.js";
 import { facadeSpec, openingsForFacade } from "./models.js?v=refinement-20261009-2";
 import { addHruDetails } from "./hru-details.js";
 import { addRoadDetails } from "./road-details.js";
+import { addLandscaping } from "./landscaping.js";
 import { addReferenceUtilities, addUtilityStructures } from "./site-structures.js";
 import { addGasPipes, addSiteEntrances } from "./site-details.js?v=five-storey-20261006-2";
 import { fixedSunForLayout } from "./baked-lighting.js";
@@ -388,6 +389,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout)) {
     scene.add(mesh);
   }
   addRoadDetails(scene, materials, layout.roads || []);
+  addLandscaping(scene, materials, layout.landscaping);
   const openings = { windows: [], balconies: [], entrances: [] };
   const buildingStart = scene.children.length;
   for (const building of layout.buildings) {
@@ -501,6 +503,18 @@ export function drawScheme(canvas, layout) {
   trace(layout.walkable);
   context.fillStyle = "rgba(141, 112, 72, 0.72)";
   context.fill();
+  for (const patch of layout.landscaping?.patches || []) {
+    trace(patch.polygon);
+    for (const hole of patch.holes || []) {
+      hole.forEach(([x,z],i) => i ? context.lineTo(mapX(x),mapZ(z)) : context.moveTo(mapX(x),mapZ(z)));
+      context.closePath();
+    }
+    context.fillStyle = '#818660';
+    context.fill('evenodd');
+    context.strokeStyle = '#b1ada0';
+    context.lineWidth = 1;
+    context.stroke();
+  }
   for (const road of layout.roads || []) {
     if (road.render === false || !road.centerline?.length) continue;
     context.beginPath();
