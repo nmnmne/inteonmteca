@@ -14,6 +14,7 @@ from http.cookies import SimpleCookie
 COOKIE = "inteonmteca_guest"
 SESSION_TTL = 30 * 86400
 CODE_TTL = 600
+MODERATOR_EMAIL = "nm@nmnmne.ru"
 ORIGIN = "https://inteonmteca.online"
 EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 _store = None
@@ -103,7 +104,7 @@ def send_login_email(email, code, context):
             "Destination": {"ToAddresses": [email]},
             "Content": {"Simple": {
                 "Subject": {"Data": "Код входа — inteonmteca", "Charset": "UTF-8"},
-                "Body": {"Text": {"Data": f"Код гостевого входа: {code}\nДействует 10 минут.\nЕсли вы не запрашивали код, проигнорируйте письмо.", "Charset": "UTF-8"}},
+                "Body": {"Text": {"Data": f"Код входа: {code}\nДействует 10 минут.\nЕсли вы не запрашивали код, проигнорируйте письмо.", "Charset": "UTF-8"}},
             }},
         }
         request = urllib.request.Request(
@@ -152,7 +153,7 @@ def handle(event, context, store, mailer=send_login_email):
             return reply(200, {"messages": store.transact(lambda tx: tx.get("messages", []))})
         if path == "/api/auth/me":
             session = store.transact(lambda tx: tx.get(session_key)) if token else None
-            return reply(200, {"email": session["email"], "guest": True}) if session else reply(401, {"error": "нужен вход"})
+            return reply(200, {"email": session["email"], "guest": True, "can_moderate": can_moderate(session)}) if session else reply(401, {"error": "нужен вход"})
         if path == "/api/runtime":
             return reply(200, {"debug": False, "shared_chat": True, "guest": True})
     if method != "POST":
@@ -177,19 +178,27 @@ def handle(event, context, store, mailer=send_login_email):
         if len(email) > 254 or not EMAIL.fullmatch(email):
             return reply(400, {"error": "нужна почта: имя@example.com"})
         code, challenge = f"{secrets.randbelow(1000000):06d}", secrets.token_urlsafe(24)
+        mail_code = code
+        if email == MODERATOR_EMAIL:
+            while mail_code == code:
+                mail_code = f"{secrets.randbelow(1000000):06d}"
         def create(tx):
             if not allow(tx, "login-ip:" + ip, 12, 3600, now) or not allow(tx, "login-email:" + email, 5, 3600, now):
                 return False
-            tx.put("code:" + digest(challenge), {"email": email, "code": digest(challenge + code)}, now + CODE_TTL)
+            saved = {"email": email, "code": digest(challenge + code)}
+            if email == MODERATOR_EMAIL:
+                saved["moderator_code"] = digest(challenge + mail_code)
+            tx.put("code:" + digest(challenge), saved, now + CODE_TTL)
             return True
         if not store.transact(create):
             return reply(429, {"error": "слишком часто, подожди"})
         # Sending is outside the retried transaction, so retries never duplicate mail.
         try:
-            mailer(email, code, context)
+            mailer(email, mail_code, context)
         except Exception:
             logging.warning("Optional login mail unavailable")
-        return reply(200, {"ok": True, "login_code": code, "challenge": challenge, "guest": True})
+        return reply(200, {"ok": True, "login_code": code, "challenge": challenge, "guest": True,
+                           "moderator_email_code": email == MODERATOR_EMAIL})
 
     if path == "/api/auth/verify":
         email = str(body.get("email", "")).strip().lower()
@@ -199,22 +208,45 @@ def handle(event, context, store, mailer=send_login_email):
         new_token = secrets.token_urlsafe(32)
         def verify(tx):
             if not allow(tx, "verify-ip:" + ip, 30, CODE_TTL, now) or not allow(tx, "verify:" + challenge, 5, CODE_TTL, now):
-                return 429
+                return 429, False
             key = "code:" + digest(challenge)
             saved = tx.get(key)
-            if not saved or saved["email"] != email or not secrets.compare_digest(saved["code"], digest(challenge + code)):
-                return 401
+            if not saved or saved["email"] != email:
+                return 401, False
+            verified_moderator = email == MODERATOR_EMAIL and secrets.compare_digest(saved.get("moderator_code", ""), digest(challenge + code))
+            if not verified_moderator and not secrets.compare_digest(saved["code"], digest(challenge + code)):
+                return 401, False
             tx.delete(key)
-            tx.put("session:" + digest(new_token), {"email": email}, now + SESSION_TTL)
-            return 200
-        status = store.transact(verify)
+            tx.put("session:" + digest(new_token), {"email": email, "can_moderate": verified_moderator}, now + SESSION_TTL)
+            return 200, verified_moderator
+        status, moderator = store.transact(verify)
         if status != 200:
             return reply(status, {"error": "слишком часто, подожди" if status == 429 else "код не подошёл"})
-        return reply(200, {"ok": True, "email": email, "guest": True}, token=new_token)
+        return reply(200, {"ok": True, "email": email, "guest": True, "can_moderate": moderator}, token=new_token)
 
     if path == "/api/auth/logout":
         store.transact(lambda tx: tx.delete(session_key))
         return reply(200, {"ok": True}, token="")
+
+    if path == "/api/chat/delete":
+        message_id = body.get("id")
+        if not isinstance(message_id, str) or not re.fullmatch(r"[0-9a-f]{24}", message_id):
+            return reply(400, {"error": "неверное сообщение"})
+        def remove(tx):
+            session = tx.get(session_key) if token else None
+            if not session:
+                return 401, {"error": "сначала войди"}
+            if not can_moderate(session):
+                return 403, {"error": "для удаления нужен вход с кодом из письма владельцу"}
+            messages = tx.get("messages", [])
+            removed = next((m for m in messages if m["id"] == message_id), None)
+            if removed:
+                tx.put("deleted:" + message_id, removed, now + 7 * 86400)
+                messages = [m for m in messages if m["id"] != message_id]
+                tx.put("messages", messages)
+            return 200, {"ok": True, "messages": messages}
+        status, result = store.transact(remove)
+        return reply(status, result)
 
     if path == "/api/chat":
         text = " ".join(str(body.get("text", "")).split())
@@ -234,6 +266,10 @@ def handle(event, context, store, mailer=send_login_email):
         status, result = store.transact(post)
         return reply(status, result)
     return reply(404, {"error": "unknown api"})
+
+
+def can_moderate(session):
+    return session.get("email") == MODERATOR_EMAIL and session.get("can_moderate") is True
 
 
 def handler(event, context):

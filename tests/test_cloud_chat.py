@@ -98,6 +98,37 @@ class CloudChatTests(unittest.TestCase):
         self.assertEqual(len(messages), 50)
         self.assertEqual(len({m["id"] for m in messages}), 50)
 
+    def test_moderation_requires_owner_mail_code_not_screen_or_old_session(self):
+        author = self.login()
+        _, posted, _ = self.request("POST", "/api/chat", {"text": "another user's message"}, author)
+        message_id = posted["message"]["id"]
+        self.assertEqual(self.request("POST", "/api/chat/delete", {"id": message_id}, author)[0], 403)
+        self.assertEqual(self.request("POST", "/api/chat/delete", {"id": message_id})[0], 401)
+        old_token = "old-guest-owner"
+        self.store.put("session:" + api.digest(old_token), {"email": api.MODERATOR_EMAIL}, int(time.time()) + 600)
+        self.assertEqual(self.request("POST", "/api/chat/delete", {"id": message_id}, api.COOKIE + "=" + old_token)[0], 403)
+        _, codes, _ = self.request("POST", "/api/auth/request-code", {"email": api.MODERATOR_EMAIL})
+        mail_code = self.mail[-1][1]
+        self.assertNotEqual(codes["login_code"], mail_code)
+        self.assertNotIn(mail_code, json.dumps(codes))
+        _, session, headers = self.request("POST", "/api/auth/verify", {"email": api.MODERATOR_EMAIL,
+            "challenge": codes["challenge"], "code": codes["login_code"], "can_moderate": True})
+        self.assertFalse(session["can_moderate"])
+        cookie = headers["Set-Cookie"].split(";", 1)[0]
+        self.assertEqual(self.request("POST", "/api/chat/delete", {"id": message_id}, cookie)[0], 403)
+        _, codes, _ = self.request("POST", "/api/auth/request-code", {"email": api.MODERATOR_EMAIL})
+        _, session, headers = self.request("POST", "/api/auth/verify", {"email": api.MODERATOR_EMAIL,
+            "challenge": codes["challenge"], "code": self.mail[-1][1]})
+        self.assertTrue(session["can_moderate"])
+        cookie = headers["Set-Cookie"].split(";", 1)[0]
+        self.assertTrue(self.request("GET", "/api/auth/me", cookie=cookie)[1]["can_moderate"])
+        self.assertEqual(self.request("POST", "/api/chat/delete", {"id": message_id}, cookie)[0], 200)
+        self.assertEqual(self.request("GET", "/api/chat")[1]["messages"], [])
+        self.assertEqual(self.store.get("deleted:" + message_id)["text"], "another user's message")
+        self.assertEqual(self.request("POST", "/api/chat/delete", {"id": message_id}, cookie)[0], 200)
+        self.request("POST", "/api/auth/logout", {}, cookie)
+        self.assertEqual(self.request("POST", "/api/chat/delete", {"id": message_id}, cookie)[0], 401)
+
     def test_limits_cors_expiry_and_private_cookie(self):
         cookie = self.login()
         status, _, headers = self.request("GET", "/api/chat", origin="https://other.invalid")

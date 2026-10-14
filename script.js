@@ -245,6 +245,7 @@ let pendingEmail = "";
 let localLoginCode = "";
 let passIsLocal = false;
 let sessionEmail = "";
+let canModerateChat = false;
 let chatTimer = 0;
 let chatAnimationFrame = 0;
 let chatGlyphs = [];
@@ -2284,6 +2285,8 @@ const setAuthStatus = (text) => {
 };
 
 const refreshAuthHint = () => {
+  if (!sessionEmail) canModerateChat = false;
+  chatStream?.classList.toggle("can-moderate", canModerateChat);
   if (authHint) authHint.textContent = sessionEmail ? sessionEmail.split("@")[0] : "вход";
   if (authLogout) authLogout.hidden = !sessionEmail;
   if (authEmailForm) authEmailForm.hidden = Boolean(sessionEmail);
@@ -2353,6 +2356,7 @@ const loadSession = async () => {
   try {
     const data = await requestJson("/api/auth/me");
     sessionEmail = data.email || "";
+    canModerateChat = data.can_moderate === true;
     passIsLocal = false;
   } catch {
     passIsLocal = false;
@@ -2409,7 +2413,10 @@ authEmailForm?.addEventListener("submit", async (event) => {
     authCodeForm.hidden = false;
     const directCode = data.login_code || data.dev_code;
     if (authCodeLabel) authCodeLabel.textContent = directCode ? "код с экрана" : "код из письма";
-    setAuthStatus(directCode ? `код входа: ${directCode}` : `код отправлен на ${pendingEmail}`);
+    setAuthStatus(data.moderator_email_code
+      ? `код гостевого входа: ${directCode}. Для удаления сообщений введи код из письма.`
+      : directCode ? `код входа: ${directCode}` : `код отправлен на ${pendingEmail}`);
+    if (data.moderator_email_code && authCodeLabel) authCodeLabel.textContent = "код из письма — для удаления сообщений";
     authCode?.focus();
   } catch (error) {
     setAuthStatus(error.message === "request failed" ? "сервер входа недоступен" : error.message);
@@ -2433,6 +2440,7 @@ authCodeForm?.addEventListener("submit", async (event) => {
       body: JSON.stringify({ email: pendingEmail, code: authCode?.value.trim(), challenge: loginChallenge }),
     });
     sessionEmail = data.email || pendingEmail;
+    canModerateChat = data.can_moderate === true;
     refreshAuthHint();
     setPanelOpen(authPanel, false);
     setAuthStatus("");
@@ -2499,6 +2507,7 @@ const renderChatMessages = (messages) => {
     if (!row || row.signature !== signature) {
       const line = document.createElement("div");
       line.className = "chat-line";
+      line.dataset.messageId = String(message.id ?? "");
       const meta = document.createElement("div");
       meta.className = "chat-meta";
       meta.textContent = String(message.email || "").split("@")[0] || "гость";
@@ -2555,6 +2564,45 @@ const loadChat = async () => {
     chatLoading = false;
   }
 };
+
+const deleteDialog = document.getElementById("chat-delete-dialog");
+const deleteYes = document.getElementById("chat-delete-yes");
+const deleteNo = document.getElementById("chat-delete-no");
+const deleteError = document.getElementById("chat-delete-error");
+let deleteMessageId = "";
+let chatDeleting = false;
+chatStream?.addEventListener("dblclick", event => {
+  if (!canModerateChat || chatDeleting || deleteDialog?.open) return;
+  const line = event.target.closest(".chat-line[data-message-id]");
+  if (!line || !deleteDialog) return;
+  deleteMessageId = line.dataset.messageId;
+  deleteError.textContent = "";
+  deleteDialog.showModal();
+  deleteNo.focus();
+});
+deleteNo?.addEventListener("click", () => deleteDialog.close());
+deleteDialog?.addEventListener("cancel", event => { if (chatDeleting) event.preventDefault(); });
+deleteYes?.addEventListener("click", async () => {
+  if (chatDeleting || !canModerateChat || !deleteMessageId) return;
+  chatDeleting = true;
+  deleteYes.disabled = deleteNo.disabled = true;
+  chatRequestVersion += 1;
+  try {
+    const data = await requestJson("/api/chat/delete", {method: "POST", body: JSON.stringify({id: deleteMessageId})});
+    chatRequestVersion += 1;
+    renderChatMessages(data.messages);
+    deleteDialog.close();
+  } catch (error) {
+    deleteError.textContent = error.message;
+    if (error.status === 401 || error.status === 403) {
+      canModerateChat = false;
+      refreshAuthHint();
+    }
+  } finally {
+    chatDeleting = false;
+    deleteYes.disabled = deleteNo.disabled = false;
+  }
+});
 
 const openChat = async ({ focus = false } = {}) => {
   if (!inlineChat && compactChatViewport.matches) {

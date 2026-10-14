@@ -248,6 +248,14 @@
       <button class="chat-send" type="submit" aria-label="отправить сообщение">↵</button>
     </form>
   </section>
+  <dialog id="chat-delete-dialog" class="chat-delete-dialog" aria-labelledby="chat-delete-question">
+    <p id="chat-delete-question">Вы уверены, что хотите удалить сообщение?</p>
+    <p id="chat-delete-error" role="alert"></p>
+    <div class="chat-delete-actions">
+      <button id="chat-delete-yes" type="button">Да</button>
+      <button id="chat-delete-no" type="button" autofocus>Нет</button>
+    </div>
+  </dialog>
   <section class="theme-panel" id="theme-panel" aria-hidden="true" hidden>
     <div class="theme-panel-head">
       <p class="theme-kicker">состояние среды</p>

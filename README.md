@@ -58,7 +58,9 @@ See [release verification](docs/release-check.md) and
 [production deployment requirements](docs/release-deployment.md).
 The public site uses a shared guest chat at `https://api.inteonmteca.online`:
 API Gateway → Cloud Function (`server/cloud/index.py`) → persistent YDB.
-Guest codes appear on screen and are also sent through Yandex Postbox. Email
+Guest codes appear on screen and are also sent through Yandex Postbox. For the
+moderator address, a separate email-only code grants message deletion; the
+screen code grants only guest access. Email
 failure is silent and never blocks the screen code. This guest flow does not
 verify ownership of the email address. Public messages contain only the part
 before `@`, never the full address.
