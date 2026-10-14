@@ -109,6 +109,7 @@ const isFileMode = location.protocol === "file:";
 const canUseNetwork = location.protocol === "http:" || location.protocol === "https:";
 const explicitApiBase = (apiMeta?.getAttribute("content") || "").replace(/\/$/, "");
 const API_BASE = canUseNetwork ? explicitApiBase : "";
+let loginChallenge = "";
 const sceneClock = { now: 0, energy: 0, bass: 0 };
 const perceptionField = [];
 const perceptionChars = "0123456789";
@@ -2298,9 +2299,11 @@ const requestJson = async (path, options = {}) => {
   let response;
   try {
     response = await fetch(apiUrl(path), {
-      credentials: "include",
-      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
       ...options,
+      credentials: "include",
+      cache: "no-store",
+      signal: AbortSignal.timeout(20000),
+      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     });
   } catch {
     throw new Error("сервер входа недоступен — попробуй позже");
@@ -2317,8 +2320,8 @@ const requestJson = async (path, options = {}) => {
   return data;
 };
 
-// Temporary browser pass: show the code on screen without an authentication API.
-const useLocalPass = () => true;
+// Only file previews have a private demo. HTTP pages always use the shared API.
+const useLocalPass = () => isFileMode;
 
 const showLocalCode = () => {
   if (!emailFormat.test(pendingEmail)) throw new Error("нужна почта: имя@example.com");
@@ -2402,6 +2405,7 @@ authEmailForm?.addEventListener("submit", async (event) => {
       method: "POST",
       body: JSON.stringify({ email: pendingEmail }),
     });
+    loginChallenge = data.challenge || "";
     authCodeForm.hidden = false;
     const directCode = data.login_code || data.dev_code;
     if (authCodeLabel) authCodeLabel.textContent = directCode ? "код с экрана" : "код из письма";
@@ -2426,7 +2430,7 @@ authCodeForm?.addEventListener("submit", async (event) => {
     }
     const data = await requestJson("/api/auth/verify", {
       method: "POST",
-      body: JSON.stringify({ email: pendingEmail, code: authCode?.value.trim() }),
+      body: JSON.stringify({ email: pendingEmail, code: authCode?.value.trim(), challenge: loginChallenge }),
     });
     sessionEmail = data.email || pendingEmail;
     refreshAuthHint();

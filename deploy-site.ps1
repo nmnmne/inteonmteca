@@ -112,6 +112,7 @@ $staleKeys = @(
 
 Write-Host "Updating asset version to $version..." -ForegroundColor Yellow
 $indexHtml = [System.IO.File]::ReadAllText($indexPath, [System.Text.Encoding]::UTF8)
+$indexHtml = $indexHtml -replace '<meta name="inteonmteca-api" content="[^"]*">', '<meta name="inteonmteca-api" content="https://api.inteonmteca.online">'
 $indexHtml = $indexHtml -replace '<script data-development-only[^>]*></script>', ''
 $deployIndexHtml = $indexHtml -replace 'href="styles(?:\.[0-9]{8}-[0-9]{6})?\.css(?:\?v=[^"]*)?"', "href=`"$versionedStylesName`""
 $deployIndexHtml = $deployIndexHtml -replace 'src="script(?:\.[0-9]{8}-[0-9]{6})?\.js(?:\?v=[^"]*)?"', "src=`"$versionedScriptName`""
@@ -202,4 +203,4 @@ Invoke-Aws --endpoint-url $endpoint s3 cp $deployIndexPath "$bucketUrl/index.htm
 
 Write-Host "Done." -ForegroundColor Green
 Write-Host "Static site: https://inteonmteca.online/" -ForegroundColor Green
-Write-Host "Login and chat stay in the browser when this host has no API." -ForegroundColor Yellow
+Write-Host "Shared chat API: https://api.inteonmteca.online" -ForegroundColor Green

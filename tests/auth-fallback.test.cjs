@@ -12,14 +12,21 @@ test('missing HTTP backend never presents local storage as a logged-in account',
   const context={isFileMode:false,sessionEmail:'',passIsLocal:false,
     requestJson:async()=>{throw new Error('API входа не подключён к этому адресу сайта');},
     apiMissing:()=>true,readStoredValue:()=> 'stale@example.test',localSessionStorageKey:'session',refreshAuthHint:()=>{}};
-  await vm.runInNewContext(source('loadSession')+'\nloadSession();',context);
+  await vm.runInNewContext('const useLocalPass = () => isFileMode;\n'+source('loadSession')+'\nloadSession();',context);
   assert.equal(context.passIsLocal,false);
   assert.equal(context.sessionEmail,'');
 });
 test('file preview retains its explicitly local demo pass',async () => {
   const context={isFileMode:true,sessionEmail:'',passIsLocal:false,
     readStoredValue:()=> 'demo@example.test',localSessionStorageKey:'session',refreshAuthHint:()=>{}};
-  await vm.runInNewContext(source('loadSession')+'\nloadSession();',context);
+  await vm.runInNewContext('const useLocalPass = () => isFileMode;\n'+source('loadSession')+'\nloadSession();',context);
   assert.equal(context.passIsLocal,true);
   assert.equal(context.sessionEmail,'demo@example.test');
+});
+
+test('production cannot switch to a private per-browser chat', () => {
+  const declaration = script.match(/const useLocalPass = .*;/)[0];
+  for (const isFileMode of [true, false]) {
+    assert.equal(vm.runInNewContext(declaration+'\nuseLocalPass()', {isFileMode}), isFileMode);
+  }
 });

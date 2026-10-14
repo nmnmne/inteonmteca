@@ -56,4 +56,15 @@ temporary directory, `inteon-release-qa`.
 
 See [release verification](docs/release-check.md) and
 [production deployment requirements](docs/release-deployment.md).
-Object-storage publication alone does **not** deploy the shared chat/login backend.
+The public site uses a shared guest chat at `https://api.inteonmteca.online`:
+API Gateway → Cloud Function (`server/cloud/index.py`) → persistent YDB.
+Guest codes appear on screen and are also sent through Yandex Postbox. Email
+failure is silent and never blocks the screen code. This guest flow does not
+verify ownership of the email address. Public messages contain only the part
+before `@`, never the full address.
+
+Run `powershell -NoProfile -ExecutionPolicy Bypass -File .\deploy-chat.ps1`
+to update the existing backend, then `deploy-site.ps1` to publish the frontend.
+Local HTML keeps same-origin API access for the Python development server.
+See [shared chat operations](docs/shared-chat.md). Object-storage publication
+alone does **not** update the backend.

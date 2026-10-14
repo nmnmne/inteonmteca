@@ -22,7 +22,7 @@ class DeployReleaseTests(unittest.TestCase):
             root = Path(directory)
             shutil.copy2(ROOT / "deploy-site.ps1", root / "deploy-site.ps1")
             files = {
-                "index.html": '<link href="styles.css"><script src="script.js"></script><script data-development-only src="development-debug.js"></script>',
+                "index.html": '<meta name="inteonmteca-api" content=""><link href="styles.css"><script src="script.js"></script><script data-development-only src="development-debug.js"></script>',
                 "styles.css": "body {}", "script.js": "void 0;",
                 "playlist.json": "[]", "playlist-data.js": "window.playlist=[];",
                 "yard/index.html": '<link href="yard.css?v=old"><script data-development-only src="../development-debug.js"></script>',
@@ -85,6 +85,7 @@ catch { Write-Output $_; exit 1 }
         self.assertEqual(targets[-2:], ["s3://inteonmteca.online/yard/index.html", "s3://inteonmteca.online/index.html"])
         import re
         html = uploads[-1]["html"]
+        self.assertIn('<meta name="inteonmteca-api" content="https://api.inteonmteca.online">', html)
         for name in re.findall(r'(?:href|src)="((?:styles|script)\.[^"/]+)"', html):
             self.assertIn("s3://inteonmteca.online/" + name, targets[:-2])
         self.assertEqual(len(re.findall(r'(?:styles|script)\.[^"/]+', html)), 2)
