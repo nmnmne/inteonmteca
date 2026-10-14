@@ -26,11 +26,14 @@ Local startup enables the yard's development pose panel automatically. It copies
 position in meters, yaw/pitch in radians, and the world-space look direction.
 Use `python server/app.py --production` or `INTEONMTECA_ENV=production` on a server
 to disable debugging. Static deployment removes the development panel script
-from the published yard page. This debugging mode does not enable demo login.
+from the published yard page.
 
-Email login requires configured SMTP. Without SMTP, the server now refuses login
-instead of returning a code that lets anyone impersonate an email address.
-For an explicitly local demo only, set `INTEONMTECA_DEV=1` before starting the server.
+The default loopback development server shows a guest login code on screen;
+SMTP is not required. Its SQLite chat is shared between clients of this development
+server and is separate from the public site's chat. Start it with `start-site.cmd`
+or `python server/app.py`, not `python -m http.server` (which has no login API).
+In production mode, this Python server requires SMTP and does not expose codes.
+For an explicitly local demo only, `INTEONMTECA_DEV=1` also enables screen codes.
 Never enable that flag or `INTEONMTECA_DIRECT_CODE=1` on a public server.
 Opening `index.html` directly retains a browser-local demo; it is not a shared account or chat.
 

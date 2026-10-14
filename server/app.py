@@ -522,11 +522,12 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
     return Handler
 
 
-def serve(root: Path | None = None, host: str = "127.0.0.1", port: int = 8080, db_path: Path | None = None, debug: bool = False) -> ThreadingHTTPServer:
+def serve(root: Path | None = None, host: str = "127.0.0.1", port: int = 8080, db_path: Path | None = None, debug: bool = False, local_guest_code: bool = False) -> ThreadingHTTPServer:
     site_root = (root or ROOT).resolve()
     database = db_path or (Path(__file__).resolve().parent / "data" / "inteonmteca.db")
     store = Store(database)
-    handler = make_handler(site_root, store, smtp_config(), force_dev_code=os.environ.get("INTEONMTECA_DEV") == "1", debug=debug)
+    show_code = (local_guest_code and host in {"127.0.0.1", "localhost", "::1"}) or os.environ.get("INTEONMTECA_DEV") == "1"
+    handler = make_handler(site_root, store, smtp_config(), force_dev_code=show_code, debug=debug)
     server = ThreadingHTTPServer((host, port), handler)
     return server
 
@@ -539,7 +540,7 @@ def main() -> int:
     host = os.environ.get("INTEONMTECA_HOST", "127.0.0.1")
     port = int(os.environ.get("INTEONMTECA_PORT", "8080"))
     debug = not args.production and os.environ.get("INTEONMTECA_ENV", "development") == "development" and host in {"127.0.0.1", "localhost", "::1"}
-    server = serve(host=host, port=port, debug=debug)
+    server = serve(host=host, port=port, debug=debug, local_guest_code=debug)
     print(f"inteonmteca  http://{host}:{port}", flush=True)
     try:
         server.serve_forever()

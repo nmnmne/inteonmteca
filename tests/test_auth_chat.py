@@ -104,6 +104,20 @@ class AuthChatServerTests(unittest.TestCase):
         self.assertIn("почта", body["error"])
 
 
+class DevelopmentStartupTests(unittest.TestCase):
+    def test_screen_code_only_for_default_loopback_development(self):
+        from server import app
+        cases = [([], "127.0.0.1", True), (["--production"], "127.0.0.1", False),
+                 ([], "0.0.0.0", False)]
+        for arguments, host, expected in cases:
+            with self.subTest(arguments=arguments, host=host), \
+                 patch.dict(app.os.environ, {"INTEONMTECA_HOST": host, "INTEONMTECA_ENV": "development"}), \
+                 patch.object(app.sys, "argv", ["app.py", *arguments]), \
+                 patch.object(app, "serve") as serve:
+                app.main()
+                self.assertEqual(serve.call_args.kwargs["local_guest_code"], expected)
+
+
 class ChatRetentionTests(unittest.TestCase):
     def test_insertion_deletes_old_messages_and_survives_restart(self):
         with tempfile.TemporaryDirectory() as tmp:
