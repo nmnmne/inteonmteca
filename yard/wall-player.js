@@ -43,6 +43,7 @@ export function createWallPlayer(root) {
 
   const paint = () => {
     const track = tracks[currentIndex];
+    mediaSession?.sync();
     if (title) {
       title.textContent = track ? `${track.title || "трек"}${track.artist ? ` — ${track.artist}` : ""}` : "";
     }
@@ -143,6 +144,21 @@ export function createWallPlayer(root) {
       remember();
     }
   };
+
+  const mediaSession = window.inteonMediaSession?.bind({
+    audio,
+    getTrack: () => tracks[currentIndex],
+    play: () => { if (audio.paused) toggle(); },
+    pause: () => {
+      window.inteonPlayback?.intent?.(audio, false);
+      audio.pause();
+      stamp = "";
+      paint(); remember();
+    },
+    previous: () => step(-1),
+    next: () => step(1),
+    onSeek: remember,
+  });
 
   const render = (nextTracks) => {
     tracks = nextTracks.filter((track) => track && track.audio);

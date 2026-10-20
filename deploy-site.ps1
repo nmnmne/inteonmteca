@@ -83,6 +83,7 @@ $syncArgs = @(
   "--include", "track-play.js",
   "--include", "street-return.js",
   "--include", "playback-link.js",
+  "--include", "media-session.js",
   "--include", "playlist.json",
   "--include", "playlist-data.js",
   "--include", "robots.txt",

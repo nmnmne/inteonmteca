@@ -1558,6 +1558,7 @@ const playTrack = (track, sourceItem = null, options = {}) => {
     pendingPlaybackSeek = { requestId };
   }
   if (player && src && assigned !== src && player.src !== src) player.src = src;
+  homeMediaSession?.sync();
   if (player && options.shared) {
     const place = () => {
       if (requestId !== playbackRequestId) return;
@@ -1780,6 +1781,7 @@ const exitImmersiveMode = () => {
   trackFlight = null;
   currentTrack = null;
   currentTrackIndex = -1;
+  homeMediaSession?.sync();
   cancelAnimationFrame(immersiveState.raf);
   setPlaybackStatus();
   restoreTrackStage();
@@ -1895,6 +1897,21 @@ const playRelativeTrack = (offset, automatic = false) => {
     origin: automatic ? window.inteonPlayback?.read?.()?.origin : "home",
   });
 };
+
+const homeMediaSession = window.inteonMediaSession?.bind({
+  audio: player,
+  getTrack: () => currentTrack,
+  play: () => { if (player.paused) togglePlayback(); },
+  pause: () => {
+    window.inteonPlayback?.intent?.(player, false);
+    player.pause();
+    playbackStamp = "";
+    syncTransport();
+  },
+  previous: () => playRelativeTrack(-1),
+  next: () => playRelativeTrack(1),
+  onSeek: syncTransport,
+});
 
 immersiveBack?.addEventListener("click", exitImmersiveMode);
 immersivePlay?.addEventListener("click", togglePlayback);
