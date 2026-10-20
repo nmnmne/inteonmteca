@@ -79,14 +79,12 @@ try:
                 try:
                     page.wait_for_function(expression, timeout=30000)
                 except Exception:
+                    print({"waitingFor": expression, "url": page.url}, flush=True)
                     print(page.evaluate("""(() => { const a = document.querySelector('#album-player');
-                        return {title:navigator.mediaSession.metadata?.title, src:a.currentSrc,
+                        return {title:navigator.mediaSession.metadata?.title, src:a.currentSrc, assigned:a.src,
                             time:a.currentTime, duration:a.duration, paused:a.paused, ended:a.ended,
                             ready:a.readyState, seeking:a.seeking, saved:inteonPlayback.read()}; })()"""), flush=True)
                     raise
-
-            def title():
-                return page.evaluate("navigator.mediaSession.metadata.title")
 
             playing = """(() => { const a = document.querySelector('#album-player');
                 const saved = inteonPlayback.read();
@@ -102,7 +100,7 @@ try:
                     action("play")
                 wait(playing)
                 wait("navigator.mediaSession.playbackState === 'playing'")
-                initial = title()
+                initial_src = page.evaluate("document.querySelector('#album-player').src")
                 assert page.evaluate("navigator.mediaSession.metadata.artist")
                 assert page.evaluate("navigator.mediaSession.metadata.title === inteonPlayback.read().title")
                 action("pause")
@@ -118,16 +116,16 @@ try:
                 wait("!document.querySelector('#album-player').paused && navigator.mediaSession.playbackState === 'playing'")
                 wait("inteonPlayback.read().playingIntent")
                 action("nexttrack")
-                wait(f"navigator.mediaSession.metadata.title !== {json.dumps(initial)} && ({playing})")
+                wait(f"document.querySelector('#album-player').src !== {json.dumps(initial_src)} && ({playing})")
                 action("previoustrack")
-                wait(f"navigator.mediaSession.metadata.title === {json.dumps(initial)} && ({playing})")
+                wait(f"document.querySelector('#album-player').src === {json.dumps(initial_src)} && ({playing})")
                 # Real ended event using a one-second fixture, avoiding a full FLAC
                 # download just to seek to its final frame. Earlier checks use real tracks.
                 fixture_url = page.evaluate("document.querySelector('#album-player').src")
                 page.route(fixture_url, lambda route: route.fulfill(body=short_audio, content_type="audio/wav"))
                 page.evaluate("document.querySelector('#album-player').load()")
                 action("play")
-                wait(f"navigator.mediaSession.metadata.title !== {json.dumps(initial)} && ({playing})")
+                wait(f"document.querySelector('#album-player').src !== {json.dumps(initial_src)} && ({playing})")
                 page.unroute(fixture_url)
                 action("stop")
                 wait("document.querySelector('#album-player').paused && document.querySelector('#album-player').currentTime < 1")
