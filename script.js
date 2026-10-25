@@ -141,7 +141,7 @@ const TRACK_VIEW = 5;
 const THEME_MIN_MS = 4 * 1000;
 const THEME_MAX_MS = 7 * 24 * 60 * 60 * 1000;
 const THEME_DEFAULT_MS = 8 * 1000;
-// Curated dark and light palettes using the existing room materials.
+// Curated dark palettes using the existing room materials.
 // Row: id | Russian label | background panel light-a light-b light-c accent text | mood.
 const themeCoreFilters = Object.freeze({
   desert: { canvas: "none", logo: "none", fog: "18px", opacity: ".82" },
@@ -161,7 +161,6 @@ const themeRegistry = Object.freeze([
   "warm-carbon|Песочный сумрак|161310 24201c 71665c 4d4036 81766b d6c8b7 f0e9df|dark",
   "deep-ink|Чернильный туман|0c1419 17232b 496775 294451 69767e b4cfd9 e1edf1|dark",
   "coral-obsidian|Медный обсидиан|101114 1c1d22 9b514c 51383c 716265 f18b79 f5eae6|dark",
-  "cobalt-tile|Холодная глазурь|eef0f2 f9fafc b8ccec d5dfef e1e5ee 204ac8 111c38|light",
 ].map((row) => {
   const [id, name, palette, mood] = row.split("|");
   const [bg, panel, a, b, c, accent, text] = palette.toLowerCase().split(" ");
@@ -184,7 +183,6 @@ const themeRegistry = Object.freeze([
     name,
     mood,
     tokens: Object.freeze({
-      ...(id === 'cobalt-tile' ? {'--interface-ink': '17, 28, 56', '--interface-muted': '71, 85, 113', '--interface-accent': '32, 74, 200', '--interface-peach': '32, 74, 200', '--interface-sage': '32, 74, 200'} : {}),
       ...(id === 'coral-obsidian' ? {'--interface-accent': '241, 139, 121', '--interface-peach': '241, 139, 121', '--interface-sage': '213, 169, 158'} : {}),
       ...(id === 'saffron' ? {'--interface-ink': '145, 255, 46', '--interface-muted': '116, 191, 65', '--interface-accent': '170, 255, 60', '--interface-peach': '151, 223, 48', '--interface-sage': '119, 211, 69'} : {}),
       "--theme-bg": `#${bg}`,
@@ -2229,8 +2227,7 @@ const updateThemeDurationLabel = () => {
 
 const setTheme = (name, { animate = true, persist = true } = {}) => {
   if(document.body.classList.contains("is-interlude")){name="graphite";animate=false;persist=false;}
-  const requestedTheme = name === "chalk" ? "cobalt-tile" : name;
-  const nextTheme = themesById.has(requestedTheme) ? requestedTheme : "graphite";
+  const nextTheme = themesById.has(name) ? name : "graphite";
   const root = document.documentElement;
   const changed = root.dataset.theme !== nextTheme;
   const theme = themesById.get(nextTheme);

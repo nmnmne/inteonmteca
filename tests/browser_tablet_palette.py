@@ -22,8 +22,7 @@ with sync_playwright() as p:
             setTheme('graphite', {animate:false});
             inteonMobileLogo.run();
             const root=document.documentElement, before=getComputedStyle(root).getPropertyValue('--theme-bg');
-            const light=themeRegistry.find(t=>t.mood==='light');
-            setTheme(light.id);
+            setTheme('abyss');
             return {before, after:getComputedStyle(root).getPropertyValue('--theme-bg'),
                 owner:inteonHomeEffects.active, pending:inteonThemeMorph.pending, theme:root.dataset.theme};
         }""")
@@ -46,17 +45,17 @@ with sync_playwright() as p:
                     max(1, current["at"] - previous["at"])
                     for previous,current in zip(samples,samples[1:]))
         assert speed < .35, speed
-        assert page.evaluate("document.documentElement.dataset.theme") == "cobalt-tile"
+        assert page.evaluate("document.documentElement.dataset.theme") == "abyss"
         assert not page.evaluate("inteonThemeMorph.pending || inteonThemeMorph.active")
         page.screenshot(path=str(output / f"finished-{width}.png"))
         # New requests supersede old ones without changing the busy scene's palette.
         page.evaluate("inteonHomeEffects.claim('probe'); setTheme('graphite'); setTheme('warm-carbon')")
-        assert page.evaluate("document.documentElement.dataset.theme") == "cobalt-tile"
+        assert page.evaluate("document.documentElement.dataset.theme") == "abyss"
         page.evaluate("inteonHomeEffects.release('probe')")
         page.wait_for_function("!inteonThemeMorph.active", timeout=6000)
         assert page.evaluate("document.documentElement.dataset.theme") == "warm-carbon"
         # Explicit instantaneous selection cancels an older deferred request.
-        page.evaluate("inteonHomeEffects.claim('probe'); setTheme('cobalt-tile'); setTheme('graphite',{animate:false}); inteonHomeEffects.release('probe')")
+        page.evaluate("inteonHomeEffects.claim('probe'); setTheme('abyss'); setTheme('graphite',{animate:false}); inteonHomeEffects.release('probe')")
         page.wait_for_timeout(200)
         assert page.evaluate("document.documentElement.dataset.theme") == "graphite"
         assert not page.evaluate("inteonThemeMorph.pending || inteonThemeMorph.active")
