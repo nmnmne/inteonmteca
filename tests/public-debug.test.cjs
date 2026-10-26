@@ -12,20 +12,20 @@ async function fixture({mobile = false, stored = null, gpu = null} = {}) {
     const listeners = new Map();
     return {
       addEventListener(name, callback) {if (!listeners.has(name)) listeners.set(name, []); listeners.get(name).push(callback);},
-      async emit(name, values = {}) {for (const callback of listeners.get(name) || []) await callback({type:name,...values});},
+      async emit(name, values = {}) {for (const callback of listeners.get(name) || []) await callback({type:name,preventDefault(){this.defaultPrevented=true;},stopPropagation(){},...values});},
       dispatchEvent(event) {this.emit(event.type, event);},
     };
   };
   const element = tag => {
     const classes = new Set();
-    const el = Object.assign(eventTarget(), {tagName:tag, children:[], dataset:{}, attributes:{}, style:{setProperty() {}},
+    const el = Object.assign(eventTarget(), {tagName:tag, children:[], dataset:{}, attributes:{}, isConnected:true, hidden:false, style:{setProperty() {}},
       classList:{add(name) {classes.add(name);}, remove(name) {classes.delete(name);},
         toggle(name, on) {if (on) classes.add(name); else classes.delete(name);}, contains:name=>classes.has(name)},
-      append(...children) {this.children.push(...children);},
+      append(...children) {this.children.push(...children); children.forEach(c=>c.parent=this);},
       setAttribute(name, value) {this.attributes[name]=value;}, removeAttribute(name) {delete this.attributes[name];},
       contains(target) {return this === target || this.children.some(child=>child.contains?.(target));},
-      querySelector() {return null;}, querySelectorAll() {return this.children.filter(child=>child.tagName==='button');},
-      getBoundingClientRect:()=>({right:120,top:30}),getAnimations:()=>[],focus() {this.focused=true;},
+      querySelector() {return null;}, querySelectorAll() {const descendants=this.children.flatMap(c=>[c,...c.querySelectorAll()]);return descendants.filter(c=>['button','input','summary'].includes(c.tagName));},
+      closest:()=>null, checkVisibility() {let p=this;while(p){if(p.hidden)return false;p=p.parent;}return true;}, getBoundingClientRect:()=>({left:10,bottom:52,right:120,top:30}),getAnimations:()=>[],focus() {this.focused=true;document.activeElement=this;},
     });
     if (tag === 'canvas' && gpu) el.getContext = gpu;
     all.push(el); return el;
@@ -43,6 +43,7 @@ async function fixture({mobile = false, stored = null, gpu = null} = {}) {
     localStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value)},
     navigator:{hardwareConcurrency:8},innerWidth:mobile?390:1440,innerHeight:900,devicePixelRatio:1,
     setTimeout,clearTimeout,fetch:()=>{throw Error('public debug must not depend on API');}};
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'popup-coordinator.js'), 'utf8'),context);
   vm.runInNewContext(source,context);
   assert.equal(await window.inteonDebugReady,true);
   return {all,root,body,head,document,compact,window,calls,storage,
@@ -75,7 +76,7 @@ test('every static-host visitor starts with debug off and can enable controls wi
   await run.master.emit('click');
   assert.equal(run.root.dataset.debugEnabled,'true');
   assert.equal(run.master.attributes['aria-checked'],'true');
-  assert.ok(run.body.children.includes(run.quality));
+  assert.ok(run.body.contains(run.quality));
   assert.equal(run.menu.children.length,6);
   assert.ok(run.menu.children.every(entry=>!entry.disabled));
   run.slider.value='7'; await run.slider.emit('input');
@@ -122,7 +123,7 @@ test('mobile keeps a compact closed drawer, opens controls and dismisses outside
   assert.equal(run.master.textContent,'debug');
   assert.equal(run.menu.hidden,true);
   await run.master.emit('click');
-  await run.document.emit('keydown',{key:'Escape'});
+  await run.window.emit('keydown',{key:'Escape'});
   assert.equal(run.root.dataset.debugCompactOpen,'false');
   assert.equal(run.master.focused,true);
   assert.equal(run.menu.children.find(entry=>entry.textContent==='Распад на кусочки').disabled,false);
@@ -145,11 +146,11 @@ test('compact debug Escape is hierarchical and another popup closes the drawer',
   const run=await fixture({mobile:true});
   await run.master.emit('click');
   await run.effects.emit('click');
-  await run.document.emit('keydown',{key:'Escape',preventDefault(){this.defaultPrevented=true;}});
+  await run.menu.parent.emit('keydown',{key:'Escape',preventDefault(){this.defaultPrevented=true;},stopPropagation(){}});
   assert.equal(run.menu.hidden,true,'first Escape closes the effects menu');
   assert.equal(run.root.dataset.debugCompactOpen,'true','drawer remains available');
   assert.equal(run.effects.focused,true);
-  await run.document.emit('keydown',{key:'Escape',preventDefault(){this.defaultPrevented=true;}});
+  await run.window.emit('keydown',{key:'Escape',preventDefault(){this.defaultPrevented=true;}});
   assert.equal(run.root.dataset.debugCompactOpen,'false','second Escape closes the drawer');
   await run.master.emit('click');
   await run.window.emit('inteon-popup-open',{detail:{owner:'theme'}});

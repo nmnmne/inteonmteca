@@ -102,7 +102,14 @@
     const clean = enough && active.p90 <= period * 1.15 && active.p95 <= period * 1.3
       && missedFrameRatio < .025 && active.max < Math.max(100, period * 4);
     const trialRegressed = enough && trial && (lowerTailFps < trial.tail * .85 || missedFrameRatio > trial.missed + .035);
-    if (!enough) reason = 'insufficient-active';
+    // Frozen canvas is not idle UI: text, input and layout still consume frames.
+    // Its overload may lower detail, but can never justify a promotion.
+    const foregroundOverload = light.duration >= 1000 && light.count >= 3
+      && (light.p95 > Math.max(50, period * 2.5) || light.max >= 250);
+    if (foregroundOverload) {
+      next = Math.max(1, level - 2); cleanSamples = 0; trial = null;
+      reason = 'foreground-overload';
+    } else if (!enough) reason = 'insufficient-active';
     else if (recalibrating) reason = 'cadence-recalibration';
     else if (severe || struggling || trialRegressed) {
       next = Math.max(1, level - (severe ? 2 : 1));

@@ -262,3 +262,12 @@ test('diagnostics and snapshots are readonly and preserve legacy animation quali
   h.api.setManualLevel(10);assert.equal(Object.isFrozen(h.changes()[0].detail),true);
   assert.equal(h.document.documentElement.dataset.animationQuality,'low');
 });
+
+test('foreground overload during a frozen background lowers detail without promoting on light frames', () => {
+  const h=harness(); h.sample(60);
+  h.sample(() => ({ms:80,heavy:false}));
+  assert.equal(h.api.level,3);
+  assert.equal(h.api.reason,'foreground-overload');
+  for(let i=0;i<4;i++)h.sample(() => ({ms:1000/120,heavy:false}));
+  assert.equal(h.api.level,3,'fast frozen frames cannot raise detail');
+});

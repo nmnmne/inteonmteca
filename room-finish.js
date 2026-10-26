@@ -3,9 +3,7 @@
   const shell = document.querySelector('.playlist-shell');
   if (!list || !shell) return;
   let fitFrame = 0;
-  const fit = () => {
-    if (fitFrame) return;
-    fitFrame = requestAnimationFrame(() => {
+  const performFit = () => {
       fitFrame = 0;
       const first = list.querySelector('.track-item');
       const fill = getComputedStyle(shell);
@@ -17,7 +15,9 @@
         // Explicit desktop/mobile stages keep their row count. Compact windows
         // fit as many rows as needed without stretching tiles when height drops.
         const requestedSlots = Number(fill.getPropertyValue('--catalog-slots'));
-        const slots = Math.min(list.children.length, requestedSlots || Math.max(1, Math.ceil(catalogHeight / 48)));
+        // Placeholder rows must not temporarily expand to fill all eight slots.
+        // The full async catalogue uses the exact same geometry from first paint.
+        const slots = Math.max(1, requestedSlots || Math.ceil(catalogHeight / 48));
         const oldRow = first.getBoundingClientRect().height;
         const rowPosition = oldRow ? list.scrollTop / oldRow : 0;
         // Equal fractional rows make each repeated catalogue cycle identical.
@@ -39,8 +39,8 @@
       shell.style.setProperty('--catalog-height', `${height}px`);
       list.scrollTop = Math.round(list.scrollTop / row) * row;
       list.dispatchEvent(new Event('inteon-catalog-fit'));
-    });
   };
+  const fit = () => {if (!fitFrame) fitFrame = requestAnimationFrame(performFit);};
   // Slot changes need not resize the shell. The layout owner explicitly asks
   // for a refit after committing its geometry; all requests share one frame.
   shell.addEventListener('inteon-catalog-refit', fit);
@@ -48,7 +48,7 @@
   document.fonts?.ready.then(fit);
   new ResizeObserver(fit).observe(shell);
   new MutationObserver(fit).observe(list, {childList: true});
-  fit();
+  performFit();
   const volume = document.querySelector('#track-volume');
   const rail = document.querySelector('.volume-rail');
   const music = document.querySelector('#album-player');

@@ -10,9 +10,9 @@ assert.equal(kiosk.osmWay, "402910822");
 assert.equal(kiosk.footprint.length, 4);
 assert.equal(kiosk.role, "electric-kiosk");
 
-const roadIds = new Set((layout.roads || []).map((road) => road.osmWay));
-assert.deepEqual(roadIds, new Set(["229651920", "251168367"]), "only the satellite-confirmed paved courtyard road network is rendered");
-assert.ok(layout.roads.every((road) => road.surface === "asphalt" && road.centerline.length >= 4));
+const roadIds = new Set((layout.roads || []).filter(road => road.osmWay).map((road) => road.osmWay));
+assert.deepEqual(roadIds, new Set(["229651920", "251168367"]), "original mapped ways survive user-marked additions");
+assert.ok(layout.roads.every((road) => road.surface === "asphalt" && road.centerline.length >= 2));
 assert.equal((layout.parking || []).length, 0, "parked cars are not part of this scene");
 
 const house14 = layout.buildings.find((building) => building.id === "house-14");
@@ -34,8 +34,8 @@ assert.equal(towerEntrance?.buildingId, "tower-34");
 assert.equal(towerEntrance?.edgeIndex, 4);
 assert.equal(towerEntrance?.alongM, 0);
 const photoEntrances = entrances.filter((item) => item.buildingId === "house-46-2");
-assert.equal(photoEntrances.length, 2, "only the two independently visible 46/2 entry zones are added");
-assert.ok(photoEntrances.every((item) => item.edgeIndex === 0 && item.source.includes("image_df69aa")));
+assert.equal(photoEntrances.length, 4, "the approved reconstruction contains four courtyard entrances");
+assert.ok(photoEntrances.every((item) => item.edgeIndex === 0 && item.source.includes("User-approved reconstructed photograph")));
 
 const gasPipe = (layout.gasPipes || []).find((item) => item.id === "house-14-yellow-gas-pipe");
 assert.ok(gasPipe, "the photo-confirmed yellow gas route is explicit layout data");

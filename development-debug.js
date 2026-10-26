@@ -37,7 +37,11 @@ window.inteonDebugReady = (async () => {
   button.setAttribute('aria-label', 'Отладка');
   const copy = document.querySelector('.hero-intro .topline');
   button.classList.add('development-debug-street');
-  document.body.append(button);
+  (document.querySelector('.room-toolbar') || document.body).append(button);
+  const drawer = document.createElement('section');
+  drawer.id = 'development-debug-panel'; drawer.hidden = true;
+  drawer.setAttribute('aria-label', 'Отладка и эффекты');
+  document.body.append(drawer);
   const menu = document.createElement('nav');
   menu.className = 'development-animation-menu'; menu.dataset.debugElement = '';
   menu.setAttribute('aria-label', 'Повтор анимаций');
@@ -132,6 +136,8 @@ window.inteonDebugReady = (async () => {
   };
   const closeDrawer = () => {
     drawerOpen = false;
+    drawer.hidden = true;
+    window.inteonPopups?.release(drawer);
     document.documentElement.dataset.debugCompactOpen = 'false';
     if (compact.matches) { button.setAttribute('aria-expanded', 'false'); button.textContent = 'debug'; }
     showEffects(false);
@@ -163,33 +169,10 @@ window.inteonDebugReady = (async () => {
     if (opening) requestPopupSpace('debug');
     showEffects(opening);
   });
-  document.addEventListener('pointerdown', event => {
-    if (!menu.contains(event.target) && !effectsButton.contains(event.target)) showEffects(false);
-    if (compact.matches && drawerOpen && !button.contains(event.target) && !menu.contains(event.target) && !effectsButton.contains(event.target) && !quality.contains(event.target)) closeDrawer();
+  drawer.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !menu.hidden) {event.preventDefault(); event.stopPropagation(); showEffects(false); effectsButton.focus();}
   });
-  document.addEventListener('keydown', event => {
-    if (event.key !== 'Escape') return;
-    if (!menu.hidden) {
-      event.preventDefault?.();
-      showEffects(false);
-      effectsButton.focus();
-      return;
-    }
-    if (compact.matches && drawerOpen) {
-      event.preventDefault?.();
-      closeDrawer();
-      sync();
-      button.focus();
-    }
-  });
-  if (window.MutationObserver) {
-    const panels = [...document.querySelectorAll('#auth-panel, #theme-panel')];
-    const panelObserver = new window.MutationObserver(() => {
-      if (panels.some(panel => !panel.hidden)) dismissDebug();
-    });
-    panels.forEach(panel => panelObserver.observe(panel, {attributes: true, attributeFilter: ['hidden']}));
-  }
-  if (copy) document.body.append(effectsButton, menu, quality);
+  if (copy) drawer.append(effectsButton, menu, quality);
   let materialReset = 0;
   const materialAnimations = () => (document.querySelector('#logo-wrap')?.getAnimations({subtree:true}) || [])
     .filter(a => a.animationName === 'logoContrastBreath');
@@ -240,31 +223,12 @@ window.inteonDebugReady = (async () => {
   });
   const place = () => {
     if (compact.matches) {
-      const toolbarBottom = document.querySelector('.room-toolbar')?.getBoundingClientRect().bottom;
-      const masterTop = Math.max(10, Math.round((Number.isFinite(toolbarBottom) ? toolbarBottom : 52) + 10));
-      const effectsTop = masterTop + 50;
-      const panelTop = effectsTop + 50;
-      button.style.left = '10px'; button.style.top = `${masterTop}px`;
-      effectsButton.style.left = '10px'; effectsButton.style.top = `${effectsTop}px`;
-      quality.style.left = '10px'; quality.style.top = `${panelTop}px`;
-      menu.style.left = '10px'; menu.style.top = `${panelTop}px`;
-      document.documentElement.style.setProperty('--debug-panel-top', `${panelTop}px`);
-      return;
+      button.style.left = '118px'; button.style.top = '4px';
+    } else if (copy) {
+      const rect = copy.getBoundingClientRect();
+      button.style.left = `${Math.min(innerWidth - 100, rect.right + 14)}px`;
+      button.style.top = `${Math.max(8, rect.top - 3)}px`;
     }
-    if (!copy) return;
-    const rect = copy.getBoundingClientRect();
-    const controlLeft = rect.right + 14;
-    const masterTop = rect.top - 3;
-    button.style.left = `${controlLeft}px`;
-    button.style.top = `${masterTop}px`;
-    const masterHeight = button.getBoundingClientRect().height;
-    const effectsTop = masterTop + Math.max(28, Number.isFinite(masterHeight) ? masterHeight : 0) + 6;
-    effectsButton.style.left = `${controlLeft}px`;
-    effectsButton.style.top = `${effectsTop}px`;
-    const effectsHeight = effectsButton.getBoundingClientRect().height;
-    const panelTop = effectsTop + Math.max(28, Number.isFinite(effectsHeight) ? effectsHeight : 0) + 6;
-    quality.style.left = `${controlLeft}px`; quality.style.top = `${panelTop}px`;
-    menu.style.left = `${controlLeft}px`; menu.style.top = `${panelTop}px`;
   };
   place();
   window.addEventListener('resize', place, {passive: true});
@@ -284,6 +248,10 @@ window.inteonDebugReady = (async () => {
       button.textContent = enabled ? 'debug on' : 'debug off';
     }
     syncEffectAvailability();
+    drawer.hidden = !(enabled && (!compact.matches || drawerOpen));
+    if (drawer.hidden) window.inteonPopups?.release(drawer);
+    button.setAttribute('aria-controls', drawer.id);
+    button.setAttribute('aria-expanded', String(!drawer.hidden));
     if (!enabled) showEffects(false);
     if (qualityDirty || enabled) syncQuality();
     window.dispatchEvent(new Event('inteon-debug-change'));
@@ -295,8 +263,9 @@ window.inteonDebugReady = (async () => {
     if (compact.matches) { drawerOpen = opening; enabled = true; if (!drawerOpen) showEffects(false); }
     else enabled = opening;
     sync();
+    if (!drawer.hidden) window.inteonPopups?.open(drawer, button, dismissDebug);
   });
-  compact.addEventListener('change', () => {closeDrawer(); place(); sync();});
+  compact.addEventListener('change', () => {dismissDebug(); place();});
   window.addEventListener('pageshow', event => {
     if (!event.persisted) return;
     enabled = false;

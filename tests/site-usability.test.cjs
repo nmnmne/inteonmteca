@@ -130,10 +130,10 @@ test('short phones retain readable rows and keyboard layout makes a single scrol
   const f = mobileLayoutFixture(320, 568);
   assert.ok(Number.parseFloat(f.properties['--mobile-list-height']) > 190, 'collapsed chat space belongs to the playlist');
   f.toggle.click(); f.flush();
-  assert.equal(f.properties['--mobile-list-height'], '190px', 'five38px rows');
+  assert.equal(f.properties['--mobile-list-height'], '158px', 'short screen gives chat and logo room rather than forcing five tiny rows');
   assert.equal(f.properties['--mobile-chat-row'], '14px');
-  assert.equal(f.properties['--mobile-list-top'], '288px');
-  assert.equal(f.properties['--mobile-chat-top'], '170px');
+  assert.equal(f.properties['--mobile-list-top'], '320px');
+  assert.equal(f.properties['--mobile-chat-top'], '202px');
   f.viewport.height = 400; f.viewportListeners.resize(); f.flush();
   assert.equal(f.properties['--mobile-keyboard'], '168px');
   assert.equal(f.properties['--mobile-list-height'], '190px');

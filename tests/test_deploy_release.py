@@ -4,6 +4,9 @@ Only PowerShell is required. The AWS function records requests and simulates
 native exit codes; the Python shim prevents playlist regeneration.
 """
 import json
+import gzip
+import base64
+import hashlib
 import os
 from pathlib import Path
 import shutil
@@ -46,6 +49,7 @@ function aws {
     if ($args -contains "cp") {
         $i = [Array]::IndexOf($args, "cp")
         $source = $args[$i + 1]
+        if ($args -contains "--content-encoding") { $record.gzip = [Convert]::ToBase64String([IO.File]::ReadAllBytes($source)) }
         if ($source -like "*.html") { $record.html = [IO.File]::ReadAllText($source) }
     }
     $record | ConvertTo-Json -Compress | Add-Content -LiteralPath $env:RELEASE_LOG
@@ -91,6 +95,19 @@ catch { Write-Output $_; exit 1 }
         for name in re.findall(r'(?:href|src)="((?:styles|script)\.[^"/]+)"', html):
             self.assertIn("s3://inteonmteca.online/" + name, targets[:-2])
         self.assertEqual(len(re.findall(r'(?:styles|script)\.[^"/]+', html)), 2)
+
+    def test_compressed_assets_round_trip_and_match_content_names(self):
+        result, calls, _ = self.run_release()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        compressed = [c for c in calls if 'gzip' in c]
+        self.assertGreaterEqual(len(compressed), 3)
+        for call in compressed:
+            raw = gzip.decompress(base64.b64decode(call['gzip']))
+            target = call['args'][call['args'].index('cp') + 2]
+            self.assertIn(hashlib.sha256(raw).hexdigest()[:16], target)
+            self.assertIn('public, max-age=31536000, immutable', call['args'])
+        renditions = next(c['args'] for c in calls if 'cp' in c['args'] and any('/renditions/' in a for a in c['args']))
+        self.assertIn('public, max-age=31536000, immutable', renditions)
 
     def test_release_retains_remote_assets_and_local_inputs(self):
         result, calls, preserved = self.run_release()

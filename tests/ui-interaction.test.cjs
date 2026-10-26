@@ -107,7 +107,7 @@ function panelFixture() {
   const document = { activeElement: null, querySelector: () => null, getElementById: id => nodes[id], body: {
     classList: { toggle: (name, active) => active ? bodyClasses.add(name) : bodyClasses.delete(name) },
   } };
-  const context = { document, bodyClasses, handlers, openPanels: [], panelOpeners: new WeakMap(),
+  const context = { window: {inteonPopups: {open(panel) {panel.input.focus();}, release() {}}}, document, bodyClasses, handlers, openPanels: [], panelOpeners: new WeakMap(),
     chatPanel: { hidden: false }, inlineChat: true, compactChatViewport: { matches: false },
     sessionEmail: '', setAuthStatus() {}, closeChat() { throw Error('Opening a popup must preserve the desktop inline chat'); } };
   for (const name of ['auth', 'theme']) {

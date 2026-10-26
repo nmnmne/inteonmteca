@@ -76,6 +76,7 @@
   ].join(',');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const coarse = matchMedia('(pointer: coarse), (max-width: 800px)');
+  const directGlyph = Boolean(window.CSS?.supports('content', 'attr(data-glyph) / ""'));
   const symbols = '01/\\|<>[]{}#$%&*+-=░▒:;';
   const pointer = {x: 0, y: 0, active: false, until: Infinity};
   const modes = [
@@ -178,8 +179,15 @@
         for (const letter of node.textContent) {
           if (/\s/.test(letter)) { fragment.append(document.createTextNode(letter)); continue; }
           const el = document.createElement('span'); el.className = 'text-wave-char'; el.textContent = letter;
-          const mask = document.createElement('span'); mask.className = 'text-wave-mask'; mask.setAttribute('aria-hidden', 'true');
-          el.append(mask); fragment.append(el);
+          // Empty CSS alternative text keeps decorative glyphs out of speech.
+          // Supporting browsers need one element per letter, not two nested layers.
+          let mask = el;
+          if (directGlyph) el.classList.add('direct-wave-char');
+          else {
+            mask = document.createElement('span'); mask.className = 'text-wave-mask'; mask.setAttribute('aria-hidden', 'true');
+            el.append(mask);
+          }
+          fragment.append(el);
           chars.push({el, mask, owner, seed: ++serial, glyph: '', x: 0, y: 0, visible: false});
         }
         // Keep a text run as one flex item (navigation buttons and small labels).
@@ -259,8 +267,12 @@
     const focus = document.activeElement;
     if (focus !== focusTarget) {
       focusTarget = focus;
+      // :focus-visible can flush style. Read it once before any ink writes,
+      // never once per glyph (especially when focus is simply the body).
+      const meaningful = focus && focus !== document.body && focus !== document.documentElement;
+      const focusVisible = meaningful && focus.matches(':focus-visible');
       chars.forEach(char => {
-        char.focused = char.owner.contains(focus) || (focus?.matches(':focus-visible') && focus.contains(char.el));
+        char.focused = meaningful && (char.owner.contains(focus) || (focusVisible && focus.contains(char.el)));
         if (char.focused) paint(char);
       });
     }

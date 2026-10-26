@@ -8,7 +8,7 @@ const root = path.join(__dirname, '..');
 const sourcePath = path.join(root, 'alternate-logo.js');
 const source = fs.existsSync(sourcePath) ? fs.readFileSync(sourcePath, 'utf8') : '';
 
-function fixture() {
+function fixture({mobile=false}={}) {
   let now = 0, nextId = 0;
   const timers = new Map(), listeners = new Map();
   const classes = new Set();
@@ -37,7 +37,7 @@ function fixture() {
   };
   const reduced = {matches: false, addEventListener(name, callback) { listeners.set(`motion:${name}`, callback); }};
   const sandbox = {
-    window, document, matchMedia: () => reduced,
+    window, document, matchMedia: query => query.includes('coarse') ? {matches:mobile,addEventListener(){}} : reduced,
     Math: Object.assign(Object.create(Math), {random: () => .5}),
     performance: {now: () => now},
     CustomEvent: class { constructor(type, init = {}) { this.type = type; this.detail = init.detail; } },
@@ -46,7 +46,7 @@ function fixture() {
   };
   vm.runInNewContext(source, sandbox);
   return {
-    api: window.inteonAlternateLogo, effects, document, reduced, wrap, timers, classes,
+    api: window.inteonAlternateLogo, listeners, effects, document, reduced, wrap, timers, classes,
     advance(ms) {
       const end = now + ms;
       let count = 0;
@@ -145,4 +145,15 @@ test('every handwritten logo consumer uses the transparent vector-only artwork',
   assert.match(svg, /mask="url\(#ink-wear\)"/);
   assert.doesNotMatch(svg, /<image\b|data:image|<filter\b|<feTurbulence\b|<foreignObject\b/i);
   assert.ok(Buffer.byteLength(svg) < 40000, 'shared artwork remains lightweight');
+});
+
+
+test('mobile alternate skin does not claim or delay a foreground scene',()=>{
+  const f=fixture({mobile:true});
+  assert.equal(f.api.show(3),true);
+  assert.equal(f.effects.active,null);
+  assert.equal(f.effects.claim('mobile-scatter'),true);
+  f.listeners.get('window:inteon-effects-change')();
+  assert.equal(f.api.activeVariant,null);
+  assert.equal(f.effects.active,'mobile-scatter');
 });

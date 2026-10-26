@@ -91,6 +91,7 @@ $syncArgs = @(
   "--include", "playback-link.js",
   "--include", "media-session.js",
   "--include", "track-covers.js",
+  "--include", "popup-coordinator.js",
   "--include", "track-covers.css",
   "--include", "mobile-stage.css",
   "--include", "desktop-edition.css",
@@ -108,6 +109,7 @@ $syncArgs = @(
   "--include", "yard/*",
   "--include", "yard/*/*",
   "--include", "yard/*/*/*",
+  "--exclude", "assets/track-covers/renditions/*",
   "--exclude", "*.html"
 )
 $staleKeys = @(
@@ -147,6 +149,12 @@ foreach ($key in $staleKeys) {
 # 2) Sync only public site files. This cannot upload .git, scripts, or local project metadata.
 # During active development everything is uploaded with no-cache so devices revalidate files.
 Invoke-Aws --endpoint-url $endpoint s3 sync $root "$bucketUrl/" @syncArgs --cache-control $noCache | Out-Host
+
+# Immutable content-addressed images are separate from mutable entry points.
+# Copy also repairs old no-store metadata on previously uploaded renditions.
+# Retain old hashes for cached manifests; never delete during deployment.
+Invoke-Aws --endpoint-url $endpoint s3 cp (Join-Path $root "assets/track-covers/renditions") "$bucketUrl/assets/track-covers/renditions/" `
+  --recursive --cache-control "public, max-age=31536000, immutable" | Out-Host
 
 # 3) Force the entry files to get the exact headers/content-types even if their contents did not change.
 Invoke-Aws --endpoint-url $endpoint s3 cp $playlistPath "$bucketUrl/playlist.json" `
@@ -198,6 +206,39 @@ if (Test-Path $yardCss) {
     --cache-control $noCache `
     --metadata-directive REPLACE | Out-Host
 }
+
+# Build immutable gzip representations of allowlisted homepage CSS/JS. Keep
+# objects at the bucket root so relative CSS image/font URLs retain their base.
+$assetFiles = Get-ChildItem -LiteralPath $root -File | Where-Object {
+  $_.Extension -in @(".css", ".js") -and $syncArgs -contains $_.Name
+}
+foreach ($assetFile in $assetFiles) {
+  $assetBytes = [System.IO.File]::ReadAllBytes($assetFile.FullName)
+  $digest = [System.Security.Cryptography.SHA256]::Create()
+  try { $assetHash = ([BitConverter]::ToString($digest.ComputeHash($assetBytes))).Replace("-", "").Substring(0, 16).ToLowerInvariant() }
+  finally { $digest.Dispose() }
+  $assetName = "$($assetFile.BaseName).$assetHash$($assetFile.Extension)"
+  $gzipPath = Join-Path $env:TEMP "inteonmteca-$assetName.gz"
+  $outputStream = [System.IO.File]::Create($gzipPath)
+  try {
+    $gzipStream = [System.IO.Compression.GZipStream]::new($outputStream, [System.IO.Compression.CompressionLevel]::Optimal, $true)
+    try { $gzipStream.Write($assetBytes, 0, $assetBytes.Length) }
+    finally { $gzipStream.Dispose() }
+  } finally { $outputStream.Dispose() }
+  $mime = if ($assetFile.Extension -eq ".css") { "text/css; charset=utf-8" } else { "application/javascript; charset=utf-8" }
+  try {
+    Invoke-Aws --endpoint-url $endpoint s3 cp $gzipPath "$bucketUrl/$assetName" `
+      --content-type $mime --content-encoding gzip --cache-control "public, max-age=31536000, immutable" | Out-Host
+  } finally { Remove-Item -LiteralPath $gzipPath -Force }
+  $aliases = @($assetFile.Name)
+  if ($assetFile.Name -eq "styles.css") { $aliases += $versionedStylesName }
+  if ($assetFile.Name -eq "script.js") { $aliases += $versionedScriptName }
+  foreach ($alias in $aliases) {
+    $pattern = '((?:src|href)=")' + [regex]::Escape($alias) + '(?:\?[^" ]*)?"'
+    $deployIndexHtml = [regex]::Replace($deployIndexHtml, $pattern, ('${1}' + $assetName + '"'))
+  }
+}
+[System.IO.File]::WriteAllText($deployIndexPath, $deployIndexHtml, [System.Text.UTF8Encoding]::new($false))
 
 Write-Host ""
 # Publish entry points only after every dependency upload has succeeded.

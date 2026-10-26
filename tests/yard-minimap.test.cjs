@@ -9,22 +9,22 @@ const code = source.slice(source.indexOf('export function drawScheme')).replace(
 const layout = JSON.parse(fs.readFileSync(path.join(root,'yard/data/site-layout.json'),'utf8'));
 const main = fs.readFileSync(path.join(root,'yard/main.js'),'utf8');
 for (const coarsePointer of [false, true]) {
-  test(`minimap follows every changed animation frame (touch=${coarsePointer})`, () => {
+  test(`minimap coalesces moving frames and skips stationary frames (touch=${coarsePointer})`, () => {
     const start = main.indexOf('    updateNear();') + '    updateNear();'.length;
-    const end = main.indexOf('    if (!document.hidden && shouldRender', start);
+    const end = main.indexOf('    const dirty = shouldRender', start);
     const update = new vm.Script('{' + main.slice(start, end) + '}');
     const draws = [];
     const scope = vm.createContext({coarsePointer, now:0, lastMapDraw:0, marked:null,
       body:{x:4,z:0,yaw:0}, schemeMap:{drawMarker:(...pose)=>draws.push(pose)}});
-    for (const now of [0,16,32,48,64]) {
+    for (const now of [0,16,32,48,64,120,240]) {
       scope.now=now;
       scope.body.yaw=now*.001;
       update.runInContext(scope);
     }
-    assert.equal(draws.length,5,'no skipped animation frames during rotation');
+    assert.equal(draws.length,coarsePointer ? 2 : 3,'bounded redraw rate during rotation');
     scope.now=256;
     update.runInContext(scope);
-    assert.equal(draws.length,5,'stationary map does not redraw');
+    assert.equal(draws.length,coarsePointer ? 2 : 3,'stationary map does not redraw');
   });
 }
 function contextRecorder() {
@@ -65,11 +65,11 @@ test('moving player pans cached map while keeping the marker centered',()=>{
   assert.notEqual(first[2],second[2],'moving east pans source crop');
   assert.notEqual(first[3],second[3],'moving south pans source crop');
   assert.ok(context.calls.some(call=>call[0]==='translate'&&call[1]===192&&call[2]===192),'player stays in center');
-  const rotation=context.calls.findIndex(call=>call[0]==='rotate'&&call[1]===-Math.PI/2);
+  const rotation=context.calls.findIndex(call=>call[0]==='rotate'&&call[1]===Math.PI/2);
   const image=context.calls.findIndex(call=>call[0]==='drawImage');
   const marker=context.calls.findIndex(call=>call[0]==='moveTo');
-  assert.ok(rotation>=0 && rotation<image,'map rotates opposite to viewing direction');
-  assert.ok(context.calls.slice(image+1,marker).some(call=>call[0]==='restore'),'map rotation is restored before drawing the marker');
-  assert.ok(!context.calls.slice(image+1).some(call=>call[0]==='rotate'),'player arrow always points up');
+  assert.ok(rotation>image && rotation<marker,'north-up map is drawn before rotating the direction arrow');
+  assert.ok(!context.calls.slice(0,image).some(call=>call[0]==='rotate'),'static geography stays north-up');
+  assert.ok(context.calls.slice(marker+1).some(call=>call[0]==='restore'),'arrow rotation is restored after painting');
   assert.equal(baseContext.calls.length,baked,'static geography is not repainted per frame');
 });

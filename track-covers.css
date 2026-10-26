@@ -5,7 +5,7 @@ html[data-theme] body.spatial-room .track-item:has(.has-cover) .track-fold {
   gap: clamp(8px, 1vw, 16px);
 }
 html[data-theme] body.spatial-room .track-item .track-meta:has(> .has-cover) {
-  font: var(--cover-font, inherit);
+  font: var(--cover-font, 650 .875rem/1.12 Consolas, monospace);
   --cover-size: 1cap;
   grid-template-columns: var(--cover-size) minmax(0, 1fr);
   column-gap: 4px;
@@ -34,7 +34,7 @@ html[data-theme] body.spatial-room .track-art.has-cover {
 html[data-theme] body.spatial-room .track-art.has-cover::after { content: none; }
 .cover-image { display: block; width: 100%; height: 100%; object-fit: contain; }
 html[data-theme] body.spatial-room #active-player .active-track-copy.has-active-cover {
-  font: var(--cover-font, inherit);
+  font: var(--cover-font, 650 .875rem/1.12 Consolas, monospace);
   --active-cover-size: 1cap;
   padding-left: calc(var(--active-cover-size) + 8px);
   min-height: var(--active-cover-size);
@@ -46,3 +46,6 @@ html[data-theme] body.spatial-room .active-cover {
   overflow: hidden; border-radius: 0;
   box-shadow: 0 0 0 1px rgba(var(--theme-text-rgb), .12);
 }
+/* A real low-resolution preview sharpens in place, without opacity flashes. */
+[data-cover-stage="preview"] .cover-image { image-rendering: pixelated; }
+[data-cover-stage="sharp"] .cover-image { image-rendering: auto; }

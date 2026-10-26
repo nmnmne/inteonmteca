@@ -426,9 +426,18 @@
       if (journey && destination && !clearPath(here,destination)) {stopJourney();schedule(500);}
     }
   };
-  let spaceGuard=setInterval(guardSpace,240);
-  window.addEventListener('pagehide',()=>clearInterval(spaceGuard));
-  window.addEventListener('pageshow',()=>{clearInterval(spaceGuard);spaceGuard=setInterval(guardSpace,240);});
+  let spaceGuard = 0;
+  const invalidateSpace = () => {
+    if (spaceGuard || document.hidden || compact.matches) return;
+    spaceGuard = requestAnimationFrame(() => { spaceGuard = 0; guardSpace(); });
+  };
+  const obstacleObserver = new ResizeObserver(invalidateSpace);
+  document.querySelectorAll('.playlist-shell, #active-player, .listening-intro, #logo-wrap, #chat-panel, #auth-panel, #theme-panel')
+    .forEach(el => obstacleObserver.observe(el));
+  ['inteon-catalog-fit', 'inteon-mobile-chat-change', 'inteon-popup-open', 'inteon-debug-change', 'resize', 'pageshow']
+    .forEach(type => window.addEventListener(type, invalidateSpace, {passive: true}));
+  document.addEventListener('transitionend', invalidateSpace);
+  window.addEventListener('pagehide', () => {cancelAnimationFrame(spaceGuard); spaceGuard = 0;});
   document.documentElement.addEventListener("pointerleave", () => {
     pointer={x:-9999,y:-9999,at:0}; clear(stillness);
   });

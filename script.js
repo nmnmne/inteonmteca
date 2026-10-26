@@ -2197,7 +2197,7 @@ window.addEventListener('inteon-close-popups', () => {
 const panelOpeners = new WeakMap();
 const setPanelOpen = (panel, open, { focus = true } = {}) => {
   if (!panel || panel.hidden === !open) return;
-  if (open && panel !== chatPanel && compactChatViewport.matches && !chatPanel?.hidden) closeChat();
+  if (open && panel !== chatPanel && !inlineChat && compactChatViewport.matches && !chatPanel?.hidden) closeChat();
   if (open) {
     for (const other of [...openPanels]) {
       if (other === panel || (other === chatPanel && inlineChat)) continue;
@@ -2221,8 +2221,10 @@ const setPanelOpen = (panel, open, { focus = true } = {}) => {
   if (open) {
     openPanels.push(panel);
     openPanels.forEach((entry, order) => { entry.style.zIndex = String(40 + order); });
-    if (focus) panel.querySelector('input:not([hidden]), select, button')?.focus({ preventScroll: true });
+    if (panel !== chatPanel) window.inteonPopups?.open(panel, trigger, () => setPanelOpen(panel, false, {focus: false}));
+    else if (focus) panel.querySelector('input:not([hidden]), select, button')?.focus({ preventScroll: true });
   } else {
+    window.inteonPopups?.release(panel);
     panel.style.zIndex = "";
     const opener = panelOpeners.get(panel);
     if (focus && panel.contains(document.activeElement)) {
@@ -3557,7 +3559,7 @@ const scheduleLogo = (callback, delay) => {
   return id;
 };
 // Text is intentionally live, but never driven by the decorative frame loop.
-if (!prefersReducedMotion) window.setInterval(() => {
+if (!prefersReducedMotion && playlistList?.dataset?.layout !== "catalog") window.setInterval(() => {
   if (!isMobileViewport || document.hidden || window.inteonHomeEffects?.ambientBlocked || window.inteonHomeEffects?.ambientPaused || (!inlineChat && !chatPanel?.hidden)) return;
   const now = window.inteonHomeEffects?.ambientNow?.() ?? performance.now();
   renderTitleMutation(now);

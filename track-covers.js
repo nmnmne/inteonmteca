@@ -4,6 +4,41 @@
   const visible = new Set();
   const near = new Set();
   const preloads = new Map();
+  const queue = [];
+  let loading = 0, upgradeTimer = 0;
+  const connection = navigator.connection;
+  const constrained = () => connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '')
+    || (window.inteonGraphicsQuality?.level || 3) < 3;
+  const pump = () => {
+    if (document.hidden) return;
+    while (loading < 2 && queue.length) {
+      const job = queue.shift(); loading++;
+      const done = async ok => {
+        if (ok) { try { await job.image.decode?.(); } catch {} }
+        job.ready = ok; loading--; job.resolve(ok); pump();
+      };
+      job.image.onload = () => done(true);
+      job.image.onerror = () => {preloads.delete(job.url); done(false);};
+      job.image.src = job.url;
+    }
+  };
+  const preload = (url, urgent = false) => {
+    if (preloads.has(url)) return preloads.get(url);
+    const image = new Image(); image.decoding = 'async';
+    image.fetchPriority = urgent ? 'auto' : 'low';
+    const job = {url, image, ready: false};
+    job.promise = new Promise(resolve => {job.resolve = resolve;});
+    preloads.set(url, job); urgent ? queue.unshift(job) : queue.push(job); pump();
+    return job;
+  };
+  const upgradeDelay = () => constrained() ? 8000 : 1200;
+  const upgradeVisible = () => {
+    upgradeTimer = 0;
+    if (document.hidden) return;
+    for (const host of near) {const slot = slots.get(host); if (slot) paint(host, slot, true);}
+  };
+  const scheduleUpgrade = () => { if (!upgradeTimer) upgradeTimer = setTimeout(upgradeVisible, upgradeDelay()); };
+
   // Titles still own cap-height typography. Also observe host size: this catches
   // responsive cap changes without doing layout reads on the rotation timer.
   const titleHosts = new Map();
@@ -24,9 +59,16 @@
     for (const entry of entries) {
       if (entry.isIntersecting) {
         near.add(entry.target);
+        const title = slots.get(entry.target)?.title;
+        if (title) {titleHosts.set(title, entry.target); titleObserver.observe(title);}
+        titleObserver.observe(entry.target);
         const slot = slots.get(entry.target);
         if (slot) paint(entry.target, slot);
-      } else near.delete(entry.target);
+      } else {
+        near.delete(entry.target); titleObserver.unobserve(entry.target);
+        const title = slots.get(entry.target)?.title;
+        if (title) {titleObserver.unobserve(title); titleHosts.delete(title);}
+      }
     }
   }, { rootMargin: '120px', threshold: 0 });
   const viewingObserver = new IntersectionObserver(entries => {
@@ -35,7 +77,6 @@
       else visible.delete(entry.target);
     }
   }, { threshold: [0, .65] });
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let previous = performance.now();
   let timer = 0;
 
@@ -46,26 +87,30 @@
     const pixels = slot.pixels || 16;
     return (candidates.find(candidate => candidate.width >= pixels) || candidates[candidates.length - 1]).url;
   };
-  const paint = (host, slot) => {
-    if (!near.has(host)) return;
+  const paint = (host, slot, upgrade = false) => {
+    if (!near.has(host) || document.hidden) return;
     const rect = host.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
     slot.pixels = Math.ceil(Math.max(rect.width, rect.height) * (window.devicePixelRatio || 1));
-    const url = resource(slot, slot.state.index);
-    host.dataset.coverIndex = String(slot.state.index);
-    if (slot.url === url) return;
+    const index = slot.state.index, original = slot.state.covers[index];
+    const low = slot.renditions[original]?.[0]?.url || resource(slot, index);
+    const final = resource(slot, index);
+    const url = upgrade || slot.displayIndex === index && slot.high ? final : low;
+    if (slot.url === url && slot.image.getAttribute('src') === url) return;
     slot.url = url;
-    slot.image.src = url;
+    preload(url, !upgrade).promise.then(ok => {
+      if (!ok || slot.url !== url || !host.isConnected || !near.has(host)) return;
+      // Decode off-DOM, retain the old image until the replacement is ready.
+      slot.image.src = url; slot.displayIndex = index; slot.high = url === final;
+      host.dataset.coverIndex = String(index);
+      host.dataset.coverStage = slot.high ? 'sharp' : 'preview';
+      if (!slot.high) scheduleUpgrade();
+    });
   };
   const preloadNext = slot => {
-    const url = resource(slot, (slot.state.index + 1) % slot.state.covers.length);
-    if (!preloads.has(url)) {
-      const image = new Image();
-      image.decoding = 'async';
-      image.src = url;
-      preloads.set(url, image);
-    }
-    return preloads.get(url);
+    const index = (slot.state.index + 1) % slot.state.covers.length;
+    const original = slot.state.covers[index];
+    return preload(slot.renditions[original]?.[0]?.url || resource(slot, index));
   };
   const detach = host => {
     const title = slots.get(host)?.title;
@@ -83,7 +128,9 @@
     const elapsed = Math.min(500, now - previous);
     previous = now;
     const viewing = new Map();
-    for (const [host, slot] of slots) {
+    for (const host of visible) {
+      const slot = slots.get(host);
+      if (!slot) continue;
       if (!host.isConnected) { detach(host); continue; }
       if (!document.hidden && visible.has(host) && slot.image.complete && slot.image.naturalWidth) {
         if (!viewing.has(slot.state)) viewing.set(slot.state, []);
@@ -94,10 +141,10 @@
       if (state.covers.length < 2) continue;
       const nextImages = viewers.map(preloadNext);
       state.elapsed += elapsed;
-      if (state.elapsed >= state.dwell && nextImages.every(image => image.complete && image.naturalWidth)) {
+      if (state.elapsed >= state.dwell && nextImages.every(job => job.ready)) {
         state.index = (state.index + 1) % state.covers.length;
         state.elapsed = 0;
-        for (const [host, slot] of slots) if (slot.state === state) paint(host, slot);
+        for (const host of near) {const slot = slots.get(host); if (slot?.state === state) paint(host, slot);}
         viewers.forEach(preloadNext);
       }
     }
@@ -121,18 +168,13 @@
     image.width = image.height = 16;
     // IO is the single loading gate (native lazy loading can delay near rows).
     image.decoding = 'async';
-    image.addEventListener('load', () => {
-      if (!reducedMotion.matches) image.animate([{ opacity: .3 }, { opacity: 1 }], { duration: 450 });
-    });
     host.replaceChildren(image);
     host.classList.add('has-cover');
     const slot = { image, state: states.get(key), title, renditions: track.coverRenditions || {} };
     slots.set(host, slot);
-    if (title) { titleHosts.set(title, host); titleObserver.observe(title); }
-    titleObserver.observe(host);
     observer.observe(host);
     viewingObserver.observe(host);
-    if (!timer) { previous = performance.now(); timer = setInterval(tick, 250); }
+    if (!timer && !document.hidden) { previous = performance.now(); timer = setInterval(tick, 250); }
     return true;
   };
   const select = track => {
@@ -149,7 +191,7 @@
     if (attach(host, track, copy.querySelector('.now-playing-title'))) copy.classList.add('has-active-cover');
     else host.remove();
   };
-  const refresh = () => { for (const [host, slot] of slots) paint(host, slot); };
+  const refresh = () => { for (const host of near) {const slot = slots.get(host); if (slot) paint(host, slot);} scheduleUpgrade(); };
   window.addEventListener?.('resize', refresh);
   // DPR can change when moving between monitors without changing CSS geometry.
   const watchDpr = () => {
@@ -157,6 +199,10 @@
     query.addEventListener?.('change', () => { refresh(); watchDpr(); }, { once: true });
   };
   watchDpr();
-  document.addEventListener('visibilitychange', () => { previous = performance.now(); });
+  document.addEventListener('visibilitychange', () => {
+    previous = performance.now(); clearInterval(timer); timer = 0;
+    clearTimeout(upgradeTimer); upgradeTimer = 0;
+    if (!document.hidden) {pump(); refresh(); if (slots.size) timer = setInterval(tick, 250);}
+  });
   window.inteonCovers = { attach, select };
 })();

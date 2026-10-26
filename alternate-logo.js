@@ -7,6 +7,7 @@
   if (!effects) return;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const variants = Object.freeze([1, 3, 5, 12, 13, 16, 17]);
+  const compact = matchMedia('(max-width: 800px), (pointer: coarse)');
   const visibleMs = 4600;
   const randomDelay = () => 18000 + Math.floor(Math.random() * 12000);
   const motionTimeout = (callback, delay) => effects.setMotionTimeout
@@ -38,7 +39,7 @@
     if (activeVariant === null) return;
     activeVariant = null;
     delete wrap.dataset.alternateLogo;
-    effects.release('alternate-logo');
+    if (!compact.matches) effects.release('alternate-logo');
     publish('old');
     if (reschedule) schedule(randomDelay());
   };
@@ -46,7 +47,8 @@
     const selected = Number(variant);
     if (!variants.includes(selected) || activeVariant !== null || !canShow()) return false;
     clearNext();
-    if (!effects.claim('alternate-logo')) return false;
+    // Compact variants are a passive skin: foreground scenes always take priority.
+    if (!compact.matches && !effects.claim('alternate-logo')) return false;
     activeVariant = selected;
     nextIndex = (variants.indexOf(selected) + 1) % variants.length;
     wrap.dataset.alternateLogo = String(selected);
@@ -78,6 +80,8 @@
     hide: () => finish(true),
     get activeVariant() { return activeVariant; },
   });
+  window.addEventListener('inteon-effects-change', () => { if (compact.matches && effects.active && activeVariant !== null) finish(true); });
+  compact.addEventListener('change', () => { effects.release('alternate-logo'); finish(true); });
   reduced.addEventListener('change', () => reduced.matches ? stop() : start());
   document.addEventListener('pagehide', stop);
   window.addEventListener('pageshow', () => start());
