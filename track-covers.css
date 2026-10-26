@@ -1,0 +1,52 @@
+/* Keep artwork inside the existing catalogue tiles and player copy. */
+html[data-theme] body.spatial-room .track-item:has(.has-cover) .track-fold {
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(8px, 1vw, 16px);
+  --cover-size: clamp(17px, 2.65dvh, 32px);
+}
+html[data-theme] body.spatial-room .track-item .track-meta:has(> .has-cover) {
+  grid-template-columns: var(--cover-size) minmax(0, 1fr);
+  column-gap: 4px;
+  align-items: center;
+}
+html[data-theme] body.spatial-room .track-item .track-meta > .track-art.has-cover {
+  grid-column: 1; grid-row: 1; align-self: center;
+}
+html[data-theme] body.spatial-room .track-item .track-meta:has(> .has-cover) > .track-title {
+  grid-column: 2; grid-row: 1;
+}
+html[data-theme] body.spatial-room .track-item .track-meta:has(> .has-cover) > .track-artist {
+  grid-column: 1 / -1; grid-row: 2;
+}
+html[data-theme] body.spatial-room .track-art.has-cover {
+  display: block;
+  width: var(--cover-size);
+  height: var(--cover-size);
+  overflow: hidden;
+  border: 0;
+  border-radius: 38%;
+  background: rgba(var(--theme-panel-rgb), .3);
+  box-shadow: 0 0 0 1px rgba(var(--theme-text-rgb), .1);
+}
+html[data-theme] body.spatial-room .track-art.has-cover::after { content: none; }
+.cover-image { display: block; width: 100%; height: 100%; object-fit: contain; }
+html[data-theme] body.spatial-room #active-player .active-track-copy.has-active-cover {
+  padding-left: calc(var(--active-cover-size) + 12px);
+  min-height: var(--active-cover-size);
+  --active-cover-size: clamp(38px, 6.5dvh, 72px);
+}
+html[data-theme] body.spatial-room .active-cover {
+  position: absolute; top: 0; left: 0;
+  width: var(--active-cover-size); height: var(--active-cover-size);
+  overflow: hidden; border-radius: 6px;
+  box-shadow: 0 0 0 1px rgba(var(--theme-text-rgb), .12);
+}
+@media (max-width: 800px) and (min-height: 501px), (max-width: 500px) {
+  html[data-theme] body.spatial-room .track-item:has(.has-cover) .track-fold {
+    --cover-size: clamp(14px, 2.3dvh, 21px);
+  }
+  html[data-theme] body.spatial-room #active-player .active-track-copy.has-active-cover {
+    --active-cover-size: 28px;
+    padding-left: 36px;
+  }
+}

@@ -1,8 +1,12 @@
-"""Exercise exclusive scenes, continuous ambient motion and readable text in a browser."""
+"""Exercise exclusive scenes, ambient duty-cycle and readable text in a browser."""
 import sys
 from playwright.sync_api import sync_playwright
 
 URL = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8080/"
+
+def wait_running(page):
+    # Check movement inside a fresh active window, never across the intentional hold.
+    page.wait_for_function("document.documentElement.dataset.ambientPhase === 'running' && performance.now() - window.__ambientStartedAt < 500", timeout=22500)
 
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="msedge", headless=True)
@@ -18,8 +22,14 @@ with sync_playwright() as p:
             // Automatic rotation is covered by browser_theme_morph.py. Keep it
             // from starting a different theme between these lifecycle assertions.
             localStorage.setItem('inteonmteca-theme-duration', '604800000');
+            const today = new Date();
+            localStorage.setItem('inteonmteca-theme-duration-day', `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`);
             window.__effectDraws = {};
             window.__ownershipErrors = [];
+            window.__ambientStartedAt = -Infinity;
+            window.addEventListener('inteon-ambient-change', () => {
+                if (document.documentElement.dataset.ambientPhase === 'running') __ambientStartedAt = performance.now();
+            });
             requestAnimationFrame(function checkOwnership() {
                 if (window.inteonThemeMorph?.active && window.inteonHomeEffects?.active !== 'theme')
                     __ownershipErrors.push({at: performance.now(), owner: inteonHomeEffects.active});
@@ -36,7 +46,7 @@ with sync_playwright() as p:
         page.wait_for_timeout(2000)
         assert page.locator(".text-wave-char").count() > 100
         page.evaluate("inteonLogoStorm.stop(); inteonAtmosphere.stop(); inteonLogoAcid.stop(); inteonHomeEffects.claim('test');")
-        page.wait_for_timeout(100)
+        wait_running(page)
         before = page.evaluate("({...__effectDraws})")
         page.wait_for_timeout(350)
         after = page.evaluate("({...__effectDraws})")
@@ -46,7 +56,8 @@ with sync_playwright() as p:
         page.evaluate("inteonHomeEffects.release('wrong')")
         assert page.evaluate("inteonHomeEffects.active") == "test"
         page.evaluate("inteonHomeEffects.release('test')")
-        page.wait_for_timeout(1000)
+        wait_running(page)
+        page.wait_for_timeout(350)
         assert page.evaluate("__effectDraws['material-field']") > after.get("material-field", 0)
 
         # A rejected scene leaves the current one intact. Stops release ownership.
@@ -72,7 +83,8 @@ with sync_playwright() as p:
         before = page.evaluate("({...__effectDraws})")
         page.wait_for_timeout(350)
         after = page.evaluate("({...__effectDraws})")
-        assert after.get("material-field", 0) > before.get("material-field", 0)
+        assert after.get("material-field", 0) == before.get("material-field", 0)
+        assert after.get("logo-ripples", 0) == before.get("logo-ripples", 0)
         assert page.locator(".reactive-logo").evaluate("e => getComputedStyle(e).animationName") != "none"
         page.wait_for_function("document.querySelector('.is-wave-noisy')", timeout=5000)
         assert page.locator(".is-wave-noisy .text-wave-mask").first.evaluate("e => getComputedStyle(e).display") != "none"
@@ -89,7 +101,7 @@ with sync_playwright() as p:
         page.evaluate("window.dispatchEvent(new Event('pagehide'))")
         assert page.evaluate("inteonHomeEffects.suspended")
         page.evaluate("window.dispatchEvent(new Event('focus'))")
-        page.wait_for_timeout(350)
+        wait_running(page)
         assert not page.evaluate("inteonHomeEffects.suspended")
         before = page.evaluate("({...__effectDraws})")
         page.wait_for_timeout(350)
@@ -109,7 +121,8 @@ with sync_playwright() as p:
             assert not page.evaluate("inteonHomeEffects.suspended")
         for width, height in ((320, 568), (844, 390), (768, 1024), (1440, 900)):
             page.set_viewport_size({"width": width, "height": height})
-            page.wait_for_timeout(150)
+            wait_running(page)
+            page.wait_for_timeout(100)
             before = page.evaluate("__effectDraws['material-field']")
             phase = page.locator(".reactive-logo").evaluate("e => e.getAnimations()[0]?.currentTime")
             page.wait_for_timeout(350)

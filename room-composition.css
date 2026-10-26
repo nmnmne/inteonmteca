@@ -2,3 +2,34 @@
 .is-rebuilding .logo-ripples, .is-screen-scattered .logo-ripples { visibility: hidden; }
 @media (max-width: 800px) { .logo-ripples { opacity: .55; } }
 @media (prefers-reduced-motion: reduce) { .logo-ripples { display: none; } }
+/* Hold ambient CSS motion on the same frame as the paused canvas renderers. */
+html[data-ambient-phase="frozen"] body.spatial-room :is(.theme-light, .reactive-logo, .logo-vector-core, .logo-vector-outline, .logo-vector-ghost, .logo-particle),
+html[data-ambient-phase="frozen"] body.spatial-room .logo-wrap::before,
+html[data-ambient-phase="frozen"] body.spatial-room .logo-wrap::after {
+  animation-play-state: paused !important;
+}
+/* The cached raster moves on the compositor while expensive drawing rests. */
+@keyframes held-field-drift {
+  0%, 100% { translate: 0 0; scale: 1; }
+  38% { translate: 3px -2px; scale: 1.008; }
+  72% { translate: -2px 2px; scale: 1.004; }
+}
+@keyframes held-logo-breath {
+  0%, 100% { translate: 0 0; scale: 1; opacity: 1; }
+  35% { translate: 0 -3px; scale: 1.012; opacity: .94; }
+  70% { translate: 2px 1px; scale: 1.004; opacity: .98; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html[data-ambient-phase="frozen"]:not([data-home-effects-suspended="true"]) body.spatial-room :is(.material-field, .perception-visual, .logo-ripples) {
+    animation: held-field-drift var(--ambient-freeze-duration, 1s) ease-in-out both;
+    will-change: transform;
+  }
+  html[data-ambient-phase="frozen"]:not([data-home-effects-suspended="true"]):not([data-home-effect]) body.spatial-room .logo-wrap {
+    animation: held-logo-breath var(--ambient-freeze-duration, 1s) ease-in-out both;
+    will-change: transform, opacity;
+  }
+  html[data-ambient-phase="frozen"]:not([data-home-effects-suspended="true"]) body.spatial-room :is(.logo-acid, .storm-inversion-shards, .mobile-logo-shards) {
+    animation: held-logo-breath var(--ambient-freeze-duration, 1s) ease-in-out both;
+    will-change: transform, opacity;
+  }
+}

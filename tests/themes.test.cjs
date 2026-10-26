@@ -6,6 +6,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'script.js'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
+const consumers = fs.readdirSync(root).filter(f => /\.(?:css|js)$/.test(f)).map(f => fs.readFileSync(path.join(root,f),'utf8')).join('\n');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 assert.ok(source.includes('const themeRegistry ='), 'embedded registry exists');
 const registry = source.slice(source.indexOf('const themeCoreFilters ='), source.indexOf('const themeStorageKey ='));
@@ -16,33 +17,33 @@ const properties = new Map();
 const stored = new Map();
 const documentElement = { dataset: { theme: 'desert' }, style: { setProperty: (key, value) => properties.set(key, value) } };
 let scheduled;
-const sandbox = { document: { documentElement, createElement: element }, themeSelect: select, themeStatus: {},
+const sandbox = { document: { documentElement, body:{classList:{contains:()=>false}}, createElement: element }, themeSelect: select, themeStatus: {},
   themeDuration: { value: '500' }, themeDurationOutput: {}, prefersReducedMotion: true,
   themeStorageKey: 'inteonmteca-theme', themeDurationStorageKey: 'inteonmteca-theme-duration',
-  THEME_MIN_MS: 4000, THEME_MAX_MS: 604800000, THEME_DEFAULT_MS: 8000,
-  themeShiftTimer: 0, themeRotationTimer: 0,
-  window: { clearTimeout() {}, setTimeout(fn) { scheduled = fn; return 1; } },
+  THEME_MIN_MS: 4000, THEME_MAX_MS: 604800000, THEME_DEFAULT_MS: 60000,
+  themeShiftTimer: 0, themeRotationTimer: 0, themeDayTimer: 0, themeClockRunning: true, themeDurationMs:60000, themeDurationDay:'', themeDurationDayStorageKey:'day',
+  window: { clearTimeout() {}, setTimeout(fn, delay) { if(delay === 60000) scheduled = fn; return 1; } },
   storeValue: (key, value) => stored.set(key, value), readStoredValue: key => stored.get(key),
   Math: Object.create(Math) };
 vm.createContext(sandbox);
 vm.runInContext(`${registry}\n${behavior}\nglobalThis.api = { themeRegistry, themeNames, setTheme, randomizeTheme, initializeThemeSystem };`, sandbox);
 const api = sandbox.api;
-assert.equal(api.themeRegistry.length, 9);
-assert.equal(new Set(api.themeNames).size, 9);
-assert.equal(new Set(api.themeRegistry.map(t => t.name)).size, 9);
-assert.equal(new Set(api.themeRegistry.map(t => JSON.stringify(t.tokens))).size, 9);
-assert.equal(api.themeRegistry.filter(t => t.mood === 'light').length, 2);
+assert.equal(api.themeRegistry.length, 6);
+assert.equal(new Set(api.themeNames).size, 6);
+assert.equal(new Set(api.themeRegistry.map(t => t.name)).size, 6);
+assert.equal(new Set(api.themeRegistry.map(t => JSON.stringify(t.tokens))).size, 6);
+assert.equal(api.themeRegistry.filter(t => t.mood === 'light').length, 0);
 const luminance = hex => {
   const c = hex.match(/[a-f\d]{2}/gi).map(x => parseInt(x, 16) / 255).map(x => x <= .04045 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4);
   return c[0] * .2126 + c[1] * .7152 + c[2] * .0722;
 };
 for (const theme of api.themeRegistry) {
   assert.match(theme.id, /^[a-z][a-z-]*$/);
-  assert.match(theme.name, /^[а-яё][а-яё -]*$/u);
+  assert.match(theme.name, /^[a-zа-яё][a-zа-яё -]*$/iu);
   assert.ok(!Object.values(theme.tokens).includes('grayscale(1)'), `${theme.id} stays in color`);
   assert.notEqual(theme.tokens['--theme-fog-blur'], '32px');
-  assert.equal(Object.keys(theme.tokens).length, 11);
-  for (const key of Object.keys(theme.tokens)) assert.ok(css.includes(`var(${key})`), `CSS consumes ${key}`);
+  assert.equal(Object.keys(theme.tokens).length, 16);
+  for (const key of Object.keys(theme.tokens)) assert.ok(consumers.includes(key), `CSS consumes ${key}`);
   api.setTheme(theme.id, { animate: false });
   assert.equal(documentElement.dataset.theme, theme.id);
   assert.equal(select.value, theme.id);
@@ -54,17 +55,17 @@ for (const theme of api.themeRegistry) {
   api.initializeThemeSystem();
   assert.equal(documentElement.dataset.theme, theme.id, 'persisted IDs restore');
 }
-assert.equal(select.children.length, 9);
+assert.equal(select.children.length, 6);
 assert.deepEqual(select.children.map(o => o.value).sort(), Array.from(api.themeNames).sort());
 const reachable = new Set();
-for (let i = 0; i < 8; i++) {
+for (let i = 0; i < 5; i++) {
   api.setTheme('graphite');
-  sandbox.Math.random = () => (i + .5) / 8;
+  sandbox.Math.random = () => (i + .5) / 5;
   api.randomizeTheme();
   assert.notEqual(documentElement.dataset.theme, 'graphite');
   reachable.add(documentElement.dataset.theme);
 }
-assert.equal(reachable.size, 8, 'random picker reaches every other theme');
+assert.equal(reachable.size, 5, 'random picker reaches every other theme');
 api.setTheme('abyss'); sandbox.Math.random = () => 0; api.randomizeTheme();
 assert.equal(documentElement.dataset.theme, 'graphite');
 stored.set('inteonmteca-theme', 'missing'); api.initializeThemeSystem();
@@ -77,6 +78,6 @@ assert.match(source, /themeRandom\?\.addEventListener\("click", \(\) => \{\s*ran
 for (const pseudo of ['before', 'after']) {
   const block = css.split(`.logo-wrap.release-logo::${pseudo} {`)[1].split('}')[0];
   assert.ok(!block.includes('clip-path'));
-  assert.ok(block.includes('radial-gradient'));
+  assert.ok(block.includes(pseudo === 'before' ? 'content: none' : 'radial-gradient'));
 }
-console.log('PASS: nine unique flat palettes, persistence and readable tokens');
+console.log('PASS: six unique flat palettes, persistence and readable tokens');

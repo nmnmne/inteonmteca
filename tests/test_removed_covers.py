@@ -11,13 +11,30 @@ COVERS = (
     'assets/wave-phonk/cover.png',
 )
 
-class RemovedCoversTests(unittest.TestCase):
-    def test_cover_files_and_manifest_references_are_removed(self):
+class CoverLibraryTests(unittest.TestCase):
+    def test_retired_full_size_cover_paths_stay_removed(self):
         for cover in COVERS:
             self.assertFalse((ROOT / cover).exists(), cover)
+
+    def test_desktop_variants_are_available_in_the_playlist(self):
         playlist = json.loads((ROOT / 'playlist.json').read_text(encoding='utf-8'))
-        embedded = (ROOT / 'playlist-data.js').read_text(encoding='utf-8')
-        self.assertTrue(all('cover' not in track for track in playlist))
-        self.assertNotIn('"cover":', embedded)
+        cold = next(track for track in playlist if track['title'] == 'Слишком холод')
+        self.assertGreaterEqual(len(cold['covers']), 5)
+        for track in playlist:
+            if 'covers' not in track:
+                continue
+            self.assertEqual(track['cover'], track['covers'][0])
+            self.assertEqual(len(track['covers']), len(set(track['covers'])))
+            for url in track['covers']:
+                self.assertTrue((ROOT / url).is_file(), url)
         self.assertTrue((ROOT / 'assets/og-image.png').exists())
         self.assertTrue((ROOT / 'assets/logo-wordmark.svg').exists())
+
+    def test_archived_and_unpublished_artwork_is_retained_with_provenance(self):
+        catalog = json.loads((ROOT / 'assets/track-covers/catalog.json').read_text(encoding='utf-8'))
+        self.assertTrue(any(not item['mediaDirectory'] for item in catalog['collections']))
+        images = [art for item in catalog['collections'] for art in item['artwork']]
+        self.assertTrue(any('Архив/' in source for image in images for source in image['sources']))
+        self.assertTrue(any(source.endswith('.psd') for image in images for source in image['sources']))
+        for image in images:
+            self.assertTrue((ROOT / image['url']).is_file(), image['url'])

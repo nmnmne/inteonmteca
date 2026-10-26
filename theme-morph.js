@@ -1,4 +1,4 @@
-/* Animate live palette tokens while the theme controls retain their old colors. */
+/* Fade between palettes without recalculating the entire page on every frame. */
 (() => {
   const root = document.documentElement;
   const panel = document.querySelector('#theme-panel');
@@ -6,6 +6,21 @@
   const duration = 4000;
   let target = null, metadata = null, active = false, frame = 0, generation = 0, deadline = 0;
   let pending = null, retry = 0;
+  let nativeTransition = null;
+  let notifiedGeneration = -1;
+  const transitionStyle = document.createElement('style');
+  transitionStyle.textContent = `
+    html.is-theme-native::view-transition { pointer-events: none; }
+    html.is-theme-native::view-transition-group(root) { animation: none; }
+    html.is-theme-native::view-transition-image-pair(root) { isolation: isolate; }
+    html.is-theme-native::view-transition-old(root) {
+      z-index: 2; mix-blend-mode: normal;
+      animation: palette-snapshot-out ${duration}ms cubic-bezier(.22,.61,.36,1) both;
+    }
+    html.is-theme-native::view-transition-new(root) { z-index: 1; animation: none; mix-blend-mode: normal; }
+    @keyframes palette-snapshot-out { from { opacity: 1; } to { opacity: 0; } }
+  `;
+  document.head.append(transitionStyle);
   const clearPending = () => { clearTimeout(retry); retry = 0; pending = null; };
   const flushPending = () => {
     clearTimeout(retry); retry = 0;
@@ -38,16 +53,22 @@
     pinned.clear(); panel.classList.remove('is-palette-pinned');
   };
   const commit = () => {
-    if (target) for (const [property, value] of Object.entries(target)) root.style.setProperty(property, value);
+    if (target) for (const [property, value] of Object.entries(target)) {
+      if (root.style.getPropertyValue(property) !== value) root.style.setProperty(property, value);
+    }
     if (metadata?.name) { root.dataset.theme = metadata.name; root.dataset.themeMood = metadata.mood; }
-    window.dispatchEvent(new Event('inteon-theme-frame'));
+    if (notifiedGeneration !== generation) {
+      notifiedGeneration = generation;
+      window.dispatchEvent(new Event('inteon-theme-frame'));
+    }
   };
   const complete = token => {
     if (token !== generation) return;
     clearTimeout(deadline); deadline = 0;
     cancelAnimationFrame(frame); frame = 0; active = false;
+    nativeTransition?.skipTransition(); nativeTransition = null;
     commit(); unpinPanel();
-    root.classList.remove('is-theme-crossfading', 'is-theme-shifting');
+    root.classList.remove('is-theme-crossfading', 'is-theme-shifting', 'is-theme-native');
     window.inteonHomeEffects?.release('theme');
   };
   const finish = () => { clearPending(); if (active) complete(generation); };
@@ -78,6 +99,7 @@
       const token = ++generation;
       clearTimeout(deadline); deadline = 0;
       cancelAnimationFrame(frame); frame = 0;
+      nativeTransition?.skipTransition(); nativeTransition = null;
       const light = mood === 'light';
       target = {...tokens,
         '--interface-ink':tokens['--interface-ink'] || (light?'12, 15, 17':'249, 244, 233'),
@@ -97,19 +119,46 @@
         (controller && controller.active !== 'theme' && !controller.claim('theme'));
       if (immediate) { complete(token); return; }
       pinPanel();
+      // Capture the old palette once. The new live page keeps animating while
+      // the compositor fades its old image, without rewriting every CSS token.
+      if (typeof document.startViewTransition === 'function') {
+        active = true;
+        root.classList.add('is-theme-native');
+        deadline = setTimeout(() => complete(token), duration + 500);
+        try {
+          nativeTransition = document.startViewTransition(() => {
+            if (token === generation) commit();
+          });
+          nativeTransition.ready.catch(() => {});
+          nativeTransition.finished.then(() => complete(token), () => complete(token));
+          return;
+        } catch {
+          clearTimeout(deadline); deadline = 0;
+          root.classList.remove('is-theme-native');
+        }
+      }
       const styles = getComputedStyle(root);
-      const tweens = Object.entries(target).map(([property,value]) => [property, interpolate(styles.getPropertyValue(property).trim(), value)]);
+      const tweens = Object.entries(target).map(([property,value]) => {
+        const initial = styles.getPropertyValue(property).trim();
+        return {property, tween: interpolate(initial, value), previous: initial, changed: initial !== value};
+      }).filter(item => item.changed);
       active = true;
       if (metadata?.name) { root.dataset.theme = metadata.name; root.dataset.themeMood = metadata.mood; }
       // Browser frame throttling must never retain the foreground effect lock.
       deadline = setTimeout(() => complete(token), duration + 250);
       const start = performance.now();
+      let lastPaint = -Infinity;
       const tick = now => {
         if (token !== generation) return;
         const elapsed = Math.min(1, (now-start)/duration);
+        if (elapsed < 1 && now - lastPaint < 1000 / 30) { frame = requestAnimationFrame(tick); return; }
+        lastPaint = now;
         // Ease out immediately: visible color movement in the first frames, then a soft landing.
         const blend = 1 - Math.pow(1 - elapsed, 3);
-        for (const [property, tween] of tweens) root.style.setProperty(property, tween(blend));
+        for (const item of tweens) {
+          const value = item.tween(blend);
+          if (value !== item.previous) { root.style.setProperty(item.property, value); item.previous = value; }
+        }
         if (elapsed < 1) frame = requestAnimationFrame(tick);
         else complete(token);
       };
@@ -120,8 +169,13 @@
     get pending() { return Boolean(pending); },
   };
   reduced.addEventListener('change', () => { if (reduced.matches) finish(); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden && active) finish(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) finish(); });
   window.addEventListener('pagehide', finish);
+  // Reveal live controls immediately when the user interacts during a fade.
+  const revealLivePage = () => { if (nativeTransition) finish(); };
+  document.addEventListener('pointerdown', revealLivePage, {capture: true, passive: true});
+  document.addEventListener('keydown', revealLivePage, {capture: true});
+  document.addEventListener('wheel', revealLivePage, {capture: true, passive: true});
   window.addEventListener('inteon-effects-change', () => {
     if (document.body.classList.contains('portal-leaving')) finish();
     else if (pending && !window.inteonHomeEffects?.active) flushPending();

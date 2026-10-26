@@ -13,9 +13,10 @@
         const override = fill.getPropertyValue('--catalog-bottom-space').trim();
         const bottomSpace = override ? Number(override) : desktop ? Math.min(96, Math.max(32, innerHeight * .07)) : 8;
         const catalogHeight = Math.max(1, Math.floor(shell.clientHeight - bottomSpace));
-        // Seven generous tiles; keep five readable rows when vertical space is tight.
+        // Explicit desktop/mobile stages keep their row count. Compact windows
+        // fit as many rows as needed without stretching tiles when height drops.
         const requestedSlots = Number(fill.getPropertyValue('--catalog-slots'));
-        const slots = Math.min(list.children.length, requestedSlots || (catalogHeight >= 7 * 56 ? 7 : 5));
+        const slots = Math.min(list.children.length, requestedSlots || Math.max(1, Math.ceil(catalogHeight / 48)));
         const oldRow = first.getBoundingClientRect().height;
         const rowPosition = oldRow ? list.scrollTop / oldRow : 0;
         // Equal fractional rows make each repeated catalogue cycle identical.

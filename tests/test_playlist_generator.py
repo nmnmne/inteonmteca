@@ -6,6 +6,26 @@ from tools.generate_playlist import build_playlist
 
 
 class PlaylistGeneratorTests(unittest.TestCase):
+    def test_all_catalog_variants_survive_regeneration_and_shared_releases(self):
+        import json
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            media = root / 'media'
+            assets = root / 'assets'
+            (media / 'Release').mkdir(parents=True)
+            (assets / 'track-covers').mkdir(parents=True)
+            for name in ['Artist - Song.flac', 'Artist - Song remix.flac']:
+                (media / 'Release' / name).write_bytes(b'audio')
+            covers = ['assets/track-covers/release/first.webp', 'assets/track-covers/release/draft.webp']
+            (assets / 'track-covers/catalog.json').write_text(json.dumps({'collections': [{
+                'mediaDirectory': 'release', 'artwork': [{'url': url} for url in covers],
+            }]}), encoding='utf-8')
+            playlist = build_playlist(media, assets, root)
+        self.assertEqual(len(playlist), 2)
+        for track in playlist:
+            self.assertEqual(track['cover'], covers[0])
+            self.assertEqual(track['covers'], covers)
+
     def test_build_playlist_reads_artist_title_and_matching_cover(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

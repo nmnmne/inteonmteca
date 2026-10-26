@@ -1,16 +1,27 @@
 (() => {
   const logo = document.querySelector('#logo-wrap');
+  const root = document.documentElement;
+  const readLevel = () => Math.max(1, Math.min(10, Math.round(Number(root.dataset.graphicsLevel) || (root.dataset.animationQuality === 'low' ? 4 : 8))));
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const source = new Image();
   source.src = 'assets/logo-wordmark.svg';
-  let frame = 0, finish = null, canvas = null, deadline = 0;
+  const motionNow = () => window.inteonHomeEffects?.ambientNow?.() ?? performance.now();
+  const motionTimeout = (fn, delay) => window.inteonHomeEffects?.setMotionTimeout ? window.inteonHomeEffects.setMotionTimeout(fn, delay) : setTimeout(fn, delay);
+  const clearMotionTimeout = id => { if (window.inteonHomeEffects?.clearMotionTimeout) window.inteonHomeEffects.clearMotionTimeout(id); else clearTimeout(id); };
+  let frame = 0, finish = null, canvas = null, deadline = 0, paintFrame = null;
+  const syncMotion = () => {
+    if (window.inteonHomeEffects?.ambientPaused) { cancelAnimationFrame(frame); frame = 0; }
+    else if (finish && paintFrame && !frame) frame = requestAnimationFrame(paintFrame);
+  };
   const stop = () => {
-    clearTimeout(deadline); deadline = 0;
+    clearMotionTimeout(deadline); deadline = 0;
     cancelAnimationFrame(frame); frame = 0;
+    paintFrame = null;
     canvas?.remove(); canvas = null;
     logo?.classList.remove('is-acid');
     if (logo) delete logo.dataset.acidPhase;
     const resolve = finish; finish = null;
+    window.inteonHomeEffects?.setLogoScattered?.('acid', false);
     window.inteonHomeEffects?.release('acid');
     resolve?.();
   };
@@ -20,13 +31,18 @@
     if (window.inteonHomeEffects && !window.inteonHomeEffects.claim('acid')) return null;
     return new Promise(resolve => {
       finish = resolve;
-      deadline = setTimeout(stop, 11850);
       const mobile=matchMedia('(max-width: 800px), (pointer: coarse)').matches;
-      const box = logo.getBoundingClientRect(), pad = mobile ? 44 : 90, cols = mobile ? 10 : 18, rows = mobile ? 3 : 6;
+      // A scene keeps its allocation when quality changes; the next one samples it.
+      const level = readLevel(), detail = (level - 1) / 9;
+      const cols = Math.round((mobile ? 5 : 6) + (mobile ? 7 : 12) * detail);
+      const rows = Math.round(2 + (mobile ? 1 : 4) * detail);
+      const holesPerTile = Math.round(2 + (mobile ? 3 : 7) * detail), vertices = Math.round(7 + 8 * detail);
+      const box = logo.getBoundingClientRect(), pad = mobile ? 44 : 90;
       const w = box.width / cols, h = box.height / rows;
       canvas = document.createElement('canvas');
       canvas.className = 'logo-acid'; canvas.setAttribute('aria-hidden', 'true');
-      const dpr = Math.min(devicePixelRatio, document.documentElement.dataset.animationQuality === 'low' ? 1 : 1.5);
+      const dpr = Math.min(devicePixelRatio, 1 + .5 * detail);
+      Object.assign(canvas.dataset, {graphicsLevel: String(level), tiles: String(cols * rows), holesPerTile: String(holesPerTile)});
       canvas.width = Math.ceil((box.width + pad * 2) * dpr);
       canvas.height = Math.ceil((box.height + pad * 2) * dpr);
       Object.assign(canvas.style, {left: `${box.left-pad}px`, top: `${box.top-pad}px`, width: `${box.width+pad*2}px`, height: `${box.height+pad*2}px`});
@@ -55,10 +71,10 @@
         x: i % cols * w, y: Math.floor(i/cols)*h, texture:makeTexture(),
         dx: (Math.random()-.5)*(mobile?42:90), dy: (Math.random()-.5)*(mobile?30:58),
         rotation: (Math.random()-.5)*.45, delay: Math.random()*.22,
-        holes: Array.from({length: mobile ? 5 : 9}, () => {
+        holes: Array.from({length: holesPerTile}, () => {
           const x=Math.random()*w,y=Math.random()*h,path=new Path2D();
-          for(let k=0;k<15;k++){
-            const angle=k/14*Math.PI*2,r=1+.18*Math.sin(k*2.7+x);
+          for(let k=0;k<vertices;k++){
+            const angle=k/(vertices-1)*Math.PI*2,r=1+.18*Math.sin(k*2.7+x);
             if(!k)path.moveTo(Math.cos(angle)*r,Math.sin(angle)*r);else path.lineTo(Math.cos(angle)*r,Math.sin(angle)*r);
           }
           path.closePath();
@@ -66,12 +82,16 @@
           return {x,y,size,path,cover:Math.hypot(Math.max(x,w-x),Math.max(y,h-y))/(size*.78)};
         }),
       }));
-      document.body.append(canvas); logo.classList.add('is-acid');
-      const started = performance.now() - (options.preview ? 700 : 0);
-      let previousPhase='',previousReturn='0';
-      const paint = now => {
-        if (!finish) return;
-        const elapsed = now-started;
+      document.body.append(canvas);
+      window.inteonHomeEffects?.setLogoScattered?.('acid', true);
+      const started = motionNow() - (options.preview ? 700 : 0);
+      deadline = motionTimeout(stop, 11850);
+      let previousPhase='',previousReturn='0',shown=false;
+      const paint = () => {
+        frame = 0;
+        if (!finish || window.inteonHomeEffects?.ambientPaused) return;
+        if (!shown) { logo.classList.add('is-acid'); shown = true; }
+        const elapsed = motionNow()-started;
         if (elapsed >= 11600) { stop(); return; }
         frame = requestAnimationFrame(paint);
         const spread = 1-Math.pow(1-Math.min(1, elapsed/2300), 3);
@@ -117,8 +137,9 @@
           ctx.drawImage(texture.image,-w/2,-h/2,w,h);
         }
       };
+      paintFrame = paint;
       logo.style.setProperty('--acid-return', '0');
-      paint(performance.now());
+      paint();
     });
   };
   window.inteonLogoAcid = {run, stop, get active() { return Boolean(finish); }};
@@ -128,5 +149,6 @@
   window.addEventListener('inteon-storm', event => { if (event.detail.phase === 'prepare') stop(); });
   window.addEventListener('inteon-interlude', () => { if (document.body.classList.contains('is-interlude')) stop(); });
   reduced.addEventListener('change', stop);
+  window.addEventListener('inteon-ambient-change', syncMotion);
   window.addEventListener('inteon-effects-change', () => { if (window.inteonHomeEffects?.suspended) stop(); });
 })();

@@ -22,7 +22,7 @@ class DeployReleaseTests(unittest.TestCase):
             root = Path(directory)
             shutil.copy2(ROOT / "deploy-site.ps1", root / "deploy-site.ps1")
             files = {
-                "index.html": '<meta name="inteonmteca-api" content=""><link href="styles.css"><script src="script.js"></script><script data-development-only src="development-debug.js"></script>',
+                "index.html": '<meta name="inteonmteca-api" content=""><link href="styles.css"><script src="script.js"></script><script src="development-debug.js"></script><script data-development-only src="private-dev.js"></script>',
                 "styles.css": "body {}", "script.js": "void 0;",
                 "playlist.json": "[]", "playlist-data.js": "window.playlist=[];",
                 "yard/index.html": '<link href="yard.css?v=old"><script data-development-only src="../development-debug.js"></script>',
@@ -80,7 +80,9 @@ catch { Write-Output $_; exit 1 }
         uploads = [call for call in calls if "cp" in call["args"]]
         for call in uploads:
             if 'html' in call:
-                self.assertNotIn('development-debug.js', call['html'])
+                self.assertNotIn('private-dev.js', call['html'])
+        self.assertIn('development-debug.js', uploads[-1]['html'], 'visitor controls survive the production build')
+        self.assertNotIn('development-debug.js', uploads[-2]['html'], 'unrelated yard developer controls stay private')
         targets = [call["args"][call["args"].index("cp") + 2] for call in uploads]
         self.assertEqual(targets[-2:], ["s3://inteonmteca.online/yard/index.html", "s3://inteonmteca.online/index.html"])
         import re

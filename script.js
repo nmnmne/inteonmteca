@@ -62,7 +62,23 @@ const lowPowerDevice = isMobileViewport
   || (navigator.deviceMemory && navigator.deviceMemory <= 4);
 let animationQuality = lowPowerDevice ? "low" : "high";
 document.documentElement.dataset.animationQuality = animationQuality;
-let particleGrid = animationQuality === "low" ? { cols: 12, rows: 4 } : { cols: 18, rows: 6 };
+const sceneGraphicsProfiles = Object.freeze([.12, .20, .29, .38, .48, .58, .68, .78, .89, 1].map((density, index) => Object.freeze({
+  level: index + 1, density,
+  scale: [.25, .30, .35, .40, .45, .50, .55, .60, .68, .75][index],
+  logoScale: [.4, .4, .45, .5, .55, .6, .65, .7, .75, .85][index],
+  strands: [0, 0, 0, 3, 4, 5, 6, 7, 8, 10][index],
+  segments: [0, 0, 0, 20, 28, 36, 44, 52, 60, 72][index],
+  slices: [0, 0, 0, 6, 8, 10, 14, 18, 21, 24][index],
+})));
+let sceneGraphicsLevel = Math.max(1, Math.min(10, Number(document.documentElement.dataset.graphicsLevel) || 5));
+let sceneGraphicsDirty = false;
+const sceneGraphics = () => sceneGraphicsProfiles[sceneGraphicsLevel - 1];
+window.addEventListener('inteon-quality-change', () => {
+  const level = Math.max(1, Math.min(10, Number(document.documentElement.dataset.graphicsLevel) || 5));
+  if (level === sceneGraphicsLevel) return;
+  sceneGraphicsLevel = level; sceneGraphicsDirty = true;
+});
+let particleGrid = { cols: 18, rows: 6 };
 const logoWrap = document.querySelector(".logo-wrap");
 const reactiveLogo = document.getElementById("reactive-logo");
 const logoVector = document.getElementById("logo-vector");
@@ -140,7 +156,7 @@ const counterBaseUrl = "https://abacus.jasoncameron.dev";
 const TRACK_VIEW = 5;
 const THEME_MIN_MS = 4 * 1000;
 const THEME_MAX_MS = 7 * 24 * 60 * 60 * 1000;
-const THEME_DEFAULT_MS = 8 * 1000;
+const THEME_DEFAULT_MS = 60 * 1000;
 // Curated dark palettes using the existing room materials.
 // Row: id | Russian label | background panel light-a light-b light-c accent text | mood.
 const themeCoreFilters = Object.freeze({
@@ -154,6 +170,7 @@ const themeCoreFilters = Object.freeze({
   porcelain: { canvas: "hue-rotate(8deg) saturate(.95)", logo: "hue-rotate(10deg) saturate(.9)", fog: "18px", opacity: ".8" },
   graphite: { canvas: "hue-rotate(200deg) saturate(.62)", logo: "hue-rotate(198deg) saturate(.58)", fog: "18px", opacity: ".78" },
   oxblood: { canvas: "hue-rotate(-18deg) saturate(1.2)", logo: "hue-rotate(-16deg) saturate(1.16)", fog: "18px", opacity: ".84" },
+  'vice-city': { canvas: "hue-rotate(307deg) saturate(1.18)", logo: "hue-rotate(307deg) saturate(1.12)", fog: "18px", opacity: ".86" },
 });
 const themeRegistry = Object.freeze([
   "abyss|Глубокий ультрамарин|030914 070c19 296dba 183b74 583777 9cb9d6 e8efff|dark",
@@ -161,6 +178,7 @@ const themeRegistry = Object.freeze([
   "warm-carbon|Песочный сумрак|161310 24201c 71665c 4d4036 81766b d6c8b7 f0e9df|dark",
   "deep-ink|Чернильный туман|0c1419 17232b 496775 294451 69767e b4cfd9 e1edf1|dark",
   "coral-obsidian|Медный обсидиан|101114 1c1d22 9b514c 51383c 716265 f18b79 f5eae6|dark",
+  "vice-city|Vice City|090b1b 171329 e448a2 34ccd6 7443b8 ff86d2 f7f0ff|dark",
 ].map((row) => {
   const [id, name, palette, mood] = row.split("|");
   const [bg, panel, a, b, c, accent, text] = palette.toLowerCase().split(" ");
@@ -183,8 +201,13 @@ const themeRegistry = Object.freeze([
     name,
     mood,
     tokens: Object.freeze({
+      // Complete interface palettes also reset accents if the morph controller
+      // is unavailable; leaving Vice City must not retain its neon colours.
+      '--interface-ink': '249, 244, 233', '--interface-muted': '202, 196, 178',
+      '--interface-accent': '218, 243, 149', '--interface-peach': '232, 178, 125', '--interface-sage': '191, 211, 151',
       ...(id === 'coral-obsidian' ? {'--interface-accent': '241, 139, 121', '--interface-peach': '241, 139, 121', '--interface-sage': '213, 169, 158'} : {}),
       ...(id === 'saffron' ? {'--interface-ink': '145, 255, 46', '--interface-muted': '116, 191, 65', '--interface-accent': '170, 255, 60', '--interface-peach': '151, 223, 48', '--interface-sage': '119, 211, 69'} : {}),
+      ...(id === 'vice-city' ? {'--interface-ink': '247, 240, 255', '--interface-muted': '191, 186, 215', '--interface-accent': '255, 134, 210', '--interface-peach': '252, 130, 184', '--interface-sage': '95, 225, 222'} : {}),
       "--theme-bg": `#${bg}`,
       "--theme-panel-rgb": rgb(panel),
       "--theme-a-rgb": rgb(a),
@@ -213,6 +236,7 @@ const populateThemeSelect = () => {
 };
 const themeStorageKey = "inteonmteca-theme";
 const themeDurationStorageKey = "inteonmteca-theme-duration";
+const themeDurationDayStorageKey = "inteonmteca-theme-duration-day";
 const localSessionStorageKey = "inteonmteca-local-session";
 const localAccountsStorageKey = "inteonmteca-local-accounts";
 const localChatStorageKey = "inteonmteca-local-chat";
@@ -260,6 +284,10 @@ let titleLastFrame = 0;
 let playlistLastFrame = 0;
 let playlistSignature = "";
 let themeRotationTimer = 0;
+let themeDayTimer = 0;
+let themeDurationMs = THEME_DEFAULT_MS;
+let themeDurationDay = "";
+let themeClockRunning = false;
 let themeShiftTimer = 0;
 let slowFrameScore = 0;
 let stableFrameTime = 0;
@@ -307,6 +335,8 @@ const setAnimationQuality = (quality) => {
 };
 
 const recordFramePacing = (delta) => {
+  // The ten-level controller owns adaptation, including its manual hold period.
+  if (document.documentElement.dataset.graphicsLevel) return;
   if (document.hidden || !Number.isFinite(delta) || delta <= 0 || delta > 250) return;
   if (performance.now() < qualityCooldownUntil) return;
   if (animationQuality === "high") {
@@ -391,7 +421,7 @@ if (!isMobileViewport && typeof DeviceMotionEvent !== "undefined" && typeof Devi
   window.addEventListener("pointerdown", () => DeviceMotionEvent.requestPermission().catch(() => {}), { once: true, passive: true });
 }
 
-const canvasScale = () => isListeningRoom ? (animationQuality === "low" ? .5 : .75) : Math.min(devicePixelRatio || 1, animationQuality === "low" ? 1 : 1.25);
+const canvasScale = () => isListeningRoom ? sceneGraphics().scale : Math.min(devicePixelRatio || 1, animationQuality === "low" ? 1 : 1.25);
 
 const sizeCanvas = (canvas) => {
   if (!canvas) return;
@@ -434,7 +464,7 @@ const setupPerceptionField = () => {
   if (isMobileViewport) return;
   if (!perceptionVisual || !perceptionContext) return;
   perceptionField.length = 0;
-  const count = animationQuality === "low" ? 4 : 7;
+  const count = 7;
   for (let index = 0; index < count; index += 1) {
     perceptionField.push({
       x: .08 + hashUnit(index + 31.2) * .84,
@@ -453,7 +483,7 @@ const renderPerceptionField = (now) => {
   if (elapsed < renderInterval()) return;
   perceptionLastFrame = now;
   sceneClock.now = now;
-  const energy = audioEnergy(now);
+  const energy = audioEnergy();
   const scale = canvasScale();
   perceptionContext.setTransform(scale, 0, 0, scale, 0, 0);
   perceptionContext.clearRect(0, 0, innerWidth, innerHeight);
@@ -469,8 +499,9 @@ const renderPerceptionField = (now) => {
   drawWindField(perceptionContext, innerWidth, innerHeight, energy, now);
   perceptionContext.font = "11px ui-monospace, monospace";
   const live = immersiveState.active;
-  for (let index = 0; index < perceptionField.length; index += 1) {
-    const node = perceptionField[index];
+  const visibleNodes = Math.min(perceptionField.length, Math.max(1, Math.ceil(perceptionField.length * sceneGraphics().density)));
+  for (let index = 0; index < visibleNodes; index += 1) {
+    const node = perceptionField[Math.floor(index * perceptionField.length / visibleNodes)];
     const breath = Math.max(0, Math.sin(now * .00018 + node.seed));
     const x = node.x * innerWidth + motionState.x * (8 + index * 1.3) + windState.x * (10 + index);
     const y = node.y * innerHeight + motionState.y * (6 + index) + windState.y * (8 + index * .6);
@@ -532,7 +563,7 @@ const setupWindField = () => {
   if (isMobileViewport) return;
   windMotes.length = 0;
   windDigits.length = 0;
-  const count = prefersReducedMotion ? 10 : animationQuality === "low" ? 32 : 64;
+  const count = prefersReducedMotion ? 10 : 64;
   for (let index = 0; index < count; index += 1) windMotes.push(spawnWindMote(true));
 };
 
@@ -558,14 +589,15 @@ const recycleWindMote = (mote) => {
 
 const drawWindField = (ctx, width, height, energy, now) => {
   if (!ctx || prefersReducedMotion && !windMotes.length) return;
-  const delta = Math.min(2.2, Math.max(.25, (now - (windLastTick || now)) / 16.67));
+  const delta = Math.min(6, Math.max(0, (now - (windLastTick || now - 16.67)) / 16.67));
   windLastTick = now;
   updateWind(now, energy, delta);
   if (!windMotes.length) setupWindField();
 
   const live = .7 + energy.avg * .9;
-  for (let index = 0; index < windMotes.length; index += 1) {
-    const mote = windMotes[index];
+  const visibleMotes = Math.min(windMotes.length, Math.max(4, Math.ceil(windMotes.length * sceneGraphics().density)));
+  for (let index = 0; index < visibleMotes; index += 1) {
+    const mote = windMotes[Math.floor(index * windMotes.length / visibleMotes)];
     const speed = (1.1 + mote.z * 1.8) * live;
     mote.wobble += .04 * delta;
     mote.x += (windState.x * 1.8 + Math.sin(mote.wobble) * .35) * speed * delta;
@@ -578,9 +610,10 @@ const drawWindField = (ctx, width, height, energy, now) => {
     ctx.fillRect(mote.x, mote.y, mote.size * mote.z, mote.size * .45);
   }
 
-  const digitGap = prefersReducedMotion ? 6400 : animationQuality === "low" ? 2200 : 1400;
+  const digitLimit = Math.floor(6 * sceneGraphics().density);
+  const digitGap = prefersReducedMotion ? 6400 : 2600 - 1200 * sceneGraphics().density;
   const wantDigit = now - windDigitAt > digitGap
-    && windDigits.length < (animationQuality === "low" ? 3 : 6)
+    && windDigits.length < digitLimit
     && (energy.flux > .12 || hashUnit(now * .0013) > .72);
   if (wantDigit) {
     windDigits.push(spawnWindDigit());
@@ -601,6 +634,7 @@ const drawWindField = (ctx, width, height, energy, now) => {
       windDigits.splice(index, 1);
       continue;
     }
+    if (index >= digitLimit) continue;
     ctx.save();
     ctx.translate(digit.x, digit.y);
     ctx.rotate(digit.rot);
@@ -690,6 +724,49 @@ const audioEnergy = (now = performance.now()) => {
   spectrumState.flux += (flux - spectrumState.flux) * .3;
   return spectrumState;
 };
+
+// Letter motion reads musical Hz bands from the player's existing FFT buffer.
+// Fractional edge weights respect the resolution of that shared analyser.
+window.inteonAudioBands = (() => {
+  const signal = {playing: false, bass: 0, mid: 0};
+  let floatSource = null, floatData = null, floatAt = -Infinity;
+  const view = Object.freeze({
+    get playing() { return signal.playing; },
+    get bass() { return signal.bass; },
+    get mid() { return signal.mid; },
+  });
+  const band = (data, binHz, low, high, floating = false) => {
+    const from = Math.max(0, low / binHz), to = Math.min(data.length, high / binHz);
+    let sum = 0, weight = 0;
+    for (let index = Math.floor(from); index < Math.ceil(to); index++) {
+      const overlap = Math.max(0, Math.min(to, index + 1) - Math.max(from, index));
+      const value = floating ? Math.max(0, Math.min(1, (data[index] + 80) / 80)) : data[index] / 255;
+      sum += value * overlap; weight += overlap;
+    }
+    return weight ? sum / weight : 0;
+  };
+  return Object.freeze({read() {
+    audioEnergy();
+    const node = activeAudioNode || (immersiveState.analyser ? {analyser: immersiveState.analyser, data: immersiveState.data} : null);
+    const context = node?.context || node?.analyser?.context || sharedAudioContext;
+    signal.playing = Boolean(node?.data && context?.state === "running" && player && !player.paused && !player.ended);
+    const binHz = context?.sampleRate / node?.analyser?.fftSize;
+    let data = node?.data, floating = false;
+    // Float dB values retain bass headroom above the byte analyser's -30 dB ceiling.
+    if (signal.playing && typeof node.analyser.getFloatFrequencyData === "function") {
+      if (floatSource !== node.analyser || floatData?.length !== node.data.length) {
+        floatSource = node.analyser; floatData = new Float32Array(node.data.length); floatAt = -Infinity;
+      }
+      if (floatAt !== spectrumState.at) {
+        node.analyser.getFloatFrequencyData(floatData); floatAt = spectrumState.at;
+      }
+      data = floatData; floating = true;
+    }
+    signal.bass = signal.playing && binHz > 0 ? band(data, binHz, 40, 250, floating) : 0;
+    signal.mid = signal.playing && binHz > 0 ? band(data, binHz, 250, 2500, floating) : 0;
+    return view;
+  }});
+})();
 
 const ensureEffectLayers = (width, height) => {
   const targetWidth = Math.max(1, Math.round(width));
@@ -925,7 +1002,7 @@ const drawImmersiveScene = (now) => {
   const elapsed = now - immersiveState.lastDraw;
   if (elapsed < renderInterval()) return;
   immersiveState.lastDraw = now;
-  const energy = audioEnergy(now);
+  const energy = audioEnergy();
   sceneClock.now = now;
   sceneClock.energy = energy.avg;
   sceneClock.bass = energy.bass;
@@ -1053,7 +1130,7 @@ const renderInkField = (now) => {
   inkLastFrame = now;
   inkContext.setTransform(scale, 0, 0, scale, 0, 0);
   inkContext.clearRect(0, 0, inkFieldBounds.width, inkFieldBounds.height);
-  const energy = audioEnergy(now);
+  const energy = audioEnergy();
   const emissionDelay = prefersReducedMotion ? 420 : Math.max(74, 132 - energy.avg * 62);
   if (now - inkLastEmission > emissionDelay) {
     emitTitleInk(now, energy);
@@ -1396,7 +1473,11 @@ const createTrackItem = (track, index, wheelNumber = index) => {
   artwork.className = "track-art";
   artwork.setAttribute("aria-hidden", "true");
   artwork.textContent = item.dataset.number;
-  fold.append(artwork, meta);
+  window.inteonCovers?.attach(artwork, track);
+  if (artwork.classList.contains('has-cover')) {
+    meta.prepend(artwork);
+    fold.append(meta);
+  } else fold.append(artwork, meta);
   button.append(fold);
   item.append(button);
   bindTrackItem(item, track);
@@ -1520,6 +1601,7 @@ const playTrack = (track, sourceItem = null, options = {}) => {
   if (pendingPlaybackSeek) player?.removeEventListener("loadedmetadata", pendingPlaybackSeek.place);
   pendingPlaybackSeek = null;
   currentTrack = track;
+  window.inteonCovers?.select(track);
   if (player && options.shared) window.inteonPlayback?.restore?.(player, options.shared);
   else if (player) window.inteonPlayback?.select?.(player, options.origin || "home");
   playbackStamp = "";
@@ -1778,6 +1860,7 @@ const exitImmersiveMode = () => {
   trackFlight?.remove();
   trackFlight = null;
   currentTrack = null;
+  window.inteonCovers?.select(null);
   currentTrackIndex = -1;
   homeMediaSession?.sync();
   cancelAnimationFrame(immersiveState.raf);
@@ -2217,12 +2300,44 @@ const formatThemeDuration = (duration) => {
   return days >= 7 ? "1 неделя" : ruCount(days, "день", "дня", "дней");
 };
 
-const currentThemeDuration = () => themeSliderToDuration(themeDuration?.value || themeDurationToSlider(THEME_DEFAULT_MS));
+// Keep exact stored/default milliseconds; the logarithmic slider is only a control.
+const currentThemeDuration = () => themeDurationMs;
 
 const updateThemeDurationLabel = () => {
   const duration = currentThemeDuration();
   if (themeDurationOutput) themeDurationOutput.textContent = formatThemeDuration(duration);
   return duration;
+};
+
+const localThemeDay = (now = new Date()) => `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+
+const persistThemeDuration = () => {
+  storeValue(themeDurationStorageKey, themeDurationMs);
+  storeValue(themeDurationDayStorageKey, themeDurationDay);
+};
+
+const syncThemeDurationDay = () => {
+  const today = localThemeDay();
+  if (themeDurationDay === today) return false;
+  const saved = Number(readStoredValue(themeDurationStorageKey));
+  const savedToday = readStoredValue(themeDurationDayStorageKey) === today;
+  themeDurationDay = today;
+  themeDurationMs = savedToday && Number.isFinite(saved) && saved >= THEME_MIN_MS && saved <= THEME_MAX_MS
+    ? saved : THEME_DEFAULT_MS;
+  if (themeDuration) themeDuration.value = String(themeDurationToSlider(themeDurationMs));
+  updateThemeDurationLabel();
+  persistThemeDuration();
+  return true;
+};
+
+const readThemeDurationControl = () => {
+  // A first interaction after midnight establishes today's preference.
+  const value = themeDuration?.value;
+  syncThemeDurationDay();
+  if (value != null) themeDurationMs = themeSliderToDuration(value);
+  if (themeDuration) themeDuration.value = String(themeDurationToSlider(themeDurationMs));
+  updateThemeDurationLabel();
+  persistThemeDuration();
 };
 
 const setTheme = (name, { animate = true, persist = true } = {}) => {
@@ -2252,21 +2367,52 @@ const randomizeTheme = () => {
 
 const scheduleThemeRotation = () => {
   window.clearTimeout(themeRotationTimer);
+  themeRotationTimer = 0;
+  syncThemeDurationDay();
   const duration = updateThemeDurationLabel();
-  storeValue(themeDurationStorageKey, duration);
+  if (!themeClockRunning || document.hidden) return;
   themeRotationTimer = window.setTimeout(() => {
-    randomizeTheme();
+    themeRotationTimer = 0;
+    // A midnight reset starts a fresh minute instead of firing yesterday's timer.
+    if (!syncThemeDurationDay()) randomizeTheme();
     scheduleThemeRotation();
-  }, duration + (window.inteonThemeMorph?.active ? window.inteonThemeMorph.duration : 0));
+  }, duration);
+};
+
+const stopThemeTimers = () => {
+  window.clearTimeout(themeRotationTimer);
+  window.clearTimeout(themeDayTimer);
+  themeRotationTimer = 0;
+  themeDayTimer = 0;
+};
+
+const scheduleThemeDayReset = () => {
+  window.clearTimeout(themeDayTimer);
+  themeDayTimer = 0;
+  if (!themeClockRunning || document.hidden) return;
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+  themeDayTimer = window.setTimeout(() => {
+    themeDayTimer = 0;
+    if (syncThemeDurationDay()) scheduleThemeRotation();
+    scheduleThemeDayReset();
+  }, Math.max(1, midnight.getTime() - now.getTime()));
+};
+
+const resumeThemeClock = () => {
+  themeClockRunning = true;
+  const changed = syncThemeDurationDay();
+  scheduleThemeDayReset();
+  if (changed || !themeRotationTimer) scheduleThemeRotation();
 };
 
 const initializeThemeSystem = () => {
   populateThemeSelect();
   const storedTheme = readStoredValue(themeStorageKey);
-  const storedDuration = Number(readStoredValue(themeDurationStorageKey)) || THEME_DEFAULT_MS;
-  if (themeDuration) themeDuration.value = String(themeDurationToSlider(storedDuration));
+  syncThemeDurationDay();
   setTheme(storedTheme || document.documentElement.dataset.theme || "fern", { animate: false, persist: false });
-  scheduleThemeRotation();
+  resumeThemeClock();
 };
 
 themeHint?.addEventListener("click", () => {
@@ -2279,20 +2425,28 @@ themeSelect?.addEventListener("change", () => {
   setTheme(themeSelect.value);
   scheduleThemeRotation();
 });
-themeDuration?.addEventListener("input", updateThemeDurationLabel);
-themeDuration?.addEventListener("change", scheduleThemeRotation);
+themeDuration?.addEventListener("input", readThemeDurationControl);
+themeDuration?.addEventListener("change", () => {
+  readThemeDurationControl();
+  scheduleThemeRotation();
+});
 themeRandom?.addEventListener("click", () => {
   randomizeTheme();
   scheduleThemeRotation();
 });
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) return;
-  perceptionLastFrame = performance.now();
-  inkLastFrame = performance.now();
-  logoLastFrame = performance.now();
+  if (document.hidden) { stopThemeTimers(); return; }
+  resumeThemeClock();
+  const visualNow = window.inteonHomeEffects?.ambientNow() ?? performance.now();
+  perceptionLastFrame = visualNow;
+  inkLastFrame = visualNow;
+  logoLastFrame = visualNow;
   lastVisualTick = 0;
   windLastTick = 0;
 });
+window.addEventListener("focus", resumeThemeClock);
+window.addEventListener("pageshow", resumeThemeClock);
+window.addEventListener("pagehide", () => { themeClockRunning = false; stopThemeTimers(); });
 
 const setAuthStatus = (text) => {
   if (authStatus) authStatus.textContent = text;
@@ -2867,6 +3021,7 @@ const revealText = (element) => {
 };
 
 const runReadableWave = () => {
+  if (window.inteonHomeEffects?.ambientPaused) return;
   matrixElements.forEach((element, index) => {
     window.setTimeout(() => revealText(element), index * 140);
   });
@@ -2876,7 +3031,7 @@ const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 let logoFilamentSeeds = [];
 const setupLogoFilaments = () => {
   if (isMobileViewport) return;
-  logoFilamentSeeds = Array.from({ length: animationQuality === "low" ? 28 : 52 }, (_, index) => ({
+  logoFilamentSeeds = Array.from({ length: 52 }, (_, index) => ({
     x: .08 + hashUnit(index + 101.3) * .84,
     y: .32 + hashUnit(index + 141.8) * .36,
     phase: hashUnit(index + 181.4) * Math.PI * 2,
@@ -2894,7 +3049,7 @@ const setupLogoSlices = () => {
   logoSlices = [];
   logoSliceContainer.replaceChildren();
   defs.querySelectorAll('clipPath[id^="logo-slice-clip-"]').forEach(node => node.remove());
-  const count = animationQuality === "low" ? 14 : 24;
+  const count = 24;
   for (let index = 0; index < count; index += 1) {
     const clip = document.createElementNS(SVG_NAMESPACE, "clipPath");
     const clipId = `logo-slice-clip-${index}`;
@@ -2934,7 +3089,7 @@ const resizeLogoCanvas = () => {
   if (isMobileViewport) { logoCanvasMetrics = null; return; }
   if (!logoReactiveCanvas || !logoReactiveContext) return;
   const bounds = logoReactiveCanvas.getBoundingClientRect();
-  const scale = isListeningRoom ? .75 : Math.min(devicePixelRatio || 1, 1.5);
+  const scale = isListeningRoom ? sceneGraphics().logoScale : Math.min(devicePixelRatio || 1, 1.5);
   const pixelWidth = Math.max(1, Math.round(bounds.width * scale));
   const pixelHeight = Math.max(1, Math.round(bounds.height * scale));
   if (logoReactiveCanvas.width !== pixelWidth) logoReactiveCanvas.width = pixelWidth;
@@ -2969,8 +3124,8 @@ logoWrap?.addEventListener("pointerleave", () => {
 
 const drawLogoFilaments = (now, profile) => {
   if (!logoReactiveCanvas || !logoReactiveContext) return;
-  // The low-quality stylesheet hides this canvas; do not measure/draw it.
-  if (animationQuality === "low") return;
+  const detail = sceneGraphics();
+  if (!detail.strands) return;
   const metrics = logoCanvasMetrics;
   if (!metrics) return;
   const ctx = logoReactiveContext;
@@ -2999,10 +3154,10 @@ const drawLogoFilaments = (now, profile) => {
   ctx.lineWidth = .35 + profile.bass * 1.2;
   ctx.shadowBlur = 0;
 
-  const strandCount = animationQuality === "low" ? 5 : 9;
+  const strandCount = detail.strands;
   for (let strand = 0; strand < strandCount; strand += 1) {
     ctx.beginPath();
-    const steps = 64;
+    const steps = detail.segments;
     for (let step = 0; step <= steps; step += 1) {
       const progress = step / steps;
       const x = width * (.08 + progress * .84);
@@ -3026,7 +3181,9 @@ const drawLogoFilaments = (now, profile) => {
   }
 
   ctx.globalAlpha = 1;
-  logoFilamentSeeds.forEach((particle, index) => {
+  const filamentCount = Math.ceil(logoFilamentSeeds.length * detail.density);
+  for (let index = 0; index < filamentCount; index++) {
+    const particle = logoFilamentSeeds[Math.floor(index * logoFilamentSeeds.length / filamentCount)];
     const bandEnergy = particle.band === 0 ? profile.bass : particle.band === 1 ? profile.mid : profile.high;
     const orbit = t * (.18 + particle.band * .12) + particle.phase;
     let x = particle.x * width + Math.cos(orbit) * (4 + bandEnergy * 20);
@@ -3053,7 +3210,7 @@ const drawLogoFilaments = (now, profile) => {
       ctx.lineWidth = .45;
       ctx.stroke();
     }
-  });
+  }
   ctx.restore();
 };
 
@@ -3081,22 +3238,27 @@ const setLogoCssVariable = (name, value) => {
   }
 };
 
+// Preserve the response of the original fast 120 Hz presentation at every
+// refresh rate. The active clock excludes intentional heavy-effect freezes.
+const motionResponse = (factor, elapsed) => -Math.expm1(Math.log1p(-factor) * Math.max(0, Math.min(100, elapsed)) * .12);
 let roomMusicAccentAt = 0, roomMusicAccentUntil = 0;
 const renderReactiveLogo = (now) => {
   if (now - logoLastFrame < renderInterval()) return;
+  const elapsed = logoLastFrame ? now - logoLastFrame : 1000 / 120;
   logoLastFrame = now;
-  const profile = audioEnergy(now);
+  const profile = audioEnergy();
   renderLogoSymbolEcho(now, profile);
   const motionLimit = prefersReducedMotion ? .14 : 1;
   const pointerMix = logoReactiveState.proximity * .72;
   const targetX = (motionState.x * (1 - pointerMix) + logoReactiveState.hoverX * pointerMix) * motionLimit;
   const targetY = (motionState.y * (1 - pointerMix) + logoReactiveState.hoverY * pointerMix) * motionLimit;
-  logoReactiveState.x += (targetX - logoReactiveState.x) * .085;
-  logoReactiveState.y += (targetY - logoReactiveState.y) * .085;
-  logoReactiveState.bass += (profile.bass - logoReactiveState.bass) * .18;
-  logoReactiveState.mid += (profile.mid - logoReactiveState.mid) * .16;
-  logoReactiveState.high += (profile.high - logoReactiveState.high) * .14;
-  logoReactiveState.energy += (profile.avg - logoReactiveState.energy) * .16;
+  const pointerResponse = motionResponse(.085, elapsed);
+  logoReactiveState.x += (targetX - logoReactiveState.x) * pointerResponse;
+  logoReactiveState.y += (targetY - logoReactiveState.y) * pointerResponse;
+  logoReactiveState.bass += (profile.bass - logoReactiveState.bass) * motionResponse(.18, elapsed);
+  logoReactiveState.mid += (profile.mid - logoReactiveState.mid) * motionResponse(.16, elapsed);
+  logoReactiveState.high += (profile.high - logoReactiveState.high) * motionResponse(.14, elapsed);
+  logoReactiveState.energy += (profile.avg - logoReactiveState.energy) * motionResponse(.16, elapsed);
 
   const x = logoReactiveState.x;
   const y = logoReactiveState.y;
@@ -3127,7 +3289,7 @@ const renderReactiveLogo = (now) => {
   setLogoCssVariable("--logo-high", Math.min(1, high * live).toFixed(4));
   setLogoCssVariable("--logo-energy", Math.min(1, energy * live).toFixed(4));
 
-  if (logoGaze) {
+  if (logoGaze && sceneGraphicsLevel >= 4) {
     const size = 150 + bass * 72 + logoReactiveState.proximity * 26;
     writeLogoAttribute(logoGaze, "x", String(267 + x * 224 - size * .5));
     writeLogoAttribute(logoGaze, "y", String(53.5 + y * 58 - size * .5));
@@ -3135,20 +3297,25 @@ const renderReactiveLogo = (now) => {
     writeLogoAttribute(logoGaze, "height", String(size));
     writeLogoAttribute(logoGaze, "rx", String(size * .5));
   }
-  if (logoTurbulence) {
+  if (logoTurbulence && sceneGraphicsLevel >= 8) {
     writeLogoAttribute(logoTurbulence,
       "baseFrequency",
       `${(.0035 + high * .012).toFixed(4)} ${(.031 + mid * .075).toFixed(4)}`,
     );
   }
-  if (logoDisplacement) {
+  if (logoDisplacement && sceneGraphicsLevel >= 8) {
     const chaos = logoChaosActive ? 12 : 0;
     const liveWarp = immersiveState.active ? 8 : 0;
     writeLogoAttribute(logoDisplacement, "scale", String(1.4 + bass * 13 + high * 8 + profile.flux * 14 + chaos + liveWarp));
   }
 
   const sliceForce = high * 8 + profile.flux * 13 + musicAccent * 3 + (logoChaosActive ? 12 : 0) + (immersiveState.active ? 7 : 0);
+  const sliceCount = sceneGraphics().slices;
   logoSlices.forEach((slice, index) => {
+    if (!sliceCount || (index * sliceCount) % logoSlices.length >= sliceCount) {
+      if (slice.style.opacity !== "0") slice.style.opacity = "0";
+      return;
+    }
     const normalized = index / Math.max(1, logoSlices.length - 1) - .5;
     const phase = now * .0023 + index * 1.91;
     const dx = Math.sin(phase) * sliceForce * (.3 + Math.abs(normalized)) + x * normalized * 9;
@@ -3218,13 +3385,14 @@ const renderLogoMatrix = (readable = false) => {
   if (isMobileViewport) return;
   logoWrap?.classList.toggle("is-assembled", readable);
   logoWrap?.classList.toggle("is-charging", readable);
-  if (logoChargeTimeout) window.clearTimeout(logoChargeTimeout);
+  if (logoChargeTimeout) cancelLogoTimer(logoChargeTimeout);
   if (readable) {
     logoChargeTimeout = scheduleLogo(() => logoWrap?.classList.remove("is-charging"), 1350);
     restoreLogoTileOrder();
   } else {
     scatterLogoParticles();
   }
+  window.inteonHomeEffects?.setLogoScattered?.('particles', !readable);
 };
 
 const setAllTextReadable = (isReadable) => {
@@ -3249,6 +3417,7 @@ const setAllTextReadable = (isReadable) => {
 
 const runLongReadableMoment = () => {
   if (isMobileViewport) return;
+  if (window.inteonHomeEffects?.ambientPaused) { scheduleLogo(runLongReadableMoment, 0); return; }
   if (window.inteonLogoAcid?.active) return;
   if (logoChaosActive) return;
   logoLocked = true;
@@ -3271,7 +3440,7 @@ const resetLogoChaosCountdown = () => {
 let logoCycleVariant = 0;
 const runLogoCycle = () => {
   if (isMobileViewport) return;
-  if (window.inteonHomeEffects?.ambientBlocked) {
+  if (window.inteonHomeEffects?.ambientBlocked || window.inteonHomeEffects?.active) {
     logoCycleTimeout = scheduleLogo(runLogoCycle, 1000);
     return;
   }
@@ -3285,11 +3454,14 @@ const runLogoCycle = () => {
     return;
   }
   if (++logoCycleVariant % 3 === 0) {
+    // Re-arm after the foreground scene, unless a newer lifecycle took over.
+    const generation = logoCycleGeneration;
     const acid = window.inteonLogoAcid?.run();
     if (acid) {
       acid.then(() => {
-        renderLogoMatrix(true);
-        if (!window.inteonHomeEffects) logoCycleTimeout = scheduleLogo(runLogoCycle, randomRange(3000, 7000));
+        if (generation !== logoCycleGeneration || isMobileViewport || document.hidden || window.inteonHomeEffects?.suspended) return;
+        scheduleLogo(() => renderLogoMatrix(true), 0);
+        logoCycleTimeout = scheduleLogo(runLogoCycle, randomRange(3000, 7000));
       });
       return;
     }
@@ -3313,14 +3485,52 @@ matrixElements.forEach((element) => {
 });
 
 if (matrixElements.length && !prefersReducedMotion) window.setInterval(() => {
-  if (!document.hidden && !window.inteonHomeEffects?.ambientBlocked) matrixElements.forEach(renderMatrixNoise);
+  if (!document.hidden && !window.inteonHomeEffects?.ambientBlocked && !window.inteonHomeEffects?.ambientPaused) matrixElements.forEach(renderMatrixNoise);
 }, prefersReducedMotion ? 360 : animationQuality === "low" ? 180 : 95);
 window.setTimeout(runReadableWave, 1200);
 window.setInterval(runReadableWave, 6200);
 let logoReadableInterval = 0;
 const logoTimers = new Set();
+const deferredLogoTimers = new Map();
+const heldLogoTransitions = new Set();
+const syncLogoTransitions = () => {
+  if (typeof CSSTransition === 'undefined') return;
+  if (window.inteonHomeEffects?.ambientPaused) {
+    for (const animation of logoParticles?.getAnimations({subtree: true}) || []) {
+      if (animation instanceof CSSTransition && animation.playState === 'running') {
+        animation.pause(); heldLogoTransitions.add(animation);
+      }
+    }
+  } else {
+    for (const animation of heldLogoTransitions) {
+      if (animation.playState === 'paused') animation.play();
+    }
+    heldLogoTransitions.clear();
+  }
+};
+let logoCycleGeneration = 0;
+const cancelLogoTimer = id => {
+  window.clearTimeout(id);
+  logoTimers.delete(id);
+  deferredLogoTimers.delete(id);
+};
+const cancelLogoTimers = () => {
+  logoCycleGeneration += 1;
+  logoTimers.forEach(id => window.clearTimeout(id));
+  logoTimers.clear();
+  deferredLogoTimers.clear();
+};
+const resumeLogoTimers = () => {
+  if (isMobileViewport || document.hidden || window.inteonHomeEffects?.ambientPaused || window.inteonHomeEffects?.suspended) return;
+  for (const [id, callback] of [...deferredLogoTimers]) {
+    if (!deferredLogoTimers.has(id)) continue;
+    cancelLogoTimer(id);
+    callback();
+  }
+};
 const scheduleLogo = (callback, delay) => {
   const id = window.setTimeout(() => {
+    if (window.inteonHomeEffects?.ambientPaused) { deferredLogoTimers.set(id, callback); return; }
     logoTimers.delete(id);
     if (!isMobileViewport) callback();
   }, delay);
@@ -3329,8 +3539,8 @@ const scheduleLogo = (callback, delay) => {
 };
 // Text is intentionally live, but never driven by the decorative frame loop.
 if (!prefersReducedMotion) window.setInterval(() => {
-  if (!isMobileViewport || document.hidden || window.inteonHomeEffects?.ambientBlocked || (!inlineChat && !chatPanel?.hidden)) return;
-  const now = performance.now();
+  if (!isMobileViewport || document.hidden || window.inteonHomeEffects?.ambientBlocked || window.inteonHomeEffects?.ambientPaused || (!inlineChat && !chatPanel?.hidden)) return;
+  const now = window.inteonHomeEffects?.ambientNow?.() ?? performance.now();
   renderTitleMutation(now);
   renderPlayingLetters(now);
 }, 50);
@@ -3339,15 +3549,23 @@ let roomLastRaf = 0;
 const tickVisuals = (now) => {
   window.inteonHomeEffects?.beat('room');
   sceneRaf = 0;
-  if (isMobileViewport || document.hidden || window.inteonHomeEffects?.ambientBlocked) return;
+  if (isMobileViewport || document.hidden || window.inteonHomeEffects?.ambientBlocked || window.inteonHomeEffects?.ambientPaused) return;
   sceneRaf = requestAnimationFrame(tickVisuals);
+  if (sceneGraphicsDirty) {
+    sceneGraphicsDirty = false;
+    sizeCanvas(perceptionVisual);
+    if (immersiveState.active && !isListeningRoom) sizeCanvas(immersiveVisual);
+    resizeLogoCanvas();
+  }
+  now = window.inteonHomeEffects?.ambientNow?.(now) ?? now;
   // One sparse particle field; skip hidden ink/logo canvases and DOM-wide style writes.
   if (isListeningRoom) {
     if (roomLastRaf) recordFramePacing(now-roomLastRaf);
+    const response = motionResponse(.025, roomLastRaf ? now - roomLastRaf : 1000 / 120);
     roomLastRaf = now;
     lastVisualTick = now;
-    motionState.x += (motionTarget.x - motionState.x) * .025;
-    motionState.y += (motionTarget.y - motionState.y) * .025;
+    motionState.x += (motionTarget.x - motionState.x) * response;
+    motionState.y += (motionTarget.y - motionState.y) * response;
     renderPerceptionField(now);
     renderReactiveLogo(now);
     renderTitleMutation(now);
@@ -3370,18 +3588,19 @@ let backgroundInitialized = false;
 const syncBackgroundRenderer = () => {
   isMobileViewport = backgroundViewport.matches;
   document.documentElement.dataset.backgroundMode = isMobileViewport ? "static" : "live";
+  if (isMobileViewport) window.inteonHomeEffects?.setLogoScattered?.('particles', false);
   cancelAnimationFrame(sceneRaf);
   sceneRaf = 0;
   lastVisualTick = 0;
   roomLastRaf = 0;
-  logoTimers.forEach(clearTimeout);
-  logoTimers.clear();
+  cancelLogoTimers();
   clearInterval(logoReadableInterval);
   logoReadableInterval = 0;
   window.removeEventListener("pointermove", setPointerMotion);
   window.removeEventListener("devicemotion", handleDeviceMotion);
   window.removeEventListener("deviceorientation", handleDeviceOrientation);
   if (isMobileViewport || document.hidden || window.inteonHomeEffects?.ambientBlocked) return;
+  perceptionLastFrame = inkLastFrame = logoLastFrame = window.inteonHomeEffects?.ambientNow?.() ?? performance.now();
   if (isListeningRoom) {
     if (document.hidden || reducedMotionPreference.matches) return;
     perceptionContext ||= perceptionVisual?.getContext("2d");
@@ -3404,7 +3623,7 @@ const syncBackgroundRenderer = () => {
     logoReadableInterval = window.setInterval(runLongReadableMoment, 9500);
     logoCycleTimeout = scheduleLogo(runLogoCycle, randomRange(1000, 10000));
     window.addEventListener("pointermove", setPointerMotion, { passive: true });
-    sceneRaf = requestAnimationFrame(tickVisuals);
+    if (!sceneRaf && !window.inteonHomeEffects?.ambientPaused) sceneRaf = requestAnimationFrame(tickVisuals);
     return;
   }
   perceptionContext ||= perceptionVisual?.getContext("2d");
@@ -3432,9 +3651,19 @@ const syncBackgroundRenderer = () => {
   window.addEventListener("pointermove", setPointerMotion, { passive: true });
   window.addEventListener("devicemotion", handleDeviceMotion, { passive: true });
   window.addEventListener("deviceorientation", handleDeviceOrientation, { passive: true });
-  sceneRaf = requestAnimationFrame(tickVisuals);
+  if (!sceneRaf && !window.inteonHomeEffects?.ambientPaused) sceneRaf = requestAnimationFrame(tickVisuals);
 };
 backgroundViewport.addEventListener("change", syncBackgroundRenderer);
+// Duty-cycle wakeup keeps existing particles, pixels and glyphs in place.
+window.addEventListener('inteon-ambient-change', () => {
+  syncLogoTransitions();
+  cancelAnimationFrame(sceneRaf); sceneRaf = 0;
+  roomLastRaf = 0; lastVisualTick = 0;
+  if (window.inteonHomeEffects?.ambientPaused || isMobileViewport || document.hidden || reducedMotionPreference.matches || window.inteonHomeEffects?.ambientBlocked) return;
+  resumeLogoTimers();
+  // A resumed callback can assemble the logo and dispatch a nested phase change.
+  if (!sceneRaf && !window.inteonHomeEffects?.ambientPaused && !isMobileViewport && !document.hidden && !reducedMotionPreference.matches && !window.inteonHomeEffects?.ambientBlocked) sceneRaf = requestAnimationFrame(tickVisuals);
+});
 let ambientWasBlocked = Boolean(window.inteonHomeEffects?.ambientBlocked);
 window.addEventListener("inteon-effects-change", () => {
   const blocked = Boolean(window.inteonHomeEffects?.ambientBlocked);
@@ -3450,7 +3679,7 @@ document.addEventListener("visibilitychange", () => {
 });
 syncBackgroundRenderer();
 window.inteonHomeEffects?.watch('room', {
-  blocked: () => isMobileViewport || document.hidden || reducedMotionPreference.matches || window.inteonHomeEffects?.suspended,
+  blocked: () => isMobileViewport || document.hidden || reducedMotionPreference.matches || window.inteonHomeEffects?.suspended || window.inteonHomeEffects?.ambientPaused,
   restart: syncBackgroundRenderer,
 });
 window.addEventListener('pageshow', syncBackgroundRenderer);

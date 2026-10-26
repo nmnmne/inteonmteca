@@ -81,9 +81,15 @@ def _iter_audio(media_root: Path) -> Iterable[Path]:
     )
 
 
-def build_playlist(media_root: Path, assets_root: Path, public_root: Path) -> list[dict[str, str]]:
+def build_playlist(media_root: Path, assets_root: Path, public_root: Path) -> list[dict]:
     """Return deterministic metadata for every supported audio file."""
-    playlist: list[dict[str, str]] = []
+    playlist: list[dict] = []
+    catalog_path = assets_root / "track-covers" / "catalog.json"
+    collections = json.loads(catalog_path.read_text(encoding="utf-8"))["collections"] if catalog_path.exists() else []
+    cover_sets = {
+        collection["mediaDirectory"].casefold(): [image["url"] for image in collection["artwork"]]
+        for collection in collections if collection.get("mediaDirectory")
+    }
     for audio_path in _iter_audio(media_root):
         artist, title = _parse_filename(audio_path)
         cover_path = _choose_cover(audio_path, assets_root)
@@ -94,7 +100,11 @@ def build_playlist(media_root: Path, assets_root: Path, public_root: Path) -> li
             "title": title,
             "audio": audio_url,
         }
-        if cover_path is not None:
+        covers = cover_sets.get(audio_path.parent.name.casefold(), [])
+        if covers:
+            item["cover"] = covers[0]
+            item["covers"] = covers
+        elif cover_path is not None:
             item["cover"] = _relative_url(cover_path, public_root)
         playlist.append(item)
     return playlist

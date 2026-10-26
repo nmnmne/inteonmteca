@@ -40,6 +40,7 @@ test('logo canvas draws cached geometry and gradients, refreshes size, and skips
     logoFilamentSeeds: [{x: .5, y: .5, band: 1, phase: 0, size: 1}],
     profile: {bass: .3, mid: .2, high: .1, flux: .05},
   });
+  context.sceneGraphics = () => ({logoScale:.75, strands:context.animationQuality === 'low' ? 0 : 9, segments:64, density:1});
   vm.runInContext(['refreshLogoPointerBounds', 'resizeLogoCanvas', 'updateLogoPointer', 'drawLogoFilaments'].map(functionSource).join('\n'), context);
   vm.runInContext('resizeLogoCanvas(); drawLogoFilaments(1000, profile);', context);
   assert.equal(layoutReads, 2);

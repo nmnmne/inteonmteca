@@ -35,49 +35,93 @@ test("a guest loads shared chat and keeps polling while writing remains read-onl
   assert.equal(context.chatInput.placeholder, "войди, чтобы написать");
 });
 
-test("the mobile section slider opens chat and returns to tracks with keyboard or touch", () => {
-  const events = {}, attributes = {}, bodyProperties = {}, classes = new Set();
-  const chat = { hidden: false, inert: false }, playlist = { inert: false };
-  const tracks = { querySelector: selector => { assert.equal(selector, ".playlist-shell"); return playlist; } };
-  const slider = { value: "0", addEventListener: (name, fn) => { events[name] = fn; }, setAttribute: (name, value) => { attributes[name] = value; } };
-  let loads = 0, blurred = 0, viewportChange;
-  const mobile = { matches: true, addEventListener(name, fn) { assert.equal(name, "change"); viewportChange = fn; } };
-  const context = { matchMedia: () => mobile, openChat: () => { loads++; },
-    document: { getElementById: id => ({ "chat-panel": chat, "mobile-section-slider": slider, "chat-input": { blur() { blurred++; } } })[id],
-      querySelector: () => tracks, body: { dataset: {}, style: { setProperty: (name, value) => { bodyProperties[name] = value; } },
-        classList: { toggle: (name, active) => active ? classes.add(name) : classes.delete(name) } } },
-    window: { addEventListener() {} }, innerHeight: 844 };
-  vm.runInNewContext(fs.readFileSync(path.join(root, "mobile-sections.js"), "utf8"), context);
-  assert.equal(tracks.id, "mobile-track-section");
-  assert.equal(chat.hidden, true, "mobile starts with tracks");
-  assert.equal(chat.inert, true);
-  assert.equal(playlist.inert, false);
-  for (const [key, opened] of [["End", true], ["Home", false], ["ArrowRight", true], ["ArrowLeft", false]]) {
-    let prevented = false;
-    events.keydown({ key, preventDefault() { prevented = true; } });
-    assert.equal(prevented, true);
-    assert.equal(chat.hidden, !opened);
-    assert.equal(chat.inert, !opened);
-    assert.equal(playlist.inert, opened);
-    assert.equal(attributes["aria-valuetext"], opened ? "Чат" : "Треки");
-  }
-  assert.equal(loads, 2, "revealing chat requests fresh public messages");
-  slider.value = "750";
-  events.input();
-  assert.equal(blurred, 1);
-  assert.equal(chat.hidden, false);
-  assert.equal(chat.inert, true, "chat controls wait until the slide settles");
-  events.change();
-  assert.equal(slider.value, "1000");
-  assert.equal(chat.inert, false);
-  slider.value = "100";
-  events.input();
-  events.pointercancel();
-  assert.equal(slider.value, "0");
-  assert.equal(chat.hidden, true);
-  assert.equal(playlist.inert, false);
-  mobile.matches = false;
-  viewportChange();
-  assert.equal(chat.hidden, false, "desktop always reveals inline chat");
-  assert.equal(chat.inert, false);
+function mobileLayoutFixture(width = 390, height = 844) {
+  const properties = {}, frames = new Map(); let frameId = 0, opened = 0;
+  const node = () => {
+    const classes = new Set();
+    return {children: [], dataset: {}, hidden: false, inert: false, style: {setProperty(name, value) { properties[name] = value; }},
+      classList: {add(name) { classes.add(name); }, remove(...names) { names.forEach(name => classes.delete(name)); },
+        contains(name) { return classes.has(name); }, toggle(name, enabled) { enabled ? classes.add(name) : classes.delete(name); }},
+      setAttribute() {}, append(child) {
+        if (child.parentNode) child.parentNode.children.splice(child.parentNode.children.indexOf(child), 1);
+        this.children.push(child); child.parentNode = this;
+      },
+      insertBefore(child, before) {
+        if (child.parentNode) child.parentNode.children.splice(child.parentNode.children.indexOf(child), 1);
+        const index = before ? this.children.indexOf(before) : this.children.length;
+        this.children.splice(index, 0, child); child.parentNode = this;
+      },
+      get nextSibling() { return this.parentNode?.children[this.parentNode.children.indexOf(this) + 1] || null; },
+    };
+  };
+  const body = node(), rootElement = node(), intro = node(), logo = node(), playlist = node(), tracks = node(), chat = node(), composer = node(), dock = node(), oldSwitch = node();
+  intro.append(logo);
+  chat.hidden = true; chat.inert = playlist.inert = true;
+  const listeners = {}, viewportListeners = {}, mediaListeners = [];
+  const mobile = {matches: true, addEventListener(name, fn) { mediaListeners[0] = fn; }};
+  const landscape = {matches: false, addEventListener(name, fn) { mediaListeners[1] = fn; }};
+  const viewport = {height, offsetTop: 0, addEventListener(name, fn) { viewportListeners[name] = fn; }};
+  composer.getBoundingClientRect = () => ({height: 36});
+  dock.getBoundingClientRect = () => ({top: viewport.height - 84});
+  chat.querySelector = () => composer;
+  tracks.querySelector = () => playlist;
+  const context = {innerWidth: width, innerHeight: height, openChat() { opened++; },
+    matchMedia: query => query.startsWith('(pointer: coarse) and') ? landscape : mobile,
+    requestAnimationFrame(fn) { frames.set(++frameId, fn); return frameId; },
+    ResizeObserver: class { observe() {} },
+    document: {body, documentElement: rootElement, createElement: node, createComment: node,
+      querySelector: selector => selector === '.release-content' ? tracks : oldSwitch,
+      getElementById: id => ({'chat-panel': chat, 'logo-wrap': logo, 'active-player': dock})[id]},
+    window: {visualViewport: viewport, addEventListener(name, fn) { listeners[name] = fn; }, scrollTo() {}},
+  };
+  const flush = () => { const pending = [...frames.values()]; frames.clear(); pending.forEach(fn => fn()); };
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'mobile-sections.js'), 'utf8'), context);
+  flush();
+  return {properties, body, rootElement, intro, logo, playlist, tracks, chat, oldSwitch, mobile, landscape,
+    viewport, listeners, viewportListeners, mediaListeners, flush, opened: () => opened};
+}
+
+test('mobile keeps chat and five-track space simultaneously enabled, preserving the same logo across resize', () => {
+  const f = mobileLayoutFixture();
+  assert.equal(f.chat.hidden, false);
+  assert.equal(f.chat.inert, false);
+  assert.equal(f.playlist.inert, false);
+  assert.equal(f.tracks.inert, false);
+  assert.equal(f.oldSwitch.hidden, true);
+  assert.equal(f.oldSwitch.inert, true);
+  assert.equal(f.opened(), 1);
+  assert.equal(f.logo.parentNode.id, 'mobile-visual-stage');
+  assert.equal(f.properties['--mobile-list-height'], '236px');
+  assert.equal(f.properties['--mobile-list-top'], '518px');
+  assert.equal(f.properties['--mobile-chat-height'], '122px');
+  assert.equal(f.properties['--mobile-chat-top'], '390px');
+  assert.equal(f.body.dataset.mobileSection, undefined);
+  f.mobile.matches = false; f.mediaListeners[0](); f.flush();
+  assert.equal(f.logo.parentNode, f.intro, 'restore the original node, including its canvas state');
+  assert.equal(f.chat.hidden, false);
+  f.mobile.matches = true; f.mediaListeners[0](); f.flush();
+  assert.equal(f.logo.parentNode.id, 'mobile-visual-stage');
+  assert.equal(f.opened(), 1, 'resize does not reload an already visible chat');
+});
+
+test('short phones retain readable rows and keyboard layout makes a single scrollable page only when necessary', () => {
+  const f = mobileLayoutFixture(320, 568);
+  assert.equal(f.properties['--mobile-list-height'], '190px', 'five38px rows');
+  assert.equal(f.properties['--mobile-chat-row'], '14px');
+  assert.equal(f.properties['--mobile-list-top'], '288px');
+  assert.equal(f.properties['--mobile-chat-top'], '170px');
+  f.viewport.height = 400; f.viewportListeners.resize(); f.flush();
+  assert.equal(f.properties['--mobile-keyboard'], '168px');
+  assert.equal(f.properties['--mobile-list-height'], '190px');
+  assert.equal(f.rootElement.classList.contains('mobile-keyboard-scroll'), false);
+  assert.ok(Number.parseFloat(f.properties['--mobile-chat-top']) >= 0);
+  f.viewport.height = 300; f.viewportListeners.resize(); f.flush();
+  assert.equal(f.rootElement.classList.contains('mobile-keyboard-scroll'), true);
+  assert.equal(f.properties['--mobile-chat-top'], '10px');
+  assert.equal(f.properties['--mobile-list-height'], '190px');
+  assert.ok(Number.parseFloat(f.properties['--mobile-document-height']) > 568, 'content can scroll above the keyboard');
+  assert.equal(f.chat.hidden, false);
+  assert.equal(f.playlist.inert, false);
+  f.viewport.height = 568; f.viewportListeners.resize(); f.flush();
+  assert.equal(f.rootElement.classList.contains('mobile-keyboard-scroll'), false);
 });

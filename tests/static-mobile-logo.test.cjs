@@ -15,7 +15,7 @@ test('mobile uses an actual baked logo asset and no decorative scene loop',()=>{
  for (const [mobile, hidden, blocked] of [[true,false,false],[false,true,false],[false,false,true],[false,false,false]]) {
   let frames=0, renders=0;
   const context={isMobileViewport:mobile,document:{hidden},window:{inteonHomeEffects:{ambientBlocked:blocked,beat(){}}},
-   sceneRaf:123,isListeningRoom:false,lastVisualTick:0,immersiveState:{active:false},
+   sceneRaf:123,sceneGraphicsDirty:false,isListeningRoom:false,lastVisualTick:0,immersiveState:{active:false},
    requestAnimationFrame:()=>{frames+=1; return 42;}};
   for (const fn of ['recordFramePacing','renderWeightedMotion','renderPerceptionField','renderInkField',
    'renderTitleMutation','renderPlayingLetters','loopPlaylistMotion','renderReactiveLogo']) context[fn]=()=>{renders+=1;};
@@ -67,10 +67,11 @@ test('listening room exposes a complete transport',()=>{
  for (const id of ['previous-track','next-track','current-time','duration-time','track-volume']) assert.ok(html.includes(`id="${id}"`),id);
  assert.match(html,/class="listening-intro"/);
 });
-test('public inline chat has an accessible mobile section switch and no teaser',()=>{
+test('public inline chat shares the page with tracks and has no section switch or teaser',()=>{
  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
  assert.doesNotMatch(html,/class="chat-sign"/);
  assert.match(html,/<section[^>]*class="chat-panel chat-inline"[^>]*id="chat-panel"[^>]*role="region"[^>]*aria-label="Чат"/);
- assert.match(html,/id="mobile-section-slider"[^>]*aria-label="Треки или чат"[^>]*aria-valuetext="Треки"[^>]*aria-controls="mobile-track-section chat-panel"/);
+ assert.doesNotMatch(html,/id="mobile-section-slider"/);
+ assert.match(html,/id="chat-input"/);
  assert.doesNotMatch(html,/<section[^>]*id="chat-panel"[^>]*\shidden(?:\s|>)/,'desktop chat is visible before script initialization');
 });

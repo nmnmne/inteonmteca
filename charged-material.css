@@ -48,9 +48,9 @@ html.is-theme-shifting .spatial-room :is(.track-title, .now-playing-title, .list
 .spatial-room :is(.logo-particles, .logo-symbol-echo, .logo-reactive-canvas, .logo-ripples) { filter: brightness(var(--logo-brightness)); }
 .spatial-room .resident-mark { background: rgb(var(--interface-accent)); }
 .spatial-room .resident-face i { background: rgb(var(--interface-ink)); box-shadow: 0 0 6px rgba(var(--interface-ink), .4); }
-.material-field { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; opacity: var(--field-opacity); transition: opacity 3s; }
+.material-field { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; opacity: clamp(.48, calc(var(--field-opacity) * 2), .72); transition: opacity 3s; }
 body.is-interlude .material-field { opacity: 0; }
 body.is-interlude.scene-energy .material-field { opacity: 1; z-index: 30; }
 body.is-interlude.scene-energy.scene-energy-out .material-field { opacity: 0; }
-body.is-interlude.scene-dawn .material-field { opacity: var(--field-opacity); transition-duration: 12s; }
+body.is-interlude.scene-dawn .material-field { opacity: clamp(.48, calc(var(--field-opacity) * 2), .72); transition-duration: 12s; }
 @media (prefers-reduced-motion: reduce) { .material-field { display: none; } html[data-theme] .spatial-room .perception-visual { transition: none; } }

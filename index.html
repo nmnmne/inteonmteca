@@ -40,16 +40,20 @@
   <link rel="icon" href="assets/favicon.ico" sizes="any">
   <link rel="icon" href="assets/logo-inteonmteca.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=vr-room-20261004-3">
+  <link rel="stylesheet" href="styles.css?v=cosmic-room-20261026">
   <link rel="stylesheet" href="home-player.css?v=frosted-20261005-1">
-  <link rel="stylesheet" href="text-waves.css?v=continuous-motion-20261010">
-  <link rel="stylesheet" href="room-finish.css?v=static-seek-20261010">
+  <link rel="stylesheet" href="text-waves.css?v=fps-20261026">
+  <link rel="stylesheet" href="room-finish.css?v=cosmic-room-20261026">
   <link rel="stylesheet" href="atmosphere-events.css?v=shared-scene-design-20261010">
-  <link rel="stylesheet" href="room-composition.css?v=20261005-3">
-  <link rel="stylesheet" href="charged-material.css?v=20261005-1">
+  <link rel="stylesheet" href="room-composition.css?v=resident-dock-duty-20261026">
+  <link rel="stylesheet" href="charged-material.css?v=cosmic-room-20261026">
   <link rel="stylesheet" href="room-grid.css?v=20261005-2">
   <link rel="stylesheet" href="room-editor.css?v=20261005-1">
-  <link rel="stylesheet" href="room-recesses.css?v=continuous-motion-20261010">
+  <link rel="stylesheet" href="room-recesses.css?v=resident-dock-duty-20261026">
+  <link rel="stylesheet" href="track-covers.css?v=title-aligned-20261026">
+  <link rel="stylesheet" href="mobile-stage.css?v=compact-covers-20261026">
+  <link rel="stylesheet" href="desktop-edition.css?v=resident-dock-duty-20261026">
+  <link rel="stylesheet" href="graphics-quality.css?v=public-debug-20261026">
 </head>
 <body class="perception-interface listening-room spatial-room">
   <div class="perception-field" aria-hidden="true"></div>
@@ -232,11 +236,6 @@
     <button class="auth-close" id="auth-close" type="button">закрыть</button>
   </section>
 
-  <nav class="mobile-sections" aria-label="Разделы">
-    <span class="mobile-section-thumb" aria-hidden="true"></span>
-    <span aria-hidden="true">Треки</span><span aria-hidden="true">Чат</span>
-    <input id="mobile-section-slider" type="range" min="0" max="1000" value="0" step="1" aria-label="Треки или чат" aria-valuetext="Треки" aria-controls="mobile-track-section chat-panel">
-  </nav>
   <section class="chat-panel chat-inline" id="chat-panel" role="region" aria-label="Чат">
     <div class="chat-aura" aria-hidden="true"></div>
     <div class="chat-stream" id="chat-stream" aria-live="polite"></div>
@@ -267,8 +266,8 @@
       <option value="graphite">Матовый углерод</option>
     </select>
     <label class="theme-label" for="theme-duration">случайная смена через</label>
-    <input class="theme-duration" id="theme-duration" type="range" min="0" max="1000" value="58" step="1" data-min-seconds="4" data-max-seconds="604800">
-    <output class="theme-duration-output" id="theme-duration-output" for="theme-duration">8 секунд</output>
+    <input class="theme-duration" id="theme-duration" type="range" min="0" max="1000" value="227" step="1" data-min-seconds="4" data-max-seconds="604800">
+    <output class="theme-duration-output" id="theme-duration-output" for="theme-duration">1 минута</output>
     <div class="theme-actions">
       <button class="theme-action" id="theme-random" type="button">другая сейчас</button>
     </div>
@@ -279,21 +278,24 @@
   <script src="street-return.js?v=walk-minute-20261010"></script>
   <script src="playback-link.js?v=walk-minute-20261010"></script>
   <script src="media-session.js?v=media-controls-20261020"></script>
-  <script src="home-effects.js?v=continuous-motion-20261010"></script>
-  <script src="theme-morph.js?v=queued-palette-20261010"></script>
-  <script src="script.js?v=effects-flow-20261010"></script>
+  <script src="home-effects.js?v=resident-dock-duty-20261026"></script>
+  <script src="graphics-quality.js?v=ellipse-scene-20261026"></script>
+  <script src="theme-morph.js?v=fps-20261026"></script>
+  <script src="track-covers.js?v=20261026"></script>
+  <script src="script.js?v=fast-motion-title-aligned-20261026"></script>
   <script src="theme-picker.js?v=theme-names-20261010"></script>
-  <script src="logo-acid.js?v=mobile-clouds-20261010"></script>
-  <script src="logo-materials.js?v=seamless-logo-20261010"></script>
-  <script data-development-only src="development-debug.js?v=effects-flow-20261010"></script>
-  <script src="mobile-sections.js?v=20261006-3"></script>
-  <script src="room-resident.js?v=free-space-20261010"></script>
-  <script src="logo-storm.js?v=scene-carbon-20261010"></script>
-  <script src="text-waves.js?v=continuous-motion-20261010"></script>
-  <script src="room-finish.js?v=mobile-seven-flow-20261010"></script>
-  <script src="energy-field.js?v=continuous-motion-20261010"></script>
-  <script src="atmosphere-events.js?v=effects-flow-20261010"></script>
-  <script src="mobile-logo-effects.js?v=continuous-motion-20261010"></script>
-  <script src="logo-ripples.js?v=continuous-motion-20261010"></script>
+  <script src="logo-acid.js?v=state-duty-20261026"></script>
+  <script src="logo-materials.js?v=cosmic-room-20261026"></script>
+  <script src="development-debug.js?v=ellipse-scene-20261026"></script>
+  <script src="mobile-sections.js?v=single-page-20261026"></script>
+  <script src="room-resident.js?v=resident-dock-duty-20261026"></script>
+  <script src="logo-storm.js?v=state-duty-20261026"></script>
+  <script src="text-waves.js?v=fast-motion-20261026"></script>
+  <script src="room-finish.js?v=compact-window-20261026"></script>
+  <script src="playlist-curve.js?v=ellipse-scene-20261026"></script>
+  <script src="energy-field.js?v=cosmic-room-20261026"></script>
+  <script src="atmosphere-events.js?v=adaptive-20261026"></script>
+  <script src="mobile-logo-effects.js?v=state-duty-20261026"></script>
+  <script src="logo-ripples.js?v=adaptive-20261026"></script>
 </body>
 </html>

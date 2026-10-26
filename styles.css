@@ -517,17 +517,7 @@ body.is-immersive .vr-reticle { opacity: .5; }
   animation: logoFloat 12.5s ease-in-out infinite;
 }
 
-.logo-wrap.release-logo::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inset: -48% -8%;
-  border-radius: 48% 62% 54% 46%;
-  background: radial-gradient(ellipse 80% 70% at 50% 50%, rgba(0, 0, 0, .16), transparent 82%);
-  filter: blur(18px);
-  opacity: calc(.45 + var(--logo-energy) * .2);
-  animation: logoAtmosphere 8s ease-in-out infinite;
-}
+.logo-wrap.release-logo::before { content: none; display: none; }
 
 .logo-wrap.release-logo::after {
   content: "";
@@ -589,7 +579,7 @@ body.is-immersive .vr-reticle { opacity: .5; }
   filter:
     drop-shadow(0 0 calc(7px + var(--logo-energy) * 18px) rgba(224, 138, 84, calc(.2 + var(--logo-energy) * .34)))
     saturate(calc(.86 + var(--logo-high) * .8));
-  animation: logoVectorDissolve 10.5s ease-in-out infinite;
+  animation: none;
 }
 
 .logo-vector-core {
@@ -2086,13 +2076,7 @@ html.is-theme-shifting .theme-lights {
   53% { opacity: .36; }
   58% { opacity: .62; }
 }
-@keyframes logoVectorDissolve {
-  0%, 37%, 100% { opacity: .74; }
-  44% { opacity: .5; }
-  47% { opacity: .16; }
-  51% { opacity: .6; }
-  72% { opacity: .66; }
-}
+
 @keyframes textViscosity {
   0% {
     opacity: .34;

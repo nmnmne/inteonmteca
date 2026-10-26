@@ -141,11 +141,54 @@
     resident.style.setProperty("--look-x", `${(dx / length * 2.5).toFixed(1)}px`);
     resident.style.setProperty("--look-y", `${(dy / length * 1.8).toFixed(1)}px`);
   };
-  const pose = name => { resident.dataset.state = name; };
+  const pose = name => {
+    if (name !== 'angry' && performance.now() < reactionUntil) return;
+    resident.dataset.state = name;
+  };
   const schedule = (delay = random(6500, 17000)) => {
     clear(decision);
     if (!blocked && !reduced.matches) decision = later(think, delay);
   };
+  // Daily attitude is tiny persistent state, never a per-frame storage read.
+  const angerKey = 'inteonmteca-resident-anger';
+  const localDay = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; };
+  let angerDay = localDay(), angerCount = 0, angerTimer = 0, midnightTimer = 0, lastPoke = -Infinity;
+  const restoreAnger = () => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(angerKey));
+      if (saved?.day === angerDay && Number.isSafeInteger(saved.count) && saved.count > 0) angerCount = saved.count;
+    } catch {}
+  };
+  const showAttitude = () => {
+    const force = angerCount / (angerCount + 4);
+    resident.dataset.angerCount = String(angerCount);
+    resident.style.setProperty('--anger-eye-width', `${7 + force * 3}px`);
+    resident.style.setProperty('--anger-eye-height', `${2 - force * .9}px`);
+    resident.style.setProperty('--anger-angle', `${15 + force * 24}deg`);
+    resident.style.setProperty('--anger-tilt', `${-force * 8}deg`);
+    resident.style.setProperty('--anger-lift', `${-force * 2}px`);
+  };
+  const finishAnger = () => {
+    clear(angerTimer); reactionUntil = 0;
+    pose('watching'); resident.dataset.behavior = 'independent'; schedule(1200);
+  };
+  const resetAngerDay = () => {
+    const today = localDay();
+    if (today === angerDay) return;
+    angerDay = today; angerCount = 0; lastPoke = -Infinity; ignoreUntil = 0;
+    // Another tab may already have recorded today's first encounter.
+    restoreAnger();
+    if (!angerCount) { try { localStorage.removeItem(angerKey); } catch {} }
+    showAttitude(); finishAnger();
+  };
+  const armMidnight = () => {
+    clearTimeout(midnightTimer);
+    resetAngerDay();
+    if (document.hidden) return;
+    const now = new Date(), next = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1);
+    midnightTimer = setTimeout(armMidnight, Math.max(1, next.getTime() - now.getTime()));
+  };
+  restoreAnger(); showAttitude();
   const walk = (target, arrive, duration) => {
     const from = center();
     if (!clearPath(from, target)) return false;
@@ -173,10 +216,35 @@
     }
     return false;
   };
+  // Use the existing decisions and poses for a small, satisfied private thought.
+  // Two delayed glances replace a wandering decision; no animation loop is added.
+  const contemplate = () => {
+    if (compact.matches || innerHeight < 541 || blocked || reduced.matches || journey) return false;
+    const glance = selector => {
+      const target = document.querySelector(selector);
+      if (!target) return;
+      const rect = target.getBoundingClientRect();
+      look({x:rect.left + rect.width * .35, y:rect.top + rect.height * .5});
+    };
+    pose("watching");
+    glance(".playlist-shell");
+    later(() => {
+      if (blocked || journey || resident.dataset.state !== "watching" || performance.now() < reactionUntil) return;
+      glance("#active-player");
+      pose("listening");
+      later(() => {
+        if (blocked || journey || resident.dataset.state !== "listening" || performance.now() < reactionUntil) return;
+        pose("thinking");
+        schedule(random(11000, 22000));
+      }, 2800);
+    }, 1500);
+    return true;
+  };
   function think() {
     if (blocked || reduced.matches || journey || performance.now()<reactionUntil) return;
     refreshObstacles();
     const mood = Math.random();
+    if (mood < .7 && contemplate()) return;
     if (mood < .5 && explore()) return;
     if (mood < .85 && wander()) return;
     if (mood > .88 && safe(home()) && walk(home(), () => { pose(Math.random()<.5 ? "letter" : "cube"); schedule(random(15000,32000)); })) return;
@@ -203,6 +271,7 @@
   };
   const blink = () => {
     if (blocked || reduced.matches) return;
+    if (performance.now() < reactionUntil) { later(blink, 3000); return; }
     resident.classList.remove("is-blinking");
     void resident.offsetWidth;
     resident.classList.add("is-blinking");
@@ -213,6 +282,7 @@
     stopJourney(); resident.classList.remove("is-blinking");
   };
   const sync = () => {
+    armMidnight();
     if (cinematic) return;
     const hidden = document.hidden || !anchor.getBoundingClientRect().width
       || document.body.classList.contains('is-interlude');
@@ -222,6 +292,11 @@
     const startingPoint = nearestFree(home());
     if (startingPoint) resident.style.transform = position(startingPoint);
     resident.hidden = !startingPoint;
+    if (performance.now() < reactionUntil) {
+      resident.dataset.behavior = 'annoyed'; pose('angry');
+      angerTimer = later(finishAnger, reactionUntil - performance.now());
+      return;
+    }
     pose("cube");
     resident.style.setProperty("--look-x", "0px");
     resident.style.setProperty("--look-y", "0px");
@@ -229,7 +304,7 @@
       later(blink, random(4000,9000));
       if (startingPoint) {
         later(() => {
-          if (!journey) { pose("thinking"); schedule(random(4500,10000)); }
+          if (!journey && !contemplate()) { pose("thinking"); schedule(random(4500,10000)); }
         }, random(3000,6500));
       }
     }
@@ -319,14 +394,22 @@
   window.addEventListener('pointerdown', event => {
     if (blocked || resident.hidden || cinematic) return;
     const here=center(), now=performance.now();
-    if (Math.hypot(event.clientX-here.x,event.clientY-here.y)>34 || now<reactionUntil) return;
+    if (Math.hypot(event.clientX-here.x,event.clientY-here.y)>34) return;
+    resetAngerDay();
+    if (now-lastPoke<300) return;
+    lastPoke = now;
     pointer={x:event.clientX,y:event.clientY,at:now};
     stopJourney(); clear(decision); clear(stillness);
-    reactionUntil=now+2200; ignoreUntil=now+4000;
-    if (!reduced.matches && Math.random()<.55 && flee()) return;
+    clear(angerTimer); chaseUntil = 0;
+    restoreAnger(); angerCount = Math.min(Number.MAX_SAFE_INTEGER, angerCount + 1);
+    const duration = 2300 + 2200 * Math.log2(angerCount);
+    reactionUntil=now+duration; ignoreUntil=reactionUntil+1700;
+    resident.dataset.angerDuration = String(Math.round(duration));
+    showAttitude();
+    try { localStorage.setItem(angerKey, JSON.stringify({day:angerDay,count:angerCount})); } catch {}
     resident.classList.remove('is-blinking');
     resident.dataset.behavior='annoyed'; pose('angry'); look(pointer);
-    later(()=>{pose('watching');resident.dataset.behavior='independent';schedule(1200);},2300);
+    angerTimer = later(finishAnger, duration);
   }, {passive:true});
   // Menus, heading shifts and responsive layout can invalidate a route mid-walk.
   const guardSpace = () => {
@@ -356,7 +439,7 @@
   document.addEventListener("visibilitychange",sync);
   reduced.addEventListener("change",sync);
   compact.addEventListener("change",sync);
-  window.addEventListener("pagehide",suspend);
+  window.addEventListener("pagehide",()=>{suspend();clearTimeout(midnightTimer);});
   window.addEventListener('inteon-storm', event => {
     const {phase, x, y} = event.detail;
     if (phase === 'prepare') {

@@ -3,7 +3,7 @@
 .theme-hint :is(.text-wave-run, .text-wave-char) { color: inherit; }
 .theme-hint :is(.text-wave-run, .text-wave-char, .text-wave-mask) { filter: none; }
 .text-wave-char.is-wave-noisy { color: transparent !important; text-shadow: none !important; }
-.text-wave-mask { position: absolute; inset: 0; pointer-events: none; user-select: none; color: rgb(var(--theme-accent-rgb)); }
+.text-wave-mask { position: absolute; inset: 0; contain: layout style; pointer-events: none; user-select: none; color: rgb(var(--theme-accent-rgb)); }
 .text-wave-mask::before {
   content: attr(data-glyph); position: absolute; left: 50%; top: 0; transform: translateX(-50%);
   font-family: "Cascadia Code", Consolas, "Liberation Mono", ui-monospace, monospace;

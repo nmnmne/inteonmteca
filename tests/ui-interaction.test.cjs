@@ -86,10 +86,10 @@ test('panel triggers declare their controls before JavaScript loads', () => {
     assert.ok(tag.includes(`aria-controls="${name}-panel"`), name);
     assert.ok(tag.includes('aria-expanded="false"'), name);
   }
-  const slider = html.match(/<input[^>]+id="mobile-section-slider"[^>]*>/)?.[0] || '';
-  assert.ok(slider.includes('aria-controls="mobile-track-section chat-panel"'));
-  assert.ok(slider.includes('aria-label="Треки или чат"'));
-  assert.ok(slider.includes('aria-valuetext="Треки"'));
+  const chat = html.match(/<section[^>]+id="chat-panel"[^>]*>/)?.[0] || '';
+  assert.ok(chat.includes('role="region"'));
+  assert.ok(chat.includes('aria-label="Чат"'));
+  assert.doesNotMatch(html, /id="mobile-section-slider"/);
 });
 test('a late chat response cannot steal focus or restart polling after close', () => {
   const source = functionSource('openChat');

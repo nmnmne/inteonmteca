@@ -256,8 +256,7 @@ html[data-home-effects-suspended="true"] .room-resident:not(.is-detonating) * {
 .theme-options::-webkit-scrollbar-track { background:rgba(var(--theme-text-rgb),.06); border-radius:8px; }
 .theme-options::-webkit-scrollbar-thumb { background:rgba(var(--theme-accent-rgb),.65); border-radius:8px; border:1px solid rgb(var(--theme-panel-rgb)); }
 html[data-theme] .spatial-room .theme-panel { max-height:calc(100dvh - 100px); }
-body.spatial-room .logo-wrap.release-logo::before { inset:-85% -22%; background:radial-gradient(ellipse at 43% 49%, #02060888, #050a0a55 30%, #070c0c20 53%, transparent 72%); border-radius:50%; filter:none; }
-@keyframes logo-darkness { 0%,19%,68%,100% { opacity:0; transform:scale(.92) rotate(-3deg); } 34%,48% { opacity:.7; transform:scale(1.07) rotate(2deg); } }
+
 /* A theme update paints once; these two browser snapshots blend on the GPU. */
 html.is-theme-crossfading .spatial-room .perception-visual { transition: none !important; }
 html.is-theme-crossfading::view-transition { pointer-events: none; }
@@ -284,7 +283,6 @@ body.spatial-room .logo-vector { filter:none; }
 body.spatial-room .logo-grain { opacity:.15; }
 body.spatial-room .logo-wrap.is-ink-rebuilt .logo-vector-core { opacity:1; }
 @keyframes reactiveLogoBreath { 0%,100% {opacity:1;} 48% {opacity:.96;} 53% {opacity:.9;} 58% {opacity:1;} }
-@keyframes logoVectorDissolve { 0%,37%,100% {opacity:1;} 44% {opacity:.94;} 47% {opacity:.78;} 51%,72% {opacity:1;} }
 
 /* A short, quiet comic bubble above the resident. */
 .resident-speech { position: fixed; z-index: 39; pointer-events: none; padding: 9px 14px; border: 1px solid rgba(var(--theme-accent-rgb), .4); border-radius: 15px 15px 15px 5px; background: rgb(var(--theme-panel-rgb)); color: rgb(var(--theme-text-rgb)); font: 13px/1.4 Consolas, ui-monospace, monospace; box-shadow: 0 4px 16px #0003; }
@@ -564,9 +562,10 @@ html[data-theme] body.spatial-room .track-select:hover::before {
   background: rgb(var(--theme-accent-rgb));
 }
 .room-resident[data-state="angry"] .resident-body { transform: scale(1.1); }
-.room-resident[data-state="angry"] .resident-face i { width: 7px; height: 2px; border-radius: 0; }
-.room-resident[data-state="angry"] .resident-face i:first-child { transform: rotate(25deg); }
-.room-resident[data-state="angry"] .resident-face i:last-child { transform: rotate(-25deg); }
+.room-resident[data-state="angry"] .resident-face { transform: translate(var(--look-x), calc(var(--look-y) + var(--anger-lift, 0px))) rotate(var(--anger-tilt, 0deg)); }
+.room-resident[data-state="angry"] .resident-face i { width: var(--anger-eye-width, 7px); height: var(--anger-eye-height, 2px); border-radius: 1px 1px 0 0; transition: width .25s, height .25s, transform .25s; }
+.room-resident[data-state="angry"] .resident-face i:first-child { transform: rotate(var(--anger-angle, 25deg)); }
+.room-resident[data-state="angry"] .resident-face i:last-child { transform: rotate(calc(-1 * var(--anger-angle, 25deg))); }
 .room-resident[data-state="angry"] .resident-mark { opacity: 0; }
 html[data-theme] body.spatial-room .chat-inline .chat-compose {
   border-color: transparent; border-radius: 0; box-shadow: none;
@@ -590,23 +589,6 @@ html[data-theme] body.spatial-room .chat-inline .chat-compose:focus-within::afte
   background: rgb(var(--theme-accent-rgb));
 }
 
-/* Explicit, visible material motion; the same animations serve automatic and debug playback. */
-html[data-theme] body.spatial-room .logo-wrap.release-logo::before {
-  background: rgb(var(--theme-accent-rgb)); border-radius: 0;
-  mask: url('assets/logo-ink-blot.svg') center / 100% 100% no-repeat;
-  inset: -32% -8%; filter: none;
-}
-@keyframes logo-darkness {
-  0%,19%,68%,100% { opacity:0; transform:scale(.72) rotate(-5deg); }
-  23% { opacity:.18; transform:scale(.96) rotate(-1deg); }
-  34%,48% { opacity:.28; transform:scale(1.02) rotate(1deg); }
-}
-@keyframes logoVectorDissolve {
-  0%,37%,72%,100% { opacity:1; }
-  43% { opacity:.8; }
-  49%,53% { opacity:.6; }
-  63% { opacity:.9; }
-}
 @keyframes logoContrastBreath {
   0%,100% { transform:scale(1); opacity:1; }
   25% { transform:translateY(-1px) scale(1.012,1.018); opacity:1; }
@@ -615,7 +597,6 @@ html[data-theme] body.spatial-room .logo-wrap.release-logo::before {
 }
 html[data-theme] body.spatial-room .reactive-logo { animation-duration:6s; }
 html[data-theme] body.spatial-room .logo-veins { display:none; }
-html[data-theme] body.spatial-room .logo-wrap[data-material-preview="breath"] .logo-ripples { visibility:hidden; }
 html[data-theme] .sky-clouds {
   color: rgb(var(--theme-text-rgb)); mix-blend-mode:normal;
   mask-image:radial-gradient(ellipse at 45% 35%, #000 25%, transparent 75%);
@@ -638,36 +619,6 @@ html[data-theme] body.spatial-room .logo-wrap.release-logo:not(.is-assembled) .l
 html[data-theme] body.spatial-room .logo-wrap.release-logo:not(.is-assembled) .reactive-logo { opacity:.82; }
 html[data-theme] body.spatial-room .logo-ripples { opacity:1; z-index:4; filter:none; }
 
-/* Each material gets a clean stage; no common dotted contour or competing fragments. */
-html[data-theme] body.spatial-room .logo-wrap[data-material-preview] :is(.logo-ripples,.logo-reactive-canvas,.logo-symbol-echo,.logo-grain,.logo-vector-slices,.logo-vector-outline,.logo-vector-ghost,.logo-particles) { visibility:hidden; }
-html[data-theme] body.spatial-room .logo-wrap[data-material-preview]::before { visibility:hidden; }
-html[data-theme] body.spatial-room .logo-wrap[data-material-preview="dissolve"] .reactive-logo { visibility:hidden; }
-.logo-material-preview { position:absolute;left:-8%;top:-30%;width:116%;height:160%;z-index:4;pointer-events:none; }
-html[data-theme] body.spatial-room .logo-wrap[data-material-preview="ink"] .logo-material-preview { z-index:0; }
-
-/* Ink restored from HEAD; only the mask override is cleared. */
-html[data-theme] body.spatial-room .logo-wrap.release-logo::before {
-  inset:-85% -22%; background:radial-gradient(ellipse at 43% 49%, #02060888, #050a0a55 30%, #070c0c20 53%, transparent 72%);
-  border-radius:50%; filter:none; mask:none;
-}
-@keyframes logo-darkness {
-  0%,19%,68%,100% { opacity:0; transform:scale(.92) rotate(-3deg); }
-  34%,48% { opacity:.7; transform:scale(1.07) rotate(2deg); }
-}
-html[data-theme] body.spatial-room .logo-wrap[data-material-preview="ink"]::before { visibility:visible; }
-html[data-theme] body.spatial-room .logo-wrap[data-material-preview="breath"] .reactive-logo { visibility:hidden; }
-.logo-material-preview { left:-20%;top:-100%;width:140%;height:300%; }
-
-html[data-theme] body.spatial-room .logo-wrap:is([data-material-preview="breath"],[data-material-preview="dissolve"]) .logo-ink-base { visibility:hidden; }
-
-/* Restore the blurred ink texture from before the hard-edge experiment. */
-html[data-theme] body.spatial-room .logo-wrap.release-logo::before {
-  inset:-85% -22%;border-radius:0;background:rgb(var(--theme-accent-rgb));
-  mask:url('assets/logo-ink-blot.svg') center / 100% 100% no-repeat;filter:none;
-}
-.logo-material-preview { left:-16.854%;top:-65.421%;width:133.708%;height:230.841%;overflow:visible; }
-html[data-theme] body.spatial-room .logo-wrap:is([data-material-preview="breath"],[data-material-preview="dissolve"]) .reactive-logo { opacity:0 !important; }
-
 /* Clouds are a separate background layer, including during scene transitions. */
 body.is-interlude .sky-clouds { visibility:visible; }
 @media (max-width:800px), (pointer:coarse) {
@@ -675,9 +626,8 @@ body.is-interlude .sky-clouds { visibility:visible; }
   html[data-theme] body.spatial-room .track-select:hover::before { background:rgba(var(--theme-text-rgb),.24); }
   html[data-theme] body.spatial-room .track-item.is-playing .track-select::before { background:rgba(var(--theme-accent-rgb),.44); }
   html[data-theme] body.spatial-room .track-select { background:rgba(var(--theme-panel-rgb),.12); box-shadow:none; }
-  html[data-theme] body.spatial-room .logo-wrap.release-logo::before { display:none; }
   html[data-theme] body.spatial-room .reactive-logo { animation: reactiveLogoBreath 11s ease-in-out infinite; }
-  html[data-theme] body.spatial-room .logo-vector { animation: logoVectorDissolve 10.5s ease-in-out infinite; }
+  html[data-theme] body.spatial-room .logo-vector { animation: none; }
   html[data-theme] body.spatial-room .logo-grain rect { animation:none; }
   html[data-theme] body.spatial-room :is(.logo-ripples,.logo-symbol-echo,.logo-vector-slices) { display:none; }
   .mobile-logo-shards { position:absolute;inset:0;z-index:5;pointer-events:none; }
@@ -690,37 +640,14 @@ body.is-interlude .sky-clouds { visibility:visible; }
   html[data-theme] #mobile-section-slider { top:-7px;height:40px; }
 }
 
-/* Ink darkens the scene instead of adding light. */
-html[data-theme] body.spatial-room .logo-wrap.release-logo::before {
-  background:#090d12;mix-blend-mode:multiply;
-}
 body.spatial-room.is-interlude.scene-peek .track-list .track-item.scene-peek-track {
   transition:opacity .65s ease var(--return-delay,0ms) !important;
 }
 
 .breath-screen {position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:40;}
 
-/* Dark ink on light surfaces, brighter translucent pigment on dark surfaces. */
-html[data-theme] body.spatial-room .logo-wrap.release-logo::before {
-  background:rgba(var(--theme-text-rgb),.9);mix-blend-mode:normal;
-}
-html[data-theme="cobalt-tile"] body.spatial-room .logo-wrap.release-logo::before { background:#142344;mix-blend-mode:multiply; }
-
 .storm-inversion-shards {position:fixed;inset:0;z-index:41;pointer-events:none;overflow:hidden;mix-blend-mode:difference;}
 .storm-inversion-shards .logo-storm-piece {opacity:1;}
-html[data-theme] body.spatial-room .logo-wrap.release-logo::before {
-  background:rgb(var(--theme-accent-rgb));filter:brightness(1.35);mix-blend-mode:screen;
-}
-html[data-theme="cobalt-tile"] body.spatial-room .logo-wrap.release-logo::before {background:#142344;filter:none;mix-blend-mode:multiply;}
-
-/* Ink is black in every palette, with no lightening blend or brightness filter. */
-html[data-theme] body.spatial-room .logo-wrap.release-logo::before {background:#000;filter:none;mix-blend-mode:multiply;}
-html[data-logo-snapshot]::view-transition-old(root) {
-  mask:url('assets/logo-wordmark.svg') var(--logo-snapshot-x) var(--logo-snapshot-y) / var(--logo-snapshot-w) var(--logo-snapshot-h) no-repeat;
-  animation:logo-background-dissolve 3.2s ease-in-out both;
-}
-html[data-logo-snapshot]::view-transition-new(root) {animation:none;}
-@keyframes logo-background-dissolve {0%,99%{opacity:1;filter:url(#snapshot-ink-erosion);}100%{opacity:0;filter:url(#snapshot-ink-erosion);}}
 
 /* Compact mobile composition: header, exactly seven rows, then the player. */
 @media (max-width:800px) and (min-height:501px), (max-width:500px) {
@@ -764,12 +691,6 @@ html[data-logo-snapshot]::view-transition-new(root) {animation:none;}
   html[data-theme] body.spatial-room .catalog-heading .ours { display:block;white-space:nowrap;word-break:normal;overflow-wrap:normal; }
 }
 
-/* Effect geometry shares the live logo surface, including its inset and perspective. */
-html[data-theme] body.spatial-room .logo-wrap:is([data-material-preview="breath"],[data-material-preview="dissolve"]) .reactive-logo { visibility:visible;opacity:var(--material-surface-opacity,1) !important; }
-html[data-theme] body.spatial-room .logo-wrap[data-material-preview="breath"] .logo-ink-base { visibility:visible; }
-html[data-theme] body.spatial-room .logo-wrap[data-material-preview="dissolve"] .logo-vector { opacity:var(--material-return,0) !important; }
-html[data-theme] body.spatial-room .logo-wrap[data-material-preview="dissolve"] .logo-ink-base { visibility:visible; }
-html[data-theme] body.spatial-room .reactive-logo > .logo-material-preview { inset:0;width:100%;height:100%;overflow:visible; }
 /* Mobile composition follows the compact reference from left to right. */
 @media (max-width:800px) and (min-height:501px), (max-width:500px) {
   html[data-theme] body.spatial-room { --room-top:clamp(132px,calc(26dvh - 8px),182px); }
@@ -790,3 +711,7 @@ html[data-theme] body.spatial-room .reactive-logo > .logo-material-preview { ins
   html[data-theme] body.spatial-room .track-title { font-size:11px;line-height:1.1;-webkit-line-clamp:1; }
   html[data-theme] body.spatial-room .track-artist { font-size:10px;line-height:1.1; }
 }
+
+/* Recursion shares the intact live logo surface and leaves its core visible. */
+html[data-theme] body.spatial-room .logo-wrap[data-material-preview="recursion"] :is(.logo-ripples,.logo-reactive-canvas,.logo-symbol-echo,.logo-grain,.logo-vector-slices,.logo-vector-outline,.logo-vector-ghost,.logo-particles) { visibility:hidden; }
+html[data-theme] body.spatial-room .reactive-logo > .logo-material-preview { position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:4;pointer-events:none; }

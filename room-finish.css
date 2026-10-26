@@ -27,8 +27,8 @@ body.spatial-room {
 .spatial-room .theme-hint > span[aria-hidden] { color: #c4d891; filter: none; }
 .spatial-room .chat-hint::before { background: #cba48e; box-shadow: 0 0 8px #cba48e33; }
 
-/* Matte, warm sprayed pigment. Keep the original breath, dissolution and fragments. */
-body.spatial-room .logo-vector { mix-blend-mode: normal; animation: logoVectorDissolve 10.5s ease-in-out infinite; filter: drop-shadow(0 3px 3px #0006); }
+/* Matte pigment retains core motion and fragments without the removed ink veil. */
+body.spatial-room .logo-vector { mix-blend-mode: normal; animation: none; filter: drop-shadow(0 3px 3px #0006); }
 .spatial-room .reactive-logo { animation: reactiveLogoBreath 11s ease-in-out infinite; }
 .spatial-room .logo-ink-base { opacity: 1; }
 .spatial-room .logo-vector-core { opacity: 1; }
@@ -38,11 +38,10 @@ body.spatial-room .logo-vector { mix-blend-mode: normal; animation: logoVectorDi
 @keyframes pigment-drift { to { transform: translate(2px, -1px) scale(1.01); } }
 .spatial-room .logo-veins { opacity: .48; }
 .spatial-room .logo-reactive-canvas { mask-image: radial-gradient(ellipse at center, #000 30%, transparent 70%); -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 70%); }
-body.spatial-room .logo-wrap.release-logo::before { inset: -175% -42% -190% -38%; border-radius: 0; background: url('assets/logo-ink-blot.svg') center / 100% 100% no-repeat; filter: none; transform: rotate(-4deg); opacity: 0; animation: logo-darkness 71s ease-in-out infinite; }
 .logo-acid { position: fixed; z-index: 30; pointer-events: none; }
 body.spatial-room .logo-wrap.is-acid .reactive-logo { animation: none; opacity: var(--acid-return, 0) !important; }
 body.spatial-room .logo-wrap.is-acid .logo-particles { visibility: hidden; }
-@keyframes logo-darkness { 0%, 19%, 68%, 100% { opacity: 0; transform: rotate(-6deg) scale(.85); } 34%, 48% { opacity: .9; transform: rotate(-2deg) scale(1.08); } }
+
 .spatial-room .logo-wrap.is-ink-rebuilt .logo-vector-core { opacity: .07; }
 .spatial-room .logo-wrap.is-ink-rebuilt .logo-vector-outline { opacity: .18; }
 .spatial-room .logo-wrap.is-ink-rebuilt .logo-grain { opacity: .2; }
