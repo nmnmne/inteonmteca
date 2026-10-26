@@ -1,0 +1,139 @@
+/* Final, bounded cascade for account, theme and public-debug controls.
+   Load after the room layout styles so breakpoint ownership is unambiguous. */
+
+html body .development-debug-toggle {
+  min-height: 28px;
+}
+
+html body .development-quality-slider {
+  min-height: 28px;
+}
+
+body:is(.is-theme-menu-open, .is-auth-menu-open) > .development-debug-master {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 800px), (pointer: coarse) {
+  html[data-theme] body.spatial-room .room-toolbar {
+    box-sizing: border-box;
+    min-height: 52px;
+    height: 52px;
+    padding-inline: max(10px, env(safe-area-inset-left, 0px));
+    gap: 4px;
+  }
+
+  html[data-theme] body.spatial-room .room-toolbar :is(#auth-hint, #theme-hint),
+  html[data-theme] body.spatial-room #street-link {
+    box-sizing: border-box;
+    min-width: 44px;
+    min-height: 44px;
+    height: 44px;
+    padding-inline: 8px;
+    touch-action: manipulation;
+  }
+
+  html[data-theme] body.spatial-room .room-toolbar .street-return {
+    margin-top: 0;
+  }
+
+  html[data-theme] body.spatial-room :is(#auth-panel, #theme-panel) {
+    box-sizing: border-box;
+    left: max(10px, env(safe-area-inset-left, 0px));
+    right: auto;
+    top: 60px;
+    bottom: auto;
+    width: min(360px, calc(100vw - 20px));
+    max-width: calc(100vw - 20px);
+    max-height: calc(100dvh - 70px - env(safe-area-inset-bottom, 0px));
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    z-index: 70 !important;
+  }
+
+  html[data-theme] body.spatial-room #theme-panel :is(.theme-picker-toggle, .theme-random, .theme-close),
+  html[data-theme] body.spatial-room #auth-panel :is(.auth-input, .auth-submit, .auth-close, .auth-logout) {
+    box-sizing: border-box;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  html[data-theme] body.spatial-room #theme-panel :is(.theme-picker, .theme-picker-toggle),
+  html[data-theme] body.spatial-room #auth-panel :is(.auth-form, .auth-input, .auth-submit) {
+    width: 100%;
+    min-width: 0;
+  }
+
+  html[data-theme] body.spatial-room #theme-options {
+    box-sizing: border-box;
+    max-height: min(264px, 38dvh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  html[data-theme] body.spatial-room #theme-options button {
+    min-height: 44px;
+    padding-block: 10px;
+    touch-action: manipulation;
+  }
+
+  html body .development-debug-master,
+  html body .development-debug-toggle[data-debug-element] {
+    box-sizing: border-box;
+    min-height: 44px;
+    padding: 9px 10px;
+    touch-action: manipulation;
+  }
+
+  html body .development-animation-menu,
+  html body .development-quality {
+    max-height: calc(100dvh - var(--debug-panel-top, 162px) - 10px - env(safe-area-inset-bottom, 0px));
+    overscroll-behavior: contain;
+  }
+
+  html body .development-animation-menu button,
+  html body .development-quality-details summary,
+  html body .development-quality-details button {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  html body .development-quality-slider {
+    height: 44px;
+  }
+}
+
+/* Width-only desktop rules and coarse mobile-stage rules both match here.
+   The coarse stage owns the toolbar and panels in this band. */
+@media (pointer: coarse) and (min-width: 501px) and (max-height: 500px) {
+  html[data-theme] body.spatial-room .room-toolbar {
+    position: fixed;
+    inset: 0 0 auto 0;
+    width: 100%;
+    min-height: 60px;
+    height: 60px;
+    justify-content: flex-start;
+    padding-inline: max(10px, env(safe-area-inset-left, 0px));
+  }
+
+  html[data-theme] body.spatial-room .room-toolbar :is(#auth-hint, #theme-hint) {
+    position: relative;
+    inset: auto;
+    width: auto;
+    min-width: 64px;
+    flex: 0 0 auto;
+  }
+
+  html[data-theme] body.spatial-room .room-toolbar .street-return {
+    margin: 0 0 0 auto;
+  }
+
+  html[data-theme] body.spatial-room :is(#auth-panel, #theme-panel) {
+    top: 68px;
+    width: min(360px, calc(100vw - 20px));
+    max-height: calc(100dvh - 78px - env(safe-area-inset-bottom, 0px));
+  }
+}

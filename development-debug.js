@@ -98,7 +98,13 @@ window.inteonDebugReady = (async () => {
     // Creating diagnostic contexts must not skew the next quality decision.
     window.inteonGraphicsQuality?.recalibrate?.('gpu-probe');
   });
+  let qualityDirty = true;
   const syncQuality = () => {
+    if (!enabled || (compact.matches && !drawerOpen)) {
+      qualityDirty = true;
+      return;
+    }
+    qualityDirty = false;
     const controller = window.inteonGraphicsQuality;
     const level = controller?.level ?? 5;
     const manual = controller?.mode === 'manual';
@@ -130,16 +136,59 @@ window.inteonDebugReady = (async () => {
     if (compact.matches) { button.setAttribute('aria-expanded', 'false'); button.textContent = 'debug'; }
     showEffects(false);
   };
-  window.addEventListener('inteon-close-popups', () => { showEffects(false); if (compact.matches) closeDrawer(); });
-  effectsButton.addEventListener('click', () => showEffects(menu.hidden));
+  const popupOwner = event => event?.detail?.owner || event?.inteonPopupOwner || '';
+  const publishPopup = (type, owner) => {
+    const event = new Event(type);
+    event.inteonPopupOwner = owner;
+    window.dispatchEvent(event);
+  };
+  const requestPopupSpace = owner => {
+    publishPopup('inteon-close-popups', owner);
+    publishPopup('inteon-popup-open', owner);
+  };
+  const dismissDebug = () => {
+    enabled = false;
+    closeDrawer();
+    sync();
+  };
+  window.addEventListener('inteon-close-popups', event => {
+    if (popupOwner(event) === 'debug') return;
+    dismissDebug();
+  });
+  window.addEventListener('inteon-popup-open', event => {
+    if (popupOwner(event) !== 'debug') dismissDebug();
+  });
+  effectsButton.addEventListener('click', () => {
+    const opening = menu.hidden;
+    if (opening) requestPopupSpace('debug');
+    showEffects(opening);
+  });
   document.addEventListener('pointerdown', event => {
     if (!menu.contains(event.target) && !effectsButton.contains(event.target)) showEffects(false);
     if (compact.matches && drawerOpen && !button.contains(event.target) && !menu.contains(event.target) && !effectsButton.contains(event.target) && !quality.contains(event.target)) closeDrawer();
   });
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
-    if (!menu.hidden || (compact.matches && drawerOpen)) { closeDrawer(); button.focus(); }
+    if (!menu.hidden) {
+      event.preventDefault?.();
+      showEffects(false);
+      effectsButton.focus();
+      return;
+    }
+    if (compact.matches && drawerOpen) {
+      event.preventDefault?.();
+      closeDrawer();
+      sync();
+      button.focus();
+    }
   });
+  if (window.MutationObserver) {
+    const panels = [...document.querySelectorAll('#auth-panel, #theme-panel')];
+    const panelObserver = new window.MutationObserver(() => {
+      if (panels.some(panel => !panel.hidden)) dismissDebug();
+    });
+    panels.forEach(panel => panelObserver.observe(panel, {attributes: true, attributeFilter: ['hidden']}));
+  }
   if (copy) document.body.append(effectsButton, menu, quality);
   let materialReset = 0;
   const materialAnimations = () => (document.querySelector('#logo-wrap')?.getAnimations({subtree:true}) || [])
@@ -166,14 +215,19 @@ window.inteonDebugReady = (async () => {
     }, 12000);
   };
   const entries = [
-    ['Распад на кусочки', () => { renderLogoMatrix(false); logoParticles?.getAnimations({subtree:true}).forEach(a => { if (a instanceof CSSTransition) a.currentTime = 700; }); scheduleLogo(() => renderLogoMatrix(true), 4500); logoCycleTimeout = scheduleLogo(runLogoCycle, 9000); }],
-    ['Растворение', () => { window.inteonLogoAcid?.run({preview:true})?.then(() => { if (compact.matches) { window.inteonMobileLogo?.run(); return; } renderLogoMatrix(true); logoCycleTimeout = scheduleLogo(runLogoCycle, 5000); }); }],
+    ['Распад на кусочки', () => {
+      if (compact.matches) { window.inteonMobileLogo?.run('scatter'); return; }
+      renderLogoMatrix(false); logoParticles?.getAnimations({subtree:true}).forEach(a => { if (a instanceof CSSTransition) a.currentTime = 700; }); scheduleLogo(() => renderLogoMatrix(true), 4500); logoCycleTimeout = scheduleLogo(runLogoCycle, 9000);
+    }],
+    ['Растворение', () => { if (compact.matches) { window.inteonMobileLogo?.run('dissolve'); return; } window.inteonLogoAcid?.run({preview:true})?.then(() => { renderLogoMatrix(true); logoCycleTimeout = scheduleLogo(runLogoCycle, 5000); }); }],
     ['Разлёт и гроза', () => window.inteonLogoStorm?.replay()],
     ['Смена сцен', () => window.inteonAtmosphere?.replayScene({preview:true})],
     ['Облака', () => { window.inteonAtmosphere?.replayCloud({preview:true}); }],
-    ['Рекурсия', () => { window.inteonLogoMaterials?.run('recursion'); }],
+    ['Рекурсия', () => { if (compact.matches) window.inteonMobileLogo?.run('recursion'); else window.inteonLogoMaterials?.run('recursion'); }],
   ];
-  const desktopOnly = new Set(['Распад на кусочки', 'Разлёт и гроза', 'Смена сцен', 'Рекурсия']);
+  // Scatter, dissolve and recursion have compact implementations. Only the
+  // full storm and scene choreography still require the wide composition.
+  const desktopOnly = new Set(['Разлёт и гроза', 'Смена сцен']);
   const effectEntries = [];
   entries.forEach(([label, play]) => {
     const entry = document.createElement('button'); entry.type = 'button'; entry.textContent = label;
@@ -186,19 +240,31 @@ window.inteonDebugReady = (async () => {
   });
   const place = () => {
     if (compact.matches) {
-      button.style.left = '10px'; button.style.top = '62px';
-      effectsButton.style.left = '10px'; effectsButton.style.top = '104px';
-      quality.style.left = '10px'; quality.style.top = '150px';
-      menu.style.left = '10px'; menu.style.top = '150px';
+      const toolbarBottom = document.querySelector('.room-toolbar')?.getBoundingClientRect().bottom;
+      const masterTop = Math.max(10, Math.round((Number.isFinite(toolbarBottom) ? toolbarBottom : 52) + 10));
+      const effectsTop = masterTop + 50;
+      const panelTop = effectsTop + 50;
+      button.style.left = '10px'; button.style.top = `${masterTop}px`;
+      effectsButton.style.left = '10px'; effectsButton.style.top = `${effectsTop}px`;
+      quality.style.left = '10px'; quality.style.top = `${panelTop}px`;
+      menu.style.left = '10px'; menu.style.top = `${panelTop}px`;
+      document.documentElement.style.setProperty('--debug-panel-top', `${panelTop}px`);
       return;
     }
     if (!copy) return;
     const rect = copy.getBoundingClientRect();
-    button.style.left = `${rect.right + 14}px`;
-    button.style.top = `${rect.top - 3}px`;
-    effectsButton.style.left = `${rect.right + 14}px`; effectsButton.style.top = `${rect.top + 25}px`;
-    quality.style.left = `${rect.right + 14}px`; quality.style.top = `${rect.top + 53}px`;
-    menu.style.left = `${rect.right + 14}px`; menu.style.top = `${rect.top + 53}px`;
+    const controlLeft = rect.right + 14;
+    const masterTop = rect.top - 3;
+    button.style.left = `${controlLeft}px`;
+    button.style.top = `${masterTop}px`;
+    const masterHeight = button.getBoundingClientRect().height;
+    const effectsTop = masterTop + Math.max(28, Number.isFinite(masterHeight) ? masterHeight : 0) + 6;
+    effectsButton.style.left = `${controlLeft}px`;
+    effectsButton.style.top = `${effectsTop}px`;
+    const effectsHeight = effectsButton.getBoundingClientRect().height;
+    const panelTop = effectsTop + Math.max(28, Number.isFinite(effectsHeight) ? effectsHeight : 0) + 6;
+    quality.style.left = `${controlLeft}px`; quality.style.top = `${panelTop}px`;
+    menu.style.left = `${controlLeft}px`; menu.style.top = `${panelTop}px`;
   };
   place();
   window.addEventListener('resize', place, {passive: true});
@@ -219,12 +285,15 @@ window.inteonDebugReady = (async () => {
     }
     syncEffectAvailability();
     if (!enabled) showEffects(false);
+    if (qualityDirty || enabled) syncQuality();
     window.dispatchEvent(new Event('inteon-debug-change'));
   };
   button.addEventListener('pointerdown', event => event.stopPropagation());
   button.addEventListener('click', () => {
-    if (compact.matches) { drawerOpen = !drawerOpen; enabled = true; if (!drawerOpen) showEffects(false); }
-    else enabled = !enabled;
+    const opening = compact.matches ? !drawerOpen : !enabled;
+    if (opening) requestPopupSpace('debug');
+    if (compact.matches) { drawerOpen = opening; enabled = true; if (!drawerOpen) showEffects(false); }
+    else enabled = opening;
     sync();
   });
   compact.addEventListener('change', () => {closeDrawer(); place(); sync();});

@@ -93,8 +93,9 @@ test('panel triggers declare their controls before JavaScript loads', () => {
 });
 test('a late chat response cannot steal focus or restart polling after close', () => {
   const source = functionSource('openChat');
-  assert.ok(source.indexOf('if (focus)') < source.indexOf('await loadChat()'));
-  assert.ok(/await loadChat\(\);\s*if \(chatPanel\?\.hidden\) return;/.test(source));
+  assert.ok(source.indexOf('if (focus)') < source.indexOf('syncChatPolling()'));
+  assert.doesNotMatch(source, /await/, 'no asynchronous continuation can restore a closed chat timer');
+  assert.match(functionSource('loadChat'), /!chatWorkVisible\(\)/, 'late response checks current visibility');
 });
 function functionSource(name) {
   const start = script.indexOf(`const ${name} =`);

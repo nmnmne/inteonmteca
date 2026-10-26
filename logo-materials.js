@@ -3,13 +3,18 @@
   const wrap = document.querySelector('#logo-wrap');
   if (!wrap) return;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  let layer = null, frame = 0, started = 0, echoes = [];
-  const motionNow = now => window.inteonHomeEffects?.ambientNow(now) ?? now;
-  const blocked = () => !layer || document.hidden || Boolean(window.inteonHomeEffects?.ambientBlocked || window.inteonHomeEffects?.ambientPaused);
+  let layer = null, frame = 0, started = 0, echoes = [], finish = null, deadline = 0;
+  const mobile = matchMedia('(max-width: 800px), (pointer: coarse)');
+  const motionNow = now => mobile.matches ? now : (window.inteonHomeEffects?.ambientNow(now) ?? now);
+  const blocked = () => !layer || document.hidden || Boolean(window.inteonHomeEffects?.ambientBlocked || (!mobile.matches && window.inteonHomeEffects?.ambientPaused));
   const stop = () => {
     cancelAnimationFrame(frame); frame = 0;
+    if (deadline) clearTimeout(deadline); deadline = 0;
     layer?.remove(); layer = null; echoes = [];
     delete wrap.dataset.materialPreview;
+    const resolve = finish; finish = null;
+    window.inteonHomeEffects?.release('recursion');
+    resolve?.();
   };
   const draw = now => {
     frame = 0;
@@ -32,12 +37,14 @@
   const run = name => {
     if (name !== 'recursion') return;
     stop();
-    if (reduced.matches || document.hidden || matchMedia('(max-width: 800px), (pointer: coarse)').matches) return;
+    if (reduced.matches || document.hidden) return null;
     const surface = wrap.querySelector('.reactive-logo');
-    if (!surface) return;
+    if (!surface) return null;
+    if (window.inteonHomeEffects && !window.inteonHomeEffects.claim('recursion')) return null;
+    const completion = new Promise(resolve => { finish = resolve; });
     const ns = 'http://www.w3.org/2000/svg';
     const accent = `rgb(${getComputedStyle(document.documentElement).getPropertyValue('--theme-accent-rgb')})`;
-    const level = Number(document.documentElement.dataset.graphicsLevel) || 5;
+    const level = Math.min(mobile.matches ? 4 : 10, Number(document.documentElement.dataset.graphicsLevel) || 5);
     layer = document.createElementNS(ns, 'svg');
     layer.classList.add('logo-material-preview');
     layer.setAttribute('viewBox', '0 0 534 107');
@@ -64,11 +71,14 @@
     wrap.dataset.materialPreview = 'recursion';
     surface.append(layer);
     started = motionNow(performance.now());
+    if (mobile.matches) deadline = setTimeout(stop, 6600);
     sync();
+    return completion;
   };
   window.inteonLogoMaterials = {run, stop};
   window.addEventListener('inteon-ambient-change', sync);
-  window.addEventListener('inteon-effects-change', sync);
+  window.addEventListener('inteon-effects-change', () => {if (window.inteonHomeEffects?.suspended) stop(); else sync();});
+  reduced.addEventListener('change', stop);
   window.inteonHomeEffects?.watch('logo-recursion', {blocked, restart: sync});
   document.addEventListener('visibilitychange', () => {if (document.hidden) stop();});
   window.addEventListener('resize', stop);

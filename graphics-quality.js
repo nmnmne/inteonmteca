@@ -2,8 +2,9 @@
 (() => {
   'use strict';
   const root = document.documentElement;
-  const sampleMs = 4000, initialWaitMs = 4000, manualMs = 60000, maximumWaitMs = 30000;
-  let level = 5, fps = null, baselineFps = null, activeFps = null;
+  const mobile = matchMedia('(max-width: 800px), (pointer: coarse)').matches;
+  const sampleMs = 4000, initialWaitMs = mobile ? 1000 : 4000, manualMs = 60000, maximumWaitMs = 30000;
+  let level = mobile ? 3 : 5, fps = null, baselineFps = null, activeFps = null;
   let lowerTailFps = null, p95FrameMs = null, cadencePeriod = null;
   let missedFrames = 0, missedFrameRatio = 0, activeSampleMs = 0, lightSampleMs = 0;
   let cadenceCandidate = null, cadenceCandidateCount = 0, needsRecalibration = false;
@@ -30,7 +31,8 @@
     return true;
   };
   const visible = () => started && !departed && !document.hidden;
-  const heavy = () => root.dataset.ambientPhase !== 'frozen' && !window.inteonHomeEffects?.ambientPaused;
+  const heavy = () => (mobile && ['mobile-scatter', 'acid', 'recursion'].includes(window.inteonHomeEffects?.active))
+    || root.dataset.ambientPhase !== 'frozen' && !window.inteonHomeEffects?.ambientPaused;
   const cancelWork = () => {
     clearTimeout(timer); cancelAnimationFrame(frame);
     timer = frame = 0; generation++;

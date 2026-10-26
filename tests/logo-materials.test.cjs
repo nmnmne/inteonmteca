@@ -19,11 +19,11 @@ function setup(level = 5) {
     if (!map.has(name)) map.set(name, []);
     map.get(name).push(callback);
   };
-  const effects = {ambientPaused: false, ambientBlocked: false, ambientNow: () => motion, beat() {}, watch() {}};
+  const effects = {active:null, claim(name) {if(this.active)return false;this.active=name;return true;}, release(name) {if(this.active===name)this.active=null;}, ambientPaused: false, ambientBlocked: false, ambientNow: () => motion, beat() {}, watch() {}};
   const document = {hidden: false, documentElement: {dataset: {graphicsLevel: String(level)}},
     querySelector: () => wrap, createElementNS: element,
     addEventListener: (name, callback) => on(documentEvents, name, callback)};
-  const context = {document, matchMedia: () => ({matches: false}),
+  const context = {document, matchMedia: () => ({matches: false, addEventListener() {}}),
     getComputedStyle: () => ({getPropertyValue: () => '218, 243, 149'}),
     performance: {now: () => time}, inteonHomeEffects: effects,
     requestAnimationFrame: callback => {frames.set(++serial, callback); return serial;},

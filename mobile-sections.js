@@ -9,6 +9,7 @@
   const playlist = tracks?.querySelector('.playlist-shell');
   if (!chat || !tracks || !logo || !dock || !playlist) return;
   const composer = chat.querySelector('.chat-compose');
+  const toggle = document.getElementById('mobile-chat-toggle');
   const oldSwitch = document.querySelector('.mobile-sections');
   if (oldSwitch) { oldSwitch.hidden = true; oldSwitch.inert = true; }
   const marker = document.createComment('desktop logo position');
@@ -18,8 +19,30 @@
   stage.setAttribute('aria-hidden', 'true'); stage.hidden = true;
   document.body.append(stage);
   tracks.id = 'mobile-track-section';
-  let layoutFrame = 0, keyboard = 0;
+  let layoutFrame = 0, keyboard = 0, collapsed = true, lastCollapsed;
+  const originalSlots = playlist.style.getPropertyValue('--catalog-slots');
+  const originalSlotsPriority = playlist.style.getPropertyPriority('--catalog-slots');
+  const notifyChat = () => {
+    const value = mobile.matches && collapsed;
+    if (value === lastCollapsed) return;
+    lastCollapsed = value;
+    window.dispatchEvent(new CustomEvent('inteon-mobile-chat-change', {detail: {collapsed: value}}));
+  };
+  const requestCatalogFit = () => playlist.dispatchEvent(new Event('inteon-catalog-refit'));
+  const minimumRowHeight = () => {
+    const item = playlist.querySelector('.track-item');
+    const button = item?.querySelector('.track-select');
+    const meta = item?.querySelector('.track-meta');
+    if (!button || !meta) return 44;
+    const verticalSpace = element => {
+      const style = getComputedStyle(element);
+      return ['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth']
+        .reduce((sum, key) => sum + (parseFloat(style[key]) || 0), 0);
+    };
+    return Math.ceil(Math.max(44, meta.getBoundingClientRect().height + verticalSpace(button) + verticalSpace(item)));
+  };
   const set = (name, value) => document.body.style.setProperty(name, `${value}px`);
+  const setRaw = (name, value) => document.body.style.setProperty(name, String(value));
   const fit = () => {
     layoutFrame = 0;
     if (!mobile.matches) return;
@@ -32,13 +55,15 @@
     document.body.classList.toggle('mobile-stage-tight-keyboard', tight);
     const row = innerHeight < 650 || editing ? 14 : 16;
     const composerHeight = composer?.getBoundingClientRect().height || 36;
-    const chatHeight = row * 5 + 6 + composerHeight;
+    const fullChatHeight = row * 5 + 6 + composerHeight;
+    const collapsedHeight = 14;
+    const chatHeight = collapsed ? collapsedHeight : fullChatHeight;
     const dockTop = Math.min(dock.getBoundingClientRect().top, visibleBottom - 76);
     let listTop, listHeight, chatTop, logoTop, logoWidth;
     if (sideBySide) {
       listTop = 94;
       listHeight = Math.max(140, dockTop - listTop - 6);
-      chatTop = Math.max(172, dockTop - chatHeight - 6);
+      chatTop = Math.max(172, dockTop - fullChatHeight - 6);
       logoWidth = Math.min(innerWidth * .4, 360);
       logoTop = Math.max(72, chatTop - logoWidth * .2004 - 14);
     } else if (tight) {
@@ -50,9 +75,16 @@
       logoTop = 0; logoWidth = 0;
       set('--mobile-document-height', listTop + listHeight + 90 + keyboard);
     } else {
-      listHeight = editing ? 190 : Math.round(Math.max(38, Math.min(56, innerHeight * .056)) * 5);
-      listTop = dockTop - 6 - listHeight;
-      chatTop = listTop - 6 - chatHeight;
+      const baseListHeight = editing ? 190 : Math.round(Math.max(38, Math.min(56, innerHeight * .056)) * 5);
+      if (collapsed) {
+        chatTop = dockTop - 12 - baseListHeight - fullChatHeight;
+        listTop = chatTop + collapsedHeight;
+        listHeight = dockTop - 6 - listTop;
+      } else {
+        listHeight = baseListHeight;
+        listTop = dockTop - 6 - listHeight;
+        chatTop = listTop - 6 - chatHeight;
+      }
       logoWidth = Math.min(innerWidth * .76, 520);
       const logoHeight = logoWidth * .2004;
       logoTop = Math.min(innerHeight * .355 - logoHeight / 2, chatTop - logoHeight - 10);
@@ -66,8 +98,14 @@
     set('--mobile-logo-width', logoWidth);
     set('--mobile-stage-top', Math.round(logoTop));
     set('--mobile-stage-height', logoWidth * .2004);
+    // Account for the actual two-line typography, padding and a readable row;
+    // collapsed chat earns additional rows only when they genuinely fit.
+    const slots = Math.max(1, Math.min(12, Math.floor(Math.round(listHeight) / minimumRowHeight())));
+    setRaw('--mobile-catalog-slots', slots);
+    playlist.style.setProperty('--catalog-slots', slots);
     set('--mobile-heading-top', sideBySide ? 57 : Math.max(70, Math.min(innerHeight * .185, logoTop - 36)));
     set('--mobile-resident-top', sideBySide ? 118 : Math.max(90, chatTop + 12));
+    requestCatalogFit();
   };
   const scheduleLayout = () => {
     if (!layoutFrame) layoutFrame = requestAnimationFrame(fit);
@@ -85,6 +123,12 @@
     document.body.classList.toggle('has-mobile-visual-stage', active);
     document.body.classList.toggle('mobile-stage-keyboard', active && keyboard > 100);
     stage.hidden = !active;
+    chat.classList.toggle('is-mobile-collapsed', active && collapsed);
+    if (toggle) {
+      toggle.hidden = !active;
+      toggle.setAttribute('aria-expanded', String(active && !collapsed));
+      toggle.setAttribute('aria-label', collapsed ? 'Развернуть чат' : 'Свернуть чат');
+    }
     if (active && logo.parentNode !== stage) stage.append(logo);
     else if (!active && logo.parentNode === stage) marker.parentNode.insertBefore(logo, marker.nextSibling);
     if (!active || keyboard <= 100) {
@@ -94,8 +138,23 @@
       if (wasScrolling) window.scrollTo?.(0, 0);
     }
     if (wasHidden && typeof openChat === 'function') openChat();
-    scheduleLayout();
+    notifyChat();
+    if (active) fit();
+    else {
+      if (originalSlots) playlist.style.setProperty('--catalog-slots', originalSlots, originalSlotsPriority);
+      else playlist.style.removeProperty('--catalog-slots');
+      requestCatalogFit();
+    }
   };
+  toggle?.addEventListener('click', () => {
+    if (!mobile.matches) return;
+    collapsed = !collapsed;
+    chat.classList.toggle('is-mobile-collapsed', collapsed);
+    toggle.setAttribute('aria-expanded', String(!collapsed));
+    toggle.setAttribute('aria-label', collapsed ? 'Развернуть чат' : 'Свернуть чат');
+    notifyChat();
+    fit();
+  });
   mobile.addEventListener('change', sync);
   landscape.addEventListener('change', sync);
   window.addEventListener('resize', sync);

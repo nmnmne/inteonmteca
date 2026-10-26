@@ -413,7 +413,7 @@
   }, {passive:true});
   // Menus, heading shifts and responsive layout can invalidate a route mid-walk.
   const guardSpace = () => {
-    if (blocked || cinematic || document.hidden) return;
+    if (blocked || cinematic || document.hidden || compact.matches) return;
     refreshObstacles();
     const here=center();
     if (!safe(here)) {

@@ -5,12 +5,13 @@
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const source = new Image();
   source.src = 'assets/logo-wordmark.svg';
-  const motionNow = () => window.inteonHomeEffects?.ambientNow?.() ?? performance.now();
-  const motionTimeout = (fn, delay) => window.inteonHomeEffects?.setMotionTimeout ? window.inteonHomeEffects.setMotionTimeout(fn, delay) : setTimeout(fn, delay);
-  const clearMotionTimeout = id => { if (window.inteonHomeEffects?.clearMotionTimeout) window.inteonHomeEffects.clearMotionTimeout(id); else clearTimeout(id); };
+  let foreground = false;
+  const motionNow = () => foreground ? performance.now() : (window.inteonHomeEffects?.ambientNow?.() ?? performance.now());
+  const motionTimeout = (fn, delay) => !foreground && window.inteonHomeEffects?.setMotionTimeout ? window.inteonHomeEffects.setMotionTimeout(fn, delay) : setTimeout(fn, delay);
+  const clearMotionTimeout = id => { if (!foreground && window.inteonHomeEffects?.clearMotionTimeout) window.inteonHomeEffects.clearMotionTimeout(id); else clearTimeout(id); };
   let frame = 0, finish = null, canvas = null, deadline = 0, paintFrame = null;
   const syncMotion = () => {
-    if (window.inteonHomeEffects?.ambientPaused) { cancelAnimationFrame(frame); frame = 0; }
+    if ((window.inteonHomeEffects?.suspended || (!foreground && window.inteonHomeEffects?.ambientPaused))) { cancelAnimationFrame(frame); frame = 0; }
     else if (finish && paintFrame && !frame) frame = requestAnimationFrame(paintFrame);
   };
   const stop = () => {
@@ -32,6 +33,7 @@
     return new Promise(resolve => {
       finish = resolve;
       const mobile=matchMedia('(max-width: 800px), (pointer: coarse)').matches;
+      foreground = mobile;
       // A scene keeps its allocation when quality changes; the next one samples it.
       const level = readLevel(), detail = (level - 1) / 9;
       const cols = Math.round((mobile ? 5 : 6) + (mobile ? 7 : 12) * detail);
@@ -89,7 +91,7 @@
       let previousPhase='',previousReturn='0',shown=false;
       const paint = () => {
         frame = 0;
-        if (!finish || window.inteonHomeEffects?.ambientPaused) return;
+        if (!finish || (window.inteonHomeEffects?.suspended || (!foreground && window.inteonHomeEffects?.ambientPaused))) return;
         if (!shown) { logo.classList.add('is-acid'); shown = true; }
         const elapsed = motionNow()-started;
         if (elapsed >= 11600) { stop(); return; }

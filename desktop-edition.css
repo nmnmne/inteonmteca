@@ -23,7 +23,7 @@
 html[data-theme] body.spatial-room.is-interlude .playlist-curve { display: none; }
 /* The low-window two-column layout needs the same compact tiles as the main
    desktop stage, while its row count follows the available vertical space. */
-@media (min-width: 801px) and (max-height: 540px), (min-width: 501px) and (max-width: 800px) and (max-height: 500px) and (pointer: fine) {
+@media (min-width: 801px) and (max-height: 540px) and (pointer: fine), (min-width: 501px) and (max-width: 800px) and (max-height: 500px) and (pointer: fine) {
   html[data-theme] body.spatial-room .playlist-shell {
     --catalog-slots: 0; --catalog-bottom-space: 12;
   }

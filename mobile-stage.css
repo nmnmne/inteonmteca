@@ -1,5 +1,5 @@
 /* The existing wordmark and both live sections share a single mobile page. */
-.mobile-visual-stage { display: none; }
+.mobile-visual-stage, .mobile-chat-toggle { display: none; }
 
 @media (max-width: 800px) and (min-height: 501px), (max-width: 500px), (pointer: coarse) and (max-height: 500px) {
   html[data-theme] body.spatial-room .mobile-sections { display: none; }
@@ -37,7 +37,7 @@
     width: 30px; height: 38px; margin: 0;
   }
   html[data-theme] body.spatial-room .playlist-shell {
-    --catalog-slots: 5; --catalog-bottom-space: 0;
+    --catalog-slots: var(--mobile-catalog-slots, 7); --catalog-bottom-space: 0;
     position: fixed; top: var(--mobile-list-top, 60dvh); bottom: auto;
     left: 50%; right: auto; width: min(calc(100vw - 20px), max(390px, 70vw));
     height: var(--mobile-list-height, 28dvh); min-height: 0;
@@ -51,6 +51,24 @@
     height: var(--mobile-chat-height, 122px); min-height: 0; max-height: none;
     gap: 6px; transform: translateX(-50%); transition: none; z-index: 4;
   }
+  html[data-theme] body.spatial-room .mobile-chat-toggle {
+    position: absolute; z-index: 3; right: 8px; top: 0; bottom: auto;
+    display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
+    border: 0; background: transparent; color: rgba(var(--interface-accent), .9);
+    font: 22px/1 Consolas, ui-monospace, monospace; cursor: pointer; touch-action: manipulation;
+  }
+  html[data-theme] body.spatial-room .mobile-chat-toggle::before {
+    position: absolute; top: 50%; right: 36px; width: min(36vw, 150px); height: 1px;
+    content: ""; background: linear-gradient(90deg, transparent, rgba(var(--interface-accent), .55));
+  }
+  html[data-theme] body.spatial-room .mobile-chat-toggle span { transform: rotate(180deg); transition: transform .2s ease; }
+  html[data-theme] body.spatial-room #chat-panel.is-mobile-collapsed {
+    overflow: visible; border: 0; background: transparent; box-shadow: none;
+  }
+  html[data-theme] body.spatial-room #chat-panel.is-mobile-collapsed > :not(.mobile-chat-toggle) { display: none; }
+  html[data-theme] body.spatial-room #chat-panel.is-mobile-collapsed .mobile-chat-toggle { top: -30px; bottom: auto; }
+  html[data-theme] body.spatial-room #chat-panel.is-mobile-collapsed .mobile-chat-toggle span { transform: none; }
+  html[data-theme] body.spatial-room .mobile-chat-toggle:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
   html[data-theme] body.spatial-room .chat-inline .chat-stream {
     flex: none; height: calc(var(--mobile-chat-row, 16px) * 5);
     width: calc(100% - 50px); min-height: 0; padding: 0; margin: 0;
@@ -88,7 +106,7 @@
   html[data-theme] body.spatial-room .track-artist { font-size: 10px; line-height: 1.1; }
   html[data-theme] body.spatial-room #active-player {
     position: fixed; left: 8px; right: 8px; top: auto;
-    bottom: calc(8px + var(--mobile-keyboard, 0px)); width: auto; height: 76px;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px) + var(--mobile-keyboard, 0px)); width: auto; height: 94px;
     display: grid; grid-template-columns: minmax(0, 1fr) clamp(66px, 18vw, 100px);
     grid-template-rows: 1fr; gap: 0 12px; padding: 2px;
     border: 0; background: none; box-shadow: none;
@@ -110,7 +128,12 @@
     position: relative; inset: auto; width: 100%; grid-column: 2; grid-row: 1; align-self: start;
   }
   html[data-theme] body.spatial-room #active-player .volume-control::before { scale: 2; }
-  html[data-theme] body.spatial-room #active-player .playback-status { left: auto; right: 0; width: 24%; font-size: 9px; }
+  html[data-theme] body.spatial-room #active-player .playback-status {
+    position: absolute; top: auto; bottom: 0; left: 2px; right: 2px;
+    width: auto; height: 18px; margin: 0; transform: none;
+    font-size: 9px; line-height: 18px; text-align: left;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+  }
   html[data-theme] body.spatial-room.mobile-stage-keyboard :is(.mobile-visual-stage, .listening-intro h1, .listening-intro .label, .room-presence, .room-resident, .hero-intro) { visibility: hidden; }
   html[data-theme] body.spatial-room.mobile-stage-tight-keyboard .room-toolbar { visibility: hidden; }
   html[data-theme] body.spatial-room.mobile-stage-tight-keyboard :is(.playlist-shell, #chat-panel.chat-inline) { position: absolute; }

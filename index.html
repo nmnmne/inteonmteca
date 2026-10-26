@@ -50,10 +50,12 @@
   <link rel="stylesheet" href="room-grid.css?v=20261005-2">
   <link rel="stylesheet" href="room-editor.css?v=20261005-1">
   <link rel="stylesheet" href="room-recesses.css?v=resident-dock-duty-20261026">
-  <link rel="stylesheet" href="track-covers.css?v=title-aligned-20261026">
-  <link rel="stylesheet" href="mobile-stage.css?v=compact-covers-20261026">
+  <link rel="stylesheet" href="mobile-stage.css?v=collapsible-chat-20261026">
   <link rel="stylesheet" href="desktop-edition.css?v=resident-dock-duty-20261026">
+  <link rel="stylesheet" href="track-covers.css?v=cap-height-20261026">
   <link rel="stylesheet" href="graphics-quality.css?v=public-debug-20261026">
+  <link rel="stylesheet" href="alternate-logo.css?v=selected-seven-handmarks-20261026">
+  <link rel="stylesheet" href="responsive-ui.css?v=responsive-controls-20261026">
 </head>
 <body class="perception-interface listening-room spatial-room">
   <div class="perception-field" aria-hidden="true"></div>
@@ -153,6 +155,12 @@
               <canvas class="logo-reactive-canvas" id="logo-reactive-canvas"></canvas>
             </div>
             <div class="logo-particles" id="logo-particles" aria-hidden="true"></div>
+            <div class="alternate-wordmark" id="alternate-wordmark" aria-hidden="true">
+              <img class="alternate-logo-image alternate-echo" src="assets/logo-handwriting.svg" alt="">
+              <img class="alternate-logo-image alternate-signal-green" src="assets/logo-handwriting.svg" alt="">
+              <img class="alternate-logo-image alternate-signal-warm" src="assets/logo-handwriting.svg" alt="">
+              <img class="alternate-logo-image alternate-base" src="assets/logo-handwriting.svg" alt="">
+            </div>
           </div>
             <div class="room-presence" aria-hidden="true"><span></span></div>
           </div>
@@ -237,6 +245,7 @@
   </section>
 
   <section class="chat-panel chat-inline" id="chat-panel" role="region" aria-label="Чат">
+    <button class="mobile-chat-toggle" id="mobile-chat-toggle" type="button" aria-controls="chat-panel" aria-expanded="false" aria-label="Развернуть чат"><span aria-hidden="true">⌁</span></button>
     <div class="chat-aura" aria-hidden="true"></div>
     <div class="chat-stream" id="chat-stream" aria-live="polite"></div>
     <p id="chat-status" class="chat-status" role="status" hidden></p>
@@ -273,26 +282,27 @@
     </div>
     <p class="theme-status" id="theme-status" aria-live="polite"></p>
   </section>
-  <script src="playlist-data.js?v=tracks-20261006-1"></script>
+  <script src="playlist-data.js?v=tiny-covers-20261026"></script>
   <script src="track-play.js?v=vr-room-20261004-2"></script>
   <script src="street-return.js?v=walk-minute-20261010"></script>
   <script src="playback-link.js?v=walk-minute-20261010"></script>
   <script src="media-session.js?v=media-controls-20261020"></script>
   <script src="home-effects.js?v=ambient-five-five-20261026"></script>
+  <script src="alternate-logo.js?v=selected-seven-handmarks-20261026"></script>
   <script src="graphics-quality.js?v=ellipse-scene-20261026"></script>
   <script src="theme-morph.js?v=fps-20261026"></script>
-  <script src="track-covers.js?v=20261026"></script>
-  <script src="script.js?v=fast-motion-title-aligned-20261026"></script>
-  <script src="theme-picker.js?v=theme-names-20261010"></script>
+  <script src="track-covers.js?v=tiny-covers-20261026"></script>
+  <script src="script.js?v=cap-height-20261026"></script>
+  <script src="theme-picker.js?v=responsive-controls-20261026"></script>
   <script src="logo-acid.js?v=state-duty-20261026"></script>
   <script src="logo-materials.js?v=cosmic-room-20261026"></script>
-  <script src="development-debug.js?v=ellipse-scene-20261026"></script>
-  <script src="mobile-sections.js?v=single-page-20261026"></script>
+  <script src="development-debug.js?v=responsive-controls-20261026"></script>
+  <script src="mobile-sections.js?v=collapsible-chat-20261026"></script>
   <script src="room-resident.js?v=resident-dock-duty-20261026"></script>
   <script src="logo-storm.js?v=state-duty-20261026"></script>
   <script src="text-waves.js?v=fast-motion-20261026"></script>
   <script src="room-finish.js?v=compact-window-20261026"></script>
-  <script src="playlist-curve.js?v=ellipse-scene-20261026"></script>
+  <script src="playlist-curve.js?v=river-space-20261026"></script>
   <script src="energy-field.js?v=cosmic-room-20261026"></script>
   <script src="atmosphere-events.js?v=adaptive-20261026"></script>
   <script src="mobile-logo-effects.js?v=state-duty-20261026"></script>

@@ -57,6 +57,9 @@ $syncArgs = @(
   "--include", "home-player.css",
   "--include", "script.js",
   "--include", "home-effects.js",
+  "--include", "alternate-logo.css",
+  "--include", "alternate-logo.js",
+  "--include", "responsive-ui.css",
   "--include", "graphics-quality.js",
   "--include", "development-debug.js",
   "--include", "theme-picker.js",
@@ -178,7 +181,7 @@ Invoke-Aws --endpoint-url $endpoint s3 cp $scriptPath "$bucketUrl/$versionedScri
   --cache-control $noCache `
   --metadata-directive REPLACE | Out-Host
 
-foreach ($scriptName in @("track-play.js", "street-return.js", "playback-link.js", "playlist-data.js", "room-resident.js")) {
+foreach ($scriptName in @("track-play.js", "street-return.js", "playback-link.js", "playlist-data.js", "track-covers.js", "room-resident.js")) {
   $scriptFile = Join-Path $root $scriptName
   if (-not (Test-Path $scriptFile)) { continue }
   Invoke-Aws --endpoint-url $endpoint s3 cp $scriptFile "$bucketUrl/$scriptName" `

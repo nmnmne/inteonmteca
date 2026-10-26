@@ -5,7 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '..', 'graphics-quality.js'), 'utf8');
 
-function harness({loaded = true, hidden = false} = {}) {
+function harness({loaded = true, hidden = false, mobile = false} = {}) {
   let now = 0, sequence = 0;
   const timers = new Map(), frames = new Map(), events = [];
   const target = () => {
@@ -27,7 +27,7 @@ function harness({loaded = true, hidden = false} = {}) {
   const window = target();
   const dispatch = window.dispatchEvent;
   window.dispatchEvent = event => { events.push(event); dispatch(event); };
-  const context = {window, document, performance: {now: () => now},
+  const context = {window, document, matchMedia: () => ({matches: mobile}), performance: {now: () => now},
     CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options?.detail; } },
     setTimeout(callback, delay) { const id = ++sequence; timers.set(id, {callback, at: now + delay, delay}); return id; },
     clearTimeout(id) { timers.delete(id); },
@@ -77,6 +77,14 @@ function harness({loaded = true, hidden = false} = {}) {
 }
 
 
+test('mobile reserves initial decorative budget for text and starts sampling promptly', () => {
+ const h=harness({mobile:true});assert.equal(h.api.level,3);assert.equal(h.api.nextSampleAt,1000);
+});
+
+test('mobile foreground scenes count as active work during decorative rest', () => {
+ const h=harness({mobile:true});h.window.inteonHomeEffects={active:'recursion',ambientPaused:true};
+ h.sample(()=>({ms:1000/60,heavy:false}));assert.ok(h.api.activeSampleMs>=3900);assert.equal(h.api.lightSampleMs,0);
+});
 test('scene changes interrupt idle backoff but preserve manual choice and hidden-page suspension', () => {
   const h=harness(); h.sample(60); h.sample(60);
   h.window.inteonHomeEffects={active:'interlude'};

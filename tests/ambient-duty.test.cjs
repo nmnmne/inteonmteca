@@ -5,6 +5,11 @@ const vm = require('node:vm');
 const { test } = require('node:test');
 const source = fs.readFileSync(path.join(__dirname, '..', 'home-effects.js'), 'utf8');
 
+test('mobile foreground watchdog uses wall time without borrowing the ambient freeze', () => {
+ const h=fixture();let stopped=0;h.window.inteonMobileLogo={stop(){stopped++;h.api.release('mobile-scatter');}};
+ assert.equal(h.api.claim('mobile-scatter'),true);h.advance(7000);
+ assert.equal(stopped,1);assert.equal(h.api.active,null);assert.equal(h.root.dataset.ambientPhase,'frozen');
+});
 function fixture({ hidden = false } = {}) {
   let now = 10000;
   let nextId = 0;
@@ -139,7 +144,7 @@ test('large delayed deliveries skip old cycles without a timer burst',()=>{
   f.advance(4500); assert.equal(f.api.ambientPaused,true);
 });
 test('logo watchdogs expire by moving time, not the alternating rests',()=>{
-  for(const [name,limit,moduleName] of [['acid',16000,'inteonLogoAcid'],['storm',90000,'inteonLogoStorm'],['mobile-scatter',6000,'inteonMobileLogo']]) {
+  for(const [name,limit,moduleName] of [['acid',16000,'inteonLogoAcid'],['storm',90000,'inteonLogoStorm'],['recursion',8000,'inteonLogoMaterials']]) {
     const f=fixture(); let stops=0;
     f.window[moduleName]={stop(){stops++}};
     f.api.claim(name); const start=f.api.ambientNow();

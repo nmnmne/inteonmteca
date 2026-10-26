@@ -1,0 +1,105 @@
+/* Traced handwritten paths with static dry-ink grain; the old vector stays primary. */
+#logo-wrap .alternate-wordmark {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  overflow: hidden;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .32s ease, visibility 0s linear .32s;
+}
+#logo-wrap .alternate-logo-image {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  width: 105%;
+  max-width: none;
+  height: auto;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+}
+#logo-wrap[data-alternate-logo] .reactive-logo,
+#logo-wrap[data-alternate-logo] > .logo-particles {
+  visibility: hidden;
+  opacity: 0 !important;
+}
+#logo-wrap[data-alternate-logo] .alternate-wordmark {
+  visibility: visible;
+  opacity: 1;
+  transition-delay: 0s;
+}
+#logo-wrap[data-alternate-logo="1"] .alternate-base,
+#logo-wrap[data-alternate-logo="3"] .alternate-base,
+#logo-wrap[data-alternate-logo="5"] .alternate-base {
+  opacity: .96;
+}
+/* Choice 3: a restrained lime duplicate, shifted by one print registration. */
+#logo-wrap[data-alternate-logo="3"] .alternate-echo {
+  opacity: .62;
+  filter: sepia(1) saturate(5) hue-rotate(25deg) brightness(1.18);
+  transform: translate(-49.5%, -51.5%);
+}
+/* Choice 5: clipped green and warm slices around the original white mark. */
+#logo-wrap[data-alternate-logo="5"] .alternate-signal-green {
+  opacity: .68;
+  filter: sepia(1) saturate(5) hue-rotate(22deg);
+  clip-path: inset(32% 0 48% 0);
+  transform: translate(-50.8%, -49%);
+}
+#logo-wrap[data-alternate-logo="5"] .alternate-signal-warm {
+  opacity: .42;
+  filter: sepia(.55) saturate(2.3) hue-rotate(335deg);
+  clip-path: inset(61% 0 19% 0);
+  transform: translate(-49.2%, -52%);
+}
+/* Selected treatments from the second preview, using the same transparent layers. */
+#logo-wrap[data-alternate-logo="12"] .alternate-base { opacity: .96; }
+#logo-wrap[data-alternate-logo="12"] .alternate-echo {
+  filter: sepia(1) saturate(5) hue-rotate(26deg) brightness(1.15);
+  opacity: .78;
+  transform: translate(-50%, -50%) scale(1.018);
+}
+#logo-wrap[data-alternate-logo="13"] .alternate-base { opacity: .93; }
+#logo-wrap[data-alternate-logo="13"] .alternate-signal-green {
+  filter: sepia(1) saturate(4.5) hue-rotate(22deg);
+  opacity: .62;
+  clip-path: inset(24% 0 64% 0);
+  transform: translate(-49.5%, -50%);
+}
+#logo-wrap[data-alternate-logo="13"] .alternate-signal-warm {
+  filter: sepia(.5) saturate(2) hue-rotate(338deg);
+  opacity: .4;
+  clip-path: inset(68% 0 15% 0);
+  transform: translate(-50.5%, -51%);
+}
+#logo-wrap[data-alternate-logo="16"] .alternate-base { opacity: .95; }
+#logo-wrap[data-alternate-logo="16"] .alternate-signal-green {
+  filter: grayscale(1) brightness(1.75);
+  opacity: .4;
+  clip-path: inset(34% 0 47% 0);
+  transform: translate(-50.8%, -49%);
+}
+#logo-wrap[data-alternate-logo="16"] .alternate-signal-warm {
+  filter: sepia(1) saturate(5) hue-rotate(22deg);
+  opacity: .53;
+  clip-path: inset(62% 0 21% 0);
+  transform: translate(-49.2%, -52%);
+}
+#logo-wrap[data-alternate-logo="17"] .alternate-base { opacity: .91; }
+#logo-wrap[data-alternate-logo="17"] .alternate-echo {
+  filter: sepia(1) saturate(5) hue-rotate(25deg);
+  opacity: .32;
+  transform: translate(-48.8%, -50%);
+}
+#logo-wrap[data-alternate-logo="17"] .alternate-wordmark::before {
+  position: absolute;
+  inset: 20% 14%;
+  content: "";
+  background: radial-gradient(ellipse, #caff5722, transparent 72%);
+  filter: blur(12px);
+}
+@media (prefers-reduced-motion: reduce) {
+  #logo-wrap .alternate-wordmark { transition: none; }
+}

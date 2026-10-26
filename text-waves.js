@@ -1,10 +1,10 @@
 /* Spatial successor to the original matrix-text symbol cycle (eeb6abc).
    Decoration never replaces the underlying text, names, or live player values. */
 (() => {
-  const createTextAudioMotion = () => {
+  const createTextAudioMotion = (minimumFps = 44) => {
     let lastAt = null, mid = 0, bassSlow = 0, previousBass = 0, credit = 0;
     let burstAt = -Infinity, burstPower = 0, nextBurstAt = 0, serial = 0;
-    const state = {targetFps: 44, mid: 0, bass: 0, burst: 0, playing: false, due: false, serial: 0, motionTime: 0};
+    const state = {targetFps: minimumFps, mid: 0, bass: 0, burst: 0, playing: false, due: false, serial: 0, motionTime: 0};
     const clamp = value => Math.max(0, Math.min(1, Number(value) || 0));
     return {
       update(now, input) {
@@ -30,8 +30,8 @@
           previousBass = bass;
         }
         const burst = burstPower * Math.pow(Math.max(0, 1 - (now - burstAt) / 200), 1.5);
-        const base = 44 + 100 * Math.pow(mid, .8);
-        const targetFps = Math.min(144, Math.max(44, base + (144 - base) * burst));
+        const base = minimumFps + (144 - minimumFps) * Math.pow(mid, .8);
+        const targetFps = Math.min(144, Math.max(minimumFps, base + (144 - base) * burst));
         // Wave travel follows elapsed time, independently of delivered frames
         // or graphics detail. Bass adds a brief, smooth acceleration.
         state.motionTime += elapsed * (1 + mid * .6 + burst * 1.4);
@@ -49,7 +49,13 @@
       get state() { return state; },
     };
   };
-  const audioMotion = createTextAudioMotion();
+  // Reserve a predictable slice for live text; quality changes density, not time.
+  const textWorkBudget = (mobile, level) => {
+    const detail = Math.max(0, Math.min(9, (Number(level) || 3) - 1));
+    return mobile ? {candidates: 32 + Math.round(detail * 3.5), writes: 12 + Math.round(detail * 1.3)}
+      : {candidates: 128, writes: 24};
+  };
+  const audioMotion = createTextAudioMotion(matchMedia('(pointer: coarse), (max-width: 800px)').matches ? 60 : 44);
   let glyphUpdates = 0;
   // Read-only diagnostics expose requested cadence; the display still limits RAF.
   window.inteonTextMotion = Object.freeze({
@@ -269,9 +275,10 @@
     glyphAt = now;
     const renewalMs = reduced.matches ? 180 : 80 * 44 / cadence.targetFps;
     glyphCredit = Math.min(visibleChars.length, glyphCredit + visibleChars.length * elapsed / renewalMs);
-    const candidates = Math.min(visibleChars.length, Math.floor(glyphCredit));
+    const budget = textWorkBudget(coarse.matches, document.documentElement.dataset.graphicsLevel);
+    const candidates = Math.min(budget.candidates, visibleChars.length, Math.floor(glyphCredit));
     let writes = 0;
-    for (let i = 0; i < candidates && writes < 24; i++) {
+    for (let i = 0; i < candidates && writes < budget.writes; i++) {
       glyphCredit -= 1;
       const char = visibleChars[glyphCursor++ % visibleChars.length];
       if (selected || char.focused) { if (paint(char)) writes++; continue; }

@@ -51,7 +51,7 @@ try:
     assert max(r['orbit'] for r in before['rows'])-min(r['orbit'] for r in before['rows'])>20,before
     page.locator('.track-list').evaluate('(el)=>el.scrollTop+=el.clientHeight/2')
     page.wait_for_timeout(350)
-    assert page.locator('.playlist-curve').first.get_attribute('data-trajectory')=='ellipse'
+    assert page.locator('.playlist-curve').first.get_attribute('data-trajectory')=='river'
     page.screenshot(path=str(OUT/f'{w}-ellipse.png'))
    if w==1542:
     baseline=page.evaluate(measure)

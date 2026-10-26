@@ -19,7 +19,163 @@
       "assets/track-covers/echoes-resurface/71c06c14405808b6.webp",
       "assets/track-covers/echoes-resurface/51aa5f6db984a7cd.webp",
       "assets/track-covers/echoes-resurface/bdc0a8272c5867df.webp"
-    ]
+    ],
+    "coverRenditions": {
+      "assets/track-covers/echoes-resurface/abaac489d9540559.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/09a493e32e5a0034-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/aba8648ac95df978-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/6b5eb1e62997f290-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/8bafb9f15a06fea5-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/a611b3cc31c23374-64.webp"
+        }
+      ],
+      "assets/track-covers/echoes-resurface/acacb0870352613c.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/7077a7959e821fcb-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/c6721298a99d82da-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/e971a7ad96bbe7bc-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/2d3bb95ab783a230-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/81a717cc21efc0e1-64.webp"
+        }
+      ],
+      "assets/track-covers/echoes-resurface/f4cadf149897951c.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/1ba611d4be99ae0e-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/cd4cbd9a2ace7ee3-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/7b414222f1fb2cbb-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/69a78b1bc8849f53-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/0e6fa87976e6ebc5-64.webp"
+        }
+      ],
+      "assets/track-covers/echoes-resurface/d86140efcd4bbc4a.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/84ef9f4274297272-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/f3a55aaa27538863-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/b56e1fb5b45183c8-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/149edc7491ae633d-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/75e4df651b4cf981-64.webp"
+        }
+      ],
+      "assets/track-covers/echoes-resurface/71c06c14405808b6.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/7329f47b72e0c2a1-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/dcbf1ea716c9c28d-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/790a0babd7f6d3bb-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/8da6fc98854cf6d5-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/f759d03ec86226c4-64.webp"
+        }
+      ],
+      "assets/track-covers/echoes-resurface/51aa5f6db984a7cd.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/9e1b95c698dd987f-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/8f148f6983ad2056-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/192dac5a2e8326a7-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/b48564dd0caae9d8-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/3798a5eed4487f78-64.webp"
+        }
+      ],
+      "assets/track-covers/echoes-resurface/bdc0a8272c5867df.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/21407528324d04fe-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/60d04de9ad48bb35-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/d84d7428693f7a80-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/2b83d246374fbae2-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/60ded04286be73ec-64.webp"
+        }
+      ]
+    }
   },
   {
     "id": "media/God Is Dead/Матт - God Is Dead.flac",
@@ -43,7 +199,339 @@
       "assets/track-covers/god-is-dead/bab480d8983d7692.webp",
       "assets/track-covers/god-is-dead/ca6658e49ceecfde.webp",
       "assets/track-covers/god-is-dead/ff65ca1cef5b5ae4.webp"
-    ]
+    ],
+    "coverRenditions": {
+      "assets/track-covers/god-is-dead/6afc4b748f6846be.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/51491c7d01041580-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/69b5db7bad1bda37-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/a1e1777b4dde5102-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/8ddaabb1ed26c92c-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/c33e2c5f11728c9c-64.webp"
+        }
+      ],
+      "assets/track-covers/god-is-dead/d3ead352d8650a47.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/163909b923d67bfb-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/43549d2ebf07918a-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/388816072b755898-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/9b4fe696bde5fa37-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/e12c5ed2086c8e51-64.webp"
+        }
+      ],
+      "assets/track-covers/god-is-dead/b926273beb8106fb.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/d4f9587e44aa116f-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/91dfd0d3150baf79-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/289c88beb2c9bd58-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/ffd6c41a65bd020a-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/aecf8af16614fb41-64.webp"
+        }
+      ],
+      "assets/track-covers/god-is-dead/53f2a63dfbac06b7.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/159e4046304e1ffa-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/30a159202bd89c55-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/954eeb84105185d8-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/e9d67be8a29389f7-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/198b481365aa8b71-64.webp"
+        }
+      ],
+      "assets/track-covers/god-is-dead/9eea214dad65211c.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/46d5670d4a5dca40-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/359608e35ca9cf93-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/2f2671fbceb7a2d8-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/7b20ef75a0983ae1-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/7fcd11ffb3373afa-64.webp"
+        }
+      ],
+      "assets/track-covers/god-is-dead/54145258da241166.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/078d39edb4e82599-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/8c926f20baf66c83-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/7bedd5dfa3b440b0-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/9332b85157dbf8b2-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/e2f682cc57d78cf5-64.webp"
+        }
+      ],
+      "assets/track-covers/god-is-dead/124956dee643cc86.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/1d2cef3b52ad7165-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/16782423753e1302-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/2a5571c0bdbfaa8f-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/39b626f9e233b0d5-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/b4e332d10d544eba-64.webp"
+        }
+      ],
+      "assets/track-covers/god-is-dead/ce11d81e0c6a32b0.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/e5506b1a1fd3f7a9-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/2aacb8246d02cddd-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/6e6ced6090250141-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/600eb940b9e97737-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/b1f097daa55413e1-64.webp"
+        }
+      ],
+      "assets/track-covers/god-is-dead/14d9dfe33c4a18b9.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/f0641dda7ddec6cf-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/fc9555e49461c923-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/3caead1a384354cc-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/e8976dc3853b2cc4-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/ef5a2e749e5a025f-64.webp"
+        }
+      ],
+      "assets/track-covers/god-is-dead/58958012f0f1eeeb.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/a7f7048d1adccc65-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/47a09d8f5415501d-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/31c450cbfb908aa9-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/ef3fcaaf55c41d27-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/9e6aade5c41fc003-64.webp"
+        }
+      ],
+      "assets/track-covers/god-is-dead/5ad5da8bc3e9e9ad.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/a090345c55755e58-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/91d3fb758ee6eeed-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/6d9d93603ef6659b-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/3356bce374f21b7d-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/68ca4033f71b56e4-64.webp"
+        }
+      ],
+      "assets/track-covers/god-is-dead/e81d07223c9afd70.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/5e8e02d88e6e13c9-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/916874780ddbb634-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/e8ff39ca093c821f-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/79e03f0793b66cbe-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/21763d0a6284d6a3-64.webp"
+        }
+      ],
+      "assets/track-covers/god-is-dead/bab480d8983d7692.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/674ea5fc47d04f9b-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/63896669b2b476ac-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/d6ab71c20d01070e-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/b71319bbe1d1495c-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/512609f7f4c063ca-64.webp"
+        }
+      ],
+      "assets/track-covers/god-is-dead/ca6658e49ceecfde.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/39183ad367bfa765-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/6eec181f91c7f823-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/1e802d426c4a4a15-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/75f2319c40f96130-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/da0126cf1aeb3a58-64.webp"
+        }
+      ],
+      "assets/track-covers/god-is-dead/ff65ca1cef5b5ae4.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/3e99f7ee0cd602ae-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/54a4b9401f7e405f-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/e6789ae5a2a02f17-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/a98620eb005cfe3f-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/a1bda318aa27f48a-64.webp"
+        }
+      ]
+    }
   },
   {
     "id": "media/Heavenly  Melody/Sonyx - Heavenly  Melody.flac",
@@ -66,7 +554,53 @@
     "covers": [
       "assets/track-covers/inteonmteca/ec790dc66738d6f3.webp",
       "assets/track-covers/inteonmteca/127f7f878258dec5.webp"
-    ]
+    ],
+    "coverRenditions": {
+      "assets/track-covers/inteonmteca/ec790dc66738d6f3.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/2a5164ee1d5d0898-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/a3fbfc12e46bbcff-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/91ae3c8f8066dda0-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/a2ea12f4d2e85cf4-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/1c64104cfee524e1-64.webp"
+        }
+      ],
+      "assets/track-covers/inteonmteca/127f7f878258dec5.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/99a363aab8a1a460-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/41cc167ca4c2e992-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/2bcbcd44787b52ad-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/06f963930defd444-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/d69c4bf82f0e0d6e-64.webp"
+        }
+      ]
+    }
   },
   {
     "id": "media/inteonmteca_/ыьек - Inteonmteca_.flac",
@@ -77,7 +611,53 @@
     "covers": [
       "assets/track-covers/inteonmteca/ec790dc66738d6f3.webp",
       "assets/track-covers/inteonmteca/127f7f878258dec5.webp"
-    ]
+    ],
+    "coverRenditions": {
+      "assets/track-covers/inteonmteca/ec790dc66738d6f3.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/2a5164ee1d5d0898-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/a3fbfc12e46bbcff-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/91ae3c8f8066dda0-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/a2ea12f4d2e85cf4-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/1c64104cfee524e1-64.webp"
+        }
+      ],
+      "assets/track-covers/inteonmteca/127f7f878258dec5.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/99a363aab8a1a460-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/41cc167ca4c2e992-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/2bcbcd44787b52ad-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/06f963930defd444-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/d69c4bf82f0e0d6e-64.webp"
+        }
+      ]
+    }
   },
   {
     "id": "media/Kimpintyau/Матт- Высоко до предела.flac",
@@ -89,7 +669,75 @@
       "assets/track-covers/kimpintyau/004b8c4bc785433e.webp",
       "assets/track-covers/kimpintyau/f7f636ef9854e1af.webp",
       "assets/track-covers/kimpintyau/8de395a0f4be71e2.webp"
-    ]
+    ],
+    "coverRenditions": {
+      "assets/track-covers/kimpintyau/004b8c4bc785433e.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/7e22b74367e1f068-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/346e8ef348309c37-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/4cb6fa4efdd25d92-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/e71fc2c64ea7d5f6-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/775b3b7b715c308a-64.webp"
+        }
+      ],
+      "assets/track-covers/kimpintyau/f7f636ef9854e1af.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/6ae4a061a88a4f85-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/b7deb33d4fb9e998-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/02dcf71379b0b48f-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/a21777de6588d473-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/cfe547a97476d58f-64.webp"
+        }
+      ],
+      "assets/track-covers/kimpintyau/8de395a0f4be71e2.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/05d808b7b2a3ef62-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/33d57a591db17dae-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/c0a36be15a9f2ac4-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/676015eee0be6183-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/05ff8d1caed580ab-64.webp"
+        }
+      ]
+    }
   },
   {
     "id": "media/Last_Eclipse/Матт - Last Eclipse (Negative Space Resonance).flac",
@@ -101,7 +749,75 @@
       "assets/track-covers/last-eclipse/1063ebea53e00a2d.webp",
       "assets/track-covers/last-eclipse/eccdf259ae4ae3a9.webp",
       "assets/track-covers/last-eclipse/7cd28b0a766947fd.webp"
-    ]
+    ],
+    "coverRenditions": {
+      "assets/track-covers/last-eclipse/1063ebea53e00a2d.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/34a681ce732f8dd6-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/30d0a16b20d24325-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/65fcd849de8fee92-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/ca952348c7ae9388-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/6af7749bea027534-64.webp"
+        }
+      ],
+      "assets/track-covers/last-eclipse/eccdf259ae4ae3a9.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/e6cde20e7614d333-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/d002714adeb37425-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/67ddb66409553c17-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/72c69770290dfc42-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/0844251b2928ba91-64.webp"
+        }
+      ],
+      "assets/track-covers/last-eclipse/7cd28b0a766947fd.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/8281cb069017b890-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/c99b1561884d208d-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/8f7c0b78acd17272-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/4caec8ce5ca21d7b-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/e44967b013115fc9-64.webp"
+        }
+      ]
+    }
   },
   {
     "id": "media/Light Of The Night/Sonyx - Light Of The Night [Матт remix].flac",
@@ -111,7 +827,31 @@
     "cover": "assets/track-covers/light-of-the-night/5ea2ff21a5590a60.webp",
     "covers": [
       "assets/track-covers/light-of-the-night/5ea2ff21a5590a60.webp"
-    ]
+    ],
+    "coverRenditions": {
+      "assets/track-covers/light-of-the-night/5ea2ff21a5590a60.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/9423db69018d52ed-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/cab2f36d96f31c17-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/033d0abcc6ac6c15-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/6439859f88fd8ca8-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/75a5fdbd4aa2d227-64.webp"
+        }
+      ]
+    }
   },
   {
     "id": "media/Light Of The Night/Sonyx - Light Of The Night.flac",
@@ -121,7 +861,31 @@
     "cover": "assets/track-covers/light-of-the-night/5ea2ff21a5590a60.webp",
     "covers": [
       "assets/track-covers/light-of-the-night/5ea2ff21a5590a60.webp"
-    ]
+    ],
+    "coverRenditions": {
+      "assets/track-covers/light-of-the-night/5ea2ff21a5590a60.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/9423db69018d52ed-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/cab2f36d96f31c17-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/033d0abcc6ac6c15-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/6439859f88fd8ca8-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/75a5fdbd4aa2d227-64.webp"
+        }
+      ]
+    }
   },
   {
     "id": "media/Liquid Hard Lines/Матт - Liquid Hard Lines.flac",
@@ -141,7 +905,119 @@
       "assets/track-covers/loud-silence/19fc246a261a1b3f.webp",
       "assets/track-covers/loud-silence/78ddfb7cff73f177.webp",
       "assets/track-covers/loud-silence/a71f80326bcf8ac1.webp"
-    ]
+    ],
+    "coverRenditions": {
+      "assets/track-covers/loud-silence/6760e867f24264a6.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/c1a721fc5e9a7fb3-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/1e13f958c17676f3-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/2cc70663b181e49c-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/be38c3884c746789-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/ba0ab69c15eb22e6-64.webp"
+        }
+      ],
+      "assets/track-covers/loud-silence/a468488e63c04be3.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/b41550dac2ea9621-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/6a4897d23a053e23-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/b423b8b49bfd742d-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/12dc066e6c8d4a64-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/be4d90a67f0ad5dd-64.webp"
+        }
+      ],
+      "assets/track-covers/loud-silence/19fc246a261a1b3f.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/b41550dac2ea9621-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/6a4897d23a053e23-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/b423b8b49bfd742d-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/12dc066e6c8d4a64-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/be4d90a67f0ad5dd-64.webp"
+        }
+      ],
+      "assets/track-covers/loud-silence/78ddfb7cff73f177.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/03ec5c65ee6cff1a-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/68344bc8a35245d0-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/dcfdbe57450de2d7-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/e14c19162c07d345-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/855f7e5c7750718d-64.webp"
+        }
+      ],
+      "assets/track-covers/loud-silence/a71f80326bcf8ac1.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/b4983ca7be08fe25-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/e53774d5938637f8-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/7ba4634e75b1fbb3-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/7c73273c191ced3c-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/67c337f2cd3b9ee3-64.webp"
+        }
+      ]
+    }
   },
   {
     "id": "media/M/ыьек - M.flac",
@@ -164,7 +1040,53 @@
     "covers": [
       "assets/track-covers/n01dentity/e1ba14f804853cec.webp",
       "assets/track-covers/n01dentity/cbacbf1e2bcfce42.webp"
-    ]
+    ],
+    "coverRenditions": {
+      "assets/track-covers/n01dentity/e1ba14f804853cec.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/3b9e8b22139d9cd7-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/f36273b4178d1271-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/657cc931244a6b0d-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/33c4ae944db41c0b-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/7e7840544725ec89-64.webp"
+        }
+      ],
+      "assets/track-covers/n01dentity/cbacbf1e2bcfce42.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/1856a0213fcf69cd-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/0b1066ade234b86f-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/a3e790e0839e50ac-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/9853751d29017bb6-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/610fa82ff38d0d29-64.webp"
+        }
+      ]
+    }
   },
   {
     "id": "media/Pvvmb/ыьек - Pvvmb.flac",
@@ -181,7 +1103,53 @@
     "covers": [
       "assets/track-covers/random-spiral/74646a90848acb98.webp",
       "assets/track-covers/random-spiral/5e41da3fc1870257.webp"
-    ]
+    ],
+    "coverRenditions": {
+      "assets/track-covers/random-spiral/74646a90848acb98.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/286ed7a2be75b0e4-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/2685f60291634a63-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/0858e87218c52af8-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/a3c32a033059292d-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/d35e1465c9fc406a-64.webp"
+        }
+      ],
+      "assets/track-covers/random-spiral/5e41da3fc1870257.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/667c0d7bce95b7f5-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/2a5b93e40a175939-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/e7cc46557a6ba50e-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/1c8d417c700541fd-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/e85c995f2e6547ee-64.webp"
+        }
+      ]
+    }
   },
   {
     "id": "media/Лифт моего времени/Матт - Лифт моего времени.flac",
@@ -195,7 +1163,119 @@
       "assets/track-covers/time-elevator/3c804d70f1b88b72.webp",
       "assets/track-covers/time-elevator/0c3c3c83ed085e05.webp",
       "assets/track-covers/time-elevator/8ae88880b181e720.webp"
-    ]
+    ],
+    "coverRenditions": {
+      "assets/track-covers/time-elevator/51066b6dee2d4610.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/5a114d1454415411-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/530ac36cc174f67e-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/9df77ab8e5eaafbe-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/100311617b0e4ec5-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/1f743045c5ba8663-64.webp"
+        }
+      ],
+      "assets/track-covers/time-elevator/17db9b6369c73a62.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/d45cf828c87c08cd-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/ba69d089dbc0b12b-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/b936afbe9ce39320-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/65e111c30315f3e5-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/cca0ab3b04951742-64.webp"
+        }
+      ],
+      "assets/track-covers/time-elevator/3c804d70f1b88b72.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/468f40838f8e75b2-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/2d9b9ecd5a25141e-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/70c8bc9901729d05-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/c45c4ee2bd6a9e9f-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/39510e1cab19458d-64.webp"
+        }
+      ],
+      "assets/track-covers/time-elevator/0c3c3c83ed085e05.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/d9be636e74a0375f-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/10c2d50fcae17c9b-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/ae4a473783bba726-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/dc82bd271104c205-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/198edbf69fa34eda-64.webp"
+        }
+      ],
+      "assets/track-covers/time-elevator/8ae88880b181e720.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/8bb273149dd5562c-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/5d95dad3ea933034-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/3ca3ee17907c8375-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/072dcfebdff8a932-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/05f3fff7f2a220b7-64.webp"
+        }
+      ]
+    }
   },
   {
     "id": "media/Никто не выходил/Матт - Никто не выходил.flac",
@@ -207,7 +1287,75 @@
       "assets/track-covers/nobody-left/7cef17d399c357a1.webp",
       "assets/track-covers/nobody-left/2a4d9ef6fd066883.webp",
       "assets/track-covers/nobody-left/370c7c73c955cf73.webp"
-    ]
+    ],
+    "coverRenditions": {
+      "assets/track-covers/nobody-left/7cef17d399c357a1.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/4995a6bde810eb88-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/65b517845d35f012-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/e4f0faa758697a57-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/0ec3fa6bf253cc4b-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/1bcd2e4fb0dc850c-64.webp"
+        }
+      ],
+      "assets/track-covers/nobody-left/2a4d9ef6fd066883.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/ce89622c59ea6778-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/a08515a56eb3d889-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/a11e03fa3dc851c1-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/8d22bd53631aecff-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/28bbe13efe904cbf-64.webp"
+        }
+      ],
+      "assets/track-covers/nobody-left/370c7c73c955cf73.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/8587d14242fcd078-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/480d3c22fe6b6cb3-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/90bd8fe72290d545-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/6a67dcc9826bb582-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/40e6ff323483af9f-64.webp"
+        }
+      ]
+    }
   },
   {
     "id": "media/Слишком холод/Матт - Слишком холод.flac",
@@ -222,6 +1370,140 @@
       "assets/track-covers/too-cold/2e17b8b4b578f3f7.webp",
       "assets/track-covers/too-cold/4ee2fe11e1bf1061.webp",
       "assets/track-covers/too-cold/fa5e9198b4e73272.webp"
-    ]
+    ],
+    "coverRenditions": {
+      "assets/track-covers/too-cold/c9c1a0b5f72c552e.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/f0f4a00c77387985-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/a97e48c2a61db9b6-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/615294e3425debd7-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/e55823c72b6bb67b-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/d7421b862f3c34a9-64.webp"
+        }
+      ],
+      "assets/track-covers/too-cold/14b3b26af9570138.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/d96569396470d41f-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/8bbeec38e8c2cbaa-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/8e66e07cb2c13b7a-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/3d708e4d9ae4abc5-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/604fa6c8ac9843c8-64.webp"
+        }
+      ],
+      "assets/track-covers/too-cold/0ebbbf6454bb320b.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/a820113abb23b69e-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/4800f8417be81cab-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/dbae576e610ac63f-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/882112d32f95a6cc-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/b4ba20623f476e0f-64.webp"
+        }
+      ],
+      "assets/track-covers/too-cold/2e17b8b4b578f3f7.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/ceb9ce9de0fa80bb-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/2ab3cded639b8c32-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/8ac21e0d95d2f4a4-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/bc39db6646aaeeb6-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/da7fb714d913fc77-64.webp"
+        }
+      ],
+      "assets/track-covers/too-cold/4ee2fe11e1bf1061.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/d5ffab2e4b32782e-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/015279748047c247-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/4db553ba540bfa09-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/1c4206fbf225ad5d-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/415ebe970d6a08be-64.webp"
+        }
+      ],
+      "assets/track-covers/too-cold/fa5e9198b4e73272.webp": [
+        {
+          "width": 16,
+          "url": "assets/track-covers/renditions/8554a5b0fb1e529c-16.webp"
+        },
+        {
+          "width": 24,
+          "url": "assets/track-covers/renditions/5eadefe3318d6436-24.webp"
+        },
+        {
+          "width": 32,
+          "url": "assets/track-covers/renditions/a30c3f3e64f0f8de-32.webp"
+        },
+        {
+          "width": 48,
+          "url": "assets/track-covers/renditions/921e4ed6510a57c2-48.webp"
+        },
+        {
+          "width": 64,
+          "url": "assets/track-covers/renditions/8c2817ed51c017f0-64.webp"
+        }
+      ]
+    }
   }
 ]

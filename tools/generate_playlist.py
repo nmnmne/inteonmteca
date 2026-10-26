@@ -90,6 +90,8 @@ def build_playlist(media_root: Path, assets_root: Path, public_root: Path) -> li
         collection["mediaDirectory"].casefold(): [image["url"] for image in collection["artwork"]]
         for collection in collections if collection.get("mediaDirectory")
     }
+    rendition_path = assets_root / "track-covers" / "renditions.json"
+    renditions = json.loads(rendition_path.read_text(encoding="utf-8")) if rendition_path.exists() else {}
     for audio_path in _iter_audio(media_root):
         artist, title = _parse_filename(audio_path)
         cover_path = _choose_cover(audio_path, assets_root)
@@ -106,6 +108,9 @@ def build_playlist(media_root: Path, assets_root: Path, public_root: Path) -> li
             item["covers"] = covers
         elif cover_path is not None:
             item["cover"] = _relative_url(cover_path, public_root)
+        candidates = {url: renditions[url] for url in item.get("covers", [item.get("cover")]) if url in renditions}
+        if candidates:
+            item["coverRenditions"] = candidates
         playlist.append(item)
     return playlist
 

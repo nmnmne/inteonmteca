@@ -1473,7 +1473,7 @@ const createTrackItem = (track, index, wheelNumber = index) => {
   artwork.className = "track-art";
   artwork.setAttribute("aria-hidden", "true");
   artwork.textContent = item.dataset.number;
-  window.inteonCovers?.attach(artwork, track);
+  window.inteonCovers?.attach(artwork, track, title);
   if (artwork.classList.contains('has-cover')) {
     meta.prepend(artwork);
     fold.append(meta);
@@ -2621,7 +2621,7 @@ authCodeForm?.addEventListener("submit", async (event) => {
 
 const animateChatGlyphs = (now) => {
   chatAnimationFrame = 0;
-  if (chatPanel?.hidden || document.hidden || animationQuality === "low" || prefersReducedMotion) return;
+  if (!chatWorkVisible() || animationQuality === "low" || prefersReducedMotion) return;
   const t = now * 0.001;
   const beat = (Math.sin(t * 1.45) + 1) / 2;
   chatGlyphs.forEach((glyph, index) => {
@@ -2713,8 +2713,12 @@ const renderChatMessages = (messages) => {
   if (chatGlyphs.length) chatAnimationFrame = requestAnimationFrame(animateChatGlyphs);
 };
 
+// mobile-sections loads later; its first event reconciles this conservative default.
+let mobileChatCollapsed = Boolean(chatPanel?.classList.contains('is-mobile-collapsed') ||
+  inlineChat && matchMedia('(max-width: 800px), (pointer: coarse)').matches);
+const chatWorkVisible = () => !document.hidden && !chatPanel?.hidden && !mobileChatCollapsed;
 const loadChat = async () => {
-  if (chatLoading || chatPanel?.hidden || document.hidden) return;
+  if (chatLoading || !chatWorkVisible()) return;
   if (useLocalPass()) {
     renderChatMessages(readStoredJson(localChatStorageKey, []));
     return;
@@ -2723,7 +2727,7 @@ const loadChat = async () => {
   const version = ++chatRequestVersion;
   try {
     const data = await requestJson("/api/chat");
-    if (version !== chatRequestVersion) return;
+    if (version !== chatRequestVersion || !chatWorkVisible()) return;
     renderChatMessages(data.messages || data);
     setChatStatus();
   } catch {
@@ -2732,6 +2736,24 @@ const loadChat = async () => {
     chatLoading = false;
   }
 };
+
+const syncChatPolling = () => {
+  if (!chatWorkVisible()) {
+    window.clearInterval(chatTimer); chatTimer = 0;
+    cancelAnimationFrame(chatAnimationFrame); chatAnimationFrame = 0;
+    return;
+  }
+  if (chatTimer) return;
+  loadChat();
+  chatTimer = window.setInterval(loadChat, 2500);
+};
+window.addEventListener('inteon-mobile-chat-change', event => {
+  mobileChatCollapsed = Boolean(event.detail?.collapsed);
+  syncChatPolling();
+});
+document.addEventListener('visibilitychange', syncChatPolling);
+window.addEventListener('pagehide', () => {window.clearInterval(chatTimer); chatTimer = 0;});
+window.addEventListener('pageshow', syncChatPolling);
 
 const deleteDialog = document.getElementById("chat-delete-dialog");
 const deleteYes = document.getElementById("chat-delete-yes");
@@ -2788,15 +2810,12 @@ const openChat = async ({ focus = false } = {}) => {
   }
   if (compactChatViewport.matches) chatClose?.focus({ preventScroll: true });
   else if (focus) chatInput?.focus({ preventScroll: true });
-  await loadChat();
-  if (chatPanel?.hidden) return;
-  window.clearInterval(chatTimer);
-  chatTimer = window.setInterval(loadChat, 2500);
+  syncChatPolling();
 };
 
 const closeChat = () => {
   if (inlineChat) return;
-  window.clearInterval(chatTimer);
+  window.clearInterval(chatTimer); chatTimer = 0;
   cancelAnimationFrame(chatAnimationFrame);
   chatAnimationFrame = 0;
   setPanelOpen(chatPanel, false);
@@ -3733,5 +3752,5 @@ if (inlineChat) {
   window.addEventListener("resize", syncChatViewport, {passive:true});
   const inlineDock = document.getElementById("active-player");
   if (inlineDock) new ResizeObserver(syncChatViewport).observe(inlineDock);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) loadChat(); });
+  // Shared polling lifecycle handles visibility and mobile collapse.
 }

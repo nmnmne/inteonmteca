@@ -12,16 +12,26 @@
     button.addEventListener('click',()=>{select.value=option.value;select.dispatchEvent(new Event('change',{bubbles:true}));button.focus({preventScroll:true});}); menu.append(button);return button;
   });
   const sync=()=>{toggle.textContent=`${select.selectedOptions[0]?.textContent || 'Матовый углерод'} ${menu.hidden?'▾':'▴'}`;options.forEach(o=>o.setAttribute('aria-selected',String(o.dataset.value===select.value)));};
-  const open=value=>{menu.hidden=!value;toggle.setAttribute('aria-expanded',String(value));sync();};
+  const announce=owner=>window.dispatchEvent(new CustomEvent('inteon-popup-open',{detail:{owner}}));
+  const open=(value,{announceOpen=true}={})=>{
+    const opening=value&&menu.hidden;
+    menu.hidden=!value;toggle.setAttribute('aria-expanded',String(value));sync();
+    if(opening&&announceOpen)announce('theme-picker');
+  };
   toggle.addEventListener('click',()=>open(menu.hidden));
   host.addEventListener('keydown',event=>{
-    if(event.key==='Escape'){open(false);toggle.focus();event.stopPropagation();return;}
+    if(event.key==='Escape'){
+      if(!menu.hidden){event.preventDefault();event.stopPropagation();open(false);toggle.focus();}
+      return;
+    }
     if(!['ArrowDown','ArrowUp','Home','End'].includes(event.key))return;
     event.preventDefault();const wasClosed=menu.hidden;open(true);let i=options.indexOf(document.activeElement);
     if(wasClosed||i<0)i=Math.max(0,options.findIndex(o=>o.dataset.value===select.value));else i=event.key==='ArrowDown'?Math.min(options.length-1,i+1):Math.max(0,i-1);
     if(event.key==='Home')i=0;if(event.key==='End')i=options.length-1;options[i]?.focus();options[i]?.scrollIntoView({block:'nearest'});
   });
   document.addEventListener('pointerdown',event=>{const r=host.getBoundingClientRect(),m=menu.getBoundingClientRect();const inside=b=>event.clientX>=b.left&&event.clientX<=b.right&&event.clientY>=b.top&&event.clientY<=b.bottom;if(!host.contains(event.target)&&!inside(r)&&(menu.hidden||!inside(m)))open(false);});
+  window.addEventListener('inteon-close-popups',()=>open(false,{announceOpen:false}));
+  window.addEventListener('inteon-popup-open',event=>{if(event.detail?.owner!=='theme-picker')open(false,{announceOpen:false});});
   const panel=select.closest('#theme-panel');new MutationObserver(()=>{if(panel.hidden)open(false);}).observe(panel,{attributes:true,attributeFilter:['hidden']});
   new MutationObserver(sync).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
   window.addEventListener('inteon-theme-frame',sync);select.addEventListener('change',sync);open(false);

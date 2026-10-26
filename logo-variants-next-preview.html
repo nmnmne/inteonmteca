@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ещё 10 вариантов второго логотипа — inteonmteca</title>
+<style>
+:root { color-scheme: dark; --bg:#070706; --surface:#0b0c09; --raised:#10120d; --edge:#292d23; --edge-hi:#56613b; --ink:#f1eee7; --muted:#939688; --acid:#d3ff69; }
+* { box-sizing:border-box; }
+html { background:var(--bg); }
+body { margin:0; padding:20px; color:var(--ink); background:var(--bg); font-family:"Segoe UI",Arial,sans-serif; }
+main { width:min(100%,1260px); }
+header { display:flex; justify-content:space-between; align-items:end; gap:24px; padding:0 0 16px; margin-bottom:14px; border-bottom:1px solid #282a22; }
+.kicker,.number,.selection-label { color:var(--acid); font:10px/1.4 Consolas,"Courier New",monospace; letter-spacing:.14em; text-transform:uppercase; }
+h1 { margin:5px 0 0; font-size:clamp(21px,3vw,30px); font-weight:450; letter-spacing:-.04em; }
+.note { max-width:390px; margin:0; color:var(--muted); font:12px/1.5 Consolas,"Courier New",monospace; text-align:right; }
+.selection { min-height:30px; display:flex; align-items:baseline; gap:10px; margin:0 0 13px; color:var(--muted); font-size:12px; }
+#picked { color:var(--ink); }
+.grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:11px; }
+.card { min-width:0; padding:9px; border:1px solid var(--edge); border-radius:5px; color:inherit; background:var(--surface); text-align:left; cursor:pointer; transition:border-color .18s,background-color .18s,transform .18s; }
+.card:hover { border-color:var(--edge-hi); background:var(--raised); transform:translateY(-2px); }
+.card:focus-visible { outline:2px solid var(--acid); outline-offset:3px; }
+.card[aria-pressed="true"] { border-color:var(--acid); background:#11150b; }
+.art { position:relative; display:grid; place-items:center; height:130px; overflow:hidden; border-radius:3px; background:transparent; isolation:isolate; }
+.layer { position:absolute; inset:0; overflow:hidden; }
+.logo { position:absolute; top:50%; left:50%; width:105%; max-width:none; height:auto; transform:translate(-50%,-50%); pointer-events:none; }
+.ghost { opacity:.5; }
+.caption { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:baseline; gap:8px; padding:11px 2px 1px; }
+.number { color:#7f8767; letter-spacing:.06em; }
+.name { overflow:hidden; font-size:13px; font-weight:550; text-overflow:ellipsis; white-space:nowrap; }
+.check { color:var(--acid); font:11px Consolas,monospace; opacity:0; }
+.card[aria-pressed="true"] .check { opacity:1; }
+.detail { margin:5px 0 1px 29px; color:var(--muted); font:10px/1.4 Consolas,"Courier New",monospace; }
+/* 11 — three small registration echoes around the faithful original. */
+.v11 .echo-a { filter:sepia(1) saturate(4.5) hue-rotate(24deg); opacity:.42; transform:translate(-50.8%,-51%); }
+.v11 .echo-b { filter:sepia(1) saturate(4.5) hue-rotate(24deg); opacity:.28; transform:translate(-49.2%,-49%); }
+.v11 .base { opacity:.95; }
+/* 12 — lime edge from the offset layer, white handwriting on top. */
+.v12 .edge { filter:sepia(1) saturate(5) hue-rotate(26deg) brightness(1.15); opacity:.78; transform:translate(-50%,-50%) scale(1.018); }
+.v12 .base { opacity:.96; }
+/* 13 — two clean scan cuts, not full-screen static. */
+.v13 .cut-a { filter:sepia(1) saturate(4.5) hue-rotate(22deg); opacity:.62; clip-path:inset(24% 0 64% 0); transform:translate(-49.5%,-50%); }
+.v13 .cut-b { filter:sepia(.5) saturate(2) hue-rotate(338deg); opacity:.4; clip-path:inset(68% 0 15% 0); transform:translate(-50.5%,-51%); }
+.v13 .base { opacity:.93; }
+/* 14 — the green copy drifts behind the white mark. */
+.v14 .echo-a { filter:sepia(1) saturate(5) hue-rotate(23deg); opacity:.58; transform:translate(-49.4%,-52%); }
+.v14 .echo-b { filter:sepia(1) saturate(4) hue-rotate(23deg); opacity:.28; transform:translate(-50.6%,-48%); }
+.v14 .base { opacity:.91; }
+/* 15 — a narrow moving sweep crosses the mark. */
+.v15 .base { opacity:.94; }
+.v15 .beam { position:absolute; z-index:2; inset:-100% 0; background:linear-gradient(180deg,transparent 47%,#d3ff6910 49%,#d3ff6970 50%,#d3ff6910 51%,transparent 53%); mix-blend-mode:screen; animation:sweep 4s linear infinite; }
+@keyframes sweep { to { transform:translateY(200%); } }
+/* 16 — offset white exposure with acid breaks at two bands. */
+.v16 .echo-a { filter:grayscale(1) brightness(1.75); opacity:.4; clip-path:inset(34% 0 47% 0); transform:translate(-50.8%,-49%); }
+.v16 .echo-b { filter:sepia(1) saturate(5) hue-rotate(22deg); opacity:.53; clip-path:inset(62% 0 21% 0); transform:translate(-49.2%,-52%); }
+.v16 .base { opacity:.95; }
+/* 17 — a soft green duplicate trails to the right, no hard glitch. */
+.v17 .echo-a { filter:sepia(1) saturate(5) hue-rotate(25deg); opacity:.32; transform:translate(-48.8%,-50%); }
+.v17 .base { opacity:.91; }
+.v17 .art::before { position:absolute; inset:20% 14%; content:""; background:radial-gradient(ellipse,#caff5722,transparent 72%); filter:blur(12px); }
+/* 18 — stepped slices keep the imperfect hand-drawn core readable. */
+.v18 .slice-a { filter:sepia(1) saturate(4.5) hue-rotate(22deg); opacity:.56; clip-path:inset(17% 0 69% 0); transform:translate(-49.5%,-49%); }
+.v18 .slice-b { filter:sepia(1) saturate(4.5) hue-rotate(22deg); opacity:.42; clip-path:inset(43% 0 39% 0); transform:translate(-50.4%,-51%); }
+.v18 .slice-c { filter:sepia(1) saturate(4.5) hue-rotate(22deg); opacity:.5; clip-path:inset(71% 0 12% 0); transform:translate(-49.6%,-50%); }
+.v18 .base { opacity:.9; }
+/* 19 — bright hand lettering with a very fine green afterimage. */
+.v19 .echo-a { filter:sepia(1) saturate(5) hue-rotate(24deg); opacity:.7; transform:translate(-50%,-50%) scale(1.012); }
+.v19 .base { filter:grayscale(.18) brightness(1.14); opacity:.96; }
+/* 20 — low-intensity ghost; the original grain stays visible. */
+.v20 .echo-a { filter:sepia(1) saturate(4.5) hue-rotate(25deg); opacity:.24; transform:translate(-50%,-50%) scale(1.025); }
+.v20 .base { filter:contrast(.9) brightness(.8); opacity:.72; }
+@media (max-width:1100px) { .grid { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+@media (max-width:820px) { body{padding:14px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}header{align-items:start;flex-direction:column;gap:8px}.note{text-align:left}.art{height:118px} }
+@media (max-width:420px) { body{padding:10px}.grid{gap:7px}.card{padding:6px}.art{height:102px}.caption{gap:5px;padding-top:8px}.name{font-size:12px}.detail{margin-left:24px;font-size:9px} }
+@media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; } }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div><div class="kicker">второй знак / новые варианты 11–20</div><h1>На основе исходника, отпечатка и сигнала</h1></div>
+  <p class="note">Все варианты сохраняют исходную форму букв.<br>Нажми карточку, чтобы отметить выбор.</p>
+</header>
+<div class="selection" aria-live="polite"><span class="selection-label">Выбрано</span><span id="picked">пока ничего</span></div>
+<section class="grid" aria-label="Десять новых вариантов логотипа">
+  <button class="card v11" type="button" aria-pressed="false" data-name="Тройное эхо" aria-label="Выбрать 11 — Тройное эхо"><span class="art"><span class="layer"><img class="logo ghost echo-a" src="assets/logo-handwriting.svg" alt=""><img class="logo ghost echo-b" src="assets/logo-handwriting.svg" alt=""><img class="logo base" src="assets/logo-handwriting.svg" alt=""></span></span><span class="caption"><span class="number">11</span><span class="name">Тройное эхо</span><span class="check">✓</span></span><span class="detail">три мягких совмещения</span></button>
+  <button class="card v12" type="button" aria-pressed="false" data-name="Лаймовый край" aria-label="Выбрать 12 — Лаймовый край"><span class="art"><span class="layer"><img class="logo edge" src="assets/logo-handwriting.svg" alt=""><img class="logo base" src="assets/logo-handwriting.svg" alt=""></span></span><span class="caption"><span class="number">12</span><span class="name">Лаймовый край</span><span class="check">✓</span></span><span class="detail">тонкий контурный отблеск</span></button>
+  <button class="card v13" type="button" aria-pressed="false" data-name="Два скан-разрыва" aria-label="Выбрать 13 — Два скан-разрыва"><span class="art"><span class="layer"><img class="logo cut-a" src="assets/logo-handwriting.svg" alt=""><img class="logo cut-b" src="assets/logo-handwriting.svg" alt=""><img class="logo base" src="assets/logo-handwriting.svg" alt=""></span></span><span class="caption"><span class="number">13</span><span class="name">Два скан-разрыва</span><span class="check">✓</span></span><span class="detail">две локальные полосы сдвига</span></button>
+  <button class="card v14" type="button" aria-pressed="false" data-name="Плавающая регистрация" aria-label="Выбрать 14 — Плавающая регистрация"><span class="art"><span class="layer"><img class="logo ghost echo-a" src="assets/logo-handwriting.svg" alt=""><img class="logo ghost echo-b" src="assets/logo-handwriting.svg" alt=""><img class="logo base" src="assets/logo-handwriting.svg" alt=""></span></span><span class="caption"><span class="number">14</span><span class="name">Плавающая регистрация</span><span class="check">✓</span></span><span class="detail">слои расходятся по вертикали</span></button>
+  <button class="card v15" type="button" aria-pressed="false" data-name="Световой проход" aria-label="Выбрать 15 — Световой проход"><span class="art"><span class="layer"><img class="logo base" src="assets/logo-handwriting.svg" alt=""></span><span class="beam" aria-hidden="true"></span></span><span class="caption"><span class="number">15</span><span class="name">Световой проход</span><span class="check">✓</span></span><span class="detail">узкий луч скользит по буквам</span></button>
+  <button class="card v16" type="button" aria-pressed="false" data-name="Слоёный срез" aria-label="Выбрать 16 — Слоёный срез"><span class="art"><span class="layer"><img class="logo echo-a" src="assets/logo-handwriting.svg" alt=""><img class="logo echo-b" src="assets/logo-handwriting.svg" alt=""><img class="logo base" src="assets/logo-handwriting.svg" alt=""></span></span><span class="caption"><span class="number">16</span><span class="name">Слоёный срез</span><span class="check">✓</span></span><span class="detail">белый и зелёный фрагменты</span></button>
+  <button class="card v17" type="button" aria-pressed="false" data-name="Мягкое эхо" aria-label="Выбрать 17 — Мягкое эхо"><span class="art"><span class="layer"><img class="logo ghost echo-a" src="assets/logo-handwriting.svg" alt=""><img class="logo base" src="assets/logo-handwriting.svg" alt=""></span></span><span class="caption"><span class="number">17</span><span class="name">Мягкое эхо</span><span class="check">✓</span></span><span class="detail">зелёный отпечаток смещён вправо</span></button>
+  <button class="card v18" type="button" aria-pressed="false" data-name="Ступенчатый сигнал" aria-label="Выбрать 18 — Ступенчатый сигнал"><span class="art"><span class="layer"><img class="logo slice-a" src="assets/logo-handwriting.svg" alt=""><img class="logo slice-b" src="assets/logo-handwriting.svg" alt=""><img class="logo slice-c" src="assets/logo-handwriting.svg" alt=""><img class="logo base" src="assets/logo-handwriting.svg" alt=""></span></span><span class="caption"><span class="number">18</span><span class="name">Ступенчатый сигнал</span><span class="check">✓</span></span><span class="detail">несколько коротких горизонтальных срезов</span></button>
+  <button class="card v19" type="button" aria-pressed="false" data-name="Яркий фосфор" aria-label="Выбрать 19 — Яркий фосфор"><span class="art"><span class="layer"><img class="logo ghost echo-a" src="assets/logo-handwriting.svg" alt=""><img class="logo base" src="assets/logo-handwriting.svg" alt=""></span></span><span class="caption"><span class="number">19</span><span class="name">Яркий фосфор</span><span class="check">✓</span></span><span class="detail">белое ядро и тонкий лайм</span></button>
+  <button class="card v20" type="button" aria-pressed="false" data-name="Тихий фантом" aria-label="Выбрать 20 — Тихий фантом"><span class="art"><span class="layer"><img class="logo ghost echo-a" src="assets/logo-handwriting.svg" alt=""><img class="logo base" src="assets/logo-handwriting.svg" alt=""></span></span><span class="caption"><span class="number">20</span><span class="name">Тихий фантом</span><span class="check">✓</span></span><span class="detail">слабый сигнал поверх чёрного</span></button>
+</section>
+</main>
+<script>
+const cards=[...document.querySelectorAll('.card')],picked=document.querySelector('#picked');
+for(const card of cards)card.addEventListener('click',()=>{for(const item of cards)item.setAttribute('aria-pressed',String(item===card));picked.textContent=`${card.querySelector('.number').textContent} · ${card.dataset.name}`;});
+</script>
+</body>
+</html>

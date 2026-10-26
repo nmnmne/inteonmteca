@@ -1,10 +1,11 @@
-/* Exclusive scenes share one continuous 5s motion / 5s rest clock. */
+/* Shared scene exclusivity; decoration keeps its 5s motion / 5s rest clock.
+   Bounded mobile foreground scenes own wall-time completion independently. */
 (() => {
   const root = document.documentElement;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   let active = null, suspended = false, away = false, pageDeparted = false, claimedAt = 0, claimedMotionAt = 0;
   const scatteredSources = new Set(), motionTimers = new Map();
-  const logoScenes = new Set(['acid', 'storm', 'mobile-scatter']);
+  const logoScenes = new Set(['acid', 'storm', 'recursion']);
   let nextMotionTimer = 0, recoveryTimer = 0;
   let ambientFrozen = false, ambientTimer = 0, ambientClockPaused = false, scheduleGeneration = 0;
   let ambientAt = performance.now(), ambientElapsed = ambientAt;
@@ -95,7 +96,7 @@
     sync();
     if (suspended) return;
     const now = performance.now();
-    const limits = {theme: 6000, acid: 16000, storm: 90000, interlude: 65000, cloud: 85000, 'mobile-scatter': 6000};
+    const limits = {theme: 6000, acid: 16000, storm: 90000, interlude: 65000, cloud: 85000, 'mobile-scatter': 6000, recursion: 8000};
     const claimedElapsed = logoScenes.has(active) ? ambientNow(now) - claimedMotionAt : now - claimedAt;
     if (active && claimedElapsed > (limits[active] || 90000)) {
       const stale = active;
@@ -104,6 +105,7 @@
       else if (stale === 'interlude' || stale === 'cloud') window.inteonAtmosphere?.stop();
       else if (stale === 'theme') window.inteonThemeMorph?.finish();
       else if (stale === 'mobile-scatter') window.inteonMobileLogo?.stop();
+      else if (stale === 'recursion') window.inteonLogoMaterials?.stop();
       if (active === stale) { active = null; publish(); }
     }
     for (const renderer of renderers.values()) {

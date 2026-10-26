@@ -371,7 +371,10 @@ class SiteContentTests(unittest.TestCase):
         self.assertIn("renderReactiveLogo", script)
         self.assertIn("averageBand", script)
         self.assertIn(".logo-vector-core", styles)
-        self.assertNotIn("assets/logo-full.png", html)
+        alternate = re.search(r'<div class="alternate-wordmark".*?</div>', html, re.S)
+        self.assertIsNotNone(alternate)
+        self.assertEqual(alternate.group(0).count("assets/logo-handwriting.svg"), 4)
+        self.assertEqual(html.count("assets/logo-handwriting.svg"), 4, "the handwritten vector is confined to the alternate mark")
         self.assertNotIn('url("assets/logo-full.png")', styles)
 
     def test_fractal_lattice_is_revealed_only_through_smoke(self):

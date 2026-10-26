@@ -37,7 +37,8 @@ async function fixture({mobile = false, stored = null, gpu = null} = {}) {
   const window=eventTarget();
   const storage=new Map(stored===null?[]:[['inteonmteca-debug-enabled',stored]]);
   Object.assign(window,{inteonGraphicsQuality:{level:5,fps:60,mode:'auto',state:'waiting',snapshot:()=>({}),
-    setManualLevel:value=>calls.push(['manual',value]),recalibrate:value=>calls.push(['recalibrate',value])}});
+    setManualLevel:value=>calls.push(['manual',value]),recalibrate:value=>calls.push(['recalibrate',value])},
+    inteonMobileLogo:{stop:()=>calls.push(['mobile-stop']),run:name=>calls.push(['mobile-run',name])}});
   const context={window,document,matchMedia:()=>compact,Event:class{constructor(type){this.type=type;}},
     localStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value)},
     navigator:{hardwareConcurrency:8},innerWidth:mobile?390:1440,innerHeight:900,devicePixelRatio:1,
@@ -124,8 +125,44 @@ test('mobile keeps a compact closed drawer, opens controls and dismisses outside
   await run.document.emit('keydown',{key:'Escape'});
   assert.equal(run.root.dataset.debugCompactOpen,'false');
   assert.equal(run.master.focused,true);
-  assert.ok(run.menu.children.find(entry=>entry.textContent==='Рекурсия').disabled);
+  assert.equal(run.menu.children.find(entry=>entry.textContent==='Распад на кусочки').disabled,false);
+  assert.equal(run.menu.children.find(entry=>entry.textContent==='Рекурсия').disabled,false);
   assert.equal(run.menu.children.find(entry=>entry.textContent==='Растворение').disabled,false);
+  assert.equal(run.menu.children.find(entry=>entry.textContent==='Разлёт и гроза').disabled,true);
+});
+
+test('quality copy stays dormant while hidden and refreshes when debug opens', async () => {
+  const run=await fixture({mobile:true});
+  const qualityCopy=()=>run.all.some(el=>String(el.textContent||'').startsWith('Графика '));
+  assert.equal(qualityCopy(),false);
+  await run.window.emit('inteon-quality-state');
+  assert.equal(qualityCopy(),false,'hidden quality events do not rewrite detached copy');
+  await run.master.emit('click');
+  assert.equal(qualityCopy(),true,'opening diagnostics performs one current refresh');
+});
+
+test('compact debug Escape is hierarchical and another popup closes the drawer', async () => {
+  const run=await fixture({mobile:true});
+  await run.master.emit('click');
+  await run.effects.emit('click');
+  await run.document.emit('keydown',{key:'Escape',preventDefault(){this.defaultPrevented=true;}});
+  assert.equal(run.menu.hidden,true,'first Escape closes the effects menu');
+  assert.equal(run.root.dataset.debugCompactOpen,'true','drawer remains available');
+  assert.equal(run.effects.focused,true);
+  await run.document.emit('keydown',{key:'Escape',preventDefault(){this.defaultPrevented=true;}});
+  assert.equal(run.root.dataset.debugCompactOpen,'false','second Escape closes the drawer');
+  await run.master.emit('click');
+  await run.window.emit('inteon-popup-open',{detail:{owner:'theme'}});
+  assert.equal(run.root.dataset.debugCompactOpen,'false');
+});
+
+test('mobile debug routes scatter, dissolve and recursion through the compact effect owner', async () => {
+  const run=await fixture({mobile:true});
+  await run.master.emit('click');
+  for (const [label,name] of [['Распад на кусочки','scatter'],['Растворение','dissolve'],['Рекурсия','recursion']]) {
+    await run.menu.children.find(entry=>entry.textContent===label).emit('click');
+    assert.deepEqual(run.calls.filter(call=>call[0]==='mobile-run').at(-1),['mobile-run',name]);
+  }
 });
 
 test('desktop toggle is visit-local and a compact user can still open diagnostics', async () => {

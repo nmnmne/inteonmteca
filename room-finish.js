@@ -4,8 +4,9 @@
   if (!list || !shell) return;
   let fitFrame = 0;
   const fit = () => {
-    cancelAnimationFrame(fitFrame);
+    if (fitFrame) return;
     fitFrame = requestAnimationFrame(() => {
+      fitFrame = 0;
       const first = list.querySelector('.track-item');
       const fill = getComputedStyle(shell);
       if (fill.getPropertyValue('--catalog-fill').trim() === '1' && first && shell.clientHeight) {
@@ -40,6 +41,11 @@
       list.dispatchEvent(new Event('inteon-catalog-fit'));
     });
   };
+  // Slot changes need not resize the shell. The layout owner explicitly asks
+  // for a refit after committing its geometry; all requests share one frame.
+  shell.addEventListener('inteon-catalog-refit', fit);
+  window.addEventListener('resize', fit);
+  document.fonts?.ready.then(fit);
   new ResizeObserver(fit).observe(shell);
   new MutationObserver(fit).observe(list, {childList: true});
   fit();

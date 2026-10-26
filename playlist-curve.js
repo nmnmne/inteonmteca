@@ -1,4 +1,4 @@
-/* The desktop catalogue folds into a leftward analogue signal. Real rows stay
+/* The desktop catalogue flows into a leftward analogue river. Real rows stay
    accessible and native; only cached glyph textures and grain cross its edges. */
 (() => {
   const list = document.getElementById('track-list');
@@ -55,7 +55,8 @@
     firstOffset = first?.offsetTop || 0;
     if (!rowHeight || !width || !height) return false;
     depth = Math.min(150, Math.max(44, innerHeight * .105));
-    gutter = Math.min(220, width * .26);
+    const bounds = shell.getBoundingClientRect();
+    gutter = Math.max(0, bounds.left);
     ellipseY = height / 2 + depth;
     edgeAngle = Math.asin(height / (2 * ellipseY));
     edgeCos = Math.cos(edgeAngle);
@@ -71,9 +72,13 @@
     artistSize = parseFloat(artistStyle.fontSize) || artistSize;
     shell.style.setProperty('--playlist-curve-depth', `${depth}px`);
     shell.style.setProperty('--playlist-curve-gutter', `${gutter}px`);
-    const dpr = Math.min(devicePixelRatio || 1, level() <= 3 ? .75 : 1);
+    // A longer river must not become a full-DPR viewport renderer. Keep the
+    // existing four surfaces and cap the decorative backing width at 1440.
+    const dpr = Math.min(devicePixelRatio || 1, level() <= 3 ? .75 : 1, 1440 / (width + gutter));
     for (const side of sides) {
-      const targetWidth = Math.round((width + gutter) * dpr), targetHeight = Math.round(depth * dpr);
+      side.depth = Math.max(1, side.edge === 'top' ? bounds.top : innerHeight - bounds.bottom + 1);
+      side.canvas.style.setProperty('--playlist-curve-depth', `${side.depth}px`);
+      const targetWidth = Math.round((width + gutter) * dpr), targetHeight = Math.round(side.depth * dpr);
       if (side.canvas.width !== targetWidth) side.canvas.width = targetWidth;
       if (side.canvas.height !== targetHeight) side.canvas.height = targetHeight;
       side.context.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -150,6 +155,22 @@
       ctx.fillText(signalText(artistText, start + index + 611, epoch), 7, y + rowHeight / 2 + titleSize * .6, width - 23);
     }
   };
+  const cubic = (a, b, c, t) => 3 * (1 - t) ** 2 * t * a + 3 * (1 - t) * t * t * b + t ** 3 * c;
+  const riverPoint = (side, p) => {
+    const top = side.edge === 'top';
+    const angle = edgeAngle + (Math.PI / 2 - edgeAngle) * p;
+    // Retain the old near-edge fold, then let its tail continue to the viewport
+    // instead of stopping after 10.5vh. Both banks share the row arc's tangent.
+    const bend = ellipseY * Math.sin(angle) - height / 2;
+    const y = bend + (side.depth - depth) * p * p;
+    const t = Math.max(0, Math.min(1, y / side.depth));
+    const tangent = -ellipseX / ellipseY * Math.tan(edgeAngle) * side.depth / 3;
+    const left = top ? cubic(tangent, -innerWidth * .075, -innerWidth * .192, t)
+      : cubic(tangent, -innerWidth * .75, -innerWidth * .66, t);
+    const right = top ? cubic(tangent, -innerWidth * .14, -innerWidth * .192 - width * .16, t)
+      : cubic(tangent, -innerWidth * .025, innerWidth * .10, t);
+    return {x: gutter + 2 + left, y, width: width + right - left};
+  };
   const paintSide = (side, scroll, time) => {
     const ctx = side.context, top = side.edge === 'top';
     const boundary = scroll + (top ? 0 : height);
@@ -157,25 +178,19 @@
     const start = Math.floor((boundary - (top ? sourceDepth : 0) - firstOffset) / rowHeight);
     const epoch = Math.floor(time * 5), grainEpoch = Math.floor(time * 16);
     cacheRows(side, start, epoch);
-    ctx.clearRect(0, 0, width + gutter, depth);
+    ctx.clearRect(0, 0, width + gutter, side.depth);
     const bands = 28 + level() * 4, bandSize = sourceDepth / bands;
     for (let band = 0; band < bands; band++) {
       const p = band / bands, end = (band + 1) / bands;
-      // Continue the very same ellipse followed by the interactive row centres.
-      const angle = edgeAngle + (Math.PI / 2 - edgeAngle) * p;
-      const endAngle = edgeAngle + (Math.PI / 2 - edgeAngle) * end;
-      const near = ellipseY * Math.sin(angle) - height / 2;
-      const far = ellipseY * Math.sin(endAngle) - height / 2;
-      const stretch = 1 + p * p * .12;
+      const near = riverPoint(side, p), far = riverPoint(side, end);
       const shake = (noise(band + grainEpoch * 41) - .5) * (3 + level()) * p * p;
-      // Both edges move left; widening cannot pull the far edge to the right.
-      const x = gutter + 2 + ellipseX * (Math.cos(angle) - edgeCos) + shake;
+      const x = near.x + shake;
       const globalY = top ? boundary - (band + 1) * bandSize : boundary + band * bandSize;
       const sourceY = (globalY - firstOffset - start * rowHeight) * ratio;
       const dropout = p > .12 && noise(band * 7 + grainEpoch * 3) > .77 ? .24 : 1;
       ctx.globalAlpha = .76 * Math.pow(1 - p, 1.7) * dropout;
       ctx.drawImage(side.texture, 0, sourceY, width * ratio, bandSize * ratio,
-        x, top ? depth - far : near, width * stretch, far - near + .45);
+        x, top ? side.depth - far.y : near.y, near.width, far.y - near.y + .45);
     }
     // Sparse rectangular grains, not a full-resolution noise bitmap. Their
     // outward/leftward trajectories use time, so detail changes keep the wind.
@@ -183,10 +198,9 @@
     for (let index = 0; index < count; index++) {
       const seed = side.particles[Math.floor(index * side.particles.length / count)];
       const p = (seed.phase + time * seed.speed) % 1;
-      const angle = edgeAngle + (Math.PI / 2 - edgeAngle) * p;
-      const bend = ellipseY * Math.sin(angle) - height / 2;
-      const x = gutter + seed.lane * width * .82 + ellipseX * (Math.cos(angle) - edgeCos) - width * p * .08;
-      const y = top ? depth - bend : bend;
+      const point = riverPoint(side, p);
+      const x = point.x + seed.lane * point.width * .82 - width * p * .08;
+      const y = top ? side.depth - point.y : point.y;
       const length = 1 + seed.length * (2 + p * 19);
       ctx.fillStyle = index % 4 ? `rgb(${accent})` : `rgb(${ink})`;
       ctx.globalAlpha = Math.sin(p * Math.PI) * (.13 + seed.weight * .45) * (1 - p * .6);
@@ -199,17 +213,17 @@
     ctx.fillStyle = `rgb(${ink})`;
     for (let index = 0; index < 2; index++) {
       const p = (time * (.13 + index * .06) + index * .43) % 1;
-      const angle = edgeAngle + (Math.PI / 2 - edgeAngle) * p;
-      const y = ellipseY * Math.sin(angle) - height / 2;
+      const point = riverPoint(side, p);
       ctx.globalAlpha = .065 * Math.sin(p * Math.PI);
-      ctx.fillRect(gutter + ellipseX * (Math.cos(angle) - edgeCos), top ? depth - y : y, width * (.5 + p * .2), .8);
+      ctx.fillRect(point.x, top ? side.depth - point.y : point.y, point.width * (.5 + p * .2), .8);
     }
     ctx.globalAlpha = 1;
     side.canvas.dataset.scroll = scroll.toFixed(2);
     side.canvas.dataset.drawCount = String(++side.draws);
     side.canvas.dataset.revision = String(revision);
     side.canvas.dataset.direction = 'left';
-    side.canvas.dataset.trajectory = 'ellipse';
+    side.canvas.dataset.trajectory = 'river';
+    side.canvas.dataset.depth = String(side.depth);
     side.canvas.dataset.windParticles = String(count);
     side.canvas.dataset.glyphRevision = String(epoch);
   };

@@ -5,7 +5,9 @@ const vm = require('node:vm');
 const source = fs.readFileSync(require('node:path').join(__dirname, '../track-covers.js'), 'utf8');
 
 function setup(count = 3) {
-  let now = 0, tick, observe;
+  let now = 0, tick, resize;
+  const observers = [];
+  const watchedTitles = new Set();
   class Element {
     constructor() {
       this.dataset = {}; this.attributes = {}; this.isConnected = true;
@@ -17,20 +19,28 @@ function setup(count = 3) {
     get src() { return this.attributes.src; }
     getAttribute(name) { return this.attributes[name]; }
     addEventListener() {}
+    getBoundingClientRect() { return {width: this.size || 8, height: this.size || 8}; }
     replaceChildren(image) { this.image = image; }
   }
   const document = { hidden: false, createElement: () => new Element(), addEventListener() {} };
   const context = { document, window: {}, Image: Element, matchMedia: () => ({matches: false}),
     performance: {now: () => now}, setInterval: fn => {tick = fn; return 1;}, clearInterval() {},
-    IntersectionObserver: class { constructor(fn) {observe = fn;} observe() {} unobserve() {} },
+    IntersectionObserver: class { constructor(fn) {observers.push(fn);} observe() {} unobserve() {} },
+    ResizeObserver: class {
+      constructor(fn) { resize = fn; }
+      observe(title) { watchedTitles.add(title); }
+      unobserve(title) { watchedTitles.delete(title); }
+    },
+    getComputedStyle: title => ({font: title.font}),
   };
   vm.runInNewContext(source, context);
   const track = {covers: Array.from({length: count}, (_, i) => `assets/cover-${i}.webp`)};
   const host = new Element();
   context.window.inteonCovers.attach(host, track);
-  const visibility = (element, visible) => observe([{target: element, isIntersecting: visible, intersectionRatio: visible ? 1 : 0}]);
+  const visibility = (element, visible) => observers.forEach(observe => observe([{target: element, isIntersecting: visible, intersectionRatio: visible ? 1 : 0}]));
   visibility(host, true);
-  return {host, track, document, api: context.window.inteonCovers, Element, visibility,
+  return {host, track, document, api: context.window.inteonCovers, Element, visibility, watchedTitles,
+    resize(title) { resize([{target: title}]); },
     advance(ms) {for (let i = 0; i < ms; i += 250) {now += 250; tick();}}};
 }
 
@@ -76,11 +86,41 @@ test('duplicate wheel rows and a recreated row retain one shared position withou
   ui.advance(250);
   const replacement = new ui.Element();
   ui.api.attach(replacement, ui.track);
+  ui.visibility(replacement, true);
   assert.equal(replacement.image.src, second.image.src);
+});
+
+test('unseen hosts have no src; near hosts use smallest sufficient rendition, including resize', () => {
+  const ui = setup(), host = new ui.Element();
+  const track = {covers: ['assets/original.webp'], coverRenditions: {'assets/original.webp':
+    [16, 24, 32, 48, 64].map(width => ({width, url: `assets/tiny-${width}.webp`}))}};
+  ui.api.attach(host, track);
+  assert.equal(host.image.src, undefined);
+  ui.visibility(host, true);
+  assert.equal(host.image.src, 'assets/tiny-16.webp');
+  host.size = 20;
+  ui.resize(host);
+  assert.equal(host.image.src, 'assets/tiny-24.webp');
 });
 
 test('tracks without known artwork keep their existing placeholder', () => {
   const ui = setup(), host = new ui.Element();
   assert.equal(ui.api.attach(host, {audio: 'song.flac'}), false);
   assert.equal(host.image, undefined);
+});
+
+test('artwork follows title font changes and releases detached title observers', () => {
+  const ui = setup(), host = new ui.Element(), title = {font: '650 13px / 14.3px Consolas'};
+  const properties = new Map();
+  host.parentElement = {style: {setProperty: (name, value) => properties.set(name, value)}};
+  ui.api.attach(host, ui.track, title);
+  assert.ok(ui.watchedTitles.has(title));
+  ui.resize(title);
+  assert.equal(properties.get('--cover-font'), title.font);
+  title.font = '600 24px / 28px Inter';
+  ui.resize(title);
+  assert.equal(properties.get('--cover-font'), title.font);
+  host.isConnected = false;
+  ui.advance(250);
+  assert.ok(!ui.watchedTitles.has(title));
 });

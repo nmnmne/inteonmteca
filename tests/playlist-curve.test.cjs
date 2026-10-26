@@ -17,9 +17,11 @@ function fixture({desktop = true, reducedMotion = false, level = 5, alphabet = '
       dataset: {originalText: `${selector === '.track-title' ? 'Track' : 'Artist'} ${index}`}, textContent: 'glitch',
     },
   }));
-  const list = {children: rows, clientWidth: 800, clientHeight: 400, scrollTop: 1500, addEventListener: on};
+  const bounds = {left: 640, top: 153, bottom: 553};
+  const list = {children: rows, clientWidth: 800, clientHeight: 400, scrollTop: 1500, addEventListener: on,
+    getBoundingClientRect: () => bounds};
   const properties = new Map();
-  const shell = {append: canvas => visible.push(canvas), style: {setProperty: (name, value) => properties.set(name, value)}};
+  const shell = {getBoundingClientRect: () => bounds, append: canvas => visible.push(canvas), style: {setProperty: (name, value) => properties.set(name, value)}};
   const media = {matches: desktop, addEventListener: on};
   const reduced = {matches: reducedMotion, addEventListener: (name, fn) => on(`reduced-${name}`, fn)};
   const root = {dataset: {graphicsLevel: String(level)}};
@@ -29,13 +31,13 @@ function fixture({desktop = true, reducedMotion = false, level = 5, alphabet = '
     const draws = [], text = [], clears = [], grains = [];
     const context = new Proxy({drawImage: (...args) => draws.push(args), fillText: (...args) => text.push(args),
       fillRect: (...args) => grains.push(args), clearRect: (...args) => clears.push(args)}, {get: (target, key) => target[key] || (() => {})});
-    const canvas = {dataset: {}, attributes: {}, width: 300, height: 150, className: '',
+    const canvas = {dataset: {}, attributes: {}, width: 300, height: 150, className: '', style: {setProperty() {}},
       getContext: () => context, setAttribute(name, value) {this.attributes[name] = value;}, draws, text, clears, grains};
     canvases.push(canvas); return canvas;
   };
   const doc = {hidden: false, documentElement: root, body, createElement: create, addEventListener: on,
     getElementById: id => id === 'track-list' ? list : shell};
-  const sandbox = {document: doc, innerHeight: 900, devicePixelRatio: 2,
+  const sandbox = {document: doc, innerWidth: 1440, innerHeight: 900, devicePixelRatio: 2,
     matchMedia: query => query.includes('prefers-reduced-motion') ? reduced : media,
     performance: {now: () => wallTime}, inteonHomeEffects: effects, inteonTextMotion: Object.freeze({symbols: alphabet}),
     getComputedStyle: () => ({font: '600 16px monospace', fontSize: '16px', getPropertyValue: () => '218, 243, 149'}),
@@ -94,20 +96,30 @@ test('scrolling repaints adjacent rows, coalesces events and reuses caches until
   assert.equal(run.frames.size, 1);
 });
 
-test('both edges of each projection bend left into the gutter and remain outside the active region', () => {
+test('river narrows upstream, opens downstream and stays outside the active region', () => {
   const run = fixture(); run.frame(0);
   const gutter = parseFloat(run.properties.get('--playlist-curve-gutter'));
-  assert.equal(gutter, 208);
+  assert.equal(gutter, 640, 'continuation reaches the left viewport edge rather than a short gutter');
   for (const canvas of run.visible) {
     for (const [texture, sx, sy, sw, sh, dx, dy, dw, dh] of canvas.draws) {
       assert.ok(sy >= 0 && sy + sh <= texture.height + 1, 'cached row sample in bounds');
-      assert.ok(dy >= 0 && dy + dh <= 95.5, 'projection confined to continuation canvas');
-      assert.ok(dw >= 800 && dx <= gutter + 2 && dh > 0, 'surface expands towards its left gutter');
+      assert.ok(dy >= 0 && dy + dh <= Number(canvas.dataset.depth) + 1, 'projection confined to continuation canvas');
+      assert.ok(dw > 0 && dx <= gutter + 2 && dh > 0, 'surface flows left without folding over itself');
     }
     const near = canvas.draws[0], far = canvas.draws.at(-1);
     assert.equal(near[5], gutter + 2, 'nearest strip meets the existing row edge');
-    assert.ok(far[5] < near[5] - 100, 'ellipse turns left into the available gutter');
-    assert.ok(far[5] + far[7] < near[5] + near[7] - 10, 'right edge also moves left despite stretch');
+    assert.ok(far[5] < near[5] - 100, 'both continuations turn left');
+    assert.equal(canvas.dataset.trajectory, 'river');
+    if (canvas.dataset.edge === 'top') {
+      assert.ok(far[7] < near[7] * .86, 'upper bank narrows into the distance');
+      assert.ok(far[5] + far[7] < near[5] + near[7] - 300, 'upper right bank follows the leftward bend');
+      assert.equal(Number(canvas.dataset.depth),153,'upper stream reaches the viewport edge');
+    } else {
+      assert.ok(far[7] > near[7] * 2, 'lower bank opens rather than curling into the same ellipse');
+      assert.ok(far[5]<0,'lower left bank continues offscreen');
+      assert.ok(far[5]+far[7]>1440,'lower right bank continues offscreen');
+      assert.ok(Number(canvas.dataset.depth)>=347,'lower stream reaches the bottom edge');
+    }
   }
   const top = run.visible.find(canvas => canvas.dataset.edge === 'top').draws;
   const bottom = run.visible.find(canvas => canvas.dataset.edge === 'bottom').draws;
@@ -154,7 +166,7 @@ test('quality changes reuse surfaces and reduce projection work and backing reso
   const pools = run.pools();
   run.root.dataset.graphicsLevel = '1'; run.emit('inteon-quality-change'); run.frame(10);
   assert.equal(run.canvases.length, 4);
-  assert.equal(run.visible[0].width, 756);
+  assert.equal(run.visible[0].width, 1080);
   assert.equal(run.visible[0].dataset.windParticles, '28');
   run.pools().forEach((pool, index) => assert.equal(pool, pools[index]));
   const before = run.visible[0].draws.length;
