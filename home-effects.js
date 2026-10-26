@@ -1,4 +1,4 @@
-/* Exclusive scenes share one continuous 1s motion / 1s rest clock. */
+/* Exclusive scenes share one continuous 5s motion / 5s rest clock. */
 (() => {
   const root = document.documentElement;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -8,14 +8,15 @@
   let nextMotionTimer = 0, recoveryTimer = 0;
   let ambientFrozen = false, ambientTimer = 0, ambientClockPaused = false, scheduleGeneration = 0;
   let ambientAt = performance.now(), ambientElapsed = ambientAt;
-  const scheduleEpoch = ambientAt, schedulePeriod = 2000;
+  const motionDurationMs = 5000, freezeDurationMs = 5000;
+  const scheduleEpoch = ambientAt, schedulePeriod = motionDurationMs + freezeDurationMs;
   let freezeUntil = 0;
   const currentMode = () => scatteredSources.size ? 'scattered' : 'assembled';
   const ambientNow = (now = performance.now()) => ambientElapsed + (ambientClockPaused ? 0 : Math.max(0, now - ambientAt));
   const boundaryAfter = now => {
     const cycle = Math.max(0, Math.floor((now - scheduleEpoch) / schedulePeriod));
     const start = scheduleEpoch + cycle * schedulePeriod;
-    if (now < start + 1000) return {at: start + 1000, freeze: true, end: start + schedulePeriod};
+    if (now < start + motionDurationMs) return {at: start + motionDurationMs, freeze: true, end: start + schedulePeriod};
     return {at: start + schedulePeriod, freeze: false, end: start + schedulePeriod};
   };
   let nextBoundary = boundaryAfter(scheduleEpoch);
@@ -41,7 +42,7 @@
     root.dataset.logoMotion = currentMode();
     root.dataset.ambientPhase = ambientClockPaused ? 'frozen' : 'running';
     if (wasPaused !== ambientClockPaused || force || previousMode !== currentMode()) {
-      root.style?.setProperty('--ambient-freeze-duration', `${ambientFrozen ? freezeUntil - now : 1000}ms`);
+      root.style?.setProperty('--ambient-freeze-duration', `${ambientFrozen ? freezeUntil - now : freezeDurationMs}ms`);
     }
     if (wasPaused !== ambientClockPaused || force) {
       for (const [id, entry] of motionTimers) armMotionTimer(id, entry);
@@ -148,7 +149,7 @@
     setLogoScattered(source, scattered) {
       if (typeof source !== 'string' || !source) return;
       const now = performance.now();
-      // Logo changes never restart or cancel the common one-second cadence.
+      // Logo changes never restart or cancel the common five-second cadence.
       advanceSchedule(now);
       const wasScattered = scatteredSources.size > 0;
       if (scattered) scatteredSources.add(source);

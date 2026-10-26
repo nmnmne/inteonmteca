@@ -73,25 +73,25 @@ function fixture({ hidden = false } = {}) {
 }
 
 
-for (const scattered of [false, true]) test(`one-second running/rest cadence, scattered=${scattered}`, () => {
+for (const scattered of [false, true]) test(`five-second running/rest cadence, scattered=${scattered}`, () => {
   const f=fixture(), start=f.api.ambientNow();
   f.api.setLogoScattered('logo',scattered);
   for(let i=0;i<5;i++) {
     assert.equal(f.api.ambientPaused,false);
-    f.advance(999); assert.equal(f.api.ambientPaused,false);
+    f.advance(4999); assert.equal(f.api.ambientPaused,false);
     f.advance(1); assert.equal(f.api.ambientPaused,true);
     const held=f.api.ambientNow();
-    f.advance(999); assert.equal(f.api.ambientNow(),held);
+    f.advance(4999); assert.equal(f.api.ambientNow(),held);
     f.advance(1); assert.equal(f.api.ambientPaused,false);
   }
-  assert.equal(f.api.ambientNow()-start,5000);
+  assert.equal(f.api.ambientNow()-start,25000);
   assert.equal(f.phaseTimers().length,1);
 });
 test('logo mode changes preserve the common epoch and an in-progress freeze',()=>{
-  const f=fixture(); f.advance(900); f.api.setLogoScattered('a',true);
+  const f=fixture(); f.advance(4900); f.api.setLogoScattered('a',true);
   f.advance(100); assert.equal(f.api.ambientPaused,true);
   f.api.setLogoScattered('a',false); assert.equal(f.api.ambientPaused,true);
-  f.advance(999); assert.equal(f.api.ambientPaused,true);
+  f.advance(4999); assert.equal(f.api.ambientPaused,true);
   f.advance(1); assert.equal(f.api.ambientPaused,false);
 });
 test('hidden time does not advance motion or allocate timers; missed freezes are skipped',()=>{
@@ -101,14 +101,15 @@ test('hidden time does not advance motion or allocate timers; missed freezes are
   assert.equal(f.api.ambientNow()-start,500);
   f.document.hidden=false; f.document.emit('visibilitychange');
   assert.equal(f.api.ambientPaused,false);
-  f.advance(1499); assert.equal(f.api.ambientPaused,false);
+  f.advance(9499); assert.equal(f.api.ambientPaused,false);
   f.advance(1); assert.equal(f.api.ambientPaused,true);
 });
 test('returning during an accepted freeze keeps only its remainder',()=>{
-  const f=fixture(); f.advance(1100); const held=f.api.ambientNow();
+  const f=fixture(); f.advance(5100); const held=f.api.ambientNow();
   f.document.hidden=true; f.document.emit('visibilitychange'); f.advance(300);
   f.document.hidden=false; f.document.emit('visibilitychange');
-  assert.equal(f.api.ambientPaused,true); f.advance(600);
+  assert.equal(f.api.ambientPaused,true); f.advance(4599);
+  assert.equal(f.api.ambientPaused,true); f.advance(1);
   assert.equal(f.api.ambientPaused,false); assert.equal(f.api.ambientNow(),held);
 });
 test('page lifecycle invalidates queued callbacks and leaves one schedule',()=>{
@@ -118,13 +119,13 @@ test('page lifecycle invalidates queued callbacks and leaves one schedule',()=>{
   assert.equal(f.api.ambientPaused,false); assert.equal(f.phaseTimers().length,1);
   assert.equal([...f.timers.values()].filter(t=>t.interval).length,1);
 });
-test('virtual deadlines count active time and support cancellation',()=>{
+test('virtual deadlines count active time across a five-second freeze and support cancellation',()=>{
   const f=fixture(), start=f.api.ambientNow(); let fired=null, cancelled=0;
-  f.api.setMotionTimeout(()=>{fired=f.api.ambientNow()-start},2500);
+  f.api.setMotionTimeout(()=>{fired=f.api.ambientNow()-start},5500);
   const id=f.api.setMotionTimeout(()=>cancelled++,500);
   f.api.clearMotionTimeout(id);
-  f.advance(4499); assert.equal(fired,null);
-  f.advance(1); assert.equal(fired,2500); assert.equal(cancelled,0);
+  f.advance(10499); assert.equal(fired,null);
+  f.advance(1); assert.equal(fired,5500); assert.equal(cancelled,0);
 });
 test('motion callbacks can cancel another callback and schedule subsequent work',()=>{
   const f=fixture(), calls=[]; let second;
@@ -135,7 +136,7 @@ test('motion callbacks can cancel another callback and schedule subsequent work'
 test('large delayed deliveries skip old cycles without a timer burst',()=>{
   const f=fixture(); f.jump(120500); f.advance(0);
   assert.equal(f.api.ambientPaused,false); assert.equal(f.phaseTimers().length,1);
-  f.advance(500); assert.equal(f.api.ambientPaused,true);
+  f.advance(4500); assert.equal(f.api.ambientPaused,true);
 });
 test('logo watchdogs expire by moving time, not the alternating rests',()=>{
   for(const [name,limit,moduleName] of [['acid',16000,'inteonLogoAcid'],['storm',90000,'inteonLogoStorm'],['mobile-scatter',6000,'inteonMobileLogo']]) {
