@@ -66,7 +66,7 @@ class SiteContentTests(unittest.TestCase):
     def test_page_and_social_titles_are_inteonmteca(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
 
-        title = "inteonmteca — Погрузись в глубину звука"
+        title = "Интеонмтека — Погрузись в глубину звука"
         self.assertIn(f"<title>{title}</title>", html)
         self.assertIn(f'<meta property="og:title" content="{title}">', html)
         self.assertIn(f'<meta name="twitter:title" content="{title}">', html)
@@ -93,7 +93,7 @@ class SiteContentTests(unittest.TestCase):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         description = "Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри."
 
-        title = "inteonmteca — Погрузись в глубину звука"
+        title = "Интеонмтека — Погрузись в глубину звука"
         self.assertIn(f"<title>{title}</title>", html)
         self.assertIn('<meta name="description" content="' + description + '">', html)
         self.assertIn(f'<meta property="og:title" content="{title}">', html)
