@@ -15,7 +15,7 @@ test('manual return saves pose and a cached yard gets a fresh cancellable deadli
     addEventListener: (name, fn) => { events[name] = fn; },
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../street-return.js'), 'utf8'), {
-    window, Date, localStorage: { getItem: key => store.get(key) ?? null, setItem: (key, value) => store.set(key, String(value)) },
+    window, Date, URLSearchParams, localStorage: { getItem: key => store.get(key) ?? null, setItem: (key, value) => store.set(key, String(value)) },
   });
   const street = window.inteonStreet;
   street.noteExit();

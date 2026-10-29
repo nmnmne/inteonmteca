@@ -55,6 +55,8 @@
   transform: translate(-49.2%, -52%);
 }
 /* Selected treatments from the second preview, using the same transparent layers. */
+/* White handwriting with a lime edge: lower luminance, not motion or geometry. */
+#logo-wrap[data-alternate-logo="12"] .alternate-wordmark { filter: brightness(.82); }
 #logo-wrap[data-alternate-logo="12"] .alternate-base { opacity: .96; }
 #logo-wrap[data-alternate-logo="12"] .alternate-echo {
   filter: sepia(1) saturate(5) hue-rotate(26deg) brightness(1.15);

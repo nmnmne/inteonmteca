@@ -37,20 +37,13 @@ For an explicitly local demo only, `INTEONMTECA_DEV=1` also enables screen codes
 Never enable that flag or `INTEONMTECA_DIRECT_CODE=1` on a public server.
 Opening `index.html` directly retains a browser-local demo; it is not a shared account or chat.
 
-Track artwork lives in `assets/track-covers/`; `catalog.json` retains its Desktop
-source paths and associates each release with a media directory. It also keeps
-artwork for releases whose audio is not in the playlist yet. The reviewed import
-list is `tools/desktop-cover-sources.json`. To refresh it (requires Pillow):
+The catalogue and player are text-only. Track artwork, its importer and generated
+renditions have been removed; logos, backgrounds and social preview images remain.
+Refresh both shared audio-only manifests with:
 
-```powershell
-python tools/import_desktop_covers.py --desktop "$([Environment]::GetFolderPath('Desktop'))"
+```bash
 python tools/generate_playlist.py
 ```
-
-The catalogue and selected player share the current variant. Artwork advances
-after 3.5–7 seconds of visible, loaded display time and completes a set in about
-a minute. Hidden tabs and offscreen rows pause it; every variant appears before
-the cycle repeats. Original files are never changed by the importer.
 
 ## Release checks
 

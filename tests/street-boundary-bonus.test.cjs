@@ -6,7 +6,7 @@ const source=fs.readFileSync(require('node:path').join(__dirname,'../street-retu
 function load(store=new Map(), at=new Date(2026,9,4,12).getTime(), pathname='/yard/') {
   let now=at; const timers=new Map(); let serial=0; const events={};
   class Clock extends Date { constructor(...args){super(...(args.length?args:[now]));} static now(){return now;} }
-  const context={Date:Clock,location:{pathname},localStorage:{getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,String(v))},
+  const context={Date:Clock,URLSearchParams,location:{pathname},localStorage:{getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,String(v))},
     setTimeout:(fn,ms)=>{timers.set(++serial,{fn,ms});return serial;},clearTimeout:id=>timers.delete(id),setInterval:()=>++serial,clearInterval(){},addEventListener:(name,fn)=>(events[name]??=[]).push(fn)};
   context.window=context; vm.runInNewContext(source,context);
   let left,home=false; const street=context.inteonStreet;

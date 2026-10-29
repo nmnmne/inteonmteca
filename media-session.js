@@ -42,6 +42,7 @@
                 title: track.title || "Трек",
                 artist: track.artist || "",
                 album: track.album || "",
+                artwork: [],
               })
               : null;
             metadataKey = key;

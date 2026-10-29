@@ -38,7 +38,7 @@ test('actual street-return ticks and its boundary bonus retime continuously with
   let now = new Date(2026, 9, 4, 12).getTime();
   const store = new Map();
   class Clock extends Date { constructor(...args) { super(...(args.length ? args : [now])); } static now() { return now; } }
-  const context = { Date: Clock, location: { pathname: '/yard/' },
+  const context = { Date: Clock, URLSearchParams, location: { pathname: '/yard/' },
     localStorage: { getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)) },
     setTimeout() {}, clearTimeout() {}, setInterval() {}, clearInterval() {}, addEventListener() {} };
   context.window = context;

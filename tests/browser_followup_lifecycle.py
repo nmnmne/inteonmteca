@@ -48,16 +48,15 @@ try:
   assert page.evaluate("inteonMobileLogo.run('recursion')")
   page.wait_for_function("!document.querySelector('#logo-wrap').dataset.mobileEffect",timeout=8500)
   page.evaluate("inteonMobileLogo.stop();inteonAlternateLogo.stop();window.__startQA=JSON.parse(JSON.stringify(__qa))")
-  # More than a minute of actual viewing covers a full variant cycle. The first
-  # three-copy catalogue stays bounded; only near rows own glyph/cover work.
+  # The three-copy text catalogue stays bounded during prolonged viewing.
   begin=len(requests);page.wait_for_timeout(57000)
   state=page.evaluate("""()=>({qa:__qa,start:__startQA,rows:document.querySelectorAll('.track-item').length,wrappedRows:[...document.querySelectorAll('.track-item')].filter(e=>e.querySelector('.text-wave-run')).length,images:[...document.querySelectorAll('.cover-image')].filter(e=>e.currentSrc).map(e=>({url:e.currentSrc,width:e.naturalWidth})),quality:inteonGraphicsQuality.snapshot()})""")
   assert state['qa']['gpu']==0,'normal startup must not probe or choose GPUs'
   assert state['qa']['glyphChanges']>state['start']['glyphChanges']+100,'letters remain alive at minimum quality'
   assert state['wrappedRows']<state['rows']/2,state
   assert not any('/api/chat' in u for u in requests[begin:]),'collapsed chat must not poll'
-  assert all(x['width']<=64 for x in state['images'])
-  assert not any('/track-covers/' in u and '/renditions/' not in u for u in requests)
+  assert not state['images']
+  assert not any('/track-covers/' in u for u in requests)
   assert not errors,errors
   report.update(state=state,requests=requests,errors=errors,visibility='controlled document.hidden events')
   b.close()

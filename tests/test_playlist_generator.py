@@ -6,7 +6,7 @@ from tools.generate_playlist import build_playlist
 
 
 class PlaylistGeneratorTests(unittest.TestCase):
-    def test_all_catalog_variants_survive_regeneration_and_shared_releases(self):
+    def test_legacy_catalog_cannot_restore_artwork(self):
         import json
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -23,10 +23,9 @@ class PlaylistGeneratorTests(unittest.TestCase):
             playlist = build_playlist(media, assets, root)
         self.assertEqual(len(playlist), 2)
         for track in playlist:
-            self.assertEqual(track['cover'], covers[0])
-            self.assertEqual(track['covers'], covers)
+            self.assertEqual(set(track), {'id', 'artist', 'title', 'audio'})
 
-    def test_build_playlist_reads_artist_title_and_matching_cover(self):
+    def test_build_playlist_reads_artist_title_and_ignores_matching_image(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             media = root / "media"
@@ -46,7 +45,7 @@ class PlaylistGeneratorTests(unittest.TestCase):
                     "artist": "Sonyx",
                     "title": "Light Of The Night",
                     "audio": "media/Night_Set/Sonyx - Light Of The Night.flac",
-                    "cover": "assets/night_set/cover.jpg",
+
                 }
             ],
         )

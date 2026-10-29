@@ -198,8 +198,3 @@ html[data-theme] body.spatial-room.has-mobile-visual-stage .playlist-shell {
     width: 100%; min-width: 0; white-space: normal; overflow-wrap: anywhere;
   }
 }
-@media (max-width: 800px), (pointer: coarse) {
-  html[data-theme] body.spatial-room .track-item .track-meta > .track-art.has-cover {
-    align-self: start; margin-top: calc((1.12em - 1cap) / 2);
-  }
-}

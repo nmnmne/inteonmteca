@@ -1,4 +1,4 @@
-/* Shared scene exclusivity; decoration keeps its 5s motion / 5s rest clock.
+/* Shared scene exclusivity; decoration keeps its 5s motion / 2s rest clock.
    Bounded mobile foreground scenes own wall-time completion independently. */
 (() => {
   const root = document.documentElement;
@@ -9,7 +9,7 @@
   let nextMotionTimer = 0, recoveryTimer = 0;
   let ambientFrozen = false, ambientTimer = 0, ambientClockPaused = false, scheduleGeneration = 0;
   let ambientAt = performance.now(), ambientElapsed = ambientAt;
-  const motionDurationMs = 5000, freezeDurationMs = 5000;
+  const motionDurationMs = 5000, freezeDurationMs = 2000;
   const scheduleEpoch = ambientAt, schedulePeriod = motionDurationMs + freezeDurationMs;
   let freezeUntil = 0;
   const currentMode = () => scatteredSources.size ? 'scattered' : 'assembled';

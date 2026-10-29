@@ -10,51 +10,13 @@ from typing import Iterable
 
 AUDIO_EXTENSIONS = {".flac", ".mp3", ".wav", ".m4a", ".ogg", ".opus", ".aac"}
 LEGACY_MEDIA_DIRECTORIES = {"wave-phonk"}
-IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
+
 DASH_SPLIT = re.compile(r"\s*-\s*", re.UNICODE)
 
 
 def _relative_url(path: Path, root: Path) -> str:
     return path.relative_to(root).as_posix()
 
-
-def _find_asset_directory(assets_root: Path, media_directory_name: str) -> Path | None:
-    if not assets_root.exists():
-        return None
-
-    wanted = media_directory_name.casefold()
-    candidates = [candidate for candidate in assets_root.iterdir() if candidate.is_dir()]
-    for candidate in candidates:
-        if candidate.name == media_directory_name:
-            return candidate
-    for candidate in candidates:
-        if candidate.name.casefold() == wanted:
-            return candidate
-    return None
-
-
-def _choose_cover(audio_path: Path, assets_root: Path) -> Path | None:
-    asset_directory = _find_asset_directory(assets_root, audio_path.parent.name)
-    if asset_directory is None:
-        return None
-
-    images = sorted(
-        (candidate for candidate in asset_directory.iterdir() if candidate.is_file() and candidate.suffix.casefold() in IMAGE_EXTENSIONS),
-        key=lambda candidate: candidate.name.casefold(),
-    )
-    if not images:
-        return None
-
-    audio_stem = audio_path.stem.casefold()
-    for image in images:
-        if image.stem.casefold() == audio_stem:
-            return image
-
-    for image in images:
-        if image.stem.casefold() in {"cover", "artwork", "art", "folder"}:
-            return image
-
-    return images[0]
 
 
 def _parse_filename(audio_path: Path) -> tuple[str, str]:
@@ -82,19 +44,10 @@ def _iter_audio(media_root: Path) -> Iterable[Path]:
 
 
 def build_playlist(media_root: Path, assets_root: Path, public_root: Path) -> list[dict]:
-    """Return deterministic metadata for every supported audio file."""
+    """Return audio-only metadata; assets_root remains for caller compatibility."""
     playlist: list[dict] = []
-    catalog_path = assets_root / "track-covers" / "catalog.json"
-    collections = json.loads(catalog_path.read_text(encoding="utf-8"))["collections"] if catalog_path.exists() else []
-    cover_sets = {
-        collection["mediaDirectory"].casefold(): [image["url"] for image in collection["artwork"]]
-        for collection in collections if collection.get("mediaDirectory")
-    }
-    rendition_path = assets_root / "track-covers" / "renditions.json"
-    renditions = json.loads(rendition_path.read_text(encoding="utf-8")) if rendition_path.exists() else {}
     for audio_path in _iter_audio(media_root):
         artist, title = _parse_filename(audio_path)
-        cover_path = _choose_cover(audio_path, assets_root)
         audio_url = _relative_url(audio_path, public_root)
         item = {
             "id": audio_url,
@@ -102,15 +55,7 @@ def build_playlist(media_root: Path, assets_root: Path, public_root: Path) -> li
             "title": title,
             "audio": audio_url,
         }
-        covers = cover_sets.get(audio_path.parent.name.casefold(), [])
-        if covers:
-            item["cover"] = covers[0]
-            item["covers"] = covers
-        elif cover_path is not None:
-            item["cover"] = _relative_url(cover_path, public_root)
-        candidates = {url: renditions[url] for url in item.get("covers", [item.get("cover")]) if url in renditions}
-        if candidates:
-            item["coverRenditions"] = candidates
+
         playlist.append(item)
     return playlist
 

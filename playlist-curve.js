@@ -136,15 +136,8 @@
       rounded(ctx, 2, y + 2, width - 4, rowHeight - 4, 20);
       ctx.fillStyle = `rgba(${accent}, .045)`; ctx.fill();
       ctx.strokeStyle = `rgba(${ink}, .22)`; ctx.stroke();
-      const cover = item.querySelector('.cover-image');
-      const coverSize = Math.max(0, Math.min(48, rowHeight - 14) / 2);
       const titleY = y + rowHeight / 2 - artistSize * .6;
-      let textX = 7;
-      if (cover?.complete && cover.naturalWidth) {
-        ctx.save(); rounded(ctx, 7, titleY - coverSize / 2, coverSize, coverSize, coverSize * .38); ctx.clip();
-        ctx.drawImage(cover, 7, titleY - coverSize / 2, coverSize, coverSize); ctx.restore();
-        textX += coverSize + 4;
-      }
+      const textX = 7;
       const title = item.querySelector('.track-title');
       const artist = item.querySelector('.track-artist');
       ctx.font = titleFont; ctx.fillStyle = `rgba(${ink}, .88)`;

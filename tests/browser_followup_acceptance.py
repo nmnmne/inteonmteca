@@ -90,21 +90,12 @@ try:
    context=browser.new_context(viewport={'width':390,'height':844},is_mobile=True,has_touch=True,device_scale_factor=dpr)
    context.add_init_script("""window.__covers=[];document.addEventListener('load',e=>{if(e.target.matches?.('.cover-image'))__covers.push({at:performance.now(),url:e.target.currentSrc,width:e.target.naturalWidth,stage:e.target.parentElement.dataset.coverStage})},true);""")
    page=context.new_page();page.goto(url);page.wait_for_timeout(3500)
-   stages=page.evaluate('__covers');assert stages and max(x['width'] for x in stages)<=64
-   if dpr>=2: assert any(x['stage']=='preview' for x in stages) and any(x['width']>16 for x in stages),stages
-   assert not page.evaluate("performance.getEntriesByType('resource').some(e=>e.name.includes('/track-covers/')&&!e.name.includes('/renditions/'))")
-   loaded=set(page.evaluate("performance.getEntriesByType('resource').filter(e=>e.name.includes('/renditions/')).map(e=>e.name)"))
+   stages=page.evaluate('__covers');assert not stages
+   assert page.locator('.cover-image,.active-cover').count()==0
+   assert not page.evaluate("performance.getEntriesByType('resource').some(e=>e.name.includes('/track-covers/'))")
    page.reload();page.wait_for_timeout(2500)
-   # Reload shuffles the playlist, so explicitly reuse a known decoded URL.
-   # Otherwise two legitimate random selections may have no common covers.
-   probe_url=sorted(loaded)[0]
-   before_probe=requests.count(probe_url.replace(url,''))
-   page.evaluate("async src=>{const image=new Image();image.src=src;await image.decode();}",probe_url)
-   cache=page.evaluate("performance.getEntriesByType('resource').filter(e=>e.name.includes('/renditions/')).map(e=>({url:e.name,bytes:e.transferSize}))")
-   repeated=[x for x in cache if x['url'] in loaded]
-   assert repeated and all(x['bytes']==0 for x in repeated),repeated
-   assert requests.count(probe_url.replace(url,''))==before_probe
-   report['covers'].append({'dpr':dpr,'stages':stages,'reload':cache})
+   assert page.locator('.cover-image,.active-cover').count()==0
+   report['covers'].append({'dpr':dpr,'removed':True})
    context.close();print('DPR/cache',dpr,flush=True)
   # Desktop -> mobile -> desktop restores explicit desktop slots. Playback
   # uses local media, never posts messages or changes a remote account.

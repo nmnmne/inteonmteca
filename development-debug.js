@@ -1,5 +1,13 @@
 window.inteonDebugReady = (async () => {
-  // Visitor-side visual controls work on the static host, without a debug API.
+  // Only the same-origin development server can grant diagnostics. Static hosts,
+  // production, redirects and failed requests fail closed (even on localhost).
+  document.documentElement.dataset.debugEnabled = 'false';
+  document.documentElement.dataset.debugCompactOpen = 'false';
+  try {
+    const response = await fetch('/api/runtime', {cache: 'no-store', credentials: 'same-origin', redirect: 'error'});
+    if (!response.ok || response.redirected || !response.headers.get('content-type')?.includes('application/json')) return false;
+    if ((await response.json())?.debug !== true) return false;
+  } catch { return false; }
   const compact = matchMedia('(max-width: 800px), (pointer: coarse)');
   let drawerOpen = false;
   // Debug is opt-in for this visit, never restored from another visit or tab.

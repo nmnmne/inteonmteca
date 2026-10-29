@@ -402,6 +402,8 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
             except Exception:
                 return True
             parts = set(path.relative_to(root).parts)
+            if not debug and path in {root / "development-debug.js", root / "yard" / "debug-pose.js"}:
+                return True
             if ".git" in parts or path.name == ".env" or path.suffix == ".db":
                 return True
             return False

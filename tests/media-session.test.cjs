@@ -93,3 +93,11 @@ test('missing or partially supported Media Session leaves other controls usable'
   limited.actions.nexttrack();
   assert.equal(limited.session.metadata.title, 'Next');
 });
+
+test('legacy track artwork is never exposed to system media controls', () => {
+  const s = setup();
+  s.select({title: 'Legacy', audio: 'track.flac', cover: 'old.webp', artwork: [{src: 'old.webp'}]});
+  assert.equal(s.session.metadata.artwork.length, 0);
+  s.actions.nexttrack();
+  assert.equal(s.session.metadata.artwork.length, 0);
+});

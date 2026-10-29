@@ -795,9 +795,7 @@ body.is-immersive .vr-reticle { opacity: .5; }
 }
 
 .track-item .track-toggle,
-.track-item .track-cover,
 .track-toggle,
-.track-cover,
 .track-audio { display: none; }
 
 .track-fold,

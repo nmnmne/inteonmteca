@@ -61,7 +61,7 @@ $syncArgs = @(
   "--include", "alternate-logo.js",
   "--include", "responsive-ui.css",
   "--include", "graphics-quality.js",
-  "--include", "development-debug.js",
+
   "--include", "theme-picker.js",
   "--include", "mobile-sections.js",
   "--include", "room-resident.js",
@@ -90,9 +90,9 @@ $syncArgs = @(
   "--include", "street-return.js",
   "--include", "playback-link.js",
   "--include", "media-session.js",
-  "--include", "track-covers.js",
+
   "--include", "popup-coordinator.js",
-  "--include", "track-covers.css",
+
   "--include", "mobile-stage.css",
   "--include", "desktop-edition.css",
   "--include", "graphics-quality.css",
@@ -109,10 +109,14 @@ $syncArgs = @(
   "--include", "yard/*",
   "--include", "yard/*/*",
   "--include", "yard/*/*/*",
-  "--exclude", "assets/track-covers/renditions/*",
+
+  "--exclude", "development-debug.js",
+  "--exclude", "yard/debug-pose.js",
   "--exclude", "*.html"
 )
 $staleKeys = @(
+  "development-debug.js",
+  "yard/debug-pose.js",
   ".gitignore",
   "LICENSE",
   "README.md",
@@ -150,11 +154,6 @@ foreach ($key in $staleKeys) {
 # During active development everything is uploaded with no-cache so devices revalidate files.
 Invoke-Aws --endpoint-url $endpoint s3 sync $root "$bucketUrl/" @syncArgs --cache-control $noCache | Out-Host
 
-# Immutable content-addressed images are separate from mutable entry points.
-# Copy also repairs old no-store metadata on previously uploaded renditions.
-# Retain old hashes for cached manifests; never delete during deployment.
-Invoke-Aws --endpoint-url $endpoint s3 cp (Join-Path $root "assets/track-covers/renditions") "$bucketUrl/assets/track-covers/renditions/" `
-  --recursive --cache-control "public, max-age=31536000, immutable" | Out-Host
 
 # 3) Force the entry files to get the exact headers/content-types even if their contents did not change.
 Invoke-Aws --endpoint-url $endpoint s3 cp $playlistPath "$bucketUrl/playlist.json" `
@@ -189,7 +188,7 @@ Invoke-Aws --endpoint-url $endpoint s3 cp $scriptPath "$bucketUrl/$versionedScri
   --cache-control $noCache `
   --metadata-directive REPLACE | Out-Host
 
-foreach ($scriptName in @("track-play.js", "street-return.js", "playback-link.js", "playlist-data.js", "track-covers.js", "room-resident.js")) {
+foreach ($scriptName in @("track-play.js", "street-return.js", "playback-link.js", "playlist-data.js", "room-resident.js")) {
   $scriptFile = Join-Path $root $scriptName
   if (-not (Test-Path $scriptFile)) { continue }
   Invoke-Aws --endpoint-url $endpoint s3 cp $scriptFile "$bucketUrl/$scriptName" `
@@ -209,8 +208,11 @@ if (Test-Path $yardCss) {
 
 # Build immutable gzip representations of allowlisted homepage CSS/JS. Keep
 # objects at the bucket root so relative CSS image/font URLs retain their base.
+$publicRootAssets = for ($i = 0; $i -lt $syncArgs.Count - 1; $i += 2) {
+  if ($syncArgs[$i] -eq "--include") { $syncArgs[$i + 1] }
+}
 $assetFiles = Get-ChildItem -LiteralPath $root -File | Where-Object {
-  $_.Extension -in @(".css", ".js") -and $syncArgs -contains $_.Name
+  $_.Extension -in @(".css", ".js") -and $publicRootAssets -contains $_.Name
 }
 foreach ($assetFile in $assetFiles) {
   $assetBytes = [System.IO.File]::ReadAllBytes($assetFile.FullName)
@@ -253,6 +255,14 @@ Invoke-Aws --endpoint-url $endpoint s3 cp $deployIndexPath "$bucketUrl/index.htm
   --content-type "text/html; charset=utf-8" `
   --cache-control $noCache `
   --metadata-directive REPLACE | Out-Host
+
+# Retire only track artwork after the text-only entry points are published.
+Invoke-Aws --endpoint-url $endpoint s3 rm "$bucketUrl/" --recursive --exclude "*" `
+  --include "development-debug.*.js" | Out-Host
+Invoke-Aws --endpoint-url $endpoint s3 rm "$bucketUrl/assets/track-covers/" --recursive | Out-Host
+Invoke-Aws --endpoint-url $endpoint s3 rm "$bucketUrl/" --recursive --exclude "*" `
+  --include "track-covers.js" --include "track-covers.css" `
+  --include "track-covers.*.js" --include "track-covers.*.css" | Out-Host
 
 Write-Host "Done." -ForegroundColor Green
 Write-Host "Static site: https://inteonmteca.online/" -ForegroundColor Green

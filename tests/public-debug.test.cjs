@@ -6,7 +6,7 @@ const {test} = require('node:test');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'development-debug.js'), 'utf8');
 
-async function fixture({mobile = false, stored = null, gpu = null} = {}) {
+async function fixture({mobile = false, stored = null, gpu = null, runtime = {debug:true}, ok = true, networkError = false} = {}) {
   const all = [], calls = [];
   const eventTarget = () => {
     const listeners = new Map();
@@ -42,10 +42,14 @@ async function fixture({mobile = false, stored = null, gpu = null} = {}) {
   const context={window,document,matchMedia:()=>compact,Event:class{constructor(type){this.type=type;}},
     localStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value)},
     navigator:{hardwareConcurrency:8},innerWidth:mobile?390:1440,innerHeight:900,devicePixelRatio:1,
-    setTimeout,clearTimeout,fetch:()=>{throw Error('public debug must not depend on API');}};
+    setTimeout,clearTimeout,fetch:async (url, options)=>{
+      assert.equal(url,'/api/runtime'); assert.equal(options.cache,'no-store');
+      if (networkError) throw Error('offline');
+      return {ok, redirected:false, headers:{get:()=> 'application/json'}, json:async()=>runtime};
+    }};
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'popup-coordinator.js'), 'utf8'),context);
   vm.runInNewContext(source,context);
-  assert.equal(await window.inteonDebugReady,true);
+  assert.equal(await window.inteonDebugReady, !networkError && ok && runtime?.debug === true);
   return {all,root,body,head,document,compact,window,calls,storage,
     master:all.find(el=>el.className==='development-debug-toggle development-debug-master'),
     effects:all.find(el=>el.attributes['aria-controls']==='development-animation-menu'),
@@ -53,6 +57,16 @@ async function fixture({mobile = false, stored = null, gpu = null} = {}) {
     menu:all.find(el=>el.id==='development-animation-menu'),
     slider:all.find(el=>el.className==='development-quality-slider')};
 }
+
+test('static, production, malformed and unreachable runtimes never create debug controls', async () => {
+  for (const options of [{runtime:{debug:false}}, {runtime:{}}, {runtime:{debug:'true'}}, {ok:false}, {networkError:true}]) {
+    const run = await fixture({...options, stored:'1'});
+    assert.equal(run.master,undefined);
+    assert.equal(run.quality,undefined);
+    assert.equal(run.menu,undefined);
+    assert.equal(run.root.dataset.debugEnabled,'false');
+  }
+});
 
 test('GPU diagnostics create and release one default context only after an explicit click', async () => {
   const calls=[]; let released=0;
@@ -68,7 +82,7 @@ test('GPU diagnostics create and release one default context only after an expli
   assert.deepEqual(run.calls,[['recalibrate','gpu-probe']]);
 });
 
-test('every static-host visitor starts with debug off and can enable controls without an API', async () => {
+test('actual development server starts off and permits opt-in controls', async () => {
   const run=await fixture();
   assert.equal(run.root.dataset.debugEnabled,'false');
   assert.equal(run.master.attributes.role,'switch');

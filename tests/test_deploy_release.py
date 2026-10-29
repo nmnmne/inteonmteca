@@ -25,7 +25,9 @@ class DeployReleaseTests(unittest.TestCase):
             root = Path(directory)
             shutil.copy2(ROOT / "deploy-site.ps1", root / "deploy-site.ps1")
             files = {
-                "index.html": '<meta name="inteonmteca-api" content=""><link href="styles.css"><script src="script.js"></script><script src="development-debug.js"></script><script data-development-only src="private-dev.js"></script>',
+                "index.html": '<meta name="inteonmteca-api" content=""><link href="styles.css"><script src="script.js"></script><script data-development-only defer src="development-debug.js"></script><script data-development-only src="private-dev.js"></script>',
+                "development-debug.js": "throw Error('development only');",
+                "yard/debug-pose.js": "throw Error('development only');",
                 "styles.css": "body {}", "script.js": "void 0;",
                 "playlist.json": "[]", "playlist-data.js": "window.playlist=[];",
                 "yard/index.html": '<link href="yard.css?v=old"><script data-development-only src="../development-debug.js"></script>',
@@ -85,7 +87,11 @@ catch { Write-Output $_; exit 1 }
         for call in uploads:
             if 'html' in call:
                 self.assertNotIn('private-dev.js', call['html'])
-        self.assertIn('development-debug.js', uploads[-1]['html'], 'visitor controls survive the production build')
+        self.assertNotIn('development-debug.js', uploads[-1]['html'], 'home debug stays private')
+        self.assertNotIn('development-debug.js', includes)
+        self.assertIn('yard/debug-pose.js', [sync[i + 1] for i, value in enumerate(sync) if value == '--exclude'])
+        for call in uploads:
+            self.assertNotIn('development-debug', call['args'][call['args'].index('cp') + 2])
         self.assertNotIn('development-debug.js', uploads[-2]['html'], 'unrelated yard developer controls stay private')
         targets = [call["args"][call["args"].index("cp") + 2] for call in uploads]
         self.assertEqual(targets[-2:], ["s3://inteonmteca.online/yard/index.html", "s3://inteonmteca.online/index.html"])
@@ -106,8 +112,9 @@ catch { Write-Output $_; exit 1 }
             target = call['args'][call['args'].index('cp') + 2]
             self.assertIn(hashlib.sha256(raw).hexdigest()[:16], target)
             self.assertIn('public, max-age=31536000, immutable', call['args'])
-        renditions = next(c['args'] for c in calls if 'cp' in c['args'] and any('/renditions/' in a for a in c['args']))
-        self.assertIn('public, max-age=31536000, immutable', renditions)
+        for call in calls:
+            if 'cp' in call['args'] or 'sync' in call['args']:
+                self.assertFalse(any('track-covers' in a for a in call['args']))
 
     def test_release_retains_remote_assets_and_local_inputs(self):
         result, calls, preserved = self.run_release()
@@ -117,7 +124,18 @@ catch { Write-Output $_; exit 1 }
             args = call["args"]
             self.assertNotIn("--delete", args)
             if "rm" in args:
-                self.assertNotIn("--recursive", args, "old version assets must remain available")
+                if "--recursive" in args:
+                    target = args[args.index('rm') + 1]
+                    if target.endswith('/assets/track-covers/'):
+                        self.assertEqual(target, 's3://inteonmteca.online/assets/track-covers/')
+                    else:
+                        self.assertEqual(target, 's3://inteonmteca.online/')
+                        self.assertEqual(args[args.index('--exclude') + 1], '*')
+                        self.assertIn([args[i+1] for i,a in enumerate(args) if a=='--include'],
+                                      [['track-covers.js', 'track-covers.css', 'track-covers.*.js', 'track-covers.*.css'],
+                                       ['development-debug.*.js']])
+                    entry = next(i for i,c in enumerate(calls) if c.get('html') and 's3://inteonmteca.online/index.html' in c['args'])
+                    self.assertGreater(calls.index(call), entry)
 
     def test_failure_at_each_upload_stops_later_publication(self):
         result, success_calls, _ = self.run_release()

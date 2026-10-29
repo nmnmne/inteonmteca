@@ -150,7 +150,9 @@
         await transition.finished;
       }else{reveal();}
       preview.remove();
-      save({to:'yard',at:Date.now(),poster});navigate(url);
+      save({to:'yard',at:Date.now(),poster});
+      window.inteonStreet?.prepareExit();
+      navigate(url);
     }catch(error){
       preview.remove();clear();cleanup();
       const button=document.querySelector('#street-link');

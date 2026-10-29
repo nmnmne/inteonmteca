@@ -9,6 +9,9 @@
   const maxSeconds = 900;
   const stepSeconds = 60;
   const boundaryBonusSeconds = 240;
+  const pendingExitKey = "inteonmteca-street-pending-exit";
+  const preview = new URLSearchParams(window.location?.search || "").has("portal-preview");
+  const clearPendingExit = () => { try { sessionStorage.removeItem(pendingExitKey); } catch {} };
 
   const read = (key) => {
     try {
@@ -31,13 +34,14 @@
     return `${date.getFullYear()}-${month}-${day}`;
   };
 
+  const poseDay = today();
   const resetIfNewDay = () => {
     if (read(dayKey) === today() && read(ruleKey) === rule) return;
     write(dayKey, today());
     write(ruleKey, rule);
     write(secondsKey, "");
     write(visitsKey, "");
-
+    write(poseKey, "");
   };
 
   const visits = () => {
@@ -96,6 +100,7 @@
     return state;
   };
   const endVisit = () => {
+    clearPendingExit();
     const state = walkState();
     state.ended = true;
     state.deadline = null;
@@ -130,8 +135,15 @@
     },
     visits,
     formatWatch,
+    prepareExit() {
+      // Stage only after the preview succeeds; commit in the destination document.
+      try { sessionStorage.setItem(pendingExitKey, "1"); } catch {}
+    },
     noteExit() {
       resetIfNewDay();
+      // Actual home-to-yard outings only: reloads never increment this count.
+      // The tenth keeps its place; the next (11th, 21st, ...) starts at base.
+      if (visits() > 0 && visits() % 10 === 0) write(poseKey, "");
       newVisit();
       const next = Math.min(maxSeconds, baseSeconds + visits() * stepSeconds);
       write(dayKey, today());
@@ -141,6 +153,9 @@
       return next;
     },
     savePose(pose) {
+      resetIfNewDay();
+      // Yesterday's open yard must not undo the reset on periodic/pagehide save.
+      if (poseDay !== today()) return;
       if (!pose || !Number.isFinite(Number(pose.x)) || !Number.isFinite(Number(pose.z))) return;
       write(poseKey, JSON.stringify({
         x: Number(pose.x),
@@ -150,6 +165,8 @@
       }));
     },
     resumePose() {
+      // Preview the next spawn without consuming an outing or erasing its pose.
+      if (preview && visits() > 0 && visits() % 10 === 0) return null;
       return recall();
     },
     armReturn(locationObject, protocol, onTick, remember) {
@@ -197,4 +214,12 @@
       start();
     },
   };
+  if (!preview && /\/yard(?:\/|$)/.test(window.location?.pathname || "")) {
+    let pending = false;
+    try { pending = sessionStorage.getItem(pendingExitKey) === "1"; } catch {}
+    if (pending) {
+      clearPendingExit();
+      window.inteonStreet.noteExit();
+    }
+  }
 })();

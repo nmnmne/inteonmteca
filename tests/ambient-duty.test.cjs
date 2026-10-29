@@ -8,7 +8,7 @@ const source = fs.readFileSync(path.join(__dirname, '..', 'home-effects.js'), 'u
 test('mobile foreground watchdog uses wall time without borrowing the ambient freeze', () => {
  const h=fixture();let stopped=0;h.window.inteonMobileLogo={stop(){stopped++;h.api.release('mobile-scatter');}};
  assert.equal(h.api.claim('mobile-scatter'),true);h.advance(7000);
- assert.equal(stopped,1);assert.equal(h.api.active,null);assert.equal(h.root.dataset.ambientPhase,'frozen');
+ assert.equal(stopped,1);assert.equal(h.api.active,null);assert.equal(h.root.dataset.ambientPhase,'running');
 });
 function fixture({ hidden = false } = {}) {
   let now = 10000;
@@ -78,7 +78,7 @@ function fixture({ hidden = false } = {}) {
 }
 
 
-for (const scattered of [false, true]) test(`five-second running/rest cadence, scattered=${scattered}`, () => {
+for (const scattered of [false, true]) test(`five-second running / two-second rest cadence, scattered=${scattered}`, () => {
   const f=fixture(), start=f.api.ambientNow();
   f.api.setLogoScattered('logo',scattered);
   for(let i=0;i<5;i++) {
@@ -86,7 +86,7 @@ for (const scattered of [false, true]) test(`five-second running/rest cadence, s
     f.advance(4999); assert.equal(f.api.ambientPaused,false);
     f.advance(1); assert.equal(f.api.ambientPaused,true);
     const held=f.api.ambientNow();
-    f.advance(4999); assert.equal(f.api.ambientNow(),held);
+    f.advance(1999); assert.equal(f.api.ambientNow(),held);
     f.advance(1); assert.equal(f.api.ambientPaused,false);
   }
   assert.equal(f.api.ambientNow()-start,25000);
@@ -96,7 +96,7 @@ test('logo mode changes preserve the common epoch and an in-progress freeze',()=
   const f=fixture(); f.advance(4900); f.api.setLogoScattered('a',true);
   f.advance(100); assert.equal(f.api.ambientPaused,true);
   f.api.setLogoScattered('a',false); assert.equal(f.api.ambientPaused,true);
-  f.advance(4999); assert.equal(f.api.ambientPaused,true);
+  f.advance(1999); assert.equal(f.api.ambientPaused,true);
   f.advance(1); assert.equal(f.api.ambientPaused,false);
 });
 test('hidden time does not advance motion or allocate timers; missed freezes are skipped',()=>{
@@ -106,14 +106,14 @@ test('hidden time does not advance motion or allocate timers; missed freezes are
   assert.equal(f.api.ambientNow()-start,500);
   f.document.hidden=false; f.document.emit('visibilitychange');
   assert.equal(f.api.ambientPaused,false);
-  f.advance(9499); assert.equal(f.api.ambientPaused,false);
+  f.advance(6499); assert.equal(f.api.ambientPaused,false);
   f.advance(1); assert.equal(f.api.ambientPaused,true);
 });
 test('returning during an accepted freeze keeps only its remainder',()=>{
   const f=fixture(); f.advance(5100); const held=f.api.ambientNow();
   f.document.hidden=true; f.document.emit('visibilitychange'); f.advance(300);
   f.document.hidden=false; f.document.emit('visibilitychange');
-  assert.equal(f.api.ambientPaused,true); f.advance(4599);
+  assert.equal(f.api.ambientPaused,true); f.advance(1599);
   assert.equal(f.api.ambientPaused,true); f.advance(1);
   assert.equal(f.api.ambientPaused,false); assert.equal(f.api.ambientNow(),held);
 });
@@ -124,12 +124,12 @@ test('page lifecycle invalidates queued callbacks and leaves one schedule',()=>{
   assert.equal(f.api.ambientPaused,false); assert.equal(f.phaseTimers().length,1);
   assert.equal([...f.timers.values()].filter(t=>t.interval).length,1);
 });
-test('virtual deadlines count active time across a five-second freeze and support cancellation',()=>{
+test('virtual deadlines count active time across a two-second freeze and support cancellation',()=>{
   const f=fixture(), start=f.api.ambientNow(); let fired=null, cancelled=0;
   f.api.setMotionTimeout(()=>{fired=f.api.ambientNow()-start},5500);
   const id=f.api.setMotionTimeout(()=>cancelled++,500);
   f.api.clearMotionTimeout(id);
-  f.advance(10499); assert.equal(fired,null);
+  f.advance(7499); assert.equal(fired,null);
   f.advance(1); assert.equal(fired,5500); assert.equal(cancelled,0);
 });
 test('motion callbacks can cancel another callback and schedule subsequent work',()=>{
@@ -139,7 +139,7 @@ test('motion callbacks can cancel another callback and schedule subsequent work'
   f.advance(600); assert.deepEqual(calls,['first','nested']);
 });
 test('large delayed deliveries skip old cycles without a timer burst',()=>{
-  const f=fixture(); f.jump(120500); f.advance(0);
+  const f=fixture(); f.jump(7000 * 12 + 500); f.advance(0);
   assert.equal(f.api.ambientPaused,false); assert.equal(f.phaseTimers().length,1);
   f.advance(4500); assert.equal(f.api.ambientPaused,true);
 });

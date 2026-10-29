@@ -1473,11 +1473,7 @@ const createTrackItem = (track, index, wheelNumber = index) => {
   artwork.className = "track-art";
   artwork.setAttribute("aria-hidden", "true");
   artwork.textContent = item.dataset.number;
-  window.inteonCovers?.attach(artwork, track, title);
-  if (artwork.classList.contains('has-cover')) {
-    meta.prepend(artwork);
-    fold.append(meta);
-  } else fold.append(artwork, meta);
+  fold.append(artwork, meta);
   button.append(fold);
   item.append(button);
   bindTrackItem(item, track);
@@ -1601,7 +1597,7 @@ const playTrack = (track, sourceItem = null, options = {}) => {
   if (pendingPlaybackSeek) player?.removeEventListener("loadedmetadata", pendingPlaybackSeek.place);
   pendingPlaybackSeek = null;
   currentTrack = track;
-  window.inteonCovers?.select(track);
+
   if (player && options.shared) window.inteonPlayback?.restore?.(player, options.shared);
   else if (player) window.inteonPlayback?.select?.(player, options.origin || "home");
   playbackStamp = "";
@@ -1860,7 +1856,7 @@ const exitImmersiveMode = () => {
   trackFlight?.remove();
   trackFlight = null;
   currentTrack = null;
-  window.inteonCovers?.select(null);
+
   currentTrackIndex = -1;
   homeMediaSession?.sync();
   cancelAnimationFrame(immersiveState.raf);
@@ -3729,8 +3725,8 @@ streetLink?.addEventListener("click", (event) => {
     playbackStamp = "";
     rememberPlayback();
   }
-  window.inteonStreet?.noteExit();
   if (window.inteonPortal) { event.preventDefault(); window.inteonPortal.exit(streetLink.href); }
+  else window.inteonStreet?.prepareExit();
 });
 window.addEventListener("pagehide", () => { rememberPlayback(); playbackLeaving = true; });
 window.addEventListener("pageshow", (event) => {
