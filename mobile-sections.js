@@ -84,7 +84,7 @@
       logoTop = 0; logoWidth = 0;
       set('--mobile-document-height', listTop + listHeight + 90 + keyboard);
     } else {
-      const baseListHeight = editing ? 190 : Math.round(Math.max(38, Math.min(56, innerHeight * .056)) * 5);
+      const baseListHeight = editing ? 190 : Math.round(Math.max(38, Math.min(56, innerHeight * .056)) * 5) + minimumRowHeight();
       if (collapsed) {
         chatTop = dockTop - 12 - baseListHeight - fullChatHeight;
         listTop = chatTop + collapsedHeight;
@@ -94,15 +94,14 @@
         listTop = dockTop - 6 - listHeight;
         chatTop = listTop - 6 - chatHeight;
       }
+      logoWidth = Math.min(innerWidth * .76, 520);
+      // A top-anchored composition: its spacing does not grow with viewport height.
+      logoTop = 132;
       if (!editing) {
-        chatTop = Math.max(202, chatTop);
+        chatTop = logoTop + logoWidth * .2004 + 32;
         listTop = chatTop + chatHeight + (collapsed ? 0 : 6);
         listHeight = Math.max(48, dockTop - 6 - listTop);
-      }
-      logoWidth = Math.min(innerWidth * .76, 520);
-      const logoHeight = logoWidth * .2004;
-      logoTop = Math.min(innerHeight * .355 - logoHeight / 2, chatTop - logoHeight - 40);
-      if (editing) logoTop = 0;
+      } else logoTop = 0;
     }
     set('--mobile-chat-row', row);
     set('--mobile-chat-top', Math.round(chatTop));
@@ -114,11 +113,11 @@
     set('--mobile-stage-height', logoWidth * .2004);
     // Account for the actual two-line typography, padding and a readable row;
     // collapsed chat earns additional rows only when they genuinely fit.
-    const slots = Math.max(1, Math.min(12, Math.floor(Math.round(listHeight) / minimumRowHeight())));
+    const slots = Math.max(1, Math.min(30, Math.floor(Math.round(listHeight) / minimumRowHeight())));
     setRaw('--mobile-catalog-slots', slots);
     playlist.style.setProperty('--catalog-slots', slots);
-    set('--mobile-heading-top', sideBySide ? 57 : Math.max(70, Math.min(innerHeight * .185, logoTop - 36)));
-    set('--mobile-resident-top', sideBySide ? 118 : Math.max(90, chatTop + 12));
+    set('--mobile-heading-top', sideBySide ? 57 : 90);
+    set('--mobile-resident-top', sideBySide ? 90 : 86);
     requestCatalogFit();
   };
   const scheduleLayout = () => {

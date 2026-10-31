@@ -182,8 +182,6 @@ html[data-theme] .chat-inline .chat-send:hover { background: rgba(var(--interfac
   html[data-theme] .spatial-room :is(.theme-panel, .auth-panel) { left: auto; right: calc(50vw + 18px); top: 78px; bottom: auto; width: var(--theme-menu-width); max-height: min(250px, 28vh); overflow-y: auto; z-index: 70 !important; }
   html[data-theme] .spatial-room .auth-panel { max-height: calc(100dvh - 100px); }
   .spatial-room .listening-intro :is(.label, h1) { transition: right .18s ease, font-size .18s ease; }
-  .spatial-room:is(.is-theme-menu-open, .is-auth-menu-open) .listening-intro :is(.label, h1) { right: calc(var(--theme-menu-width) + 36px); }
-  .spatial-room:is(.is-theme-menu-open, .is-auth-menu-open) .listening-intro h1 { font-size: clamp(18px, calc((50vw - var(--theme-menu-width) - 60px) / 8.4), 86px); }
 }
 /* Separate the pigment from nearby background shades without a broad glow. */
 body.spatial-room .logo-vector { filter: contrast(1.12) drop-shadow(0 2px 2px #0009); }
@@ -374,12 +372,6 @@ body.spatial-room .logo-wrap.is-ink-rebuilt .logo-vector-core { opacity:1; }
     top: max(78px, 11dvh); width: var(--theme-menu-width);
   }
   html[data-theme] body.spatial-room .listening-intro .label { right: var(--catalog-edge-gap); }
-  html[data-theme] body.spatial-room:is(.is-theme-menu-open, .is-auth-menu-open) .listening-intro :is(h1, .label) {
-    right: calc(var(--theme-menu-width) + var(--catalog-edge-gap) * 2);
-  }
-  html[data-theme] body.spatial-room:is(.is-theme-menu-open, .is-auth-menu-open) .listening-intro h1 {
-    font-size: min(clamp(22px, calc((60.4vw - var(--theme-menu-width) - var(--catalog-edge-gap) * 2 - 24px) / 8.4), 170px), clamp(24px, 3.5vw, 119px));
-  }
 }
 
 /* Local code typography retains each artist's original spelling and case. */

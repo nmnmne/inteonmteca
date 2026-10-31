@@ -112,6 +112,11 @@
       .map(el => el.getBoundingClientRect()).filter(r => r.width && r.height && r.bottom > 0 && r.top < innerHeight);
   };
   const safe = p => {
+    if (document.body.classList.contains('has-mobile-visual-stage')) {
+      const heading = document.querySelector('.listening-intro h1').getBoundingClientRect();
+      const logo = document.querySelector('#logo-wrap').getBoundingClientRect();
+      if (p.x < 28 || p.x > heading.left - 25 || p.y < 88 || p.y > logo.top - 24) return false;
+    }
     const padX=compact.matches ? 24 : 32, padY=compact.matches ? 27 : 34;
     return p.x >= padX && p.x <= innerWidth-padX && p.y >= padY && p.y <= innerHeight-padY
       && !obstacles.some(r => p.x > r.left-padX && p.x < r.right+padX

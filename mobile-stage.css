@@ -147,3 +147,20 @@
   html[data-theme] body.spatial-room .listening-intro h1 { font-size: 24px; }
   html[data-theme] body.spatial-room:not(.mobile-stage-keyboard) .room-presence { left: 42vw; right: auto; }
 }
+
+@media (max-width: 800px) and (min-height: 501px), (max-width: 500px), (pointer: coarse) and (max-height: 500px) {
+  html[data-theme] body.spatial-room .room-presence { left: 38px; right: auto; }
+  html[data-theme] body.spatial-room #active-player {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) clamp(66px, 18vw, 100px);
+    grid-template-rows: 44px 24px; gap: 2px 8px;
+  }
+  html[data-theme] body.spatial-room #active-player .transport { display: contents; }
+  html[data-theme] body.spatial-room #active-player :is(.transport-play, .transport-skip) { grid-row: 1; justify-self: center; }
+  html[data-theme] body.spatial-room #active-player #previous-track { grid-column: 1; }
+  html[data-theme] body.spatial-room #active-player #immersive-play { grid-column: 2; }
+  html[data-theme] body.spatial-room #active-player #next-track { grid-column: 3; }
+  html[data-theme] body.spatial-room #active-player .volume-control { grid-column: 4; grid-row: 1; align-self: center; }
+  html[data-theme] body.spatial-room #active-player .transport-seek-field { grid-column: 1 / -1; grid-row: 2; margin-inline: 32px; width: auto; }
+  html[data-theme] body.spatial-room #active-player #current-time { grid-column: 1; grid-row: 2; }
+  html[data-theme] body.spatial-room #active-player #duration-time { grid-column: 4; grid-row: 2; }
+}
