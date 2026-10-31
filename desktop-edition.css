@@ -77,11 +77,17 @@ html[data-theme] body.spatial-room.is-interlude .playlist-curve { display: none;
     width: calc(100% + var(--playlist-curve-gutter, 0px));
     height: var(--playlist-curve-depth, 100px); z-index: 0;
     pointer-events: none; user-select: none; contain: strict;
-    -webkit-mask-image: linear-gradient(90deg, transparent, #000 13%, #000 80%, transparent 100%);
-    mask-image: linear-gradient(90deg, transparent, #000 13%, #000 80%, transparent 100%);
+    /* Full continuity for the first 20 px at the catalogue; only the distant
+       right-hand tail fades. Two static alpha gradients, no blur surfaces. */
+    -webkit-mask-image: linear-gradient(var(--curve-seam-direction), #000 0 20px, transparent 100px),
+      linear-gradient(90deg, transparent, #000 13%, #000 38%, rgba(0, 0, 0, .55) 55%, transparent 85%);
+    mask-image: linear-gradient(var(--curve-seam-direction), #000 0 20px, transparent 100px),
+      linear-gradient(90deg, transparent, #000 13%, #000 38%, rgba(0, 0, 0, .55) 55%, transparent 85%);
+    -webkit-mask-composite: source-over;
+    mask-composite: add;
   }
-  html[data-theme] body.spatial-room .playlist-curve[data-edge="top"] { bottom: 100%; }
-  html[data-theme] body.spatial-room .playlist-curve[data-edge="bottom"] { top: 100%; }
+  html[data-theme] body.spatial-room .playlist-curve[data-edge="top"] { bottom: 100%; --curve-seam-direction: 0deg; }
+  html[data-theme] body.spatial-room .playlist-curve[data-edge="bottom"] { top: 100%; --curve-seam-direction: 180deg; }
   html[data-theme] body.spatial-room .track-item { padding: 2px 0; }
   html[data-theme] body.spatial-room .track-select {
     height: calc(var(--tile-height) - 4px); min-height: 0;

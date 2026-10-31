@@ -1,7 +1,7 @@
-import { createDigitalBoundary } from './digital-boundary.js';
+import { createDigitalBoundary } from './digital-boundary.js?v=black-outer-dome-20261031';
 import * as THREE from "./vendor/three.module.js";
 import { batchStaticDecoration } from './static-batches.js';
-import { addFiveStoreyReference } from './five-storey-reference.js?v=20261006-3';
+import { addFiveStoreyReference } from './five-storey-reference.js?v=lawn-pipe-correction-20261031';
 import { addHouseRelief } from "./house14-relief.js?v=refinement-20261009-2";
 import { addTowerReference } from './tower-reference.js?v=20261009-2';
 import { facadeNormal } from "./facade-frame.js";
@@ -351,7 +351,7 @@ function distanceToBoundary(x, z, ring) {
   return nearest;
 }
 
-export function createYardScene(layout, fixedSun = fixedSunForLayout(layout)) {
+export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), { progressive = false, origin = layout.spawn } = {}) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(fixedSun.skyColor);
   scene.fog = new THREE.Fog(fixedSun.fogColor, 90, 260);
@@ -369,7 +369,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout)) {
   for (let index = 1; index < layout.walkable.length; index += 1) {
     groundShape.lineTo(layout.walkable[index][0], -layout.walkable[index][1]);
   }
-  const ground = new THREE.Mesh(new THREE.ShapeGeometry(groundShape), materials.soil(1, 1));
+  const ground = new THREE.Mesh(new THREE.ShapeGeometry(groundShape), materials.asphalt(1, 1));
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = 0;
   scene.add(ground);
@@ -390,17 +390,26 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout)) {
   }
   addRoadDetails(scene, materials, layout.roads || []);
   addLandscaping(scene, materials, layout.landscaping);
-  const openings = { windows: [], balconies: [], entrances: [] };
   const buildingStart = scene.children.length;
+  const pendingDetails = [];
+  const detailState = scene.userData.detailLoading = {
+    status: 'loading', completed: [], total: layout.buildings.length,
+  };
   for (const building of layout.buildings) {
     const ring = building.footprint;
+    const openings = { windows: [], balconies: [], entrances: [] };
+    const facadeId = building.facadeMaterialId || "unknown-facade";
+    // Distant silhouettes and collision walls exist on the first frame. Their
+    // procedural facade maps and dense balcony geometry follow nearest first.
+    const facade = progressive
+      ? new THREE.MeshStandardMaterial({ color: facadeSpec(facadeId).baseColor })
+      : materials.facade(facadeId);
+    const walls = [];
     for (let index = 0; index < ring.length; index += 1) {
       const a = ring[index];
       const b = ring[(index + 1) % ring.length];
-      const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
-      const facadeId = building.facadeMaterialId || "unknown-facade";
-      const facade = materials.facade(facadeId);
       const mesh = addWall(scene, solids, a, b, building.heightM, facade, { facadeId });
+      walls.push(mesh);
       const same = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]) < 0.2;
       const music = layout.musicWall;
       const onSegment = (same(a, music.segment[0]) && same(b, music.segment[1])) || (same(a, music.segment[1]) && same(b, music.segment[0]));
@@ -409,13 +418,38 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout)) {
       if (!isMusic && building.id !== 'tower-34' && !building.facadeProject?.referenceStyle && !building.facadeProject?.reliefSections?.some(section => section.edgeIndex === index)) collectOpenings(openings, a, b, building, index);
     }
     addRoof(scene, ring, building.heightM + 0.05, ROOF_COLOR[building.roof] || 0x8d9298, building.roof === "red");
-    addHouseRelief(scene, solids, materials, layout, building);
-    if(building.id==='tower-34')addTowerReference(scene,materials,building);
-    addFiveStoreyReference(scene, materials, building);
+    pendingDetails.push({ building, add() {
+      if (progressive) {
+        const textured = materials.facade(facadeId);
+        textured.side = THREE.DoubleSide;
+        for (const wall of walls) {
+          // Keep the digital-boundary shader attached to the existing material.
+          wall.material.color.copy(textured.color);
+          wall.material.map = textured.map;
+          wall.material.roughness = textured.roughness;
+          wall.material.metalness = textured.metalness;
+          wall.material.needsUpdate = true;
+        }
+      }
+      const start = scene.children.length;
+      addHouseRelief(scene, solids, materials, layout, building);
+      if (building.id === 'tower-34') addTowerReference(scene, materials, building);
+      addFiveStoreyReference(scene, materials, building);
+      addOpeningMeshes(scene, materials, openings);
+      addHruDetails(scene, materials, openings);
+      scene.children.slice(start).forEach(mesh => { mesh.userData.digitalBuilding = true; });
+      detailState.completed.push(building.id);
+    } });
   }
-  addOpeningMeshes(scene, materials, openings);
-  addHruDetails(scene, materials, openings);
   scene.children.slice(buildingStart).forEach(mesh => { mesh.userData.digitalBuilding = true; });
+  const addNearestDetails = (position) => {
+    pendingDetails.sort((a, b) => distanceToBoundary(position.x, position.z, a.building.footprint)
+      - distanceToBoundary(position.x, position.z, b.building.footprint));
+    pendingDetails.shift()?.add();
+    detailState.status = pendingDetails.length ? 'loading' : 'ready';
+  };
+  if (progressive) addNearestDetails(origin);
+  else while (pendingDetails.length) addNearestDetails(origin);
   addUtilityStructures(scene, materials, layout.utilityStructures || []);
   addReferenceUtilities(scene, materials);
   addSiteEntrances(scene, materials, layout);
@@ -462,7 +496,15 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout)) {
   batchStaticDecoration(scene, solids);
   edgeEffect.attachBuildings();
 
-  return { scene, solids, logo, edgeEffect };
+  const loadNextDetail = (position = origin) => {
+    if (!pendingDetails.length) return false;
+    addNearestDetails(position);
+    // Batch each new block before displaying it, retaining existing batches.
+    batchStaticDecoration(scene, solids);
+    edgeEffect.attachBuildings();
+    return pendingDetails.length > 0;
+  };
+  return { scene, solids, logo, edgeEffect, loadNextDetail };
 }
 
 export function drawScheme(canvas, layout) {

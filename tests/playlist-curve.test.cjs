@@ -28,11 +28,11 @@ function fixture({desktop = true, reducedMotion = false, level = 5, alphabet = '
   const effects = {suspended: false, ambientPaused: false, ambientNow: () => activeTime, beat() {}, watch() {}};
   const body = {interlude: false, classList: {contains: () => body.interlude}};
   const create = () => {
-    const draws = [], text = [], clears = [], grains = [];
-    const context = new Proxy({drawImage: (...args) => draws.push(args), fillText: (...args) => text.push(args),
+    const draws = [], text = [], clears = [], grains = [], alphas = [];
+    const context = new Proxy({createLinearGradient: () => ({addColorStop() {}}), drawImage: (...args) => {draws.push(args); alphas.push(context.globalAlpha);}, fillText: (...args) => text.push(args),
       fillRect: (...args) => grains.push(args), clearRect: (...args) => clears.push(args)}, {get: (target, key) => target[key] || (() => {})});
     const canvas = {dataset: {}, attributes: {}, width: 300, height: 150, className: '', style: {setProperty() {}},
-      getContext: () => context, setAttribute(name, value) {this.attributes[name] = value;}, draws, text, clears, grains};
+      getContext: () => context, setAttribute(name, value) {this.attributes[name] = value;}, draws, text, clears, grains, alphas};
     canvases.push(canvas); return canvas;
   };
   const doc = {hidden: false, documentElement: root, body, createElement: create, addEventListener: on,
@@ -239,4 +239,15 @@ test('reduced motion paints a still signal and page departure cannot restart bac
   assert.equal(run.frames.size, 0); assert.deepEqual(run.visible.map(canvas => canvas.clears.length), counts);
   run.emit('pageshow'); run.emit('pageshow'); assert.equal(run.frames.size, 1); run.frame(6100);
   assert.equal(run.canvases.length, 4);
+});
+
+
+test('continuation begins at full contrast and eases away without a sudden seam dropout', () => {
+  const run = fixture(); run.frame(0);
+  for (const canvas of run.visible) {
+    assert.equal(canvas.alphas[0], 1, 'first strip is not faded before it leaves the catalogue');
+    assert.ok(canvas.alphas[1] > .99, 'smooth onset has no abrupt contrast step');
+    assert.ok(canvas.alphas[8] > .9, 'nearby rows retain visual continuity');
+    assert.ok(canvas.alphas.at(-1) < .01, 'outer tail still dissolves completely');
+  }
 });

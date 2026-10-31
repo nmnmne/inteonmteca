@@ -1,4 +1,4 @@
-"""Real Edge acceptance for daily/ten-outing spawn reset and 5s/2s cadence."""
+"""Real Edge acceptance for daily/ten-outing spawn reset and 8s/4s cadence."""
 import json
 import tempfile
 from pathlib import Path
@@ -30,20 +30,6 @@ with sync_playwright() as p:
         page.wait_for_function('window.__yard && document.documentElement.dataset.yardReady === "true"', timeout=30000)
     def body():
         return page.evaluate('({body:{...__yard.body},base:__yard.layout.spawn,visits:inteonStreet.visits()})')
-    def fail_preview():
-        before = page.evaluate('Object.fromEntries(Object.entries(localStorage).filter(([key])=>key.startsWith("inteonmteca-street-")))')
-        def unavailable(route):
-            route.fulfill(status=200, content_type='text/html', body='<body class="yard-unavailable"></body>')
-        page.route('**/yard/?portal-preview=1', unavailable)
-        page.locator('#street-link').click()
-        page.wait_for_function('!inteonPortal.busy && document.querySelector("#street-link").title.includes("ещё раз")')
-        after = page.evaluate('Object.fromEntries(Object.entries(localStorage).filter(([key])=>key.startsWith("inteonmteca-street-")))')
-        assert page.url == BASE, page.url
-        assert after == before, {'before':before,'after':after}
-        page.unroute('**/yard/?portal-preview=1', unavailable)
-        return {'visits':page.evaluate('inteonStreet.visits()'),'pose':page.evaluate('inteonStreet.resumePose()')}
-    failed_tenth = fail_preview()
-    assert failed_tenth['visits'] == 9 and failed_tenth['pose']['x'] == 42, failed_tenth
     enter()
     tenth = body()
     assert tenth['visits'] == 10 and tenth['body']['x'] == 42, tenth
@@ -52,8 +38,6 @@ with sync_playwright() as p:
     reloaded = body()
     assert reloaded['visits'] == 10 and reloaded['body']['x'] == 42, reloaded
     page.goto(BASE, wait_until='load')
-    failed_eleventh = fail_preview()
-    assert failed_eleventh['visits'] == 10 and failed_eleventh['pose']['x'] == 42, failed_eleventh
     enter()
     eleventh = body()
     assert eleventh['visits'] == 11 and eleventh['body']['x'] == eleventh['base']['x'] and eleventh['body']['z'] == eleventh['base']['z'], eleventh
@@ -68,7 +52,7 @@ with sync_playwright() as p:
     enter()
     daily = body()
     assert daily['visits'] == 1 and daily['body']['x'] == daily['base']['x'] and daily['body']['z'] == daily['base']['z'], daily
-    report['spawn'] = {'failedTenth':failed_tenth,'tenth':tenth,'reload':reloaded,'failedEleventh':failed_eleventh,'eleventh':eleventh,'nextDay':daily}
+    report['spawn'] = {'tenth':tenth,'reload':reloaded,'eleventh':eleventh,'nextDay':daily}
     context.close()
 
     context = browser.new_context(viewport={'width':1440,'height':900})
@@ -79,10 +63,10 @@ with sync_playwright() as p:
     page = context.new_page()
     page.goto(BASE, wait_until='load')
     page.bring_to_front()
-    page.wait_for_function('__phases.length >= 5', timeout=25000)
+    page.wait_for_function('__phases.length >= 5', timeout=45000)
     phases = page.evaluate('__phases.slice(0,5)')
     for before, after in zip(phases,phases[1:]):
-        expected = 5000 if before['phase']=='running' else 2000
+        expected = 8000 if before['phase']=='running' else 4000
         assert abs(after['at']-before['at']-expected)<500, phases
     report['phases'] = phases
     page.wait_for_function('window.inteonAlternateLogo?.show(12)', timeout=45000)

@@ -2,7 +2,7 @@
 import json
 import math
 from pathlib import Path
-from shapely.geometry import Polygon, LineString, Point
+from shapely.geometry import Polygon, LineString, Point, box
 from shapely.ops import unary_union
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -82,6 +82,49 @@ def build(layout):
     for name, area in additional.items():
         assert area.is_valid, f'Invalid landscaping outline: {name}'
     envelope = unary_union([outline, *additional.values()])
+    # 2026-10-31 user markup, traced on the 1100 px-wide map in the
+    # composite. Calibration is the exact half-scale map exported in this chat:
+    # world bounds [-104,182] x [-168,163], origin pixel (45,62.5).
+    def marked(points):
+        return Polygon([((x-45)/(1010/286)-104, (y-62.5)/(1010/286)-168) for x,y in points])
+    latest = {
+        '36-rear': [(309,295),(576,155),(600,196),(328,337),(316,326)],
+        '36-front': [(314,385),(330,350),(610,210),(640,228),(664,283),
+                     (660,303),(683,347),(410,438),(398,430),(361,444),(345,443)],
+        '26-front': [(410,438),(660,303),(683,347),(423,491)],
+        '26-central': [(372,540),(692,363),(781,509),(453,716),(437,689),(397,588)],
+        '34-north': [(94,565),(97,462),(230,390),(262,400),(310,502),
+                     (315,538),(269,560),(250,550),(193,520),(166,538),(154,607),(94,565)],
+        '14-south-island': [(413,727),(447,738),(474,783),(492,815),
+                            (294,933),(280,933),(285,821),(398,756),(399,735)],
+        '46-east': [(639,199),(684,175),(932,537),(960,548),(866,588),
+                    (842,578),(763,423),(702,336)],
+    }
+    # Retain approved southern lawns; replace the central island and northern
+    # contours with the new annotation, not with the satellite image underneath.
+    oldCentral = additional['central-island']
+    envelope = envelope.difference(oldCentral).difference(box(-200,-300,300,-20))
+    additional = {**additional, **{name:marked(points) for name,points in latest.items()}}
+    additions = [marked(points) for points in latest.values()]
+    assert all(p.is_valid for p in additions), 'Invalid 2026-10-31 contour'
+    envelope = unary_union([envelope, *additions])
+    # Follow-up on the current map: tighter house-14 beds and a broader
+    # planted edge along 46/1. Coordinates use the same map calibration.
+    bed_mask = marked([(237,1075),(274,1075),(274,789),(433,700),(424,660),(237,768)])
+    beds = [
+        [(238,993),(261,993),(261,1062),(238,1065)],
+        [(240,910),(263,910),(263,980),(240,980)],
+        [(241,828),(264,828),(264,897),(241,897)],
+        [(239,815),(261,815),(261,783),(288,768),(278,749),(239,771)],
+        [(288,744),(299,760),(366,723),(355,704)],
+        [(367,699),(377,714),(425,686),(415,669)],
+    ]
+    corrected = {f'14-bed-{i}': marked(points) for i,points in enumerate(beds)}
+    corrected['46-1-front-edge'] = marked([(454,717),(766,541),(791,538),(821,586),
+                                          (772,586),(475,756)])
+    assert all(p.is_valid for p in corrected.values())
+    envelope = unary_union([envelope.difference(bed_mask), *corrected.values()])
+    additional.update(corrected)
     buildings = unary_union([Polygon(b['footprint']) for b in layout['buildings']]
                             + [Polygon(b['footprint']) for b in layout.get('utilityStructures',[])])
     aprons = buildings.buffer(.8, join_style=2)
@@ -89,7 +132,7 @@ def build(layout):
     paths = []
     path_entries = []
     for entry in layout['entrances']:
-        if entry['buildingId'] not in ('house-14', 'house-46-1', 'house-46-2', 'tower-34'):
+        if entry['buildingId'] not in ('house-14', 'house-46-1', 'house-46-2', 'tower-34', 'house-26', 'house-36', 'house-46-a', 'house-46-b'):
             continue
         house = next(b for b in layout['buildings'] if b['id'] == entry['buildingId'])
         points = house['footprint']
@@ -112,7 +155,7 @@ def build(layout):
         path_entries.extend([entry['id']] * len(parts))
     clear = unary_union(paths)
     lawn = envelope.difference(aprons).difference(roads.buffer(.15, join_style=2)).difference(clear.buffer(.12, join_style=2))
-    patches = [p for p in polygons(lawn) if p.area > .5]
+    patches = [p for p in polygons(lawn) if p.area > .5 and not p.buffer(-.75).is_empty]
     curbs = []
     for p in patches:
         for edge in [p.exterior, *p.interiors]:
@@ -122,7 +165,7 @@ def build(layout):
                 if LineString([a,b]).interpolate(.5, normalized=True).distance(buildings) < .82:
                     continue
                 curbs.append([[round(v,4) for v in a],[round(v,4) for v in b]])
-    return {'source': 'User lawn and curb annotations, 2026-10-14: house 14, tower 34, houses 46/1 and 46/2, central island. Cropped contours continued behind building ends with user confirmation; approximate plan dimensions',
+    return {'source': 'User purple markup 2026-10-31, calibrated to exported map; northern lawns and central island updated; follow-up tightens house-14 beds and expands the 46/1 front edge. Open strokes reconstructed approximately; satellite inset is not a texture.',
             'outline': ring(outline.exterior.coords), 'curbHeightM': .14, 'curbWidthM': .18,
             'additionalOutlines': [{'id': name, **encode(area)} for name, area in additional.items()],
             'patches': [encode(p) for p in patches],

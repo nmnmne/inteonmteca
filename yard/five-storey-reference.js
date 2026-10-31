@@ -5,7 +5,8 @@ import { facadeNormal } from './facade-frame.js';
 // All small repeated parts share instanced geometry and deterministic materials.
 export function addFiveStoreyReference(scene, materials, building) {
   const project = building.facadeProject;
-  if (project?.referenceStyle !== 'pink-hourglass') return;
+  if (!['pink-hourglass', 'pebble-panel'].includes(project?.referenceStyle)) return;
+  const pebble = project.referenceStyle === 'pebble-panel';
   const batches = new Map(), dummy = new THREE.Object3D();
   const palette = {
     wall0: materials.flat(0xcdb9a5), wall1: materials.flat(0xc5ada1),
@@ -17,6 +18,23 @@ export function addFiveStoreyReference(scene, materials, building) {
     glass: materials.flat(0x405461), glassLight: materials.flat(0x657a80),
     door: materials.flat(0x685138), metal: materials.flat(0x5f6864),
   };
+  if (pebble) {
+    // Photo-derived aggregate plaster. The photograph itself is not a texture:
+    // trees, vehicles and cast shadows must not be baked into the facade.
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256;
+    const ctx = canvas.getContext('2d'); ctx.fillStyle = '#c9c6b8'; ctx.fillRect(0,0,256,256);
+    let seed = 2636;
+    const random = () => ((seed = (1664525 * seed + 1013904223) >>> 0) / 4294967296);
+    for (let i=0;i<4200;i++) {
+      ctx.fillStyle = ['#929286','#aaab9d','#e0ddcb','#777c72'][i%4];
+      ctx.fillRect(random()*256,random()*256,1+random()*2,1+random()*2);
+    }
+    const map = new THREE.CanvasTexture(canvas); map.colorSpace = THREE.SRGBColorSpace;
+    for (let i=0;i<4;i++) palette[`wall${i}`] = new THREE.MeshLambertMaterial({map,color:0xffffff-i*0x020202});
+    palette.plinth = materials.flat(0x88867b);
+    palette.white = materials.flat(0xc8c9bd);
+    palette.blue = materials.flat(0x986555);
+  }
   const floorH = building.heightM / building.floors;
   const entryCount = project.referenceEntranceCount || 4;
   for (let edge = 0; edge < building.footprint.length; edge++) {
@@ -58,7 +76,7 @@ export function addFiveStoreyReference(scene, materials, building) {
         for(let floor=0;floor<5;floor++) {
           const base=floor*floorH;
           // Broad red trapezoid narrowing towards the low stairwell window.
-          add('red',x,base+floorH/2,.142,2.9,floorH-.06,1,'hourglass');
+          if (!pebble) add('red',x,base+floorH/2,.142,2.9,floorH-.06,1,'hourglass');
           if(floor>0) window(x,base+.6,1.05,.64,.19,2,bay+floor);
         }
         add('slab',x,1.25,.22,1.94,2.5,.18);
@@ -78,10 +96,10 @@ export function addFiveStoreyReference(scene, materials, building) {
           const base=.48+floor*floorH;
           window(x,base+1.22,2.6,1.8,.18,3,stack+floor);
           add('slab',x,base,.65,3.03,.15,1.35);
-          const kind=(stack===1&&floor===4)||(stack===0&&floor===1)||(stack===2&&floor===1)?'blue':'white';
+          const kind=(pebble && floor===0 && stack===1)||(stack===1&&floor===4)||(stack===0&&floor===1)||(stack===2&&floor===1)?'blue':'white';
           add(kind,x,base+.48,1.26,2.88,.83,.1);
           for(const side of [-1,1]) add(kind,x+side*1.41,base+.48,.72,.09,.83,1.05);
-          const enclosed=(stack+floor)%4!==2;
+          const enclosed=pebble || (stack+floor)%4!==2;
           if(enclosed) {
             window(x,base+1.58,2.78,1.32,1.23,4,stack+floor);
             for(const side of [-1,1]) add('glass',x+side*1.43,base+1.59,.72,.035,1.3,1);
@@ -94,10 +112,61 @@ export function addFiveStoreyReference(scene, materials, building) {
         }
       }
       columns.forEach((x,col)=>{for(let floor=0;floor<5;floor++) window(x,.48+floor*floorH+1.35,1.27,1.42,.18,2,col+floor);});
+      if (pebble) {
+        // Low roof-edge railing and occasional air-conditioning units.
+        add('metal',0,building.heightM+.43,.05,length,.035,.035);
+        for(let x=-length/2+.8;x<length/2;x+=2.8) add('metal',x,building.heightM+.24,.05,.025,.45,.025);
+        for(let bay=0;bay<entryCount;bay++) {
+          const x=stairs[bay]+2.1;
+          add('white',x,5.9,.42,.8,.55,.45);
+          add('metal',x,5.9,.66,.38,.38,.025);
+        }
+      }
       // Small rooftop vents seen above the three balcony stacks.
       for(const x of stairs.slice(1).map((value,i)=>(value+stairs[i])/2)) {
         add('slab',x,building.heightM+.48,-1.5,.85,.85,.75);
         add('metal',x,building.heightM+.94,-1.5,1.1,.1,1);
+      }
+    } else if (pebble && edge === project.referenceRearEdge) {
+      // Rear elevation from the second user photo: no entrance doors or
+      // stairwell slots; broad loggias alternate with full-height windows.
+      const span = length / entryCount;
+      for (let bay=0; bay<entryCount; bay++) {
+        const x = -length/2 + (bay+.5)*span;
+        for (let floor=0; floor<5; floor++) {
+          const base = .48 + floor*floorH;
+          for (const side of [-1,1]) window(x+side*span*.31,base+1.35,1.35,1.48,.18,2,bay+floor);
+          window(x,base+1.35,2.9,1.7,.18,3,bay+floor);
+          if (floor===0) {
+            for(let bar=0;bar<10;bar++) add('metal',x-1.4+bar*.31,base+1.35,.4,.025,1.7,.025);
+            add('metal',x,base+.65,.4,2.95,.035,.035);
+            add('metal',x,base+2.05,.4,2.95,.035,.035);
+            continue;
+          }
+          add('slab',x,base,.72,3.35,.16,1.55);
+          add('white',x,base+.46,1.43,3.18,.8,.12);
+          for (const side of [-1,1]) add('wall1',x+side*1.62,base+1.2,.78,.16,2.4,1.5);
+          const enclosed = !(floor===4 && bay%3===0);
+          if (enclosed) {
+            window(x,base+1.57,3.05,1.35,1.44,4,bay+floor);
+            if ((bay+floor)%3===0) {
+              // Older timber glazing alongside newer pale PVC frames.
+              for(let bar=0;bar<5;bar++) add('door',x-1.52+bar*.76,base+1.57,1.53,.045,1.38,.04);
+              add('door',x,base+1.57,1.53,3.08,.045,.04);
+            }
+          } else {
+            add('metal',x,base+.94,1.5,3.2,.035,.035);
+            for(let post=0;post<10;post++) add('metal',x-1.5+post/3,base+.53,1.5,.025,.8,.025);
+          }
+          add('slab',x,base+2.35,.78,3.4,.12,1.6);
+          if((bay+floor)%4===1) {
+            add('white',x+2.45,base+.65,.48,.8,.55,.48);
+            add('metal',x+2.45,base+.65,.735,.38,.38,.02);
+          }
+        }
+        // Downpipe beside the loggia, held off the wall.
+        add('metal',x+1.85,building.heightM/2,.3,.09,building.heightM,.09);
+        for(let floor=0;floor<5;floor++) add('metal',x+1.85,floor*floorH+.8,.3,.15,.06,.15);
       }
     } else {
       // Unphotographed faces retain a restrained regular window rhythm.

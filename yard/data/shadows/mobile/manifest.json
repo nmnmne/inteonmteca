@@ -1,6 +1,6 @@
 {
-  "meshCount": 201,
-  "instances": 11999,
+  "meshCount": 343,
+  "instances": 21631,
   "resolution": 1024,
   "bounds": {
     "min": [
@@ -49,8 +49,8 @@
         0.2621699673962832
       ],
       "file": "sun-00.png",
-      "bytes": 159663,
-      "sha256": "814aa98b7d050ecfc099a6708ee843c080359e8c5a84fdc480ed3780398da558"
+      "bytes": 165656,
+      "sha256": "0ef81b49ba47bf65667f46a0009039a4200574d778aa77ff2b227923e1fd9b52"
     },
     {
       "presetIndex": 1,
@@ -84,8 +84,8 @@
         0.24369903681376306
       ],
       "file": "sun-01.png",
-      "bytes": 156696,
-      "sha256": "4b25cf1b1a1dfacac4e4e335117242ff94fcdc0d304ce52019de4f4ec7013e1d"
+      "bytes": 160922,
+      "sha256": "f34b0c73d8fe9c43ad18435cb7c4b5d89cfe5e514a494b6e5c6a056280ed1dcf"
     },
     {
       "presetIndex": 2,
@@ -119,8 +119,8 @@
         0.22366659494701713
       ],
       "file": "sun-02.png",
-      "bytes": 171814,
-      "sha256": "82bfc10408ae34d0a2f0bb2edf8512abf53ed2648e99483c375492392b2e946e"
+      "bytes": 172575,
+      "sha256": "ae1e880013660ff3c264bc3a24bbf4f01b131da98f5f65c1688834ba44bdb84e"
     },
     {
       "presetIndex": 3,
@@ -154,8 +154,8 @@
         0.20272611983647754
       ],
       "file": "sun-03.png",
-      "bytes": 185720,
-      "sha256": "d4f3608ade2f40ba2993b2dedd04e9b013fdbafdc0f9824994a8c908ab567bc1"
+      "bytes": 189979,
+      "sha256": "5c488ed202d39515ee3ad73922c85aa9947d28c47ebc0f0c24bdf0f6f22b2802"
     },
     {
       "presetIndex": 4,
@@ -189,8 +189,8 @@
         0.18144429639448023
       ],
       "file": "sun-04.png",
-      "bytes": 232334,
-      "sha256": "b4b896f26fbe2956a244a00927568942742cf7ebad0241d85a953b502e85e7a1"
+      "bytes": 241009,
+      "sha256": "f9ff20d061815ee821f6a27c8342368ad6fec5734ef99787163906fee83bfc65"
     },
     {
       "presetIndex": 5,
@@ -224,8 +224,8 @@
         0.16031316811300944
       ],
       "file": "sun-05.png",
-      "bytes": 254687,
-      "sha256": "d1c20bdc56135138c47a32190448e2a5813d0a8c1cba9729eb56db3d8471ef67"
+      "bytes": 269910,
+      "sha256": "e24c0c87b20f28aeb495e87438747fbf8f35ffcbd8173354550f1d45437a89e4"
     },
     {
       "presetIndex": 6,
@@ -259,8 +259,8 @@
         0.13976256164267714
       ],
       "file": "sun-06.png",
-      "bytes": 292069,
-      "sha256": "9054029132dd9daf238d1239d7fc1992b928201e1277232804b832c5ed05c69f"
+      "bytes": 306990,
+      "sha256": "3a493ae6dad840e714576a43557495348da5637959459f1983cae621527107db"
     },
     {
       "presetIndex": 7,
@@ -294,8 +294,8 @@
         0.12017096876566416
       ],
       "file": "sun-07.png",
-      "bytes": 295830,
-      "sha256": "45ff19e8218e5fd9ac10930d4c545af3784cb8a295cf99a87b4de9fc70fe7d14"
+      "bytes": 321600,
+      "sha256": "7b00662c9c7f67d982f6160b6564a66bb7b4a8f00903767576fa50a26790809a"
     },
     {
       "presetIndex": 8,
@@ -329,8 +329,8 @@
         0.10350096272651452
       ],
       "file": "sun-08.png",
-      "bytes": 291946,
-      "sha256": "c945a18fded6411a613f6fc6ff6d946c39f91a10ece1d723eac7437215743797"
+      "bytes": 326134,
+      "sha256": "8984af895dd64e8c112c9908998200b5778ec2aad554c40bc2b5559c1c30494e"
     },
     {
       "presetIndex": 9,
@@ -364,8 +364,8 @@
         0.09371756554537418
       ],
       "file": "sun-09.png",
-      "bytes": 215727,
-      "sha256": "926a67475ebb7a79e978c28282b3f8ce2d31f08b77d21f5ba55157672bfa7736"
+      "bytes": 242152,
+      "sha256": "c5914eec3148624c71debf743d91693de0ef69305d3c3e02faa10826af49f829"
     },
     {
       "presetIndex": 10,
@@ -399,8 +399,8 @@
         0.08156835065791301
       ],
       "file": "sun-10.png",
-      "bytes": 287151,
-      "sha256": "824532f781b7fe64564f299442101393eb488b1cce63cc7db5ecb2d6e7ba4c73"
+      "bytes": 321763,
+      "sha256": "c228eb9f954c763b3ae9f2e1dbdc58bb5c12b75beca6ae1e3015a39013f5f2a2"
     },
     {
       "presetIndex": 11,
@@ -434,8 +434,8 @@
         0.0673892180096303
       ],
       "file": "sun-11.png",
-      "bytes": 229877,
-      "sha256": "05e054e1ee8fd98358efdc3b89a7ef3b75d05a85e37d96a682ca15de6e512a9b"
+      "bytes": 262129,
+      "sha256": "1bb6bd1fccaf94eaf0b3a0e4362c0a83121be5e8967621a92fdc92e1ebb8de8f"
     }
   ],
   "sourceHashes": {
@@ -444,24 +444,24 @@
     "yard/debug-pose.js": "f58b52de2f493b31e53d7c5fa63e6f29c65fd9881d96f51cef2c13d18dce805a",
     "yard/digital-boundary.js": "15e002f4fc188bda436825de8ca935637c54de10436e7db0c6a7e846328632e4",
     "yard/facade-frame.js": "00ff4cd290dd269d85e37e5e2a140ee3ae3bba347d5e56af514522eaa30c62e4",
-    "yard/five-storey-reference.js": "6b3f78726f9b9555c8e5abcb84ac598499623b5e5c08c1525eba15a947e13357",
+    "yard/five-storey-reference.js": "0cb0f765dfcf321e8c5dd2cfb9b823311215715fcdb5db20b3d9bc51c0f5889e",
     "yard/house14-relief.js": "656fc906bf4bc082aa04436b50092c75cdbd06d588055415e0ca5b402add5756",
     "yard/hru-details.js": "995bab5226cce78f716ba347e09040f6dad9870574747eac3afcc773fee49b0f",
-    "yard/landscaping.js": "7a19135223f7720a2abfe9b694aab739498694190e8b70be443fc8d67db59c84",
+    "yard/landscaping.js": "23fd4cf27c0782562c93a92e929f6a684fb17e521bff85879f012dc88d12d8f6",
     "yard/lighting-transition.js": "d76b8151fcba5ff427b7f5d8ccda00b124243715025c5031c6b0f084e8e739ed",
     "yard/material-textures.js": "24613bb378528de3b580d7ee8929da85efafeddc8b72ee665e68ac2f6a02f64d",
     "yard/materials.js": "c843e67a59205aca8a254133c2b625610fe76e2b038dffcfe02c73709391f353",
     "yard/models.js": "2eca95fdd6f4c7c51a7920951ad9450e25328ad81a73646d259fe2b2374dbaab",
     "yard/road-details.js": "2938d875b6c2b7265eca0c0ebcaa0f16e490f43b5a51c6e1da2a2ac52c813103",
-    "yard/scene.js": "8f416b60a42b17e825f210d1b0fd3e774e4bfde6c49d0a0d28256aea417dd366",
+    "yard/scene.js": "dde5ab887d8abff9a11db533ae6b696700caa34b5fce7664815298f07079b717",
     "yard/shadow-atlas.js": "d2d2c1341950322f7fa587f6ca3a338f83260daac04dc08f01c980738125657b",
     "yard/shadow-transition.js": "28326407a11725fc1ff4b087770a0a2986b9a1cdc3609131ffa2bdd31e314202",
-    "yard/site-details.js": "26cdddbb4586fbc8ba2cb24e986d742b02e5645a2e4d2d52fe5ebb55d04f5d41",
+    "yard/site-details.js": "65be92d9ac3d6d19005f862f504085a181d9ecf27f308ffbf73a9bc47bcd9973",
     "yard/site-structures.js": "2b2cc5f455738efbae554fb004794cb46ff7f02c865ea502c2ba1c784443a705",
     "yard/static-batches.js": "ed6df65e7f5ddf1faa1cb8031364f34183f932479a9603874e787e354d07f66e",
     "yard/tower-reference.js": "79212bfe02b1f4e28ccc92c5b2501486b8146481d08a2b623f89d77ccc0cf79e",
     "yard/walk-lighting.js": "8c9e134c0869d875ab7ad8773c7f513c8eefbe1de85ddcc2d0e7f6849629a695",
-    "yard/data/site-layout.json": "0ec1ffb5d14af3448a2ab60abfaa3a9104651466bdf1171fb970812299837299",
+    "yard/data/site-layout.json": "e3b14b2afb3ee2fc671a1eba0f74ac34e5c483106277c1a5d0882aea06a5766b",
     "tools/bake_yard_shadows.js": "7d0b9ecd507b1272f6f27ef3b59c4d8ac2330778f7e8e924ea09bad709641adc"
   }
 }

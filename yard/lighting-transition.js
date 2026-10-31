@@ -17,7 +17,7 @@ export function createLightingTransition(scene, layout, initial, clock) {
   let shadows = null;
   let disposed = false;
   let lastMix = 0;
-  let lastBoundary = null;
+  let lastBoundary = null, lastOutsideOuterDome = null;
   let lastShadowStatus = 'idle';
   let availableProgress = null;
   const state = { fromIndex: initial.presetIndex, toIndex: next.presetIndex, progress: 0, mix: 0,
@@ -71,11 +71,17 @@ export function createLightingTransition(scene, layout, initial, clock) {
       }
       // Use the explicit digital transition; fog range now expands to retain silhouettes.
       const boundary = THREE.MathUtils.clamp(scene.userData.virtuality ?? (90 - scene.fog.near) / 64, 0, 1) * 0.98;
-      const boundaryChanged = boundary !== lastBoundary;
+      const outsideOuterDome = scene.userData.outsideOuterDome === true;
+      const boundaryChanged = boundary !== lastBoundary || outsideOuterDome !== lastOutsideOuterDome;
       if (changed || boundaryChanged) {
-        blendColor(scene.background, 'skyColor', mix).lerp(edgeSky, boundary);
-        blendColor(scene.fog.color, 'fogColor', mix).lerp(edgeFog, boundary);
+        if (outsideOuterDome) {
+          scene.background.set(0x000000); scene.fog.color.set(0x000000);
+        } else {
+          blendColor(scene.background, 'skyColor', mix).lerp(edgeSky, boundary);
+          blendColor(scene.fog.color, 'fogColor', mix).lerp(edgeFog, boundary);
+        }
         lastBoundary = boundary;
+        lastOutsideOuterDome = outsideOuterDome;
       }
       state.mix = mix;
       state.status = mix === 1 ? 'complete' : now <= timeline.holdUntil ? 'holding' : shadows?.metrics.status === 'unavailable' ? 'unavailable' : ready ? 'blending' : 'waiting';

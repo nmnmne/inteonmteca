@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-from shapely.geometry import Polygon, LineString
+from shapely.geometry import Polygon, LineString, Point
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,8 +18,20 @@ from build_landscaping import road_polygon
 layout = json.loads((ROOT/'yard/data/site-layout.json').read_text(encoding='utf-8'))
 data = layout['landscaping']
 lawns = [Polygon(p['polygon'],p['holes']) for p in data['patches']]
-expected_entries = {e['id'] for e in layout['entrances'] if e['buildingId'] in ('house-14','house-46-1','house-46-2')}
-assert expected_entries <= {p['entranceId'] for p in data['paths']}, 'All fifteen residential entrances keep access paths'
+expected_entries = {e['id'] for e in layout['entrances'] if e['buildingId'] in ('house-14','house-46-1','house-46-2','house-26','house-36','house-46-a','house-46-b')}
+# A door already facing continuous asphalt needs no separate lawn path.
+import math
+for entry in layout['entrances']:
+    if entry['id'] not in expected_entries: continue
+    building = next(b for b in layout['buildings'] if b['id']==entry['buildingId'])
+    ring = building['footprint']; edge = entry['edgeIndex']
+    a,b = ring[edge],ring[(edge+1)%len(ring)]
+    dx,dz = b[0]-a[0],b[1]-a[1]; length=math.hypot(dx,dz)
+    x,z=a[0]+dx/length*entry['alongM'],a[1]+dz/length*entry['alongM']
+    nx,nz=-dz/length,dx/length
+    if Polygon(ring).contains(Point(x+nx,z+nz)): nx,nz=-nx,-nz
+    access=LineString([(x+nx*.85,z+nz*.85),(x+nx*3,z+nz*3)]).buffer(.65,cap_style=2)
+    assert all(access.intersection(lawn).area < .001 for lawn in lawns), entry['id']
 for lawn in lawns:
     assert lawn.is_valid
     for building in layout['buildings']:

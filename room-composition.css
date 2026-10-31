@@ -21,15 +21,15 @@ html[data-ambient-phase="frozen"] body.spatial-room .logo-wrap::after {
 }
 @media (prefers-reduced-motion: no-preference) {
   html[data-ambient-phase="frozen"]:not([data-home-effects-suspended="true"]) body.spatial-room :is(.material-field, .perception-visual, .logo-ripples) {
-    animation: held-field-drift var(--ambient-freeze-duration, 2s) ease-in-out both;
+    animation: held-field-drift var(--ambient-freeze-duration, 4s) ease-in-out both;
     will-change: transform;
   }
   html[data-ambient-phase="frozen"]:not([data-home-effects-suspended="true"]):not([data-home-effect]) body.spatial-room .logo-wrap {
-    animation: held-logo-breath var(--ambient-freeze-duration, 2s) ease-in-out both;
+    animation: held-logo-breath var(--ambient-freeze-duration, 4s) ease-in-out both;
     will-change: transform, opacity;
   }
   html[data-ambient-phase="frozen"]:not([data-home-effects-suspended="true"]) body.spatial-room :is(.logo-acid, .storm-inversion-shards, .mobile-logo-shards) {
-    animation: held-logo-breath var(--ambient-freeze-duration, 2s) ease-in-out both;
+    animation: held-logo-breath var(--ambient-freeze-duration, 4s) ease-in-out both;
     will-change: transform, opacity;
   }
 }

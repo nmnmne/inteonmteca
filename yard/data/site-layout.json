@@ -95,7 +95,7 @@
       "surface": "asphalt",
       "widthM": 4.4,
       "widthStatus": "satellite-image estimate; OSM has no width tag",
-      "source": "OSM way 229651920 (highway=service, surface=asphalt), aligned against supplied satellite map",
+      "source": "Existing drive, southern bend shifted outside the user-corrected lawn boundary (2026-10-31).",
       "confidence": "mapped-and-imagery-aligned",
       "centerline": [
         [
@@ -111,16 +111,16 @@
           19.73
         ],
         [
-          23.11,
-          40.83
+          25.9743,
+          47.3495
         ],
         [
-          -34.78,
-          74.65
+          -33.4911,
+          81.6129
         ],
         [
-          -40.1,
-          74.65
+          -40.8535,
+          81.6129
         ]
       ]
     },
@@ -874,6 +874,132 @@
       "style": "pink-hourglass-integrated",
       "source": "User confirms six entrances",
       "confidence": "photo-relative"
+    },
+    {
+      "id": "house-26-reference-entry-1",
+      "buildingId": "house-26",
+      "edgeIndex": 0,
+      "alongM": 7.14045888756458,
+      "style": "pebble-panel-integrated"
+    },
+    {
+      "id": "house-26-reference-entry-2",
+      "buildingId": "house-26",
+      "edgeIndex": 0,
+      "alongM": 21.42137666269374,
+      "style": "pebble-panel-integrated"
+    },
+    {
+      "id": "house-26-reference-entry-3",
+      "buildingId": "house-26",
+      "edgeIndex": 0,
+      "alongM": 35.7022944378229,
+      "style": "pebble-panel-integrated"
+    },
+    {
+      "id": "house-26-reference-entry-4",
+      "buildingId": "house-26",
+      "edgeIndex": 0,
+      "alongM": 49.98321221295206,
+      "style": "pebble-panel-integrated"
+    },
+    {
+      "id": "house-36-reference-entry-1",
+      "buildingId": "house-36",
+      "edgeIndex": 2,
+      "alongM": 7.701143944606901,
+      "style": "pebble-panel-integrated"
+    },
+    {
+      "id": "house-36-reference-entry-2",
+      "buildingId": "house-36",
+      "edgeIndex": 2,
+      "alongM": 23.103431833820704,
+      "style": "pebble-panel-integrated"
+    },
+    {
+      "id": "house-36-reference-entry-3",
+      "buildingId": "house-36",
+      "edgeIndex": 2,
+      "alongM": 38.50571972303451,
+      "style": "pebble-panel-integrated"
+    },
+    {
+      "id": "house-36-reference-entry-4",
+      "buildingId": "house-36",
+      "edgeIndex": 2,
+      "alongM": 53.908007612248305,
+      "style": "pebble-panel-integrated"
+    },
+    {
+      "id": "house-36-reference-entry-5",
+      "buildingId": "house-36",
+      "edgeIndex": 2,
+      "alongM": 69.31029550146211,
+      "style": "pebble-panel-integrated"
+    },
+    {
+      "id": "house-36-reference-entry-6",
+      "buildingId": "house-36",
+      "edgeIndex": 2,
+      "alongM": 84.71258339067592,
+      "style": "pebble-panel-integrated"
+    },
+    {
+      "id": "house-46-a-reference-entry-1",
+      "buildingId": "house-46-a",
+      "edgeIndex": 3,
+      "alongM": 6.768925782574368,
+      "style": "pebble-panel-integrated"
+    },
+    {
+      "id": "house-46-a-reference-entry-2",
+      "buildingId": "house-46-a",
+      "edgeIndex": 3,
+      "alongM": 20.306777347723106,
+      "style": "pebble-panel-integrated"
+    },
+    {
+      "id": "house-46-a-reference-entry-3",
+      "buildingId": "house-46-a",
+      "edgeIndex": 3,
+      "alongM": 33.84462891287184,
+      "style": "pebble-panel-integrated"
+    },
+    {
+      "id": "house-46-a-reference-entry-4",
+      "buildingId": "house-46-a",
+      "edgeIndex": 3,
+      "alongM": 47.382480478020575,
+      "style": "pebble-panel-integrated"
+    },
+    {
+      "id": "house-46-b-reference-entry-1",
+      "buildingId": "house-46-b",
+      "edgeIndex": 1,
+      "alongM": 7.643041872350302,
+      "style": "pebble-panel-integrated"
+    },
+    {
+      "id": "house-46-b-reference-entry-2",
+      "buildingId": "house-46-b",
+      "edgeIndex": 1,
+      "alongM": 22.929125617050907,
+      "style": "pebble-panel-integrated"
+    },
+    {
+      "id": "house-46-b-reference-entry-3",
+      "buildingId": "house-46-b",
+      "edgeIndex": 1,
+      "alongM": 38.21520936175151,
+      "style": "pebble-panel-integrated"
+    },
+    {
+      "id": "house-46-b-reference-entry-4",
+      "buildingId": "house-46-b",
+      "edgeIndex": 1,
+      "alongM": 53.50129310645212,
+      "style": "pebble-panel-integrated"
     }
   ],
   "gasPipes": [
@@ -962,6 +1088,524 @@
         }
       ],
       "supports": []
+    },
+    {
+      "id": "houses-46-ab-connected-heating-1",
+      "kind": "district-heating",
+      "buildingId": "house-46-a",
+      "diameterM": 0.3,
+      "color": "#a6b0b1",
+      "supportColor": "#a59e8d",
+      "supportType": "concrete-block",
+      "roughness": 0.35,
+      "metalness": 0.55,
+      "path": [
+        {
+          "x": 64.202,
+          "z": -126.2327,
+          "heightM": 0.95
+        },
+        {
+          "x": 67.0482,
+          "z": -120.9507,
+          "heightM": 0.95
+        },
+        {
+          "x": 69.8944,
+          "z": -115.6688,
+          "heightM": 0.95
+        },
+        {
+          "x": 72.7407,
+          "z": -110.3868,
+          "heightM": 0.95
+        },
+        {
+          "x": 75.5869,
+          "z": -105.1049,
+          "heightM": 0.95
+        },
+        {
+          "x": 78.4331,
+          "z": -99.8229,
+          "heightM": 0.95
+        },
+        {
+          "x": 81.2794,
+          "z": -94.541,
+          "heightM": 0.95
+        },
+        {
+          "x": 84.1256,
+          "z": -89.259,
+          "heightM": 0.95
+        },
+        {
+          "x": 86.9718,
+          "z": -83.9771,
+          "heightM": 0.95
+        },
+        {
+          "x": 89.8181,
+          "z": -78.6951,
+          "heightM": 0.95
+        },
+        {
+          "x": 92.6643,
+          "z": -73.4132,
+          "heightM": 0.95
+        },
+        {
+          "x": 93.6515,
+          "z": -71.5812,
+          "heightM": 0.95
+        },
+        {
+          "x": 95.9168,
+          "z": -71.0149,
+          "heightM": 0.95
+        },
+        {
+          "x": 97.313,
+          "z": -71.7628,
+          "heightM": 0.95
+        },
+        {
+          "x": 102.6019,
+          "z": -74.5961,
+          "heightM": 0.95
+        },
+        {
+          "x": 103.8455,
+          "z": -75.2624,
+          "heightM": 0.95
+        },
+        {
+          "x": 105.8277,
+          "z": -74.9792,
+          "heightM": 0.95
+        },
+        {
+          "x": 107.1154,
+          "z": -72.7357,
+          "heightM": 0.95
+        },
+        {
+          "x": 110.1022,
+          "z": -67.5319,
+          "heightM": 0.95
+        },
+        {
+          "x": 113.089,
+          "z": -62.3282,
+          "heightM": 0.95
+        },
+        {
+          "x": 116.0757,
+          "z": -57.1244,
+          "heightM": 0.95
+        },
+        {
+          "x": 119.0625,
+          "z": -51.9206,
+          "heightM": 0.95
+        },
+        {
+          "x": 122.0493,
+          "z": -46.7169,
+          "heightM": 0.95
+        },
+        {
+          "x": 125.0361,
+          "z": -41.5131,
+          "heightM": 0.95
+        },
+        {
+          "x": 128.0229,
+          "z": -36.3093,
+          "heightM": 0.95
+        },
+        {
+          "x": 131.0096,
+          "z": -31.1056,
+          "heightM": 0.95
+        },
+        {
+          "x": 133.295,
+          "z": -27.1238,
+          "heightM": 0.95
+        }
+      ],
+      "supports": [
+        {
+          "pathIndex": 0,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 1,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 2,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 3,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 4,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 5,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 6,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 7,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 8,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 9,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 10,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 11,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 12,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 13,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 14,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 15,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 16,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 17,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 18,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 19,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 20,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 21,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 22,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 23,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 24,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 25,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 26,
+          "floorY": 0
+        }
+      ],
+      "source": "User red connector on updated map 2026-10-31; continuous rear run between 46-a and 46-b. No heating pipes at 26 or 36."
+    },
+    {
+      "id": "houses-46-ab-connected-heating-2",
+      "kind": "district-heating",
+      "buildingId": "house-46-a",
+      "diameterM": 0.3,
+      "color": "#a6b0b1",
+      "supportColor": "#a59e8d",
+      "supportType": "concrete-block",
+      "roughness": 0.35,
+      "metalness": 0.55,
+      "path": [
+        {
+          "x": 64.7742,
+          "z": -126.541,
+          "heightM": 0.95
+        },
+        {
+          "x": 67.6204,
+          "z": -121.2591,
+          "heightM": 0.95
+        },
+        {
+          "x": 70.4667,
+          "z": -115.9771,
+          "heightM": 0.95
+        },
+        {
+          "x": 73.3129,
+          "z": -110.6952,
+          "heightM": 0.95
+        },
+        {
+          "x": 76.1591,
+          "z": -105.4132,
+          "heightM": 0.95
+        },
+        {
+          "x": 79.0053,
+          "z": -100.1313,
+          "heightM": 0.95
+        },
+        {
+          "x": 81.8516,
+          "z": -94.8493,
+          "heightM": 0.95
+        },
+        {
+          "x": 84.6978,
+          "z": -89.5674,
+          "heightM": 0.95
+        },
+        {
+          "x": 87.544,
+          "z": -84.2854,
+          "heightM": 0.95
+        },
+        {
+          "x": 90.3903,
+          "z": -79.0035,
+          "heightM": 0.95
+        },
+        {
+          "x": 93.2365,
+          "z": -73.7215,
+          "heightM": 0.95
+        },
+        {
+          "x": 94.0876,
+          "z": -72.1422,
+          "heightM": 0.95
+        },
+        {
+          "x": 95.8311,
+          "z": -71.7063,
+          "heightM": 0.95
+        },
+        {
+          "x": 97.9543,
+          "z": -72.8438,
+          "heightM": 0.95
+        },
+        {
+          "x": 103.2432,
+          "z": -75.6771,
+          "heightM": 0.95
+        },
+        {
+          "x": 103.7265,
+          "z": -75.936,
+          "heightM": 0.95
+        },
+        {
+          "x": 106.2336,
+          "z": -75.5778,
+          "heightM": 0.95
+        },
+        {
+          "x": 107.6868,
+          "z": -73.046,
+          "heightM": 0.95
+        },
+        {
+          "x": 110.6735,
+          "z": -67.8423,
+          "heightM": 0.95
+        },
+        {
+          "x": 113.6603,
+          "z": -62.6385,
+          "heightM": 0.95
+        },
+        {
+          "x": 116.6471,
+          "z": -57.4347,
+          "heightM": 0.95
+        },
+        {
+          "x": 119.6339,
+          "z": -52.231,
+          "heightM": 0.95
+        },
+        {
+          "x": 122.6206,
+          "z": -47.0272,
+          "heightM": 0.95
+        },
+        {
+          "x": 125.6074,
+          "z": -41.8234,
+          "heightM": 0.95
+        },
+        {
+          "x": 128.5942,
+          "z": -36.6197,
+          "heightM": 0.95
+        },
+        {
+          "x": 131.581,
+          "z": -31.4159,
+          "heightM": 0.95
+        },
+        {
+          "x": 133.8588,
+          "z": -27.4473,
+          "heightM": 0.95
+        }
+      ],
+      "supports": [
+        {
+          "pathIndex": 0,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 1,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 2,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 3,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 4,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 5,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 6,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 7,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 8,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 9,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 10,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 11,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 12,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 13,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 14,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 15,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 16,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 17,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 18,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 19,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 20,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 21,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 22,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 23,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 24,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 25,
+          "floorY": 0
+        },
+        {
+          "pathIndex": 26,
+          "floorY": 0
+        }
+      ],
+      "source": "User red connector on updated map 2026-10-31; continuous rear run between 46-a and 46-b. No heating pipes at 26 or 36."
     }
   ],
   "buildings": [
@@ -1174,7 +1818,7 @@
       "id": "house-26",
       "osm": "26",
       "role": "residential",
-      "roof": "red",
+      "roof": "unknown-flat-gray",
       "floors": 5,
       "heightM": 14,
       "heightStatus": "osm-5-floors-times-2.8-estimated",
@@ -1198,15 +1842,22 @@
       ],
       "facadeMaterialId": "house26-pale",
       "plinthMaterialId": "unknown-plinth",
-      "roofMaterialId": "red",
+      "roofMaterialId": "unknown-flat-gray",
       "source": "osm-plan-svg",
-      "confidence": "osm-footprint-facade-unknown"
+      "confidence": "user-confirmed-shared-front-rear-type",
+      "facadeProject": {
+        "referenceStyle": "pebble-panel",
+        "referenceFrontEdge": 0,
+        "referenceRearEdge": 2,
+        "referenceEntranceCount": 4,
+        "source": "User confirms same front and rear facade type for houses 26, 36, 46-a and 46-b. Front from first photo; rear loggias and elevated twin pipes from second photo. Hidden details and section counts except marked house 26 reconstructed."
+      }
     },
     {
       "id": "house-36",
       "osm": "36",
       "role": "residential",
-      "roof": "red",
+      "roof": "unknown-flat-gray",
       "floors": 5,
       "heightM": 14,
       "heightStatus": "osm-5-floors-times-2.8-estimated",
@@ -1230,15 +1881,22 @@
       ],
       "facadeMaterialId": "house36-warm-gray",
       "plinthMaterialId": "unknown-plinth",
-      "roofMaterialId": "red",
+      "roofMaterialId": "unknown-flat-gray",
       "source": "osm-plan-svg",
-      "confidence": "osm-footprint-facade-unknown"
+      "confidence": "user-confirmed-shared-front-rear-type",
+      "facadeProject": {
+        "referenceStyle": "pebble-panel",
+        "referenceFrontEdge": 2,
+        "referenceRearEdge": 0,
+        "referenceEntranceCount": 6,
+        "source": "User confirms same front and rear facade type for houses 26, 36, 46-a and 46-b. Front from first photo; rear loggias and elevated twin pipes from second photo. Hidden details and section counts except marked house 26 reconstructed."
+      }
     },
     {
       "id": "house-46-a",
       "osm": "46",
       "role": "residential",
-      "roof": "red",
+      "roof": "unknown-flat-gray",
       "floors": 5,
       "heightM": 14,
       "heightStatus": "osm-5-floors-times-2.8-estimated",
@@ -1270,15 +1928,22 @@
       ],
       "facadeMaterialId": "house46-a-gray",
       "plinthMaterialId": "unknown-plinth",
-      "roofMaterialId": "red",
+      "roofMaterialId": "unknown-flat-gray",
       "source": "osm-plan-svg",
-      "confidence": "osm-footprint-facade-unknown"
+      "confidence": "user-confirmed-shared-front-rear-type",
+      "facadeProject": {
+        "referenceStyle": "pebble-panel",
+        "referenceFrontEdge": 3,
+        "referenceRearEdge": 5,
+        "referenceEntranceCount": 4,
+        "source": "User confirms same front and rear facade type for houses 26, 36, 46-a and 46-b. Front from first photo; rear loggias and elevated twin pipes from second photo. Hidden details and section counts except marked house 26 reconstructed."
+      }
     },
     {
       "id": "house-46-b",
       "osm": "46",
       "role": "residential",
-      "roof": "red",
+      "roof": "unknown-flat-gray",
       "floors": 5,
       "heightM": 14,
       "heightStatus": "osm-5-floors-times-2.8-estimated",
@@ -1302,9 +1967,16 @@
       ],
       "facadeMaterialId": "house46-b-sand",
       "plinthMaterialId": "unknown-plinth",
-      "roofMaterialId": "red",
+      "roofMaterialId": "unknown-flat-gray",
       "source": "osm-plan-svg",
-      "confidence": "osm-footprint-facade-unknown"
+      "confidence": "user-confirmed-shared-front-rear-type",
+      "facadeProject": {
+        "referenceStyle": "pebble-panel",
+        "referenceFrontEdge": 1,
+        "referenceRearEdge": 3,
+        "referenceEntranceCount": 4,
+        "source": "User confirms same front and rear facade type for houses 26, 36, 46-a and 46-b. Front from first photo; rear loggias and elevated twin pipes from second photo. Hidden details and section counts except marked house 26 reconstructed."
+      }
     },
     {
       "id": "tower-34",
@@ -1635,7 +2307,7 @@
     "source": "User green outline, 2026-10-09; centerline of broad brush."
   },
   "landscaping": {
-    "source": "User lawn and curb annotations, 2026-10-14: house 14, tower 34, houses 46/1 and 46/2, central island. Cropped contours continued behind building ends with user confirmation; approximate plan dimensions",
+    "source": "User purple markup 2026-10-31, calibrated to exported map; northern lawns and central island updated; follow-up tightens house-14 beds and expands the 46/1 front edge. Open strokes reconstructed approximately; satellite inset is not a texture.",
     "outline": [
       [
         -72.2284,
@@ -1874,154 +2546,1885 @@
           ]
         ],
         "holes": []
+      },
+      {
+        "id": "36-rear",
+        "polygon": [
+          [
+            -29.2436,
+            -102.1634
+          ],
+          [
+            46.3624,
+            -141.8069
+          ],
+          [
+            53.1584,
+            -130.197
+          ],
+          [
+            -23.8634,
+            -90.2703
+          ],
+          [
+            -27.2614,
+            -93.3851
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "id": "36-front",
+        "polygon": [
+          [
+            -27.8277,
+            -76.6782
+          ],
+          [
+            -23.297,
+            -86.5891
+          ],
+          [
+            55.9901,
+            -126.2327
+          ],
+          [
+            64.4851,
+            -121.1356
+          ],
+          [
+            71.2812,
+            -105.5614
+          ],
+          [
+            70.1485,
+            -99.898
+          ],
+          [
+            76.6614,
+            -87.4386
+          ],
+          [
+            -0.6436,
+            -61.6703
+          ],
+          [
+            -4.0416,
+            -63.9356
+          ],
+          [
+            -14.5188,
+            -59.9713
+          ],
+          [
+            -19.0495,
+            -60.2545
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "id": "26-front",
+        "polygon": [
+          [
+            -0.6436,
+            -61.6703
+          ],
+          [
+            70.1485,
+            -99.898
+          ],
+          [
+            76.6614,
+            -87.4386
+          ],
+          [
+            3.0376,
+            -46.6624
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "id": "26-central",
+        "polygon": [
+          [
+            -11.404,
+            -32.7871
+          ],
+          [
+            79.2099,
+            -82.9079
+          ],
+          [
+            104.4119,
+            -41.5653
+          ],
+          [
+            11.5327,
+            17.0505
+          ],
+          [
+            7.002,
+            9.405
+          ],
+          [
+            -4.3248,
+            -19.195
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "id": "34-north",
+        "polygon": [
+          [
+            -90.1248,
+            -25.7079
+          ],
+          [
+            -89.2752,
+            -54.8743
+          ],
+          [
+            -51.6139,
+            -75.2624
+          ],
+          [
+            -42.5525,
+            -72.4307
+          ],
+          [
+            -28.9604,
+            -43.5475
+          ],
+          [
+            -27.5446,
+            -33.3535
+          ],
+          [
+            -40.5703,
+            -27.1238
+          ],
+          [
+            -45.9505,
+            -29.9554
+          ],
+          [
+            -62.0911,
+            -38.4505
+          ],
+          [
+            -69.7366,
+            -33.3535
+          ],
+          [
+            -73.1347,
+            -13.8149
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "id": "14-south-island",
+        "polygon": [
+          [
+            0.2059,
+            20.1653
+          ],
+          [
+            9.8337,
+            23.2802
+          ],
+          [
+            17.4792,
+            36.0228
+          ],
+          [
+            22.5762,
+            45.0842
+          ],
+          [
+            -33.4911,
+            78.498
+          ],
+          [
+            -37.4554,
+            78.498
+          ],
+          [
+            -36.0396,
+            46.7832
+          ],
+          [
+            -4.0416,
+            28.3772
+          ],
+          [
+            -3.7584,
+            22.4307
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "id": "46-east",
+        "polygon": [
+          [
+            64.202,
+            -129.3475
+          ],
+          [
+            76.9446,
+            -136.1436
+          ],
+          [
+            147.1703,
+            -33.6366
+          ],
+          [
+            155.099,
+            -30.5218
+          ],
+          [
+            128.4812,
+            -19.195
+          ],
+          [
+            121.6851,
+            -22.0267
+          ],
+          [
+            99.3149,
+            -65.9178
+          ],
+          [
+            82.0416,
+            -90.5535
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "id": "14-bed-0",
+        "polygon": [
+          [
+            -49.3485,
+            95.4881
+          ],
+          [
+            -42.8356,
+            95.4881
+          ],
+          [
+            -42.8356,
+            115.0267
+          ],
+          [
+            -49.3485,
+            115.8762
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "id": "14-bed-1",
+        "polygon": [
+          [
+            -48.7822,
+            71.9851
+          ],
+          [
+            -42.2693,
+            71.9851
+          ],
+          [
+            -42.2693,
+            91.8069
+          ],
+          [
+            -48.7822,
+            91.8069
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "id": "14-bed-2",
+        "polygon": [
+          [
+            -48.499,
+            48.7653
+          ],
+          [
+            -41.9861,
+            48.7653
+          ],
+          [
+            -41.9861,
+            68.304
+          ],
+          [
+            -48.499,
+            68.304
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "id": "14-bed-3",
+        "polygon": [
+          [
+            -49.0653,
+            45.0842
+          ],
+          [
+            -42.8356,
+            45.0842
+          ],
+          [
+            -42.8356,
+            36.0228
+          ],
+          [
+            -35.1901,
+            31.7752
+          ],
+          [
+            -38.0218,
+            26.395
+          ],
+          [
+            -49.0653,
+            32.6248
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "id": "14-bed-4",
+        "polygon": [
+          [
+            -35.1901,
+            24.9792
+          ],
+          [
+            -32.0752,
+            29.5099
+          ],
+          [
+            -13.103,
+            19.0327
+          ],
+          [
+            -16.2178,
+            13.6525
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "id": "14-bed-5",
+        "polygon": [
+          [
+            -12.8198,
+            12.2366
+          ],
+          [
+            -9.9881,
+            16.4842
+          ],
+          [
+            3.604,
+            8.5554
+          ],
+          [
+            0.7723,
+            3.7416
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "id": "46-1-front-edge",
+        "polygon": [
+          [
+            11.8158,
+            17.3337
+          ],
+          [
+            100.1644,
+            -32.504
+          ],
+          [
+            107.2436,
+            -33.3535
+          ],
+          [
+            115.7386,
+            -19.7614
+          ],
+          [
+            101.8634,
+            -19.7614
+          ],
+          [
+            17.7624,
+            28.3772
+          ]
+        ],
+        "holes": []
       }
     ],
     "patches": [
       {
         "polygon": [
           [
-            -13.8121,
-            -19.0531
+            -90.1248,
+            -25.7079
           ],
           [
-            -10.0866,
-            -11.602
+            -81.9706,
+            -20.0
           ],
           [
-            -22.3118,
-            -5.4949
+            -89.4308,
+            -20.0
           ],
           [
-            -22.0875,
-            -5.01
+            -90.8,
+            6.01
           ],
           [
-            -20.9721,
-            -5.6158
+            -83.325,
+            8.91
           ],
           [
-            -22.375,
-            -4.43
+            -74.9875,
+            7.75
           ],
           [
-            -71.825,
-            24.86
+            -73.5792,
+            -14.1261
           ],
           [
-            -72.2283,
-            118.1047
+            -73.2265,
+            -13.8791
           ],
           [
-            -71.6117,
-            118.046
+            -71.7055,
+            -37.8157
           ],
           [
-            -42.7875,
-            113.6
+            -68.189,
+            -42.2912
           ],
           [
-            -42.3418,
-            104.4959
+            -54.8241,
+            -49.5138
           ],
           [
-            -42.258,
-            94.866
+            -41.356,
+            -56.7818
           ],
           [
-            -48.8563,
-            94.7431
+            -37.1077,
+            -56.6852
+          ],
+          [
+            -40.1522,
+            -60.5448
+          ],
+          [
+            -46.2422,
+            -73.0707
+          ],
+          [
+            -46.0441,
+            -73.5218
+          ],
+          [
+            -51.6139,
+            -75.2624
+          ],
+          [
+            -89.2752,
+            -54.8743
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            -59.2707,
+            -36.9661
+          ],
+          [
+            -53.7301,
+            -39.9906
+          ],
+          [
+            -51.1426,
+            -35.3928
+          ],
+          [
+            -48.507,
+            -36.9419
+          ],
+          [
+            -47.285,
+            -34.6545
+          ],
+          [
+            -34.6591,
+            -41.4087
+          ],
+          [
+            -33.0364,
+            -38.3754
+          ],
+          [
+            -45.6633,
+            -31.6207
+          ],
+          [
+            -44.3108,
+            -29.0924
+          ],
+          [
+            -42.8601,
+            -28.3289
+          ],
+          [
+            -34.4133,
+            -34.8329
+          ],
+          [
+            -29.0553,
+            -42.6819
+          ],
+          [
+            -33.4142,
+            -52.0027
+          ],
+          [
+            -33.8137,
+            -52.5092
+          ],
+          [
+            -40.364,
+            -52.6582
+          ],
+          [
+            -52.8759,
+            -45.9062
+          ],
+          [
+            -65.491,
+            -39.0888
+          ],
+          [
+            -67.6945,
+            -36.2843
+          ],
+          [
+            -67.7987,
+            -34.6454
+          ],
+          [
+            -62.0911,
+            -38.4505
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            -34.84,
+            24.7702
+          ],
+          [
+            -32.8518,
+            28.2576
+          ],
+          [
+            -32.9108,
+            28.2946
+          ],
+          [
+            -32.0752,
+            29.5099
+          ],
+          [
+            -13.446,
+            19.2221
+          ],
+          [
+            -16.5188,
+            13.8322
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            -47.9315,
+            45.0842
+          ],
+          [
+            -42.8356,
+            45.0842
+          ],
+          [
+            -42.8356,
+            36.0228
+          ],
+          [
+            -35.1901,
+            31.7752
+          ],
+          [
+            -38.0218,
+            26.395
+          ],
+          [
+            -46.5635,
+            31.2134
+          ],
+          [
+            -47.7231,
+            33.8928
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            -48.0001,
+            48.7653
+          ],
+          [
+            -48.3614,
+            68.1697
+          ],
+          [
+            -46.9982,
+            68.1951
+          ],
+          [
+            -46.9992,
+            68.304
+          ],
+          [
+            -41.9861,
+            68.304
+          ],
+          [
+            -41.9861,
+            48.7653
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            -90.7921,
+            117.9516
+          ],
+          [
+            -79.0836,
+            118.4143
+          ],
+          [
+            -78.0799,
+            64.4998
+          ],
+          [
+            -77.8184,
+            24.5296
+          ],
+          [
+            -77.0048,
+            20.5458
+          ],
+          [
+            -77.0,
+            20.22
+          ],
+          [
+            -78.4411,
+            19.9293
+          ],
+          [
+            -79.4102,
+            20.3991
+          ],
+          [
+            -81.4728,
+            27.962
+          ],
+          [
+            -86.5861,
+            26.5675
+          ],
+          [
+            -85.1448,
+            21.2828
+          ],
+          [
+            -89.9375,
+            23.7
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            -42.2693,
+            87.4742
+          ],
+          [
+            -42.4823,
+            74.2782
+          ],
+          [
+            -42.2693,
+            72.4738
+          ],
+          [
+            -42.2693,
+            71.9851
+          ],
+          [
+            -48.4325,
+            71.9851
+          ],
+          [
+            -48.7822,
+            90.7634
+          ],
+          [
+            -48.7822,
+            91.3039
+          ],
+          [
+            -42.2693,
+            91.4252
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            -42.8356,
+            95.4881
+          ],
+          [
+            -48.8702,
+            95.4881
           ],
           [
             -49.1549,
             110.7797
           ],
           [
-            -63.8079,
-            110.6002
+            -49.3485,
+            110.7773
           ],
           [
-            -63.0489,
-            34.0159
+            -49.3485,
+            115.8762
           ],
           [
-            -61.7588,
-            29.4231
+            -42.8356,
+            115.0267
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            -27.2614,
+            -93.3851
           ],
           [
-            -60.3601,
-            25.9106
+            -23.8634,
+            -90.2703
           ],
           [
-            -56.9078,
-            22.0862
+            53.1584,
+            -130.197
           ],
           [
-            -53.2816,
-            18.5214
+            46.3624,
+            -141.8069
           ],
           [
-            -10.633,
-            -6.7703
+            -29.2436,
+            -102.1634
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            -27.8277,
+            -76.6782
           ],
           [
-            -3.2239,
-            6.016
+            -19.9436,
+            -61.9273
           ],
           [
-            -13.6322,
-            11.9497
+            -13.2247,
+            -65.1361
           ],
           [
-            -9.4024,
-            19.3692
+            -12.18,
+            -65.6928
           ],
           [
-            -1.5459,
-            14.4291
+            -12.18,
+            -65.8345
           ],
           [
-            -1.2675,
-            14.4925
+            -13.5465,
+            -68.2595
           ],
           [
-            4.9375,
-            10.65
+            -19.4526,
+            -64.9312
           ],
           [
-            5.2322,
-            10.4766
+            -26.0313,
+            -76.5433
           ],
           [
-            4.975,
-            9.9488
+            55.8726,
+            -122.6988
           ],
           [
-            0.8134,
-            2.9361
+            62.4513,
+            -111.0867
           ],
           [
-            -2.6305,
-            -4.2379
+            56.542,
+            -107.7566
           ],
           [
-            -4.2019,
-            -11.5612
+            58.5075,
+            -104.2689
           ],
           [
-            -6.4685,
-            -17.8753
+            66.201,
+            -109.07
           ],
           [
-            -7.1375,
-            -17.3098
+            67.1156,
+            -109.07
           ],
+          [
+            61.1069,
+            -119.0901
+          ],
+          [
+            64.492,
+            -121.12
+          ],
+          [
+            64.4851,
+            -121.1356
+          ],
+          [
+            55.9901,
+            -126.2327
+          ],
+          [
+            -23.297,
+            -86.5891
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            1.4783,
+            -72.9704
+          ],
+          [
+            -0.1282,
+            -75.8211
+          ],
+          [
+            -10.5496,
+            -69.9483
+          ],
+          [
+            -9.0818,
+            -67.3436
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            10.6461,
+            -77.8552
+          ],
+          [
+            15.1009,
+            -80.1695
+          ],
+          [
+            13.2901,
+            -83.3828
+          ],
+          [
+            2.8687,
+            -77.51
+          ],
+          [
+            4.5151,
+            -74.5884
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            28.7768,
+            -87.2742
+          ],
+          [
+            26.7085,
+            -90.9445
+          ],
+          [
+            16.287,
+            -85.0716
+          ],
+          [
+            18.1553,
+            -81.7563
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            40.3996,
+            -95.4666
+          ],
+          [
+            41.545,
+            -95.9894
+          ],
+          [
+            40.1268,
+            -98.5061
+          ],
+          [
+            29.7054,
+            -92.6333
+          ],
+          [
+            31.714,
+            -89.069
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            55.3031,
+            -102.2693
+          ],
+          [
+            55.5862,
+            -102.4459
+          ],
+          [
+            53.5451,
+            -106.0678
+          ],
+          [
+            43.1237,
+            -100.195
+          ],
+          [
+            44.6858,
+            -97.423
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            0.6391,
+            -56.441
+          ],
+          [
+            1.4367,
+            -54.2346
+          ],
+          [
+            1.6136,
+            -52.4682
+          ],
+          [
+            2.9488,
+            -47.0244
+          ],
+          [
+            13.1493,
+            -53.1119
+          ],
+          [
+            33.451,
+            -64.5754
+          ],
+          [
+            54.7979,
+            -76.2912
+          ],
+          [
+            75.541,
+            -86.9237
+          ],
+          [
+            75.7764,
+            -86.9485
+          ],
+          [
+            76.1295,
+            -87.144
+          ],
+          [
+            72.935,
+            -92.5374
+          ],
+          [
+            71.1506,
+            -97.9809
+          ],
+          [
+            70.1485,
+            -99.898
+          ],
+          [
+            70.2901,
+            -100.606
+          ],
+          [
+            69.253,
+            -103.77
+          ],
+          [
+            67.719,
+            -103.77
+          ],
+          [
+            57.8169,
+            -97.5907
+          ],
+          [
+            43.1004,
+            -90.8734
+          ],
+          [
+            33.2851,
+            -83.6437
+          ],
+          [
+            13.1139,
+            -73.1648
+          ],
+          [
+            -2.4153,
+            -64.8903
+          ],
+          [
+            -1.4443,
+            -62.2041
+          ],
+          [
+            -0.6436,
+            -61.6703
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            111.5486,
+            -43.7839
+          ],
+          [
+            115.2176,
+            -34.7162
+          ],
+          [
+            121.6851,
+            -22.0267
+          ],
+          [
+            126.7803,
+            -19.9038
+          ],
+          [
+            154.7491,
+            -30.6593
+          ],
+          [
+            147.8645,
+            -33.3639
+          ],
+          [
+            135.6185,
+            -26.4512
+          ],
+          [
+            105.4208,
+            -79.5972
+          ],
+          [
+            94.935,
+            -73.5981
+          ],
+          [
+            65.1234,
+            -128.9201
+          ],
+          [
+            71.6481,
+            -132.373
+          ],
+          [
+            77.3506,
+            -135.5509
+          ],
+          [
+            76.9446,
+            -136.1436
+          ],
+          [
+            64.202,
+            -129.3475
+          ],
+          [
+            68.5343,
+            -119.9265
+          ],
+          [
+            74.222,
+            -110.4415
+          ],
+          [
+            77.5138,
+            -100.3995
+          ],
+          [
+            82.0416,
+            -90.5535
+          ],
+          [
+            93.5465,
+            -74.1448
+          ],
+          [
+            98.4926,
+            -68.1625
+          ],
+          [
+            99.6204,
+            -65.3184
+          ],
+          [
+            108.2801,
+            -48.3277
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            89.8644,
+            -112.5347
+          ],
+          [
+            92.2562,
+            -113.7935
+          ],
+          [
+            86.5104,
+            -122.1805
+          ],
+          [
+            85.1615,
+            -121.4705
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            96.1694,
+            -100.5547
+          ],
+          [
+            99.9594,
+            -102.5493
+          ],
+          [
+            94.2136,
+            -110.9363
+          ],
+          [
+            91.4665,
+            -109.4905
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            102.4744,
+            -88.5747
+          ],
+          [
+            107.6626,
+            -91.3052
+          ],
+          [
+            101.9168,
+            -99.6922
+          ],
+          [
+            97.7715,
+            -97.5105
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            106.0438,
+            -81.7924
+          ],
+          [
+            111.9067,
+            -85.1101
+          ],
+          [
+            109.62,
+            -88.448
+          ],
+          [
+            104.0765,
+            -85.5305
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            76.4498,
+            -19.1041
+          ],
+          [
+            79.553,
+            -13.599
+          ],
+          [
+            90.018,
+            -19.4981
+          ],
+          [
+            86.9034,
+            -25.0234
+          ],
+          [
+            76.7869,
+            -19.3167
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            63.3636,
+            -10.8498
+          ],
+          [
+            66.0914,
+            -6.0107
+          ],
+          [
+            76.5563,
+            -11.9098
+          ],
+          [
+            73.5367,
+            -17.2666
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            50.2773,
+            -2.5955
+          ],
+          [
+            52.6296,
+            1.5777
+          ],
+          [
+            63.0947,
+            -4.3215
+          ],
+          [
+            60.4505,
+            -9.0123
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            37.191,
+            5.6588
+          ],
+          [
+            39.168,
+            9.166
+          ],
+          [
+            49.633,
+            3.2669
+          ],
+          [
+            47.3641,
+            -0.758
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            30.5692,
+            9.8356
+          ],
+          [
+            30.6605,
+            10.2522
+          ],
+          [
+            29.5082,
+            10.5048
+          ],
+          [
+            26.2674,
+            12.549
+          ],
+          [
+            24.122,
+            13.9437
+          ],
+          [
+            25.7064,
+            16.7543
+          ],
+          [
+            36.1713,
+            10.8552
+          ],
+          [
+            34.2779,
+            7.4963
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            14.0147,
+            20.5145
+          ],
+          [
+            22.8371,
+            36.6898
+          ],
+          [
+            25.6375,
+            34.43
+          ],
+          [
+            33.1125,
+            45.45
+          ],
+          [
+            28.8729,
+            47.7561
+          ],
+          [
+            29.1366,
+            48.2396
+          ],
+          [
+            27.9306,
+            48.9345
+          ],
+          [
+            30.0055,
+            52.6648
+          ],
+          [
+            35.3481,
+            49.6932
+          ],
+          [
+            42.0301,
+            61.6188
+          ],
+          [
+            -8.5585,
+            89.7773
+          ],
+          [
+            -15.2396,
+            77.8306
+          ],
+          [
+            -9.8932,
+            74.8569
+          ],
+          [
+            -11.6323,
+            71.7303
+          ],
+          [
+            -23.0764,
+            78.3243
+          ],
+          [
+            -24.3875,
+            81.41
+          ],
+          [
+            -23.8125,
+            98.52
+          ],
+          [
+            -32.4375,
+            102.87
+          ],
+          [
+            -32.4375,
+            123.75
+          ],
+          [
+            137.475,
+            19.93
+          ],
+          [
+            118.9351,
+            -13.5054
+          ],
+          [
+            111.9807,
+            -24.5867
+          ],
+          [
+            110.6182,
+            -27.954
+          ],
+          [
+            107.2436,
+            -33.3535
+          ],
+          [
+            100.1644,
+            -32.504
+          ],
+          [
+            89.8995,
+            -26.7135
+          ],
+          [
+            93.0146,
+            -21.1873
+          ],
+          [
+            98.9424,
+            -24.5288
+          ],
+          [
+            105.9614,
+            -12.147
+          ],
+          [
+            23.7971,
+            34.1892
+          ],
+          [
+            16.7791,
+            21.7866
+          ],
+          [
+            22.7097,
+            18.4435
+          ],
+          [
+            21.2322,
+            15.8224
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            15.7367,
+            55.9605
+          ],
+          [
+            17.708,
+            59.5048
+          ],
+          [
+            26.9992,
+            54.3369
+          ],
+          [
+            24.9497,
+            50.6521
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            3.5426,
+            62.9866
+          ],
+          [
+            5.4105,
+            66.3448
+          ],
+          [
+            14.7018,
+            61.1769
+          ],
+          [
+            12.7557,
+            57.6781
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            -8.6513,
+            70.0127
+          ],
+          [
+            -6.887,
+            73.1848
+          ],
+          [
+            2.4042,
+            68.0169
+          ],
+          [
+            0.5617,
+            64.7042
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            0.7723,
+            3.7416
+          ],
+          [
+            -12.8198,
+            12.2366
+          ],
+          [
+            -9.9881,
+            16.4842
+          ],
+          [
+            3.604,
+            8.5554
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            97.9844,
+            -50.9959
+          ],
+          [
+            96.7213,
+            -54.1813
+          ],
+          [
+            84.0705,
+            -74.9343
+          ],
+          [
+            81.5702,
+            -77.9585
+          ],
+          [
+            79.1891,
+            -81.9784
+          ],
+          [
+            77.1394,
+            -81.7627
+          ],
+          [
+            61.6637,
+            -73.2027
+          ],
+          [
+            62.8605,
+            -71.0676
+          ],
+          [
+            68.2858,
+            -74.1085
+          ],
+          [
+            74.7601,
+            -62.5936
+          ],
+          [
+            23.5347,
+            -33.9021
+          ],
+          [
+            17.0595,
+            -45.3959
+          ],
+          [
+            22.4872,
+            -48.4381
+          ],
+          [
+            21.163,
+            -50.8007
+          ],
+          [
+            0.0549,
+            -39.1253
+          ],
+          [
+            -1.7088,
+            -38.0728
+          ],
+          [
+            -2.4153,
+            -37.759
+          ],
+          [
+            -5.0522,
+            -36.3004
+          ],
+          [
+            -5.9463,
+            -35.3376
+          ],
+          [
+            -11.0373,
+            -32.9899
+          ],
+          [
+            -11.404,
+            -32.7871
+          ],
+          [
+            -8.926,
+            -28.0295
+          ],
+          [
+            -5.8692,
+            -22.4212
+          ],
+          [
+            -5.5679,
+            -21.5819
+          ],
+          [
+            -4.5028,
+            -19.5369
+          ],
+          [
+            -4.7567,
+            -19.3222
+          ],
+          [
+            -2.1781,
+            -12.1388
+          ],
+          [
+            -0.6295,
+            -4.9221
+          ],
+          [
+            2.5264,
+            1.6519
+          ],
+          [
+            3.3208,
+            1.1931
+          ],
+          [
+            3.9924,
+            4.1781
+          ],
+          [
+            6.825,
+            8.9512
+          ],
+          [
+            7.2504,
+            9.8242
+          ],
+          [
+            10.8791,
+            15.9477
+          ],
+          [
+            17.0323,
+            8.3263
+          ],
+          [
+            27.946,
+            5.9333
+          ],
+          [
+            104.0892,
+            -42.0947
+          ],
+          [
+            102.4338,
+            -44.8102
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            49.1669,
+            -66.2904
+          ],
+          [
+            50.403,
+            -64.0851
+          ],
+          [
+            59.8597,
+            -69.3856
+          ],
+          [
+            58.6535,
+            -71.5377
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            36.6701,
+            -59.3781
+          ],
+          [
+            37.9455,
+            -57.1026
+          ],
+          [
+            47.4022,
+            -62.4031
+          ],
+          [
+            46.1566,
+            -64.6253
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
+          [
+            24.1732,
+            -52.4658
+          ],
+          [
+            25.488,
+            -50.1201
+          ],
+          [
+            34.9447,
+            -55.4206
+          ],
+          [
+            33.6598,
+            -57.713
+          ]
+        ],
+        "holes": []
+      },
+      {
+        "polygon": [
           [
             -7.1375,
             -18.93
           ],
           [
-            -10.875,
-            -25.89
+            -7.7121,
+            -20.0
+          ],
+          [
+            -27.8088,
+            -20.0
           ],
           [
             -43.3494,
@@ -2086,595 +4489,151 @@
           [
             -25.8113,
             -13.0589
+          ],
+          [
+            -13.8121,
+            -19.0531
+          ],
+          [
+            -10.0866,
+            -11.602
+          ],
+          [
+            -22.3118,
+            -5.4949
+          ],
+          [
+            -22.0875,
+            -5.01
+          ],
+          [
+            -20.9721,
+            -5.6158
+          ],
+          [
+            -22.375,
+            -4.43
+          ],
+          [
+            -71.825,
+            24.86
+          ],
+          [
+            -72.2283,
+            118.1047
+          ],
+          [
+            -71.6117,
+            118.046
+          ],
+          [
+            -49.6317,
+            114.6557
+          ],
+          [
+            -49.6317,
+            110.7738
+          ],
+          [
+            -63.8079,
+            110.6002
+          ],
+          [
+            -63.0489,
+            34.0159
+          ],
+          [
+            -61.7588,
+            29.4231
+          ],
+          [
+            -60.3601,
+            25.9106
+          ],
+          [
+            -56.9078,
+            22.0862
+          ],
+          [
+            -53.2816,
+            18.5214
+          ],
+          [
+            -10.633,
+            -6.7703
+          ],
+          [
+            -3.6768,
+            5.2344
+          ],
+          [
+            0.7026,
+            2.7052
+          ],
+          [
+            -2.6305,
+            -4.2379
+          ],
+          [
+            -4.2019,
+            -11.5612
+          ],
+          [
+            -6.4685,
+            -17.8753
+          ],
+          [
+            -7.1375,
+            -17.3098
           ]
         ],
         "holes": []
       },
       {
         "polygon": [
-          [
-            -42.2202,
-            90.5189
-          ],
-          [
-            -42.4823,
-            74.2782
-          ],
-          [
-            -42.181,
-            71.7254
-          ],
-          [
-            -48.4255,
-            71.6091
-          ],
-          [
-            -48.7922,
-            91.3037
-          ],
-          [
-            -42.2281,
-            91.426
-          ]
-        ],
-        "holes": []
-      },
-      {
-        "polygon": [
-          [
-            -40.4875,
-            57.3782
-          ],
-          [
-            -40.4875,
-            48.615
-          ],
-          [
-            -47.9946,
-            48.4752
-          ],
-          [
-            -48.3614,
-            68.1697
-          ],
-          [
-            -41.7758,
-            68.2924
-          ]
-        ],
-        "holes": []
-      },
-      {
-        "polygon": [
-          [
-            -40.4875,
-            38.78
-          ],
-          [
-            -33.3372,
-            34.3521
-          ],
-          [
-            -38.1427,
-            25.9227
-          ],
-          [
-            -46.2819,
-            30.5628
-          ],
-          [
-            -47.7231,
-            33.8928
-          ],
-          [
-            -47.9306,
-            45.0358
-          ],
-          [
-            -40.4875,
-            45.1744
-          ]
-        ],
-        "holes": []
-      },
-      {
-        "polygon": [
-          [
-            -21.3429,
-            26.9245
-          ],
-          [
-            -18.5095,
-            25.0958
-          ],
-          [
-            -12.3173,
-            21.2021
-          ],
-          [
-            -16.6207,
-            13.6533
-          ],
-          [
-            -35.1542,
-            24.219
-          ],
-          [
-            -30.4106,
-            32.5398
-          ]
-        ],
-        "holes": []
-      },
-      {
-        "polygon": [
-          [
-            84.5465,
-            -68.869
-          ],
-          [
-            74.5323,
-            -62.9986
-          ],
-          [
-            74.7601,
-            -62.5936
-          ],
-          [
-            54.1295,
-            -51.0383
-          ],
-          [
-            19.5969,
-            -30.7951
-          ],
-          [
-            -1.1198,
-            -22.3964
-          ],
-          [
-            -4.7567,
-            -19.3222
-          ],
-          [
-            -2.1781,
-            -12.1388
-          ],
-          [
-            -0.6295,
-            -4.9221
-          ],
-          [
-            2.6666,
-            1.9439
-          ],
-          [
-            6.825,
-            8.9512
-          ],
-          [
-            7.0477,
-            9.4083
-          ],
-          [
-            96.3046,
-            -43.1131
-          ]
-        ],
-        "holes": []
-      },
-      {
-        "polygon": [
-          [
-            -90.8,
-            6.01
-          ],
-          [
-            -83.325,
-            8.91
-          ],
-          [
-            -74.9875,
-            7.75
-          ],
-          [
-            -73.55,
-            -14.58
-          ],
-          [
-            -89.075,
-            -26.76
-          ]
-        ],
-        "holes": []
-      },
-      {
-        "polygon": [
-          [
-            27.6463,
-            48.4233
-          ],
-          [
-            30.0055,
-            52.6648
-          ],
-          [
-            35.3481,
-            49.6932
-          ],
-          [
-            42.0301,
-            61.6188
-          ],
-          [
-            -8.5585,
-            89.7773
-          ],
-          [
-            -15.2396,
-            77.8306
-          ],
-          [
-            -9.8932,
-            74.8569
-          ],
-          [
-            -12.4612,
-            70.2401
-          ],
-          [
-            -21.8,
-            75.32
-          ],
-          [
-            -24.3875,
-            81.41
-          ],
-          [
-            -23.8125,
-            98.52
-          ],
-          [
-            -32.4375,
-            102.87
-          ],
-          [
-            -32.4375,
-            123.75
-          ],
-          [
-            137.475,
-            19.93
-          ],
-          [
-            118.9351,
-            -13.5054
-          ],
-          [
-            111.9807,
-            -24.5867
-          ],
-          [
-            109.7945,
-            -29.9897
-          ],
-          [
-            109.0125,
-            -31.4
-          ],
-          [
-            105.275,
-            -32.56
-          ],
-          [
-            91.1717,
-            -24.4566
-          ],
-          [
-            93.0146,
-            -21.1873
-          ],
-          [
-            98.9424,
-            -24.5288
-          ],
-          [
-            105.9614,
-            -12.147
-          ],
-          [
-            23.7971,
-            34.1892
-          ],
-          [
-            16.7791,
-            21.7866
-          ],
-          [
-            22.7097,
-            18.4435
-          ],
-          [
-            21.2322,
-            15.8224
-          ],
-          [
-            14.425,
-            20.2478
-          ],
-          [
-            14.425,
-            21.1144
-          ],
-          [
-            23.2418,
-            36.3632
-          ],
-          [
-            25.6375,
-            34.43
-          ],
-          [
-            33.1125,
-            45.45
-          ]
-        ],
-        "holes": []
-      },
-      {
-        "polygon": [
-          [
-            15.2845,
-            55.1476
-          ],
-          [
-            17.708,
-            59.5048
-          ],
-          [
-            26.9992,
-            54.3369
-          ],
-          [
-            24.6244,
-            50.0672
-          ]
-        ],
-        "holes": []
-      },
-      {
-        "polygon": [
-          [
-            2.9226,
-            61.872
-          ],
-          [
-            5.4105,
-            66.3448
-          ],
-          [
-            14.7018,
-            61.1769
-          ],
-          [
-            12.2625,
-            56.7915
-          ]
-        ],
-        "holes": []
-      },
-      {
-        "polygon": [
-          [
-            -9.4392,
-            68.5962
-          ],
-          [
-            -6.887,
-            73.1848
-          ],
-          [
-            2.4042,
-            68.0169
-          ],
-          [
-            -0.0994,
-            63.5158
-          ]
-        ],
-        "holes": []
-      },
-      {
-        "polygon": [
-          [
-            77.7724,
-            -16.7578
-          ],
-          [
-            79.553,
-            -13.599
-          ],
-          [
-            90.018,
-            -19.4981
-          ],
-          [
-            88.1889,
-            -22.7428
-          ]
-        ],
-        "holes": []
-      },
-      {
-        "polygon": [
-          [
-            64.3731,
-            -9.0589
-          ],
-          [
-            66.0914,
-            -6.0107
-          ],
-          [
-            76.5563,
-            -11.9098
-          ],
-          [
-            74.7896,
-            -15.0439
-          ]
-        ],
-        "holes": []
-      },
-      {
-        "polygon": [
-          [
-            50.9737,
-            -1.3599
-          ],
-          [
-            52.6296,
-            1.5777
-          ],
-          [
-            63.0947,
-            -4.3215
-          ],
-          [
-            61.3903,
-            -7.345
-          ]
-        ],
-        "holes": []
-      },
-      {
-        "polygon": [
-          [
-            37.5744,
-            6.339
-          ],
-          [
-            39.168,
-            9.166
-          ],
-          [
-            49.633,
-            3.2669
-          ],
-          [
-            47.9909,
-            0.3539
-          ]
-        ],
-        "holes": []
-      },
-      {
-        "polygon": [
-          [
-            24.1751,
-            14.0379
-          ],
-          [
-            25.7064,
-            16.7543
-          ],
-          [
-            36.1713,
-            10.8552
-          ],
-          [
-            34.5916,
-            8.0528
-          ]
-        ],
-        "holes": []
-      },
-      {
-        "polygon": [
-          [
-            4.3665,
-            20.6999
-          ],
-          [
-            -0.6447,
-            19.5576
-          ],
           [
             -35.35,
-            41.9102
+            46.3865
           ],
           [
             -35.35,
             54.8012
           ],
           [
-            -37.4155,
-            72.3
+            -37.0348,
+            69.0746
           ],
           [
-            -35.4161,
-            72.3
+            -37.4554,
+            78.498
           ],
           [
-            19.8756,
-            39.9979
+            -33.4911,
+            78.498
           ],
           [
-            9.5,
-            22.1
-          ]
-        ],
-        "holes": []
-      },
-      {
-        "polygon": [
-          [
-            -90.7921,
-            117.9516
+            22.1881,
+            45.3155
           ],
           [
-            -79.0836,
-            118.4143
+            13.5261,
+            29.4343
           ],
           [
-            -78.0799,
-            64.4998
+            9.8337,
+            23.2802
           ],
           [
-            -77.8184,
-            24.5296
+            0.2059,
+            20.1653
           ],
           [
-            -77.0048,
-            20.5458
+            -3.7584,
+            22.4307
           ],
           [
-            -77.0,
-            20.22
-          ],
-          [
-            -78.4411,
-            19.9293
-          ],
-          [
-            -79.4102,
-            20.3991
-          ],
-          [
-            -81.4728,
-            27.962
-          ],
-          [
-            -86.5861,
-            26.5675
-          ],
-          [
-            -85.1448,
-            21.2828
-          ],
-          [
-            -89.9375,
-            23.7
+            -4.0416,
+            28.3772
           ]
         ],
         "holes": []
@@ -2684,20 +4643,20 @@
       {
         "polygon": [
           [
-            -48.8541,
-            94.6232
+            -42.2693,
+            91.8069
           ],
           [
-            -42.107,
-            94.7488
+            -42.2693,
+            91.5452
           ],
           [
-            -42.0791,
-            91.5488
+            -48.7822,
+            91.4239
           ],
           [
-            -48.7945,
-            91.4237
+            -48.7822,
+            91.8069
           ]
         ],
         "holes": [],
@@ -2706,24 +4665,16 @@
       {
         "polygon": [
           [
-            -48.4232,
-            71.4892
-          ],
-          [
-            -42.0161,
-            71.6085
-          ],
-          [
-            -41.7089,
-            69.0056
-          ],
-          [
-            -41.6979,
-            68.4139
-          ],
-          [
             -48.3637,
             68.2897
+          ],
+          [
+            -48.3639,
+            68.304
+          ],
+          [
+            -47.5993,
+            68.304
           ]
         ],
         "holes": [],
@@ -2732,42 +4683,16 @@
       {
         "polygon": [
           [
-            -40.4875,
-            45.2944
+            -33.251,
+            27.7997
           ],
           [
-            -47.9328,
-            45.1557
+            -34.943,
+            24.8317
           ],
           [
-            -47.9924,
-            48.3552
-          ],
-          [
-            -40.4875,
-            48.4949
-          ]
-        ],
-        "holes": [],
-        "entranceId": "house-14-entrance-3"
-      },
-      {
-        "polygon": [
-          [
-            -30.5127,
-            32.603
-          ],
-          [
-            -35.2584,
-            24.2785
-          ],
-          [
-            -38.0384,
-            25.8633
-          ],
-          [
-            -33.2351,
-            34.2889
+            -35.1901,
+            24.9792
           ]
         ],
         "holes": [],
@@ -2776,20 +4701,20 @@
       {
         "polygon": [
           [
-            -9.4367,
-            19.5514
+            -16.2178,
+            13.6525
           ],
           [
-            -13.7365,
-            12.0091
+            -16.4157,
+            13.7706
           ],
           [
-            -16.5165,
-            13.5939
+            -13.341,
+            19.1641
           ],
           [
-            -12.1591,
-            21.2373
+            -13.103,
+            19.0327
           ]
         ],
         "holes": [],
@@ -2798,20 +4723,46 @@
       {
         "polygon": [
           [
-            -12.3557,
-            70.1827
+            -46.4745,
+            -33.1372
           ],
           [
-            -9.7884,
-            74.7986
+            -45.7199,
+            -31.7265
           ],
+          [
+            -33.1989,
+            -38.4246
+          ],
+          [
+            -34.7083,
+            -41.2462
+          ],
+          [
+            -47.2285,
+            -34.5486
+          ]
+        ],
+        "holes": [],
+        "entranceId": "tower-34-main-entrance"
+      },
+      {
+        "polygon": [
           [
             -6.9918,
             73.2431
           ],
           [
-            -9.5446,
-            68.6536
+            -8.8282,
+            69.9415
+          ],
+          [
+            -11.6012,
+            71.5392
+          ],
+          [
+            -9.7884,
+            74.7986
           ]
         ],
         "holes": [],
@@ -2820,20 +4771,20 @@
       {
         "polygon": [
           [
-            0.0061,
-            63.4585
-          ],
-          [
-            2.5091,
-            67.9586
-          ],
-          [
             5.3056,
             66.4032
           ],
           [
-            2.8172,
-            61.9293
+            3.3657,
+            62.9154
+          ],
+          [
+            0.5927,
+            64.5132
+          ],
+          [
+            2.5091,
+            67.9586
           ]
         ],
         "holes": [],
@@ -2842,20 +4793,20 @@
       {
         "polygon": [
           [
-            12.368,
-            56.7341
-          ],
-          [
-            14.8066,
-            61.1186
-          ],
-          [
             17.6032,
             59.5631
           ],
           [
-            15.1791,
-            55.205
+            15.5598,
+            55.8893
+          ],
+          [
+            12.7868,
+            57.4871
+          ],
+          [
+            14.8066,
+            61.1186
           ]
         ],
         "holes": [],
@@ -2864,20 +4815,20 @@
       {
         "polygon": [
           [
-            24.7298,
-            50.0098
-          ],
-          [
-            27.1041,
-            54.2786
-          ],
-          [
             29.9006,
             52.7231
           ],
           [
-            27.5409,
-            48.4807
+            27.7537,
+            48.8633
+          ],
+          [
+            24.9807,
+            50.461
+          ],
+          [
+            27.1041,
+            54.2786
           ]
         ],
         "holes": [],
@@ -2886,20 +4837,24 @@
       {
         "polygon": [
           [
-            21.2963,
-            15.6919
-          ],
-          [
-            22.8142,
-            18.3846
-          ],
-          [
             25.6018,
             16.8132
           ],
           [
-            24.071,
-            14.0976
+            23.948,
+            13.8793
+          ],
+          [
+            23.9318,
+            13.8885
+          ],
+          [
+            21.2592,
+            15.626
+          ],
+          [
+            22.8142,
+            18.3846
           ]
         ],
         "holes": [],
@@ -2908,20 +4863,20 @@
       {
         "polygon": [
           [
-            34.6957,
-            7.993
-          ],
-          [
-            36.2759,
-            10.7963
-          ],
-          [
             39.0635,
             9.2249
           ],
           [
-            37.4704,
-            6.3987
+            37.0156,
+            5.5921
+          ],
+          [
+            34.3058,
+            7.3014
+          ],
+          [
+            36.2759,
+            10.7963
           ]
         ],
         "holes": [],
@@ -2930,20 +4885,20 @@
       {
         "polygon": [
           [
-            48.095,
-            0.2941
-          ],
-          [
-            49.7375,
-            3.208
-          ],
-          [
             52.5251,
             1.6366
           ],
           [
-            50.8697,
-            -1.3001
+            50.1019,
+            -2.6622
+          ],
+          [
+            47.392,
+            -0.9529
+          ],
+          [
+            49.7375,
+            3.208
           ]
         ],
         "holes": [],
@@ -2952,20 +4907,20 @@
       {
         "polygon": [
           [
-            61.4944,
-            -7.4048
-          ],
-          [
-            63.1992,
-            -4.3804
-          ],
-          [
             65.9868,
             -5.9518
           ],
           [
-            64.2691,
-            -8.9991
+            63.1882,
+            -10.9165
+          ],
+          [
+            60.4783,
+            -9.2072
+          ],
+          [
+            63.1992,
+            -4.3804
           ]
         ],
         "holes": [],
@@ -2974,8 +4929,12 @@
       {
         "polygon": [
           [
-            74.8937,
-            -15.1037
+            74.1263,
+            -17.8159
+          ],
+          [
+            73.5646,
+            -17.4615
           ],
           [
             76.6609,
@@ -2986,8 +4945,8 @@
             -13.5401
           ],
           [
-            77.6684,
-            -16.698
+            76.3357,
+            -19.0621
           ]
         ],
         "holes": [],
@@ -2996,8 +4955,8 @@
       {
         "polygon": [
           [
-            88.293,
-            -22.8026
+            87.0079,
+            -25.0824
           ],
           [
             90.1225,
@@ -3008,249 +4967,2933 @@
             -21.1284
           ],
           [
-            91.0677,
-            -24.3969
+            89.795,
+            -26.6546
           ]
         ],
         "holes": [],
         "entranceId": "house-46-1-courtyard-entrance-6"
+      },
+      {
+        "polygon": [
+          [
+            21.268,
+            -50.8588
+          ],
+          [
+            22.5919,
+            -48.4968
+          ],
+          [
+            25.3833,
+            -50.0614
+          ],
+          [
+            24.0682,
+            -52.4077
+          ]
+        ],
+        "holes": [],
+        "entranceId": "house-26-reference-entry-1"
+      },
+      {
+        "polygon": [
+          [
+            33.7648,
+            -57.7711
+          ],
+          [
+            35.0494,
+            -55.4793
+          ],
+          [
+            37.8408,
+            -57.0439
+          ],
+          [
+            36.5651,
+            -59.32
+          ]
+        ],
+        "holes": [],
+        "entranceId": "house-26-reference-entry-2"
+      },
+      {
+        "polygon": [
+          [
+            46.2617,
+            -64.6834
+          ],
+          [
+            47.5069,
+            -62.4618
+          ],
+          [
+            50.2983,
+            -64.0264
+          ],
+          [
+            49.0619,
+            -66.2323
+          ]
+        ],
+        "holes": [],
+        "entranceId": "house-26-reference-entry-3"
+      },
+      {
+        "polygon": [
+          [
+            58.7585,
+            -71.5957
+          ],
+          [
+            59.9644,
+            -69.4443
+          ],
+          [
+            62.7558,
+            -71.0089
+          ],
+          [
+            61.5587,
+            -73.1446
+          ]
+        ],
+        "holes": [],
+        "entranceId": "house-26-reference-entry-4"
+      },
+      {
+        "polygon": [
+          [
+            53.6497,
+            -106.1267
+          ],
+          [
+            55.7618,
+            -102.3787
+          ],
+          [
+            58.4793,
+            -104.0745
+          ],
+          [
+            56.4375,
+            -107.6977
+          ]
+        ],
+        "holes": [],
+        "entranceId": "house-36-reference-entry-1"
+      },
+      {
+        "polygon": [
+          [
+            40.2314,
+            -98.565
+          ],
+          [
+            41.7285,
+            -95.9083
+          ],
+          [
+            44.2612,
+            -97.0644
+          ],
+          [
+            44.6323,
+            -97.2735
+          ],
+          [
+            43.0192,
+            -100.1361
+          ]
+        ],
+        "holes": [],
+        "entranceId": "house-36-reference-entry-2"
+      },
+      {
+        "polygon": [
+          [
+            26.813,
+            -91.0034
+          ],
+          [
+            28.957,
+            -87.1987
+          ],
+          [
+            30.5544,
+            -88.0286
+          ],
+          [
+            31.6908,
+            -88.8656
+          ],
+          [
+            29.6008,
+            -92.5744
+          ]
+        ],
+        "holes": [],
+        "entranceId": "house-36-reference-entry-3"
+      },
+      {
+        "polygon": [
+          [
+            13.3947,
+            -83.4417
+          ],
+          [
+            15.2812,
+            -80.0941
+          ],
+          [
+            18.1225,
+            -81.5702
+          ],
+          [
+            16.1825,
+            -85.0127
+          ]
+        ],
+        "holes": [],
+        "entranceId": "house-36-reference-entry-4"
+      },
+      {
+        "polygon": [
+          [
+            -0.0236,
+            -75.88
+          ],
+          [
+            1.6579,
+            -72.8961
+          ],
+          [
+            4.4828,
+            -74.4013
+          ],
+          [
+            2.7642,
+            -77.4511
+          ]
+        ],
+        "holes": [],
+        "entranceId": "house-36-reference-entry-5"
+      },
+      {
+        "polygon": [
+          [
+            -13.442,
+            -68.3184
+          ],
+          [
+            -12.03,
+            -65.8128
+          ],
+          [
+            -12.03,
+            -66.27
+          ],
+          [
+            -10.7777,
+            -66.27
+          ],
+          [
+            -9.1141,
+            -67.1564
+          ],
+          [
+            -10.6542,
+            -69.8894
+          ]
+        ],
+        "holes": [],
+        "entranceId": "house-36-reference-entry-6"
+      },
+      {
+        "polygon": [
+          [
+            84.6213,
+            -124.9379
+          ],
+          [
+            83.6153,
+            -124.4085
+          ],
+          [
+            85.1056,
+            -121.5767
+          ],
+          [
+            86.4422,
+            -122.2801
+          ]
+        ],
+        "holes": [],
+        "entranceId": "house-46-a-reference-entry-1"
+      },
+      {
+        "polygon": [
+          [
+            92.3245,
+            -113.6938
+          ],
+          [
+            89.9203,
+            -112.4285
+          ],
+          [
+            91.4106,
+            -109.5967
+          ],
+          [
+            94.1453,
+            -111.036
+          ]
+        ],
+        "holes": [],
+        "entranceId": "house-46-a-reference-entry-2"
+      },
+      {
+        "polygon": [
+          [
+            100.0277,
+            -102.4497
+          ],
+          [
+            96.2253,
+            -100.4485
+          ],
+          [
+            97.7156,
+            -97.6167
+          ],
+          [
+            101.8485,
+            -99.7918
+          ]
+        ],
+        "holes": [],
+        "entranceId": "house-46-a-reference-entry-3"
+      },
+      {
+        "polygon": [
+          [
+            107.7309,
+            -91.2055
+          ],
+          [
+            102.5303,
+            -88.4685
+          ],
+          [
+            104.0206,
+            -85.6367
+          ],
+          [
+            109.5517,
+            -88.5477
+          ]
+        ],
+        "holes": [],
+        "entranceId": "house-46-a-reference-entry-4"
       }
     ],
     "curbs": [
       [
         [
-          -22.3118,
-          -5.4949
+          -90.1248,
+          -25.7079
         ],
         [
-          -22.0875,
-          -5.01
+          -81.9706,
+          -20.0
         ]
       ],
       [
         [
-          -22.0875,
-          -5.01
+          -81.9706,
+          -20.0
         ],
         [
-          -20.9721,
-          -5.6158
+          -89.4308,
+          -20.0
         ]
       ],
       [
         [
-          -20.9721,
-          -5.6158
+          -89.4308,
+          -20.0
         ],
         [
-          -22.375,
-          -4.43
+          -90.8,
+          6.01
         ]
       ],
       [
         [
-          -22.375,
-          -4.43
+          -90.8,
+          6.01
         ],
         [
-          -71.825,
-          24.86
+          -83.325,
+          8.91
         ]
       ],
       [
         [
-          -71.825,
-          24.86
+          -83.325,
+          8.91
         ],
         [
-          -72.2283,
-          118.1047
+          -74.9875,
+          7.75
         ]
       ],
       [
         [
-          -72.2283,
-          118.1047
+          -74.9875,
+          7.75
         ],
         [
-          -71.6117,
-          118.046
+          -73.5792,
+          -14.1261
         ]
       ],
       [
         [
-          -71.6117,
-          118.046
+          -73.5792,
+          -14.1261
         ],
         [
-          -42.7875,
-          113.6
+          -73.2265,
+          -13.8791
         ]
       ],
       [
         [
-          -42.7875,
-          113.6
+          -73.2265,
+          -13.8791
         ],
         [
-          -42.3418,
-          104.4959
+          -71.7055,
+          -37.8157
         ]
       ],
       [
         [
-          -42.3418,
-          104.4959
+          -71.7055,
+          -37.8157
         ],
         [
-          -42.258,
-          94.866
+          -68.189,
+          -42.2912
         ]
       ],
       [
         [
-          -42.258,
-          94.866
+          -68.189,
+          -42.2912
         ],
         [
-          -48.8563,
-          94.7431
+          -54.8241,
+          -49.5138
         ]
       ],
       [
         [
-          -13.6322,
-          11.9497
+          -54.8241,
+          -49.5138
         ],
         [
-          -9.4024,
-          19.3692
+          -41.356,
+          -56.7818
         ]
       ],
       [
         [
-          -9.4024,
-          19.3692
+          -41.356,
+          -56.7818
         ],
         [
-          -1.5459,
-          14.4291
+          -37.1077,
+          -56.6852
         ]
       ],
       [
         [
-          -1.5459,
-          14.4291
+          -37.1077,
+          -56.6852
         ],
         [
-          -1.2675,
-          14.4925
+          -40.1522,
+          -60.5448
         ]
       ],
       [
         [
-          -1.2675,
-          14.4925
+          -40.1522,
+          -60.5448
         ],
         [
-          4.9375,
-          10.65
+          -46.2422,
+          -73.0707
         ]
       ],
       [
         [
-          4.9375,
-          10.65
+          -46.2422,
+          -73.0707
         ],
         [
-          5.2322,
-          10.4766
+          -46.0441,
+          -73.5218
         ]
       ],
       [
         [
-          5.2322,
-          10.4766
+          -46.0441,
+          -73.5218
         ],
         [
-          4.975,
-          9.9488
+          -51.6139,
+          -75.2624
         ]
       ],
       [
         [
-          4.975,
-          9.9488
+          -51.6139,
+          -75.2624
         ],
         [
-          0.8134,
-          2.9361
+          -89.2752,
+          -54.8743
         ]
       ],
       [
         [
-          0.8134,
-          2.9361
+          -89.2752,
+          -54.8743
         ],
         [
-          -2.6305,
-          -4.2379
+          -90.1248,
+          -25.7079
         ]
       ],
       [
         [
-          -2.6305,
-          -4.2379
+          -47.285,
+          -34.6545
         ],
         [
-          -4.2019,
-          -11.5612
+          -34.6591,
+          -41.4087
         ]
       ],
       [
         [
-          -4.2019,
-          -11.5612
+          -34.6591,
+          -41.4087
         ],
         [
-          -6.4685,
-          -17.8753
+          -33.0364,
+          -38.3754
         ]
       ],
       [
         [
-          -6.4685,
-          -17.8753
+          -33.0364,
+          -38.3754
         ],
         [
-          -7.1375,
-          -17.3098
+          -45.6633,
+          -31.6207
         ]
       ],
       [
         [
-          -7.1375,
-          -17.3098
+          -44.3108,
+          -29.0924
         ],
+        [
+          -42.8601,
+          -28.3289
+        ]
+      ],
+      [
+        [
+          -42.8601,
+          -28.3289
+        ],
+        [
+          -34.4133,
+          -34.8329
+        ]
+      ],
+      [
+        [
+          -34.4133,
+          -34.8329
+        ],
+        [
+          -29.0553,
+          -42.6819
+        ]
+      ],
+      [
+        [
+          -29.0553,
+          -42.6819
+        ],
+        [
+          -33.4142,
+          -52.0027
+        ]
+      ],
+      [
+        [
+          -33.4142,
+          -52.0027
+        ],
+        [
+          -33.8137,
+          -52.5092
+        ]
+      ],
+      [
+        [
+          -33.8137,
+          -52.5092
+        ],
+        [
+          -40.364,
+          -52.6582
+        ]
+      ],
+      [
+        [
+          -40.364,
+          -52.6582
+        ],
+        [
+          -52.8759,
+          -45.9062
+        ]
+      ],
+      [
+        [
+          -52.8759,
+          -45.9062
+        ],
+        [
+          -65.491,
+          -39.0888
+        ]
+      ],
+      [
+        [
+          -65.491,
+          -39.0888
+        ],
+        [
+          -67.6945,
+          -36.2843
+        ]
+      ],
+      [
+        [
+          -67.6945,
+          -36.2843
+        ],
+        [
+          -67.7987,
+          -34.6454
+        ]
+      ],
+      [
+        [
+          -67.7987,
+          -34.6454
+        ],
+        [
+          -62.0911,
+          -38.4505
+        ]
+      ],
+      [
+        [
+          -62.0911,
+          -38.4505
+        ],
+        [
+          -59.2707,
+          -36.9661
+        ]
+      ],
+      [
+        [
+          -34.84,
+          24.7702
+        ],
+        [
+          -32.8518,
+          28.2576
+        ]
+      ],
+      [
+        [
+          -32.8518,
+          28.2576
+        ],
+        [
+          -32.9108,
+          28.2946
+        ]
+      ],
+      [
+        [
+          -32.9108,
+          28.2946
+        ],
+        [
+          -32.0752,
+          29.5099
+        ]
+      ],
+      [
+        [
+          -32.0752,
+          29.5099
+        ],
+        [
+          -13.446,
+          19.2221
+        ]
+      ],
+      [
+        [
+          -13.446,
+          19.2221
+        ],
+        [
+          -16.5188,
+          13.8322
+        ]
+      ],
+      [
+        [
+          -16.5188,
+          13.8322
+        ],
+        [
+          -34.84,
+          24.7702
+        ]
+      ],
+      [
+        [
+          -47.9315,
+          45.0842
+        ],
+        [
+          -42.8356,
+          45.0842
+        ]
+      ],
+      [
+        [
+          -42.8356,
+          45.0842
+        ],
+        [
+          -42.8356,
+          36.0228
+        ]
+      ],
+      [
+        [
+          -42.8356,
+          36.0228
+        ],
+        [
+          -35.1901,
+          31.7752
+        ]
+      ],
+      [
+        [
+          -35.1901,
+          31.7752
+        ],
+        [
+          -38.0218,
+          26.395
+        ]
+      ],
+      [
+        [
+          -38.0218,
+          26.395
+        ],
+        [
+          -46.5635,
+          31.2134
+        ]
+      ],
+      [
+        [
+          -48.3614,
+          68.1697
+        ],
+        [
+          -46.9982,
+          68.1951
+        ]
+      ],
+      [
+        [
+          -46.9982,
+          68.1951
+        ],
+        [
+          -46.9992,
+          68.304
+        ]
+      ],
+      [
+        [
+          -46.9992,
+          68.304
+        ],
+        [
+          -41.9861,
+          68.304
+        ]
+      ],
+      [
+        [
+          -41.9861,
+          68.304
+        ],
+        [
+          -41.9861,
+          48.7653
+        ]
+      ],
+      [
+        [
+          -41.9861,
+          48.7653
+        ],
+        [
+          -48.0001,
+          48.7653
+        ]
+      ],
+      [
+        [
+          -90.7921,
+          117.9516
+        ],
+        [
+          -79.0836,
+          118.4143
+        ]
+      ],
+      [
+        [
+          -79.0836,
+          118.4143
+        ],
+        [
+          -78.0799,
+          64.4998
+        ]
+      ],
+      [
+        [
+          -78.0799,
+          64.4998
+        ],
+        [
+          -77.8184,
+          24.5296
+        ]
+      ],
+      [
+        [
+          -77.8184,
+          24.5296
+        ],
+        [
+          -77.0048,
+          20.5458
+        ]
+      ],
+      [
+        [
+          -77.0048,
+          20.5458
+        ],
+        [
+          -77.0,
+          20.22
+        ]
+      ],
+      [
+        [
+          -77.0,
+          20.22
+        ],
+        [
+          -78.4411,
+          19.9293
+        ]
+      ],
+      [
+        [
+          -78.4411,
+          19.9293
+        ],
+        [
+          -79.4102,
+          20.3991
+        ]
+      ],
+      [
+        [
+          -79.4102,
+          20.3991
+        ],
+        [
+          -81.4728,
+          27.962
+        ]
+      ],
+      [
+        [
+          -81.4728,
+          27.962
+        ],
+        [
+          -86.5861,
+          26.5675
+        ]
+      ],
+      [
+        [
+          -86.5861,
+          26.5675
+        ],
+        [
+          -85.1448,
+          21.2828
+        ]
+      ],
+      [
+        [
+          -85.1448,
+          21.2828
+        ],
+        [
+          -89.9375,
+          23.7
+        ]
+      ],
+      [
+        [
+          -89.9375,
+          23.7
+        ],
+        [
+          -90.7921,
+          117.9516
+        ]
+      ],
+      [
+        [
+          -42.2693,
+          87.4742
+        ],
+        [
+          -42.4823,
+          74.2782
+        ]
+      ],
+      [
+        [
+          -42.4823,
+          74.2782
+        ],
+        [
+          -42.2693,
+          72.4738
+        ]
+      ],
+      [
+        [
+          -42.2693,
+          72.4738
+        ],
+        [
+          -42.2693,
+          71.9851
+        ]
+      ],
+      [
+        [
+          -42.2693,
+          71.9851
+        ],
+        [
+          -48.4325,
+          71.9851
+        ]
+      ],
+      [
+        [
+          -48.7822,
+          91.3039
+        ],
+        [
+          -42.2693,
+          91.4252
+        ]
+      ],
+      [
+        [
+          -42.2693,
+          91.4252
+        ],
+        [
+          -42.2693,
+          87.4742
+        ]
+      ],
+      [
+        [
+          -42.8356,
+          95.4881
+        ],
+        [
+          -48.8702,
+          95.4881
+        ]
+      ],
+      [
+        [
+          -49.1549,
+          110.7797
+        ],
+        [
+          -49.3485,
+          110.7773
+        ]
+      ],
+      [
+        [
+          -49.3485,
+          110.7773
+        ],
+        [
+          -49.3485,
+          115.8762
+        ]
+      ],
+      [
+        [
+          -49.3485,
+          115.8762
+        ],
+        [
+          -42.8356,
+          115.0267
+        ]
+      ],
+      [
+        [
+          -42.8356,
+          115.0267
+        ],
+        [
+          -42.8356,
+          95.4881
+        ]
+      ],
+      [
+        [
+          -27.2614,
+          -93.3851
+        ],
+        [
+          -23.8634,
+          -90.2703
+        ]
+      ],
+      [
+        [
+          -23.8634,
+          -90.2703
+        ],
+        [
+          53.1584,
+          -130.197
+        ]
+      ],
+      [
+        [
+          53.1584,
+          -130.197
+        ],
+        [
+          46.3624,
+          -141.8069
+        ]
+      ],
+      [
+        [
+          46.3624,
+          -141.8069
+        ],
+        [
+          -29.2436,
+          -102.1634
+        ]
+      ],
+      [
+        [
+          -29.2436,
+          -102.1634
+        ],
+        [
+          -27.2614,
+          -93.3851
+        ]
+      ],
+      [
+        [
+          -27.8277,
+          -76.6782
+        ],
+        [
+          -19.9436,
+          -61.9273
+        ]
+      ],
+      [
+        [
+          -19.9436,
+          -61.9273
+        ],
+        [
+          -13.2247,
+          -65.1361
+        ]
+      ],
+      [
+        [
+          -13.2247,
+          -65.1361
+        ],
+        [
+          -12.18,
+          -65.6928
+        ]
+      ],
+      [
+        [
+          -12.18,
+          -65.6928
+        ],
+        [
+          -12.18,
+          -65.8345
+        ]
+      ],
+      [
+        [
+          -12.18,
+          -65.8345
+        ],
+        [
+          -13.5465,
+          -68.2595
+        ]
+      ],
+      [
+        [
+          56.542,
+          -107.7566
+        ],
+        [
+          58.5075,
+          -104.2689
+        ]
+      ],
+      [
+        [
+          58.5075,
+          -104.2689
+        ],
+        [
+          66.201,
+          -109.07
+        ]
+      ],
+      [
+        [
+          66.201,
+          -109.07
+        ],
+        [
+          67.1156,
+          -109.07
+        ]
+      ],
+      [
+        [
+          67.1156,
+          -109.07
+        ],
+        [
+          61.1069,
+          -119.0901
+        ]
+      ],
+      [
+        [
+          61.1069,
+          -119.0901
+        ],
+        [
+          64.492,
+          -121.12
+        ]
+      ],
+      [
+        [
+          64.492,
+          -121.12
+        ],
+        [
+          64.4851,
+          -121.1356
+        ]
+      ],
+      [
+        [
+          64.4851,
+          -121.1356
+        ],
+        [
+          55.9901,
+          -126.2327
+        ]
+      ],
+      [
+        [
+          55.9901,
+          -126.2327
+        ],
+        [
+          -23.297,
+          -86.5891
+        ]
+      ],
+      [
+        [
+          -23.297,
+          -86.5891
+        ],
+        [
+          -27.8277,
+          -76.6782
+        ]
+      ],
+      [
+        [
+          1.4783,
+          -72.9704
+        ],
+        [
+          -0.1282,
+          -75.8211
+        ]
+      ],
+      [
+        [
+          -10.5496,
+          -69.9483
+        ],
+        [
+          -9.0818,
+          -67.3436
+        ]
+      ],
+      [
+        [
+          -9.0818,
+          -67.3436
+        ],
+        [
+          1.4783,
+          -72.9704
+        ]
+      ],
+      [
+        [
+          10.6461,
+          -77.8552
+        ],
+        [
+          15.1009,
+          -80.1695
+        ]
+      ],
+      [
+        [
+          15.1009,
+          -80.1695
+        ],
+        [
+          13.2901,
+          -83.3828
+        ]
+      ],
+      [
+        [
+          2.8687,
+          -77.51
+        ],
+        [
+          4.5151,
+          -74.5884
+        ]
+      ],
+      [
+        [
+          4.5151,
+          -74.5884
+        ],
+        [
+          10.6461,
+          -77.8552
+        ]
+      ],
+      [
+        [
+          28.7768,
+          -87.2742
+        ],
+        [
+          26.7085,
+          -90.9445
+        ]
+      ],
+      [
+        [
+          16.287,
+          -85.0716
+        ],
+        [
+          18.1553,
+          -81.7563
+        ]
+      ],
+      [
+        [
+          18.1553,
+          -81.7563
+        ],
+        [
+          28.7768,
+          -87.2742
+        ]
+      ],
+      [
+        [
+          40.3996,
+          -95.4666
+        ],
+        [
+          41.545,
+          -95.9894
+        ]
+      ],
+      [
+        [
+          41.545,
+          -95.9894
+        ],
+        [
+          40.1268,
+          -98.5061
+        ]
+      ],
+      [
+        [
+          29.7054,
+          -92.6333
+        ],
+        [
+          31.714,
+          -89.069
+        ]
+      ],
+      [
+        [
+          31.714,
+          -89.069
+        ],
+        [
+          40.3996,
+          -95.4666
+        ]
+      ],
+      [
+        [
+          55.3031,
+          -102.2693
+        ],
+        [
+          55.5862,
+          -102.4459
+        ]
+      ],
+      [
+        [
+          55.5862,
+          -102.4459
+        ],
+        [
+          53.5451,
+          -106.0678
+        ]
+      ],
+      [
+        [
+          43.1237,
+          -100.195
+        ],
+        [
+          44.6858,
+          -97.423
+        ]
+      ],
+      [
+        [
+          44.6858,
+          -97.423
+        ],
+        [
+          55.3031,
+          -102.2693
+        ]
+      ],
+      [
+        [
+          0.6391,
+          -56.441
+        ],
+        [
+          1.4367,
+          -54.2346
+        ]
+      ],
+      [
+        [
+          1.4367,
+          -54.2346
+        ],
+        [
+          1.6136,
+          -52.4682
+        ]
+      ],
+      [
+        [
+          1.6136,
+          -52.4682
+        ],
+        [
+          2.9488,
+          -47.0244
+        ]
+      ],
+      [
+        [
+          2.9488,
+          -47.0244
+        ],
+        [
+          13.1493,
+          -53.1119
+        ]
+      ],
+      [
+        [
+          13.1493,
+          -53.1119
+        ],
+        [
+          33.451,
+          -64.5754
+        ]
+      ],
+      [
+        [
+          33.451,
+          -64.5754
+        ],
+        [
+          54.7979,
+          -76.2912
+        ]
+      ],
+      [
+        [
+          54.7979,
+          -76.2912
+        ],
+        [
+          75.541,
+          -86.9237
+        ]
+      ],
+      [
+        [
+          75.541,
+          -86.9237
+        ],
+        [
+          75.7764,
+          -86.9485
+        ]
+      ],
+      [
+        [
+          75.7764,
+          -86.9485
+        ],
+        [
+          76.1295,
+          -87.144
+        ]
+      ],
+      [
+        [
+          76.1295,
+          -87.144
+        ],
+        [
+          72.935,
+          -92.5374
+        ]
+      ],
+      [
+        [
+          72.935,
+          -92.5374
+        ],
+        [
+          71.1506,
+          -97.9809
+        ]
+      ],
+      [
+        [
+          71.1506,
+          -97.9809
+        ],
+        [
+          70.1485,
+          -99.898
+        ]
+      ],
+      [
+        [
+          70.1485,
+          -99.898
+        ],
+        [
+          70.2901,
+          -100.606
+        ]
+      ],
+      [
+        [
+          70.2901,
+          -100.606
+        ],
+        [
+          69.253,
+          -103.77
+        ]
+      ],
+      [
+        [
+          69.253,
+          -103.77
+        ],
+        [
+          67.719,
+          -103.77
+        ]
+      ],
+      [
+        [
+          67.719,
+          -103.77
+        ],
+        [
+          57.8169,
+          -97.5907
+        ]
+      ],
+      [
+        [
+          57.8169,
+          -97.5907
+        ],
+        [
+          43.1004,
+          -90.8734
+        ]
+      ],
+      [
+        [
+          43.1004,
+          -90.8734
+        ],
+        [
+          33.2851,
+          -83.6437
+        ]
+      ],
+      [
+        [
+          33.2851,
+          -83.6437
+        ],
+        [
+          13.1139,
+          -73.1648
+        ]
+      ],
+      [
+        [
+          13.1139,
+          -73.1648
+        ],
+        [
+          -2.4153,
+          -64.8903
+        ]
+      ],
+      [
+        [
+          -2.4153,
+          -64.8903
+        ],
+        [
+          -1.4443,
+          -62.2041
+        ]
+      ],
+      [
+        [
+          -1.4443,
+          -62.2041
+        ],
+        [
+          -0.6436,
+          -61.6703
+        ]
+      ],
+      [
+        [
+          -0.6436,
+          -61.6703
+        ],
+        [
+          0.6391,
+          -56.441
+        ]
+      ],
+      [
+        [
+          111.5486,
+          -43.7839
+        ],
+        [
+          115.2176,
+          -34.7162
+        ]
+      ],
+      [
+        [
+          115.2176,
+          -34.7162
+        ],
+        [
+          121.6851,
+          -22.0267
+        ]
+      ],
+      [
+        [
+          121.6851,
+          -22.0267
+        ],
+        [
+          126.7803,
+          -19.9038
+        ]
+      ],
+      [
+        [
+          126.7803,
+          -19.9038
+        ],
+        [
+          154.7491,
+          -30.6593
+        ]
+      ],
+      [
+        [
+          154.7491,
+          -30.6593
+        ],
+        [
+          147.8645,
+          -33.3639
+        ]
+      ],
+      [
+        [
+          77.3506,
+          -135.5509
+        ],
+        [
+          76.9446,
+          -136.1436
+        ]
+      ],
+      [
+        [
+          76.9446,
+          -136.1436
+        ],
+        [
+          64.202,
+          -129.3475
+        ]
+      ],
+      [
+        [
+          64.202,
+          -129.3475
+        ],
+        [
+          68.5343,
+          -119.9265
+        ]
+      ],
+      [
+        [
+          68.5343,
+          -119.9265
+        ],
+        [
+          74.222,
+          -110.4415
+        ]
+      ],
+      [
+        [
+          74.222,
+          -110.4415
+        ],
+        [
+          77.5138,
+          -100.3995
+        ]
+      ],
+      [
+        [
+          77.5138,
+          -100.3995
+        ],
+        [
+          82.0416,
+          -90.5535
+        ]
+      ],
+      [
+        [
+          82.0416,
+          -90.5535
+        ],
+        [
+          93.5465,
+          -74.1448
+        ]
+      ],
+      [
+        [
+          93.5465,
+          -74.1448
+        ],
+        [
+          98.4926,
+          -68.1625
+        ]
+      ],
+      [
+        [
+          98.4926,
+          -68.1625
+        ],
+        [
+          99.6204,
+          -65.3184
+        ]
+      ],
+      [
+        [
+          99.6204,
+          -65.3184
+        ],
+        [
+          108.2801,
+          -48.3277
+        ]
+      ],
+      [
+        [
+          108.2801,
+          -48.3277
+        ],
+        [
+          111.5486,
+          -43.7839
+        ]
+      ],
+      [
+        [
+          89.8644,
+          -112.5347
+        ],
+        [
+          92.2562,
+          -113.7935
+        ]
+      ],
+      [
+        [
+          92.2562,
+          -113.7935
+        ],
+        [
+          86.5104,
+          -122.1805
+        ]
+      ],
+      [
+        [
+          86.5104,
+          -122.1805
+        ],
+        [
+          85.1615,
+          -121.4705
+        ]
+      ],
+      [
+        [
+          96.1694,
+          -100.5547
+        ],
+        [
+          99.9594,
+          -102.5493
+        ]
+      ],
+      [
+        [
+          99.9594,
+          -102.5493
+        ],
+        [
+          94.2136,
+          -110.9363
+        ]
+      ],
+      [
+        [
+          94.2136,
+          -110.9363
+        ],
+        [
+          91.4665,
+          -109.4905
+        ]
+      ],
+      [
+        [
+          102.4744,
+          -88.5747
+        ],
+        [
+          107.6626,
+          -91.3052
+        ]
+      ],
+      [
+        [
+          107.6626,
+          -91.3052
+        ],
+        [
+          101.9168,
+          -99.6922
+        ]
+      ],
+      [
+        [
+          101.9168,
+          -99.6922
+        ],
+        [
+          97.7715,
+          -97.5105
+        ]
+      ],
+      [
+        [
+          111.9067,
+          -85.1101
+        ],
+        [
+          109.62,
+          -88.448
+        ]
+      ],
+      [
+        [
+          109.62,
+          -88.448
+        ],
+        [
+          104.0765,
+          -85.5305
+        ]
+      ],
+      [
+        [
+          76.4498,
+          -19.1041
+        ],
+        [
+          79.553,
+          -13.599
+        ]
+      ],
+      [
+        [
+          90.018,
+          -19.4981
+        ],
+        [
+          86.9034,
+          -25.0234
+        ]
+      ],
+      [
+        [
+          86.9034,
+          -25.0234
+        ],
+        [
+          76.7869,
+          -19.3167
+        ]
+      ],
+      [
+        [
+          76.7869,
+          -19.3167
+        ],
+        [
+          76.4498,
+          -19.1041
+        ]
+      ],
+      [
+        [
+          63.3636,
+          -10.8498
+        ],
+        [
+          66.0914,
+          -6.0107
+        ]
+      ],
+      [
+        [
+          76.5563,
+          -11.9098
+        ],
+        [
+          73.5367,
+          -17.2666
+        ]
+      ],
+      [
+        [
+          73.5367,
+          -17.2666
+        ],
+        [
+          63.3636,
+          -10.8498
+        ]
+      ],
+      [
+        [
+          50.2773,
+          -2.5955
+        ],
+        [
+          52.6296,
+          1.5777
+        ]
+      ],
+      [
+        [
+          63.0947,
+          -4.3215
+        ],
+        [
+          60.4505,
+          -9.0123
+        ]
+      ],
+      [
+        [
+          60.4505,
+          -9.0123
+        ],
+        [
+          50.2773,
+          -2.5955
+        ]
+      ],
+      [
+        [
+          37.191,
+          5.6588
+        ],
+        [
+          39.168,
+          9.166
+        ]
+      ],
+      [
+        [
+          49.633,
+          3.2669
+        ],
+        [
+          47.3641,
+          -0.758
+        ]
+      ],
+      [
+        [
+          47.3641,
+          -0.758
+        ],
+        [
+          37.191,
+          5.6588
+        ]
+      ],
+      [
+        [
+          30.5692,
+          9.8356
+        ],
+        [
+          30.6605,
+          10.2522
+        ]
+      ],
+      [
+        [
+          30.6605,
+          10.2522
+        ],
+        [
+          29.5082,
+          10.5048
+        ]
+      ],
+      [
+        [
+          29.5082,
+          10.5048
+        ],
+        [
+          26.2674,
+          12.549
+        ]
+      ],
+      [
+        [
+          26.2674,
+          12.549
+        ],
+        [
+          24.122,
+          13.9437
+        ]
+      ],
+      [
+        [
+          24.122,
+          13.9437
+        ],
+        [
+          25.7064,
+          16.7543
+        ]
+      ],
+      [
+        [
+          36.1713,
+          10.8552
+        ],
+        [
+          34.2779,
+          7.4963
+        ]
+      ],
+      [
+        [
+          34.2779,
+          7.4963
+        ],
+        [
+          30.5692,
+          9.8356
+        ]
+      ],
+      [
+        [
+          14.0147,
+          20.5145
+        ],
+        [
+          22.8371,
+          36.6898
+        ]
+      ],
+      [
+        [
+          22.8371,
+          36.6898
+        ],
+        [
+          25.6375,
+          34.43
+        ]
+      ],
+      [
+        [
+          25.6375,
+          34.43
+        ],
+        [
+          33.1125,
+          45.45
+        ]
+      ],
+      [
+        [
+          33.1125,
+          45.45
+        ],
+        [
+          28.8729,
+          47.7561
+        ]
+      ],
+      [
+        [
+          28.8729,
+          47.7561
+        ],
+        [
+          29.1366,
+          48.2396
+        ]
+      ],
+      [
+        [
+          29.1366,
+          48.2396
+        ],
+        [
+          27.9306,
+          48.9345
+        ]
+      ],
+      [
+        [
+          27.9306,
+          48.9345
+        ],
+        [
+          30.0055,
+          52.6648
+        ]
+      ],
+      [
+        [
+          -9.8932,
+          74.8569
+        ],
+        [
+          -11.6323,
+          71.7303
+        ]
+      ],
+      [
+        [
+          -11.6323,
+          71.7303
+        ],
+        [
+          -23.0764,
+          78.3243
+        ]
+      ],
+      [
+        [
+          -23.0764,
+          78.3243
+        ],
+        [
+          -24.3875,
+          81.41
+        ]
+      ],
+      [
+        [
+          -24.3875,
+          81.41
+        ],
+        [
+          -23.8125,
+          98.52
+        ]
+      ],
+      [
+        [
+          -23.8125,
+          98.52
+        ],
+        [
+          -32.4375,
+          102.87
+        ]
+      ],
+      [
+        [
+          -32.4375,
+          102.87
+        ],
+        [
+          -32.4375,
+          123.75
+        ]
+      ],
+      [
+        [
+          -32.4375,
+          123.75
+        ],
+        [
+          137.475,
+          19.93
+        ]
+      ],
+      [
+        [
+          137.475,
+          19.93
+        ],
+        [
+          118.9351,
+          -13.5054
+        ]
+      ],
+      [
+        [
+          118.9351,
+          -13.5054
+        ],
+        [
+          111.9807,
+          -24.5867
+        ]
+      ],
+      [
+        [
+          111.9807,
+          -24.5867
+        ],
+        [
+          110.6182,
+          -27.954
+        ]
+      ],
+      [
+        [
+          110.6182,
+          -27.954
+        ],
+        [
+          107.2436,
+          -33.3535
+        ]
+      ],
+      [
+        [
+          107.2436,
+          -33.3535
+        ],
+        [
+          100.1644,
+          -32.504
+        ]
+      ],
+      [
+        [
+          100.1644,
+          -32.504
+        ],
+        [
+          89.8995,
+          -26.7135
+        ]
+      ],
+      [
+        [
+          89.8995,
+          -26.7135
+        ],
+        [
+          93.0146,
+          -21.1873
+        ]
+      ],
+      [
+        [
+          22.7097,
+          18.4435
+        ],
+        [
+          21.2322,
+          15.8224
+        ]
+      ],
+      [
+        [
+          21.2322,
+          15.8224
+        ],
+        [
+          14.0147,
+          20.5145
+        ]
+      ],
+      [
+        [
+          15.7367,
+          55.9605
+        ],
+        [
+          17.708,
+          59.5048
+        ]
+      ],
+      [
+        [
+          26.9992,
+          54.3369
+        ],
+        [
+          24.9497,
+          50.6521
+        ]
+      ],
+      [
+        [
+          24.9497,
+          50.6521
+        ],
+        [
+          15.7367,
+          55.9605
+        ]
+      ],
+      [
+        [
+          3.5426,
+          62.9866
+        ],
+        [
+          5.4105,
+          66.3448
+        ]
+      ],
+      [
+        [
+          14.7018,
+          61.1769
+        ],
+        [
+          12.7557,
+          57.6781
+        ]
+      ],
+      [
+        [
+          12.7557,
+          57.6781
+        ],
+        [
+          3.5426,
+          62.9866
+        ]
+      ],
+      [
+        [
+          -8.6513,
+          70.0127
+        ],
+        [
+          -6.887,
+          73.1848
+        ]
+      ],
+      [
+        [
+          2.4042,
+          68.0169
+        ],
+        [
+          0.5617,
+          64.7042
+        ]
+      ],
+      [
+        [
+          0.5617,
+          64.7042
+        ],
+        [
+          -8.6513,
+          70.0127
+        ]
+      ],
+      [
+        [
+          0.7723,
+          3.7416
+        ],
+        [
+          -12.8198,
+          12.2366
+        ]
+      ],
+      [
+        [
+          -12.8198,
+          12.2366
+        ],
+        [
+          -9.9881,
+          16.4842
+        ]
+      ],
+      [
+        [
+          -9.9881,
+          16.4842
+        ],
+        [
+          3.604,
+          8.5554
+        ]
+      ],
+      [
+        [
+          3.604,
+          8.5554
+        ],
+        [
+          0.7723,
+          3.7416
+        ]
+      ],
+      [
+        [
+          97.9844,
+          -50.9959
+        ],
+        [
+          96.7213,
+          -54.1813
+        ]
+      ],
+      [
+        [
+          96.7213,
+          -54.1813
+        ],
+        [
+          84.0705,
+          -74.9343
+        ]
+      ],
+      [
+        [
+          84.0705,
+          -74.9343
+        ],
+        [
+          81.5702,
+          -77.9585
+        ]
+      ],
+      [
+        [
+          81.5702,
+          -77.9585
+        ],
+        [
+          79.1891,
+          -81.9784
+        ]
+      ],
+      [
+        [
+          79.1891,
+          -81.9784
+        ],
+        [
+          77.1394,
+          -81.7627
+        ]
+      ],
+      [
+        [
+          77.1394,
+          -81.7627
+        ],
+        [
+          61.6637,
+          -73.2027
+        ]
+      ],
+      [
+        [
+          61.6637,
+          -73.2027
+        ],
+        [
+          62.8605,
+          -71.0676
+        ]
+      ],
+      [
+        [
+          22.4872,
+          -48.4381
+        ],
+        [
+          21.163,
+          -50.8007
+        ]
+      ],
+      [
+        [
+          21.163,
+          -50.8007
+        ],
+        [
+          0.0549,
+          -39.1253
+        ]
+      ],
+      [
+        [
+          0.0549,
+          -39.1253
+        ],
+        [
+          -1.7088,
+          -38.0728
+        ]
+      ],
+      [
+        [
+          -1.7088,
+          -38.0728
+        ],
+        [
+          -2.4153,
+          -37.759
+        ]
+      ],
+      [
+        [
+          -2.4153,
+          -37.759
+        ],
+        [
+          -5.0522,
+          -36.3004
+        ]
+      ],
+      [
+        [
+          -5.0522,
+          -36.3004
+        ],
+        [
+          -5.9463,
+          -35.3376
+        ]
+      ],
+      [
+        [
+          -5.9463,
+          -35.3376
+        ],
+        [
+          -11.0373,
+          -32.9899
+        ]
+      ],
+      [
+        [
+          -11.0373,
+          -32.9899
+        ],
+        [
+          -11.404,
+          -32.7871
+        ]
+      ],
+      [
+        [
+          -11.404,
+          -32.7871
+        ],
+        [
+          -8.926,
+          -28.0295
+        ]
+      ],
+      [
+        [
+          -8.926,
+          -28.0295
+        ],
+        [
+          -5.8692,
+          -22.4212
+        ]
+      ],
+      [
+        [
+          -5.8692,
+          -22.4212
+        ],
+        [
+          -5.5679,
+          -21.5819
+        ]
+      ],
+      [
+        [
+          -5.5679,
+          -21.5819
+        ],
+        [
+          -4.5028,
+          -19.5369
+        ]
+      ],
+      [
+        [
+          -4.5028,
+          -19.5369
+        ],
+        [
+          -4.7567,
+          -19.3222
+        ]
+      ],
+      [
+        [
+          -4.7567,
+          -19.3222
+        ],
+        [
+          -2.1781,
+          -12.1388
+        ]
+      ],
+      [
+        [
+          -2.1781,
+          -12.1388
+        ],
+        [
+          -0.6295,
+          -4.9221
+        ]
+      ],
+      [
+        [
+          -0.6295,
+          -4.9221
+        ],
+        [
+          2.5264,
+          1.6519
+        ]
+      ],
+      [
+        [
+          2.5264,
+          1.6519
+        ],
+        [
+          3.3208,
+          1.1931
+        ]
+      ],
+      [
+        [
+          3.3208,
+          1.1931
+        ],
+        [
+          3.9924,
+          4.1781
+        ]
+      ],
+      [
+        [
+          3.9924,
+          4.1781
+        ],
+        [
+          6.825,
+          8.9512
+        ]
+      ],
+      [
+        [
+          6.825,
+          8.9512
+        ],
+        [
+          7.2504,
+          9.8242
+        ]
+      ],
+      [
+        [
+          7.2504,
+          9.8242
+        ],
+        [
+          10.8791,
+          15.9477
+        ]
+      ],
+      [
+        [
+          10.8791,
+          15.9477
+        ],
+        [
+          17.0323,
+          8.3263
+        ]
+      ],
+      [
+        [
+          17.0323,
+          8.3263
+        ],
+        [
+          27.946,
+          5.9333
+        ]
+      ],
+      [
+        [
+          27.946,
+          5.9333
+        ],
+        [
+          104.0892,
+          -42.0947
+        ]
+      ],
+      [
+        [
+          104.0892,
+          -42.0947
+        ],
+        [
+          102.4338,
+          -44.8102
+        ]
+      ],
+      [
+        [
+          102.4338,
+          -44.8102
+        ],
+        [
+          97.9844,
+          -50.9959
+        ]
+      ],
+      [
+        [
+          49.1669,
+          -66.2904
+        ],
+        [
+          50.403,
+          -64.0851
+        ]
+      ],
+      [
+        [
+          59.8597,
+          -69.3856
+        ],
+        [
+          58.6535,
+          -71.5377
+        ]
+      ],
+      [
+        [
+          58.6535,
+          -71.5377
+        ],
+        [
+          49.1669,
+          -66.2904
+        ]
+      ],
+      [
+        [
+          36.6701,
+          -59.3781
+        ],
+        [
+          37.9455,
+          -57.1026
+        ]
+      ],
+      [
+        [
+          47.4022,
+          -62.4031
+        ],
+        [
+          46.1566,
+          -64.6253
+        ]
+      ],
+      [
+        [
+          46.1566,
+          -64.6253
+        ],
+        [
+          36.6701,
+          -59.3781
+        ]
+      ],
+      [
+        [
+          24.1732,
+          -52.4658
+        ],
+        [
+          25.488,
+          -50.1201
+        ]
+      ],
+      [
+        [
+          34.9447,
+          -55.4206
+        ],
+        [
+          33.6598,
+          -57.713
+        ]
+      ],
+      [
+        [
+          33.6598,
+          -57.713
+        ],
+        [
+          24.1732,
+          -52.4658
+        ]
+      ],
+      [
         [
           -7.1375,
           -18.93
-        ]
-      ],
-      [
-        [
-          -7.1375,
-          -18.93
         ],
         [
-          -10.875,
-          -25.89
+          -7.7121,
+          -20.0
         ]
       ],
       [
         [
-          -10.875,
-          -25.89
+          -7.7121,
+          -20.0
+        ],
+        [
+          -27.8088,
+          -20.0
+        ]
+      ],
+      [
+        [
+          -27.8088,
+          -20.0
         ],
         [
           -43.3494,
@@ -3349,838 +7992,148 @@
       ],
       [
         [
-          -42.2202,
-          90.5189
+          -22.3118,
+          -5.4949
         ],
         [
-          -42.4823,
-          74.2782
+          -22.0875,
+          -5.01
         ]
       ],
       [
         [
-          -42.4823,
-          74.2782
+          -22.0875,
+          -5.01
         ],
         [
-          -42.181,
-          71.7254
+          -20.9721,
+          -5.6158
         ]
       ],
       [
         [
-          -42.181,
-          71.7254
+          -20.9721,
+          -5.6158
         ],
         [
-          -48.4255,
-          71.6091
+          -22.375,
+          -4.43
         ]
       ],
       [
         [
-          -48.7922,
-          91.3037
+          -22.375,
+          -4.43
         ],
         [
-          -42.2281,
-          91.426
+          -71.825,
+          24.86
         ]
       ],
       [
         [
-          -42.2281,
-          91.426
+          -71.825,
+          24.86
         ],
         [
-          -42.2202,
-          90.5189
+          -72.2283,
+          118.1047
         ]
       ],
       [
         [
-          -40.4875,
-          57.3782
+          -72.2283,
+          118.1047
         ],
         [
-          -40.4875,
-          48.615
+          -71.6117,
+          118.046
         ]
       ],
       [
         [
-          -40.4875,
-          48.615
+          -71.6117,
+          118.046
         ],
         [
-          -47.9946,
-          48.4752
+          -49.6317,
+          114.6557
         ]
       ],
       [
         [
-          -48.3614,
-          68.1697
+          -49.6317,
+          114.6557
         ],
         [
-          -41.7758,
-          68.2924
+          -49.6317,
+          110.7738
         ]
       ],
       [
         [
-          -41.7758,
-          68.2924
+          -3.6768,
+          5.2344
         ],
         [
-          -40.4875,
-          57.3782
+          0.7026,
+          2.7052
         ]
       ],
       [
         [
-          -40.4875,
-          38.78
+          0.7026,
+          2.7052
         ],
         [
-          -33.3372,
-          34.3521
+          -2.6305,
+          -4.2379
         ]
       ],
       [
         [
-          -33.3372,
-          34.3521
+          -2.6305,
+          -4.2379
         ],
         [
-          -38.1427,
-          25.9227
+          -4.2019,
+          -11.5612
         ]
       ],
       [
         [
-          -47.9306,
-          45.0358
+          -4.2019,
+          -11.5612
         ],
         [
-          -40.4875,
-          45.1744
+          -6.4685,
+          -17.8753
         ]
       ],
       [
         [
-          -40.4875,
-          45.1744
+          -6.4685,
+          -17.8753
         ],
         [
-          -40.4875,
-          38.78
+          -7.1375,
+          -17.3098
         ]
       ],
       [
         [
-          -21.3429,
-          26.9245
+          -7.1375,
+          -17.3098
         ],
         [
-          -18.5095,
-          25.0958
-        ]
-      ],
-      [
-        [
-          -18.5095,
-          25.0958
-        ],
-        [
-          -12.3173,
-          21.2021
-        ]
-      ],
-      [
-        [
-          -12.3173,
-          21.2021
-        ],
-        [
-          -16.6207,
-          13.6533
-        ]
-      ],
-      [
-        [
-          -35.1542,
-          24.219
-        ],
-        [
-          -30.4106,
-          32.5398
-        ]
-      ],
-      [
-        [
-          -30.4106,
-          32.5398
-        ],
-        [
-          -21.3429,
-          26.9245
-        ]
-      ],
-      [
-        [
-          84.5465,
-          -68.869
-        ],
-        [
-          74.5323,
-          -62.9986
-        ]
-      ],
-      [
-        [
-          74.5323,
-          -62.9986
-        ],
-        [
-          74.7601,
-          -62.5936
-        ]
-      ],
-      [
-        [
-          54.1295,
-          -51.0383
-        ],
-        [
-          19.5969,
-          -30.7951
-        ]
-      ],
-      [
-        [
-          19.5969,
-          -30.7951
-        ],
-        [
-          -1.1198,
-          -22.3964
-        ]
-      ],
-      [
-        [
-          -1.1198,
-          -22.3964
-        ],
-        [
-          -4.7567,
-          -19.3222
-        ]
-      ],
-      [
-        [
-          -4.7567,
-          -19.3222
-        ],
-        [
-          -2.1781,
-          -12.1388
-        ]
-      ],
-      [
-        [
-          -2.1781,
-          -12.1388
-        ],
-        [
-          -0.6295,
-          -4.9221
-        ]
-      ],
-      [
-        [
-          -0.6295,
-          -4.9221
-        ],
-        [
-          2.6666,
-          1.9439
-        ]
-      ],
-      [
-        [
-          2.6666,
-          1.9439
-        ],
-        [
-          6.825,
-          8.9512
-        ]
-      ],
-      [
-        [
-          6.825,
-          8.9512
-        ],
-        [
-          7.0477,
-          9.4083
-        ]
-      ],
-      [
-        [
-          7.0477,
-          9.4083
-        ],
-        [
-          96.3046,
-          -43.1131
-        ]
-      ],
-      [
-        [
-          96.3046,
-          -43.1131
-        ],
-        [
-          84.5465,
-          -68.869
-        ]
-      ],
-      [
-        [
-          -90.8,
-          6.01
-        ],
-        [
-          -83.325,
-          8.91
-        ]
-      ],
-      [
-        [
-          -83.325,
-          8.91
-        ],
-        [
-          -74.9875,
-          7.75
-        ]
-      ],
-      [
-        [
-          -74.9875,
-          7.75
-        ],
-        [
-          -73.55,
-          -14.58
-        ]
-      ],
-      [
-        [
-          -73.55,
-          -14.58
-        ],
-        [
-          -89.075,
-          -26.76
-        ]
-      ],
-      [
-        [
-          -89.075,
-          -26.76
-        ],
-        [
-          -90.8,
-          6.01
-        ]
-      ],
-      [
-        [
-          27.6463,
-          48.4233
-        ],
-        [
-          30.0055,
-          52.6648
-        ]
-      ],
-      [
-        [
-          -9.8932,
-          74.8569
-        ],
-        [
-          -12.4612,
-          70.2401
-        ]
-      ],
-      [
-        [
-          -12.4612,
-          70.2401
-        ],
-        [
-          -21.8,
-          75.32
-        ]
-      ],
-      [
-        [
-          -21.8,
-          75.32
-        ],
-        [
-          -24.3875,
-          81.41
-        ]
-      ],
-      [
-        [
-          -24.3875,
-          81.41
-        ],
-        [
-          -23.8125,
-          98.52
-        ]
-      ],
-      [
-        [
-          -23.8125,
-          98.52
-        ],
-        [
-          -32.4375,
-          102.87
-        ]
-      ],
-      [
-        [
-          -32.4375,
-          102.87
-        ],
-        [
-          -32.4375,
-          123.75
-        ]
-      ],
-      [
-        [
-          -32.4375,
-          123.75
-        ],
-        [
-          137.475,
-          19.93
-        ]
-      ],
-      [
-        [
-          137.475,
-          19.93
-        ],
-        [
-          118.9351,
-          -13.5054
-        ]
-      ],
-      [
-        [
-          118.9351,
-          -13.5054
-        ],
-        [
-          111.9807,
-          -24.5867
-        ]
-      ],
-      [
-        [
-          111.9807,
-          -24.5867
-        ],
-        [
-          109.7945,
-          -29.9897
-        ]
-      ],
-      [
-        [
-          109.7945,
-          -29.9897
-        ],
-        [
-          109.0125,
-          -31.4
-        ]
-      ],
-      [
-        [
-          109.0125,
-          -31.4
-        ],
-        [
-          105.275,
-          -32.56
-        ]
-      ],
-      [
-        [
-          105.275,
-          -32.56
-        ],
-        [
-          91.1717,
-          -24.4566
-        ]
-      ],
-      [
-        [
-          91.1717,
-          -24.4566
-        ],
-        [
-          93.0146,
-          -21.1873
-        ]
-      ],
-      [
-        [
-          22.7097,
-          18.4435
-        ],
-        [
-          21.2322,
-          15.8224
-        ]
-      ],
-      [
-        [
-          21.2322,
-          15.8224
-        ],
-        [
-          14.425,
-          20.2478
-        ]
-      ],
-      [
-        [
-          14.425,
-          20.2478
-        ],
-        [
-          14.425,
-          21.1144
-        ]
-      ],
-      [
-        [
-          14.425,
-          21.1144
-        ],
-        [
-          23.2418,
-          36.3632
-        ]
-      ],
-      [
-        [
-          23.2418,
-          36.3632
-        ],
-        [
-          25.6375,
-          34.43
-        ]
-      ],
-      [
-        [
-          25.6375,
-          34.43
-        ],
-        [
-          33.1125,
-          45.45
-        ]
-      ],
-      [
-        [
-          33.1125,
-          45.45
-        ],
-        [
-          27.6463,
-          48.4233
-        ]
-      ],
-      [
-        [
-          15.2845,
-          55.1476
-        ],
-        [
-          17.708,
-          59.5048
-        ]
-      ],
-      [
-        [
-          26.9992,
-          54.3369
-        ],
-        [
-          24.6244,
-          50.0672
-        ]
-      ],
-      [
-        [
-          24.6244,
-          50.0672
-        ],
-        [
-          15.2845,
-          55.1476
-        ]
-      ],
-      [
-        [
-          2.9226,
-          61.872
-        ],
-        [
-          5.4105,
-          66.3448
-        ]
-      ],
-      [
-        [
-          14.7018,
-          61.1769
-        ],
-        [
-          12.2625,
-          56.7915
-        ]
-      ],
-      [
-        [
-          12.2625,
-          56.7915
-        ],
-        [
-          2.9226,
-          61.872
-        ]
-      ],
-      [
-        [
-          -9.4392,
-          68.5962
-        ],
-        [
-          -6.887,
-          73.1848
-        ]
-      ],
-      [
-        [
-          2.4042,
-          68.0169
-        ],
-        [
-          -0.0994,
-          63.5158
-        ]
-      ],
-      [
-        [
-          -0.0994,
-          63.5158
-        ],
-        [
-          -9.4392,
-          68.5962
-        ]
-      ],
-      [
-        [
-          77.7724,
-          -16.7578
-        ],
-        [
-          79.553,
-          -13.599
-        ]
-      ],
-      [
-        [
-          90.018,
-          -19.4981
-        ],
-        [
-          88.1889,
-          -22.7428
-        ]
-      ],
-      [
-        [
-          88.1889,
-          -22.7428
-        ],
-        [
-          77.7724,
-          -16.7578
-        ]
-      ],
-      [
-        [
-          64.3731,
-          -9.0589
-        ],
-        [
-          66.0914,
-          -6.0107
-        ]
-      ],
-      [
-        [
-          76.5563,
-          -11.9098
-        ],
-        [
-          74.7896,
-          -15.0439
-        ]
-      ],
-      [
-        [
-          74.7896,
-          -15.0439
-        ],
-        [
-          64.3731,
-          -9.0589
-        ]
-      ],
-      [
-        [
-          50.9737,
-          -1.3599
-        ],
-        [
-          52.6296,
-          1.5777
-        ]
-      ],
-      [
-        [
-          63.0947,
-          -4.3215
-        ],
-        [
-          61.3903,
-          -7.345
-        ]
-      ],
-      [
-        [
-          61.3903,
-          -7.345
-        ],
-        [
-          50.9737,
-          -1.3599
-        ]
-      ],
-      [
-        [
-          37.5744,
-          6.339
-        ],
-        [
-          39.168,
-          9.166
-        ]
-      ],
-      [
-        [
-          49.633,
-          3.2669
-        ],
-        [
-          47.9909,
-          0.3539
-        ]
-      ],
-      [
-        [
-          47.9909,
-          0.3539
-        ],
-        [
-          37.5744,
-          6.339
-        ]
-      ],
-      [
-        [
-          24.1751,
-          14.0379
-        ],
-        [
-          25.7064,
-          16.7543
-        ]
-      ],
-      [
-        [
-          36.1713,
-          10.8552
-        ],
-        [
-          34.5916,
-          8.0528
-        ]
-      ],
-      [
-        [
-          34.5916,
-          8.0528
-        ],
-        [
-          24.1751,
-          14.0379
-        ]
-      ],
-      [
-        [
-          4.3665,
-          20.6999
-        ],
-        [
-          -0.6447,
-          19.5576
-        ]
-      ],
-      [
-        [
-          -0.6447,
-          19.5576
-        ],
-        [
-          -35.35,
-          41.9102
+          -7.1375,
+          -18.93
         ]
       ],
       [
         [
           -35.35,
-          41.9102
+          46.3865
         ],
         [
           -35.35,
@@ -4193,168 +8146,98 @@
           54.8012
         ],
         [
-          -37.4155,
-          72.3
+          -37.0348,
+          69.0746
         ]
       ],
       [
         [
-          -37.4155,
-          72.3
+          -37.0348,
+          69.0746
         ],
         [
-          -35.4161,
-          72.3
+          -37.4554,
+          78.498
         ]
       ],
       [
         [
-          -35.4161,
-          72.3
+          -37.4554,
+          78.498
         ],
         [
-          19.8756,
-          39.9979
+          -33.4911,
+          78.498
         ]
       ],
       [
         [
-          19.8756,
-          39.9979
+          -33.4911,
+          78.498
         ],
         [
-          9.5,
-          22.1
+          22.1881,
+          45.3155
         ]
       ],
       [
         [
-          9.5,
-          22.1
+          22.1881,
+          45.3155
         ],
         [
-          4.3665,
-          20.6999
+          13.5261,
+          29.4343
         ]
       ],
       [
         [
-          -90.7921,
-          117.9516
+          13.5261,
+          29.4343
         ],
         [
-          -79.0836,
-          118.4143
+          9.8337,
+          23.2802
         ]
       ],
       [
         [
-          -79.0836,
-          118.4143
+          9.8337,
+          23.2802
         ],
         [
-          -78.0799,
-          64.4998
+          0.2059,
+          20.1653
         ]
       ],
       [
         [
-          -78.0799,
-          64.4998
+          0.2059,
+          20.1653
         ],
         [
-          -77.8184,
-          24.5296
+          -3.7584,
+          22.4307
         ]
       ],
       [
         [
-          -77.8184,
-          24.5296
+          -3.7584,
+          22.4307
         ],
         [
-          -77.0048,
-          20.5458
+          -4.0416,
+          28.3772
         ]
       ],
       [
         [
-          -77.0048,
-          20.5458
+          -4.0416,
+          28.3772
         ],
         [
-          -77.0,
-          20.22
-        ]
-      ],
-      [
-        [
-          -77.0,
-          20.22
-        ],
-        [
-          -78.4411,
-          19.9293
-        ]
-      ],
-      [
-        [
-          -78.4411,
-          19.9293
-        ],
-        [
-          -79.4102,
-          20.3991
-        ]
-      ],
-      [
-        [
-          -79.4102,
-          20.3991
-        ],
-        [
-          -81.4728,
-          27.962
-        ]
-      ],
-      [
-        [
-          -81.4728,
-          27.962
-        ],
-        [
-          -86.5861,
-          26.5675
-        ]
-      ],
-      [
-        [
-          -86.5861,
-          26.5675
-        ],
-        [
-          -85.1448,
-          21.2828
-        ]
-      ],
-      [
-        [
-          -85.1448,
-          21.2828
-        ],
-        [
-          -89.9375,
-          23.7
-        ]
-      ],
-      [
-        [
-          -89.9375,
-          23.7
-        ],
-        [
-          -90.7921,
-          117.9516
+          -35.35,
+          46.3865
         ]
       ]
     ]

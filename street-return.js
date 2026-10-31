@@ -136,7 +136,7 @@
     visits,
     formatWatch,
     prepareExit() {
-      // Stage only after the preview succeeds; commit in the destination document.
+      // Stage immediately before navigation; commit in the destination document.
       try { sessionStorage.setItem(pendingExitKey, "1"); } catch {}
     },
     noteExit() {

@@ -2,11 +2,11 @@ import * as THREE from "./vendor/three.module.js";
 import { distanceToWall, isWalkable, moveCircle } from "./navigation.js";
 import { createInputController } from "./input-controller.js";
 import { createQualityMeter, createRenderGate, pixelRatioCap, createAdaptiveQuality } from "./quality.js?v=optimization-20261009";
-import { createYardScene, drawScheme } from "./scene.js?v=landscaping-20261014";
+import { createYardScene, drawScheme } from "./scene.js?v=instant-yard-20261031";
 import { createWallPlayer } from "./wall-player.js?v=seek-fade-20261006-2";
 import { createBoundaryMusic } from "./boundary-music.js";
 import { createLightingCycle, addBakedLighting } from "./baked-lighting.js";
-import { createLightingTransition } from "./lighting-transition.js";
+import { createLightingTransition } from "./lighting-transition.js?v=black-outer-dome-20261031";
 
 const portalPreview = new URLSearchParams(location.search).has('portal-preview');
 const fallback = document.querySelector("#file-fallback");
@@ -21,7 +21,7 @@ const meter = createQualityMeter();
 try {
 let layout = null;
 if (location.protocol !== "file:") {
-  layout = await fetch(new URL("./data/site-layout.json?v=landscaping-20261014", import.meta.url)).then((response) => {
+  layout = await fetch(new URL("./data/site-layout.json?v=lawn-pipe-correction-20261031", import.meta.url)).then((response) => {
     if (!response.ok) throw new Error(`site-layout ${response.status}`);
     return response.json();
   });
@@ -40,13 +40,6 @@ if (location.protocol === "file:") {
   renderer.shadowMap.enabled = false;
   // Consume exactly one preset on entrance, never on walking/player/visibility events.
   const lighting = createLightingCycle(portalPreview ? () => ({getItem: key => localStorage.getItem(key), setItem: () => {}}) : undefined).next(layout);
-  const { scene, solids, logo, edgeEffect } = createYardScene(layout, lighting);
-  const lightingTransition = createLightingTransition(scene, layout, lighting, window.yardWalkClock);
-  let disposed = false;
-  // Draw and enable input before fetching the optional projected-depth enhancement.
-  const shouldRender = createRenderGate(matchMedia("(max-width: 800px), (pointer: coarse)").matches);
-  const quality = createAdaptiveQuality(pixelRatioCap(), matchMedia("(max-width: 800px), (pointer: coarse)").matches);
-
   const params = new URLSearchParams(location.search);
   const resumed = window.inteonStreet?.resumePose?.();
   const start = params.has("play") && layout.playground?.view
@@ -54,6 +47,15 @@ if (location.protocol === "file:") {
     : params.has("photo") && layout.photoView
       ? layout.photoView
       : resumed || layout.spawn;
+  const { scene, solids, logo, edgeEffect, loadNextDetail } = createYardScene(layout, lighting, { progressive: true, origin: start });
+  // Network/module loading must not consume the lighting hold before entrance.
+  window.yardWalkClock.enteredAt = Date.now();
+  const lightingTransition = createLightingTransition(scene, layout, lighting, window.yardWalkClock);
+  let disposed = false;
+  // Draw and enable input before fetching the optional projected-depth enhancement.
+  const shouldRender = createRenderGate(matchMedia("(max-width: 800px), (pointer: coarse)").matches);
+  const quality = createAdaptiveQuality(pixelRatioCap(), matchMedia("(max-width: 800px), (pointer: coarse)").matches);
+
   const body = {
     x: start.x,
     z: start.z,
@@ -84,6 +86,7 @@ if (location.protocol === "file:") {
   };
 
   let renderRevision = 0;
+  let firstFrame = true;
   canvas.addEventListener("webglcontextlost", () => {
     delete document.documentElement.dataset.yardReady;
   });
@@ -270,6 +273,12 @@ if (location.protocol === "file:") {
     if (!returnPose && !document.hidden && !renderer.getContext().isContextLost() && dirty) {
       renderer.render(scene, camera);
       document.documentElement.dataset.yardReady = "true";
+      if (firstFrame) {
+        firstFrame = false;
+        scene.userData.firstFrame = { at: performance.now(), buildings: [...scene.userData.detailLoading.completed] };
+        window.dispatchEvent(new Event('inteon-yard-entered'));
+        continueLoading();
+      }
     }
     scheduleFrame();
   };
@@ -286,8 +295,7 @@ if (location.protocol === "file:") {
   scheduleFrame();
 
   scene.userData.bakedLightingStatus = "loading";
-  // Start after the first visible frame, not on the critical boot path.
-  requestAnimationFrame(() => setTimeout(() => {
+  const loadShadows = () => {
     if (disposed) return;
     addBakedLighting(scene, null, layout, lighting).then(atlas => {
       lightingTransition.attach(atlas);
@@ -301,6 +309,22 @@ if (location.protocol === "file:") {
       scene.userData.bakedLightingError = String(error);
       console.warn("Precomputed yard shadows unavailable; retaining lit scene:", error);
     });
+  };
+  // Let the first usable scene paint before generating distant facades. Each
+  // block yields to input and a new frame; priority follows the player's pose.
+  const continueLoading = () => requestAnimationFrame(() => setTimeout(() => {
+    if (disposed) return;
+    try {
+      const more = loadNextDetail(body);
+      renderRevision += 1;
+      scheduleFrame();
+      if (more) continueLoading();
+      else loadShadows();
+    } catch (error) {
+      scene.userData.detailLoading.status = 'unavailable';
+      console.warn('Some yard details unavailable; retaining the walkable scene:', error);
+      loadShadows();
+    }
   }, 0));
 
   window.addEventListener("pagehide", () => {

@@ -13,16 +13,17 @@ export function virtualAmount(layout,x,z) {
   return .4+.6*smooth(d/Math.max(.001,d+remaining),0,1);
 }
 export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials) {
-  const cx=39,cz=-2.5, span=700;
+  const cx=39,cz=-2.5, span=700, outerDomeScale=1.65;
   const grid=new THREE.GridHelper(span,100,0x80e8d3,0x408d82);grid.name='digital-ground';
   grid.position.set(cx,.055,cz);grid.material.transparent=true;grid.material.depthWrite=false;grid.material.fog=false;grid.material.opacity=0;scene.add(grid);
-  const domes=[1,1.65].map((scale,i)=>{
+  const domes=[1,outerDomeScale].map((scale,i)=>{
     const material=new THREE.MeshBasicMaterial({color:i?0x9989ec:0x66cdb8,wireframe:true,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide,fog:false});
     const mesh=new THREE.Mesh(new THREE.SphereGeometry(1,i?16:28,i?7:12,0,Math.PI*2,0,Math.PI/2),material);
     mesh.name=`digital-dome-${i+1}`;mesh.position.set(cx,0,cz);mesh.scale.set(220*scale,125*scale,240*scale);mesh.userData.bakedShadowCaster=false;scene.add(mesh);return mesh;
   });
   const low=new THREE.Group();low.name='digital-buildings';scene.add(low);
   const mix={value:0}, lowMix={value:0};let detailed=[];
+  const attached=new WeakSet(), clones=new Map();
   const patch=(material,uniform,inverse)=>{
     const original=material.onBeforeCompile;
     material.onBeforeCompile=(shader,renderer)=>{
@@ -46,28 +47,32 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials) 
   let previous=-1;
   return {
     attachBuildings(){
-      const clones=new Map();
+      detailed=detailed.filter(mesh=>mesh.parent);
       scene.traverse(mesh=>{
-        if(!mesh.isMesh || !mesh.userData.digitalBuilding)return;
-        detailed.push(mesh);
-        const clone=m=>{if(!clones.has(m)){const n=m.clone();patch(n,mix,false);clones.set(m,n);}return clones.get(m);};
+        if(!mesh.isMesh || !mesh.userData.digitalBuilding || attached.has(mesh))return;
+        attached.add(mesh); detailed.push(mesh);
+        const clone=m=>{if(!clones.has(m)){const n=m.clone();patch(n,mix,false);clones.set(m,n);clones.set(n,n);}return clones.get(m);};
         mesh.material=Array.isArray(mesh.material)?mesh.material.map(clone):clone(mesh.material);
+        mesh.visible=mix.value<1;
       });
     },
     update(x,z){
       const amount=virtualAmount(layout,x,z), radius=Math.hypot((x-cx)/220,(z-cz)/240), outer=smooth(radius,.92,1.25);
+      const outsideOuterDome=radius>=outerDomeScale;
       scene.userData.virtuality=amount;scene.userData.virtualLayer=outer;
+      scene.userData.outsideOuterDome=outsideOuterDome;
       // The two domes are anchored to the courtyard, never to the camera.
       outside.position.set(Math.round(x/240)*240,-.05,Math.round(z/240)*240);outside.updateMatrix();
-      const key=Math.round(amount*1000)+Math.round(outer*1000)*1001;if(key===previous)return;previous=key;
+      const key=Math.round(amount*1000)+Math.round(outer*1000)*1001+Number(outsideOuterDome)*1002001;if(key===previous)return;previous=key;
       mix.value=lowMix.value=smooth(amount,.35,.85);
       detailed.forEach(m=>m.visible=mix.value<1);low.visible=lowMix.value>0;
       low.children.forEach(m=>{if(m.isLineSegments)m.material.opacity=lowMix.value*.85;else m.material.color.set(0x345e65).lerp(new THREE.Color(0x433958),outer);});
-      grid.material.opacity=Math.min(.9,amount*1.8);domes[0].material.opacity=Math.min(.72,amount*1.5);domes[1].material.opacity=outer*.65;
-      scene.background.copy(baseSky).lerp(dark,amount);scene.fog.color.copy(baseFog).lerp(dark,amount);
+      grid.material.opacity=outsideOuterDome?0:Math.min(.9,amount*1.8);domes[0].material.opacity=Math.min(.72,amount*1.5);domes[1].material.opacity=outer*.65;
+      if(outsideOuterDome){scene.background.set(0x000000);scene.fog.color.set(0x000000);}
+      else {scene.background.copy(baseSky).lerp(dark,amount);scene.fog.color.copy(baseFog).lerp(dark,amount);}
       // Pull fog away as detail fades; proxy silhouettes and both shells ignore it.
       scene.fog.near=THREE.MathUtils.lerp(90,500,amount);scene.fog.far=THREE.MathUtils.lerp(260,2500,amount);
-      const shade=THREE.MathUtils.lerp(1,.18,amount);groundMaterials.forEach(m=>m.color.setRGB(shade,shade,shade));
+      const shade=outsideOuterDome?0:THREE.MathUtils.lerp(1,.18,amount);groundMaterials.forEach(m=>m.color.setRGB(shade,shade,shade));
     }
   };
 }

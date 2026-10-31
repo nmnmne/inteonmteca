@@ -86,6 +86,10 @@
       if (side.texture.width !== textureWidth) side.texture.width = textureWidth;
       if (side.texture.height !== textureHeight) side.texture.height = textureHeight;
       side.textureContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+      side.rowFade = side.textureContext.createLinearGradient(0, 0, width, 0);
+      side.rowFade.addColorStop(0, '#000');
+      side.rowFade.addColorStop(.82, '#000');
+      side.rowFade.addColorStop(1, 'transparent');
     }
     geometryDirty = false; invalidate(); return true;
   };
@@ -134,8 +138,13 @@
       if (!item) continue;
       const y = index * rowHeight;
       rounded(ctx, 2, y + 2, width - 4, rowHeight - 4, 20);
-      ctx.fillStyle = `rgba(${accent}, .045)`; ctx.fill();
-      ctx.strokeStyle = `rgba(${ink}, .22)`; ctx.stroke();
+      // Match the live tile's low-contrast material at the seam; the curved
+      // surface loses contrast with distance rather than beginning washed out.
+      const fill = ctx.createLinearGradient(0, 0, width * .76, 0);
+      fill.addColorStop(0, `rgba(${accent}, .045)`);
+      fill.addColorStop(1, `rgba(${accent}, .006)`);
+      ctx.fillStyle = fill; ctx.fill();
+      ctx.strokeStyle = `rgba(${ink}, .085)`; ctx.stroke();
       const titleY = y + rowHeight / 2 - artistSize * .6;
       const textX = 7;
       const title = item.querySelector('.track-title');
@@ -147,6 +156,12 @@
       const artistText = artist?.dataset.originalText || artist?.textContent || '';
       ctx.fillText(signalText(artistText, start + index + 611, epoch), 7, y + rowHeight / 2 + titleSize * .6, width - 23);
     }
+    // Match the real viewport's right edge. Earlier fading is applied only
+    // away from the seam by the surface mask, not baked into every row.
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.fillStyle = side.rowFade;
+    ctx.fillRect(0, 0, width, rowHeight * textureRows);
+    ctx.globalCompositeOperation = 'source-over';
   };
   const cubic = (a, b, c, t) => 3 * (1 - t) ** 2 * t * a + 3 * (1 - t) * t * t * b + t ** 3 * c;
   const riverPoint = (side, p) => {
@@ -180,8 +195,9 @@
       const x = near.x + shake;
       const globalY = top ? boundary - (band + 1) * bandSize : boundary + band * bandSize;
       const sourceY = (globalY - firstOffset - start * rowHeight) * ratio;
-      const dropout = p > .12 && noise(band * 7 + grainEpoch * 3) > .77 ? .24 : 1;
-      ctx.globalAlpha = .76 * Math.pow(1 - p, 1.7) * dropout;
+      const dropout = p > .35 && noise(band * 7 + grainEpoch * 3) > .77 ? .65 : 1;
+      const fade = 1 - p * p * (3 - 2 * p);
+      ctx.globalAlpha = fade * dropout;
       ctx.drawImage(side.texture, 0, sourceY, width * ratio, bandSize * ratio,
         x, top ? side.depth - far.y : near.y, near.width, far.y - near.y + .45);
     }

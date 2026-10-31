@@ -51,7 +51,7 @@ export function addLandscaping(scene, materials, data) {
     mesh.name=`lawn-${i}`;
     scene.add(mesh);
   });
-  const pathMaterial=materials.concrete(1,1);
+  const pathMaterial=materials.asphalt(1,1);
   data.paths.forEach((path,i) => {
     const mesh=surface(path,pathMaterial,.027);
     mesh.name=`lawn-entrance-path-${i}`;

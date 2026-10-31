@@ -44,7 +44,7 @@ export function addSiteEntrances(scene, materials, layout) {
 
   for (const entry of entries) {
     // This facade batches its doors together with the reference geometry.
-    if (entry.style === "pink-hourglass-integrated") continue;
+    if (["pink-hourglass-integrated", "pebble-panel-integrated"].includes(entry.style)) continue;
     const anchor = resolveFacadeAnchor(layout, entry);
     if (!anchor) continue;
     const doorWidth = Number(entry.widthM) || 1.55;
@@ -129,12 +129,14 @@ export function addGasPipes(scene, layout) {
   collection.name = "gas-pipes";
   for (const pipe of layout.gasPipes || []) {
     const points = pipe.path
-      .map((anchor) => resolveFacadeAnchor(layout, { ...anchor, buildingId: anchor.buildingId || pipe.buildingId }))
+      .map((anchor) => Number.isFinite(anchor.x) && Number.isFinite(anchor.z)
+        ? {x: anchor.x, y: anchor.heightM, z: anchor.z}
+        : resolveFacadeAnchor(layout, { ...anchor, buildingId: anchor.buildingId || pipe.buildingId }))
       .filter(Boolean);
     if (points.length < 2) continue;
     const pipeGroup = new THREE.Group();
     pipeGroup.name = pipe.id;
-    const pipeMaterial = new THREE.MeshStandardMaterial({ color: pipe.color || "#e2c04a", roughness: 0.64, metalness: 0.2 });
+    const pipeMaterial = new THREE.MeshStandardMaterial({ color: pipe.color || "#e2c04a", roughness: pipe.roughness ?? 0.64, metalness: pipe.metalness ?? 0.2 });
     const supportMaterial = new THREE.MeshStandardMaterial({ color: pipe.supportColor || "#665c46", roughness: 0.82, metalness: 0.05 });
     const radius = Math.max(0.04, Number(pipe.diameterM) / 2 || 0.055);
     for (let index = 1; index < points.length; index += 1) {
@@ -148,7 +150,7 @@ export function addGasPipes(scene, layout) {
       if (!point) continue;
       const floorY = Number(support.floorY) || 0;
       const height = Math.max(0.08, point.y - floorY);
-      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, height, 8), supportMaterial);
+      const post = new THREE.Mesh(pipe.supportType === 'concrete-block' ? new THREE.BoxGeometry(.55, height-radius, .65) : new THREE.CylinderGeometry(0.045, 0.055, height, 8), supportMaterial);
       post.position.set(point.x, floorY + height / 2, point.z);
       pipeGroup.add(post);
     }
