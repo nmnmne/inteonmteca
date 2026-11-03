@@ -1,10 +1,10 @@
 /* Spatial successor to the original matrix-text symbol cycle (eeb6abc).
    Decoration never replaces the underlying text, names, or live player values. */
 (() => {
-  const createTextAudioMotion = (minimumFps = 44) => {
-    let lastAt = null, mid = 0, bassSlow = 0, previousBass = 0, credit = 0;
+  const createTextAudioMotion = (minimumSymbolRate = 44) => {
+    let lastAt = null, mid = 0, bassSlow = 0, previousBass = 0;
     let burstAt = -Infinity, burstPower = 0, nextBurstAt = 0, serial = 0;
-    const state = {targetFps: minimumFps, mid: 0, bass: 0, burst: 0, playing: false, due: false, serial: 0, motionTime: 0};
+    const state = {symbolRate: minimumSymbolRate, mid: 0, bass: 0, burst: 0, playing: false, due: false, serial: 0, motionTime: 0};
     const clamp = value => Math.max(0, Math.min(1, Number(value) || 0));
     return {
       update(now, input) {
@@ -30,21 +30,21 @@
           previousBass = bass;
         }
         const burst = burstPower * Math.pow(Math.max(0, 1 - (now - burstAt) / 200), 1.5);
-        const base = minimumFps + (144 - minimumFps) * Math.pow(mid, .8);
-        const targetFps = Math.min(144, Math.max(minimumFps, base + (144 - base) * burst));
+        const base = minimumSymbolRate + (144 - minimumSymbolRate) * Math.pow(mid, .8);
+        const symbolRate = Math.min(144, Math.max(minimumSymbolRate, base + (144 - base) * burst));
         // Wave travel follows elapsed time, independently of delivered frames
         // or graphics detail. Bass adds a brief, smooth acceleration.
         state.motionTime += elapsed * (1 + mid * .6 + burst * 1.4);
-        credit += elapsed * targetFps / 1000;
-        const due = credit + 1e-9 >= 1;
-        if (due) { credit = Math.max(0, credit - Math.floor(credit + 1e-9)); serial++; }
-        Object.assign(state, {targetFps, mid, bass, burst, playing, due, serial});
+        // Music controls symbol lifetime and wave speed, never frame delivery.
+        const due = !first && elapsed > 0;
+        if (due) serial++;
+        Object.assign(state, {symbolRate, mid, bass, burst, playing, due, serial});
         return state;
       },
       reset() {
-        lastAt = null; mid = 0; bassSlow = 0; previousBass = 0; credit = 0;
+        lastAt = null; mid = 0; bassSlow = 0; previousBass = 0;
         burstAt = -Infinity; burstPower = 0; nextBurstAt = 0;
-        state.motionTime = 0;
+        Object.assign(state, {symbolRate: minimumSymbolRate, mid: 0, bass: 0, burst: 0, playing: false, due: false, motionTime: 0});
       },
       get state() { return state; },
     };
@@ -55,11 +55,40 @@
     return mobile ? {candidates: 32 + Math.round(detail * 3.5), writes: 12 + Math.round(detail * 1.3)}
       : {candidates: 128, writes: 24};
   };
+  const glyphAdmissionCredit = (credit, elapsed, writes) =>
+    Math.min(writes / 2, credit + writes * 30 * elapsed / 1000);
+  // Retire visible symbols before admitting new ones. A crowded catalogue must
+  // reduce simultaneous noise, not strand a letter until the full list cycles.
+  const createGlyphQueue = apply => {
+    const active = new Set();
+    const paint = (char, glyph = '', expiresAt = 0) => {
+      if (char.glyph === glyph) return false;
+      char.glyph = glyph;
+      char.expiresAt = expiresAt;
+      if (glyph) active.add(char); else active.delete(char);
+      apply(char, glyph);
+      return true;
+    };
+    return {
+      paint,
+      get size() { return active.size; },
+      expire(now, limit) {
+        let writes = 0;
+        for (const char of active) {
+          if (!char.el.isConnected) { active.delete(char); continue; }
+          if (char.expiresAt <= now && writes < limit) {
+            if (paint(char)) writes++;
+          }
+        }
+        return writes;
+      },
+    };
+  };
   const audioMotion = createTextAudioMotion(matchMedia('(pointer: coarse), (max-width: 800px)').matches ? 60 : 44);
   let glyphUpdates = 0;
-  // Read-only diagnostics expose requested cadence; the display still limits RAF.
+  // Symbol rate is musical activity, not an FPS cap; updates count RAF work.
   window.inteonTextMotion = Object.freeze({
-    get targetFps() { return audioMotion.state.targetFps; },
+    get symbolRate() { return audioMotion.state.symbolRate; },
     get mid() { return audioMotion.state.mid; },
     get bass() { return audioMotion.state.bass; },
     get burst() { return audioMotion.state.burst; },
@@ -87,7 +116,7 @@
   ];
   let chars = [], visibleChars = [], waves = [], frameId = 0, serial = 0, needsScan = true, dirty = true;
   let selected = false, focusTarget = null;
-  let glyphCursor = 0, glyphCredit = 0, glyphAt = 0, calmDirty = false;
+  let glyphCursor = 0, glyphCredit = 0, glyphStartCredit = 0, glyphAt = 0, calmDirty = false;
   let fullScan = true;
   let geometryRevision = 0;
   const pendingOwners = new Set();
@@ -114,13 +143,11 @@
   };
   let modeIndex = 0, modeUntil = 0, nextWave = 0, measuredAt = -Infinity, lastGlyphFrame = -1;
   const hash = n => { let value = Math.imul(n | 0, 374761393); value = Math.imul(value ^ (value >>> 13), 1274126177); return ((value ^ (value >>> 16)) >>> 0) / 4294967296; };
-  const paint = (char, glyph = '') => {
-    if (char.glyph === glyph) return false;
-    char.glyph = glyph;
+  const glyphQueue = createGlyphQueue((char, glyph) => {
     char.el.classList.toggle('is-wave-noisy', Boolean(glyph));
     char.mask.dataset.glyph = glyph;
-    return true;
-  };
+  });
+  const paint = glyphQueue.paint;
   const restore = () => chars.forEach(char => paint(char));
   const observerOptions = {subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['hidden', 'aria-hidden']};
   const observer = new MutationObserver(records => {
@@ -242,15 +269,17 @@
     if (blocked()) return;
     frameId = requestAnimationFrame(tick);
     const cadence = audioMotion.update(now, window.inteonAudioBands?.read());
-    // Let the browser lay out newly wrapped rows before reading glyph bounds.
-    if (needsScan && scan()) return;
-    if ((dirty && (!coarse.matches || now - measuredAt >= 100)) || now - measuredAt > 1200) measure(now);
-    // Signal requests 44–144 updates/s; RAF caps actual work to the display rate.
     if (!reduced.matches && !cadence.due) return;
     const frame = reduced.matches ? Math.floor(now / 180) : cadence.serial;
     if (frame === lastGlyphFrame) return;
     lastGlyphFrame = frame;
     glyphUpdates++;
+    const budget = textWorkBudget(coarse.matches, document.documentElement.dataset.graphicsLevel);
+    // Let the browser lay out newly wrapped rows before reading glyph bounds.
+    // Still retire old ink on scan frames; it cannot wait for geometry work.
+    if (needsScan && scan()) { glyphQueue.expire(now, budget.writes); return; }
+    if ((dirty && (!coarse.matches || now - measuredAt >= 100)) || now - measuredAt > 1200) measure(now);
+    let writes = glyphQueue.expire(now, budget.writes);
     if (!modeUntil) { modeUntil = now + modes[0].duration; nextWave = now + 100; }
     if (now >= modeUntil) {
       modeIndex = (modeIndex + 1) % modes.length;
@@ -285,15 +314,17 @@
     // that cadence. A dense wave cannot force hundreds of DOM edits at once.
     const elapsed = Math.min(120, Math.max(0, now - (glyphAt || now - 16.7)));
     glyphAt = now;
-    const renewalMs = reduced.matches ? 180 : 80 * 44 / cadence.targetFps;
+    const renewalMs = reduced.matches ? 180 : Math.max(32, 80 * 44 / cadence.symbolRate);
     glyphCredit = Math.min(visibleChars.length, glyphCredit + visibleChars.length * elapsed / renewalMs);
-    const budget = textWorkBudget(coarse.matches, document.documentElement.dataset.graphicsLevel);
+    // Admit a steady stream instead of filling the active pool in a few frames
+    // then waiting for it all to expire. Leave room for retiring old ink.
+    glyphStartCredit = glyphAdmissionCredit(glyphStartCredit, elapsed, budget.writes);
     const candidates = Math.min(budget.candidates, visibleChars.length, Math.floor(glyphCredit));
-    let writes = 0;
     for (let i = 0; i < candidates && writes < budget.writes; i++) {
       glyphCredit -= 1;
       const char = visibleChars[glyphCursor++ % visibleChars.length];
       if (selected || char.focused) { if (paint(char)) writes++; continue; }
+      if (char.glyph || glyphStartCredit < 1 || glyphQueue.size >= budget.writes * 3) continue;
       let intensity = 0;
       for (const wave of waves) {
         const distance = Math.hypot(char.x - wave.x, char.y - wave.y);
@@ -308,7 +339,9 @@
         if (distance < calmRadius * .65 && Math.floor(now / 110) % 47 === 0) intensity = .012;
       }
       const noisy = hash(char.seed * 37 + frame * 213) < intensity;
-      if (paint(char, noisy ? symbols[Math.floor(hash(char.seed + frame * 73) * symbols.length)] : '')) writes++;
+      if (noisy && paint(char, symbols[Math.floor(hash(char.seed + frame * 73) * symbols.length)], now + renewalMs)) {
+        writes++; glyphStartCredit--;
+      }
     }
   };
   const calm = event => {
@@ -326,7 +359,7 @@
   });
   document.addEventListener('scroll', () => { dirty = true; }, {capture: true, passive: true});
   window.addEventListener('resize', () => { geometryRevision++; dirty = true; });
-  const resume = () => { cancelAnimationFrame(frameId); frameId = 0; waves = []; modeUntil = 0; lastGlyphFrame = -1; glyphAt = 0; glyphCredit = 0; audioMotion.reset(); dirty = true; focusTarget = null; restore(); if (!blocked()) frameId = requestAnimationFrame(tick); };
+  const resume = () => { cancelAnimationFrame(frameId); frameId = 0; waves = []; modeUntil = 0; lastGlyphFrame = -1; glyphAt = 0; glyphCredit = 0; glyphStartCredit = 0; audioMotion.reset(); dirty = true; focusTarget = null; restore(); if (!blocked()) frameId = requestAnimationFrame(tick); };
   window.inteonHomeEffects?.watch('text', {blocked, restart: resume});
   document.addEventListener('visibilitychange', resume);
   reduced.addEventListener('change', resume);

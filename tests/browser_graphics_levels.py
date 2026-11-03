@@ -14,7 +14,7 @@ spec.loader.exec_module(benchmark)
 SNAPSHOT = '''() => ({
   at:performance.now(),
   level:inteonGraphicsQuality.level,phase:document.documentElement.dataset.ambientPhase,
-  owner:inteonHomeEffects.active,target:inteonTextMotion.targetFps,updates:inteonTextMotion.updates,
+  owner:inteonHomeEffects.active,symbolRate:inteonTextMotion.symbolRate,updates:inteonTextMotion.updates,
   glyphs:document.querySelectorAll('.text-wave-char').length,
   glyphSignature:[...document.querySelectorAll('.text-wave-mask')].map(e=>e.dataset.glyph||'').join(''),
   logoTransform:getComputedStyle(document.querySelector('.reactive-logo')).transform,
@@ -51,7 +51,7 @@ with sync_playwright() as p:
       // The same maximum letter workload at every tier isolates graphics cost.
       window.inteonAudioBands=Object.freeze({read:()=>({playing:true,mid:1,bass:0})});
     }''')
-    page.wait_for_function('inteonTextMotion.targetFps>143.99')
+    page.wait_for_function('inteonTextMotion.symbolRate>143.99')
     cases = []
     for level in [1,5,10]:
         page.evaluate('(level)=>inteonGraphicsQuality.setManualLevel(level)', level)
@@ -76,7 +76,7 @@ with sync_playwright() as p:
     page.wait_for_timeout(600)
     rest_after=page.evaluate(SNAPSHOT)
     assert rest_before['glyphSignature'] != rest_after['glyphSignature']
-    assert rest_after['target'] > 143.99 and rest_after['updates'] > rest_before['updates']
+    assert rest_after['symbolRate'] > 143.99 and rest_after['updates'] > rest_before['updates']
     page.evaluate('window.inteonAudioBands=__actualAudioBands')
     report={'empty':empty,'cases':cases,'rest':{'before':rest_before,'after':rest_after},'errors':errors}
     (OUT/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')

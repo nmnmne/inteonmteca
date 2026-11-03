@@ -9,11 +9,11 @@ test('mobile text work is bounded independently of playlist size and quality pre
  for(const level of [1,3,5,10]){const b=budget(true,level);assert.ok(b.candidates<=64);assert.ok(b.writes<=24);assert.ok(b.writes>=12);}
  assert.ok(budget(true,1).candidates<budget(true,10).candidates);
 });
-test('mobile text keeps a sixty-update floor without changing elapsed-time wave travel',()=>{
+test('mobile text keeps its symbol rate while rendering every display frame',()=>{
  const create=extract('text-waves.js','const createTextAudioMotion =','const textWorkBudget =');
  const motion=create(60);motion.update(0,{playing:false});
- for(let i=1;i<=60;i++)motion.update(i*1000/60,{playing:false});
- assert.equal(motion.state.targetFps,60);assert.ok(Math.abs(motion.state.motionTime-1000)<.01);
+ for(let i=1;i<=120;i++)assert.equal(motion.update(i*1000/120,{playing:false}).due,true);
+ assert.equal(motion.state.symbolRate,60);assert.ok(Math.abs(motion.state.motionTime-1000)<.01);
 });
 test('each mobile logo cycle has exactly five scatters, five dissolves and one recursion',()=>{
  const create=extract('mobile-logo-effects.js','const createMobileLogoCycle =','const mobile=');

@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const { test } = require('node:test');
 const source = fs.readFileSync(path.join(__dirname, '..', 'text-waves.js'), 'utf8');
 const start = source.indexOf('const createTextAudioMotion =');
-const end = source.indexOf('const audioMotion =', start);
+const end = source.indexOf('const textWorkBudget =', start);
 const create = vm.runInNewContext(`${source.slice(start, end)}\ncreateTextAudioMotion;`);
 const playing = (mid, bass = 0) => ({playing: true, mid, bass});
 
@@ -19,36 +19,55 @@ function drive(motion, signal, start, duration, displayHz = 240) {
   return {updates, last: {...last}};
 }
 
-test('silence requests exactly 44 updates per second with no spontaneous fast bursts', () => {
+test('silence keeps a calm symbol rate without throttling display updates or inventing bursts', () => {
   const motion = create();
   motion.update(0, playing(0));
   const sample = drive(motion, playing(0), 0, 1000);
-  assert.equal(sample.last.targetFps, 44);
-  assert.equal(sample.updates, 44);
+  assert.equal(sample.last.symbolRate, 44);
+  assert.equal(sample.updates, 240);
   assert.equal(sample.last.burst, 0);
   const quiet = drive(motion, playing(.001, .001), 1000, 1000);
-  assert.equal(quiet.last.targetFps, 44);
-  assert.equal(quiet.updates, 44);
+  assert.equal(quiet.last.symbolRate, 44);
+  assert.equal(quiet.updates, 240);
   assert.equal(quiet.last.burst, 0);
 });
 
-test('full normalized mids settle at 144 while the actual display caps delivered updates', () => {
+test('full normalized mids settle at symbol rate 144 while rendering follows the display', () => {
   const motion = create();
   motion.update(0, playing(1));
   drive(motion, playing(1), 0, 1000);
   const full = drive(motion, playing(1), 1000, 1000);
-  assert.equal(full.last.targetFps, 144);
-  assert.equal(full.updates, 144);
+  assert.equal(full.last.symbolRate, 144);
+  assert.equal(full.updates, 240);
   const display = drive(motion, playing(1), 2000, 1000, 60);
-  assert.equal(display.last.targetFps, 144);
+  assert.equal(display.last.symbolRate, 144);
   assert.equal(display.updates, 60, 'never performs more than one update per RAF');
+});
+
+test('paused, quiet and loud signals never skip available 60, 120, 144 or 240 Hz frames', () => {
+  for (const hz of [60, 120, 144, 240]) {
+    for (const [name, signal] of [['paused', {playing: false}], ['quiet', playing(.001, .001)], ['loud', playing(1, .8)]]) {
+      const motion = create();
+      assert.equal(motion.update(0, signal).due, false);
+      let serial = motion.state.serial;
+      for (let frame = 1; frame <= hz; frame++) {
+        const at = frame * 1000 / hz;
+        const state = motion.update(at, signal);
+        assert.equal(state.due, true, `${name} at ${hz} Hz: frame ${frame} must render`);
+        assert.equal(state.serial, ++serial, 'exactly one update per display frame');
+        const repeated = motion.update(at, signal);
+        assert.equal(repeated.due, false, 'a duplicate timestamp cannot render twice');
+        assert.equal(repeated.serial, serial);
+      }
+    }
+  }
 });
 
 test('real mid-band levels produce distinct intermediate rates with smooth attack and release', () => {
   const rates = [];
   for (const level of [.1, .35, .7]) {
     const motion = create(); motion.update(0, playing(level));
-    rates.push(drive(motion, playing(level), 0, 1500).last.targetFps);
+    rates.push(drive(motion, playing(level), 0, 1500).last.symbolRate);
   }
   assert.ok(rates[0] > 44 && rates[0] < rates[1] && rates[1] < rates[2] && rates[2] < 144);
   const motion = create(); motion.update(0, playing(.2));
@@ -66,18 +85,18 @@ test('bass transients trigger a short boost, enforce cooldown, and do not retrig
   drive(motion, playing(.15, .04), 0, 1000);
   const hit = {...motion.update(1016, playing(.15, .8))};
   assert.equal(hit.burst, 1);
-  assert.equal(hit.targetFps, 144);
+  assert.equal(hit.symbolRate, 144);
   motion.update(1116, playing(.15, .02));
   const duringCooldown = {...motion.update(1132, playing(.15, .9))};
   assert.ok(duringCooldown.burst < hit.burst, 'second hit cannot restart the boost during cooldown');
   const settled = drive(motion, playing(.15, .9), 1132, 1000).last;
   assert.equal(settled.burst, 0, 'held bass never generates periodic fake hits');
-  assert.ok(settled.targetFps < 100);
+  assert.ok(settled.symbolRate < 100);
   drive(motion, playing(.15, .02), 2132, 400);
   assert.equal(motion.update(2548, playing(.15, .9)).burst, 1);
 });
 
-test('low-level bass noise cannot trigger fast flashes and paused audio resets to 44', () => {
+test('low-level bass noise cannot trigger fast flashes and pause restores the calm symbol rate', () => {
   const motion = create(); motion.update(0, playing(.01, .01));
   for (let frame = 1; frame <= 100; frame++) {
     const state = motion.update(frame * 16, playing(.01, frame % 2 ? .08 : .01));
@@ -85,7 +104,7 @@ test('low-level bass noise cannot trigger fast flashes and paused audio resets t
   }
   motion.update(1616, playing(1, 1));
   const paused = motion.update(1632, {playing: false, mid: 1, bass: 1});
-  assert.equal(paused.targetFps, 44);
+  assert.equal(paused.symbolRate, 44);
   assert.equal(paused.burst, 0);
 });
 
@@ -95,8 +114,13 @@ test('returning after a hidden-page reset never catches up missed animation work
   motion.reset();
   const returned = motion.update(60000, playing(0));
   assert.equal(returned.due, false);
-  assert.equal(returned.targetFps, 44);
-  assert.equal(drive(motion, playing(0), 60000, 1000).updates, 44);
+  assert.equal(returned.symbolRate, 44);
+  assert.equal(returned.motionTime, 0, 'hidden elapsed time is not replayed');
+  const resumedSerial = returned.serial;
+  const resumed = motion.update(60000 + 1000 / 144, playing(0));
+  assert.equal(resumed.due, true, 'the first available frame after reset is rendered');
+  assert.equal(resumed.serial, resumedSerial + 1, 'resume does not synthesize missed frames');
+  assert.equal(drive(motion, playing(0), 60000 + 1000 / 144, 1000).updates, 240);
 });
 
 test('wave travel keeps the same speed at 30, 60, 120 and 144 Hz', () => {

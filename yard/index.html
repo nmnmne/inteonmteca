@@ -7,7 +7,7 @@
   <script src="../room-portal.js?v=instant-yard-20261031"></script>
   <title>inteonmteca — двор</title>
   <link rel="icon" href="../assets/logo-inteonmteca.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./yard.css?v=instant-yard-20261031">
+  <link rel="stylesheet" href="./yard.css?v=yard-guide-20261103">
 </head>
 <body>
   <canvas id="yard-view" aria-label="Серый прототип двора"></canvas>
@@ -18,19 +18,24 @@
   <div class="yard-corner">
     <a class="home-link" href="../index.html">домой</a>
     <div class="montana" id="street-watch" hidden>
+      <span class="montana-label" id="street-watch-label">До возвращения</span>
       <div class="montana-screen">
         <span class="montana-ghost" aria-hidden="true">88:88</span>
-        <time class="montana-face" id="street-watch-face">00:20</time>
+        <time class="montana-face" id="street-watch-face" aria-describedby="street-watch-label">00:20</time>
       </div>
     </div>
   </div>
   <section class="scheme" id="scheme">
     <canvas id="scheme-canvas" width="384" height="384" aria-label="Мини-карта: ближайшие окрестности, север сверху"></canvas>
   </section>
-  <div class="touch-guide" id="touch-guide" aria-hidden="true">
-    <span>слева — идти</span>
-    <span>справа — смотреть</span>
-  </div>
+  <aside class="yard-guide" id="yard-guide" aria-labelledby="yard-guide-title" hidden>
+    <div class="yard-guide-copy">
+      <h2 id="yard-guide-title">Осмотрись во дворе</h2>
+      <p class="yard-guide-desktop">Нажми на двор: WASD или стрелки — идти, мышь — смотреть. Shift — быстрее, Esc — отпустить курсор.</p>
+      <p class="yard-guide-touch">Левый джойстик — идти. Проведи пальцем по правой части экрана, чтобы осмотреться.</p>
+    </div>
+    <button id="yard-guide-dismiss" type="button">Понятно</button>
+  </aside>
   <div class="stick" id="stick" aria-hidden="true">
     <span id="stick-nub"></span>
     <span class="control-label">движение</span>
@@ -79,6 +84,7 @@
       document.getElementById("yard-view").hidden = true;
     }
   </script>
+  <script src="./yard-guide.js?v=yard-guide-20261103"></script>
   <script type="module" src="./main.js?v=instant-yard-20261031"></script>
   <script data-development-only src="../development-debug.js?v=server-only-20261029"></script>
   <script data-development-only src="./debug-pose.js?v=20261006-2"></script>

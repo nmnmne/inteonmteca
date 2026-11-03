@@ -199,13 +199,21 @@ test('cached titles and artists use only the shared animation alphabet, never or
   assert.notDeepEqual(textures.flatMap(canvas => canvas.text.slice(-12).map(call => call[0])), strings);
 });
 
-test('quality caps actual painting while a display-frequency clock cannot duplicate the loop', () => {
-  for (const [level, cap] of [[1, 24], [5, 36], [10, 48]]) {
-    const run = fixture({level}); run.frame(0);
-    for (let at = 1; at <= 1000; at++) run.frame(at);
-    const paints = Number(run.visible[0].dataset.drawCount) - 1;
-    assert.ok(paints >= cap - 2 && paints <= cap, `${level}: ${paints} actual paints/s`);
-    assert.equal(run.frames.size, 1);
+test('every display frame paints at every quality while glyph raster renewal stays at five hertz', () => {
+  for (const level of [1, 5, 10]) {
+    let finalGrains;
+    for (const hz of [60, 75, 120, 144]) {
+      const run = fixture({level}); run.frame(0);
+      for (let tick = 1; tick <= hz; tick++) run.frame(tick * 1000 / hz);
+      assert.equal(Number(run.visible[0].dataset.drawCount), hz + 1, `${level} at ${hz} Hz skips no frames`);
+      assert.equal(run.frames.size, 1, 'one shared RAF loop');
+      const textures = run.canvases.filter(canvas => !canvas.className);
+      assert.ok(textures.every(canvas => canvas.text.length === 6 * 12), 'six cached title/artist pairs at epochs 0 through 5');
+      const grainsPerFrame = run.visible[0].grains.length / (hz + 1);
+      const grains = run.visible[0].grains.slice(-grainsPerFrame);
+      if (finalGrains) assert.deepEqual(grains, finalGrains, 'elapsed time, not refresh rate, sets particle positions');
+      finalGrains = grains;
+    }
   }
 });
 

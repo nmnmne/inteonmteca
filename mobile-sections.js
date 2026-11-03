@@ -71,7 +71,7 @@
     let listTop, listHeight, chatTop, logoTop, logoWidth;
     if (sideBySide) {
       listTop = 94;
-      listHeight = Math.max(140, dockTop - listTop - 6);
+      listHeight = Math.max(48, dockTop - listTop - 6);
       chatTop = collapsed ? dockTop - 20 : Math.max(110, dockTop - fullChatHeight - 6);
       logoWidth = Math.min(innerWidth * .4, 360);
       logoTop = Math.max(72, (dockTop - fullChatHeight - 6) - logoWidth * .2004 - 14);
@@ -82,7 +82,7 @@
       listTop = chatTop + chatHeight + 6;
       listHeight = 190;
       logoTop = 0; logoWidth = 0;
-      set('--mobile-document-height', listTop + listHeight + 90 + keyboard);
+      set('--mobile-document-height', listTop + listHeight + dock.getBoundingClientRect().height + 20 + keyboard);
     } else {
       const baseListHeight = editing ? 190 : Math.round(Math.max(38, Math.min(56, innerHeight * .056)) * 5) + minimumRowHeight();
       if (collapsed) {

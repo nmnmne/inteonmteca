@@ -110,10 +110,10 @@ with sync_playwright() as p:
         page.locator('#yard-next').click()
         check(page.locator('#album-player').get_attribute('src')!=old,f'yard {width}: next works')
         if height <= 540:
-            guide = page.locator('.touch-guide').bounding_box()
+            guide = page.locator('.yard-guide').bounding_box()
             controls = page.locator('.yard-player').bounding_box()
             overlap = guide and controls and guide['x']<controls['x']+controls['width'] and controls['x']<guide['x']+guide['width'] and guide['y']<controls['y']+controls['height'] and controls['y']<guide['y']+guide['height']
-            check(not overlap,f'yard {width}: touch hint does not cover playback controls')
+            check(not overlap,f'yard {width}: first-visit hint does not cover playback controls')
         page.screenshot(path=str(OUTPUT/f'yard-{width}.png'))
         check(not errors,f'yard {width}: JS errors {errors}')
         page.locator('.home-link').click()

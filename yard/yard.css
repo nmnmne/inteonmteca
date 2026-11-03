@@ -104,6 +104,7 @@ html, body {
 .yard-unavailable .stick,
 .yard-unavailable .look-pad,
 .yard-unavailable .yard-player,
+.yard-unavailable .yard-guide,
 .yard-unavailable .yard-corner { display: none; }
 #player-panel {
   position: fixed;
@@ -211,6 +212,15 @@ body.is-reading .stick, body.is-reading #enter-walk, body.is-reading #listen { d
     0 2px 0 #070807;
 }
 .montana[hidden] { display: none; }
+.montana-label {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 7px);
+  color: #f7f4ee;
+  font: 600 11px/1.2 "Segoe UI", sans-serif;
+  white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .8);
+}
 .montana-screen {
   display: grid;
   place-items: center;
@@ -229,6 +239,51 @@ body.is-reading .stick, body.is-reading #enter-walk, body.is-reading #listen { d
 }
 .montana-ghost { color: rgba(36, 44, 28, .22); }
 .montana-face { color: #1c2418; }
+.yard-guide {
+  position: fixed;
+  top: max(140px, calc(env(safe-area-inset-top) + 124px));
+  left: 50%;
+  z-index: 8;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: min(520px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border: 1px solid rgba(244, 239, 230, .25);
+  border-radius: 8px;
+  background: rgba(22, 27, 24, .9);
+  color: #f7f4ee;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.yard-guide h2 { margin: 0 0 5px; font: 600 14px/1.3 "Segoe UI", sans-serif; }
+.yard-guide p { margin: 0; font: 13px/1.45 "Segoe UI", sans-serif; }
+.yard-guide-touch { display: none; }
+.yard-guide button {
+  flex: none;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(244, 239, 230, .45);
+  border-radius: 4px;
+  background: rgba(244, 239, 230, .08);
+  color: inherit;
+  font: 600 12px/1 "Segoe UI", sans-serif;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.yard-guide button:hover { background: rgba(244, 239, 230, .18); }
+@media (max-width: 500px) {
+  .yard-guide { gap: 10px; padding: 12px; }
+  .yard-guide p { font-size: 12px; }
+}
+@media (pointer: coarse) {
+  .yard-guide-desktop { display: none; }
+  .yard-guide-touch { display: block; }
+}
+@media (min-width: 501px) and (max-height: 540px) {
+  .yard-guide { top: max(14px, env(safe-area-inset-top)); width: min(430px, calc(100vw - 280px)); }
+}
 @media (max-width: 640px), (pointer: coarse) and (max-width: 960px) {
   .home-link { top: 64px; right: 36px; font-size: .85rem; }
 }

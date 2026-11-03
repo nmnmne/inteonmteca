@@ -10,7 +10,6 @@
   const sides = [];
   const textureRows = 6;
   let frame = 0, geometryDirty = true, paletteDirty = true, revision = 0, dirty = true, departed = false;
-  let lastPaint = -Infinity;
   let width = 0, height = 0, rowHeight = 0, firstOffset = 0, depth = 0, ratio = 1, gutter = 0;
   let ellipseX = 0, ellipseY = 1, edgeAngle = 0, edgeCos = 1;
   let scrollOffset = list.scrollTop, orbitScroll = NaN;
@@ -21,7 +20,6 @@
   const enabled = () => desktop.matches && !document.hidden && !departed && !window.inteonHomeEffects?.suspended && !document.body.classList.contains('is-interlude');
   const moving = () => enabled() && !reduced.matches && !window.inteonHomeEffects?.ambientPaused;
   const level = () => Math.max(1, Math.min(10, Number(root.dataset.graphicsLevel) || 5));
-  const paintRate = () => level() <= 3 ? 24 : level() <= 6 ? 36 : 48;
   const noise = seed => { const value = Math.sin(seed * 12.9898 + 78.233) * 43758.5453; return value - Math.floor(value); };
   const symbols = () => window.inteonTextMotion?.symbols || '01/\\|<>[]{}#$%&*+-=░▒:;';
   const signalText = (text, row, epoch) => {
@@ -164,7 +162,8 @@
     ctx.globalCompositeOperation = 'source-over';
   };
   const cubic = (a, b, c, t) => 3 * (1 - t) ** 2 * t * a + 3 * (1 - t) * t * t * b + t ** 3 * c;
-  const riverPoint = (side, p) => {
+  const nearPoint = {}, farPoint = {};
+  const riverPoint = (side, p, point) => {
     const top = side.edge === 'top';
     const angle = edgeAngle + (Math.PI / 2 - edgeAngle) * p;
     // Retain the old near-edge fold, then let its tail continue to the viewport
@@ -177,21 +176,22 @@
       : cubic(tangent, -innerWidth * .75, -innerWidth * .66, t);
     const right = top ? cubic(tangent, -innerWidth * .14, -innerWidth * .192 - width * .16, t)
       : cubic(tangent, -innerWidth * .025, innerWidth * .10, t);
-    return {x: gutter + 2 + left, y, width: width + right - left};
+    point.x = gutter + 2 + left; point.y = y; point.width = width + right - left;
+    return point;
   };
   const paintSide = (side, scroll, time) => {
-    const ctx = side.context, top = side.edge === 'top';
+    const ctx = side.context, top = side.edge === 'top', detail = level();
     const boundary = scroll + (top ? 0 : height);
     const sourceDepth = rowHeight * 3.6;
     const start = Math.floor((boundary - (top ? sourceDepth : 0) - firstOffset) / rowHeight);
     const epoch = Math.floor(time * 5), grainEpoch = Math.floor(time * 16);
     cacheRows(side, start, epoch);
     ctx.clearRect(0, 0, width + gutter, side.depth);
-    const bands = 28 + level() * 4, bandSize = sourceDepth / bands;
+    const bands = 28 + detail * 4, bandSize = sourceDepth / bands;
     for (let band = 0; band < bands; band++) {
       const p = band / bands, end = (band + 1) / bands;
-      const near = riverPoint(side, p), far = riverPoint(side, end);
-      const shake = (noise(band + grainEpoch * 41) - .5) * (3 + level()) * p * p;
+      const near = riverPoint(side, p, nearPoint), far = riverPoint(side, end, farPoint);
+      const shake = (noise(band + grainEpoch * 41) - .5) * (3 + detail) * p * p;
       const x = near.x + shake;
       const globalY = top ? boundary - (band + 1) * bandSize : boundary + band * bandSize;
       const sourceY = (globalY - firstOffset - start * rowHeight) * ratio;
@@ -203,26 +203,26 @@
     }
     // Sparse rectangular grains, not a full-resolution noise bitmap. Their
     // outward/leftward trajectories use time, so detail changes keep the wind.
-    const count = 20 + level() * 8;
+    const count = 20 + detail * 8, accentInk = `rgb(${accent})`, primaryInk = `rgb(${ink})`;
     for (let index = 0; index < count; index++) {
       const seed = side.particles[Math.floor(index * side.particles.length / count)];
       const p = (seed.phase + time * seed.speed) % 1;
-      const point = riverPoint(side, p);
+      const point = riverPoint(side, p, nearPoint);
       const x = point.x + seed.lane * point.width * .82 - width * p * .08;
       const y = top ? side.depth - point.y : point.y;
       const length = 1 + seed.length * (2 + p * 19);
-      ctx.fillStyle = index % 4 ? `rgb(${accent})` : `rgb(${ink})`;
+      ctx.fillStyle = index % 4 ? accentInk : primaryInk;
       ctx.globalAlpha = Math.sin(p * Math.PI) * (.13 + seed.weight * .45) * (1 - p * .6);
       ctx.fillRect(x, y, length, seed.weight > .87 ? 1.6 : .8);
-      if (level() >= 5 && index % 9 === 0) {
+      if (detail >= 5 && index % 9 === 0) {
         ctx.globalAlpha *= .23; ctx.fillRect(x + length + 2, y, length * 2.5, .65);
       }
     }
     // Two faint tracking tears move through the curled surface like tape noise.
-    ctx.fillStyle = `rgb(${ink})`;
+    ctx.fillStyle = primaryInk;
     for (let index = 0; index < 2; index++) {
       const p = (time * (.13 + index * .06) + index * .43) % 1;
-      const point = riverPoint(side, p);
+      const point = riverPoint(side, p, nearPoint);
       ctx.globalAlpha = .065 * Math.sin(p * Math.PI);
       ctx.fillRect(point.x, top ? side.depth - point.y : point.y, point.width * (.5 + p * .2), .8);
     }
@@ -238,12 +238,10 @@
   };
   const paint = (now = performance.now()) => {
     frame = 0;
-    if (!enabled()) return;
+    if (!enabled() || (!dirty && !moving())) return;
     const clock = window.inteonHomeEffects?.ambientNow(now) ?? now;
-    if (!dirty && clock - lastPaint < 1000 / paintRate()) {
-      if (moving()) schedule();
-      return;
-    }
+    // Follow every display frame. Quality bounds density and resolution, never
+    // cadence; the cached glyph raster still renews only five times per second.
     create();
     if (geometryDirty && !readGeometry()) return;
     if (!items.length) return;
@@ -252,7 +250,7 @@
     const scroll = scrollOffset;
     const time = reduced.matches ? 0 : clock / 1000;
     for (const side of sides) paintSide(side, scroll, time);
-    lastPaint = clock; dirty = false;
+    dirty = false;
     window.inteonHomeEffects?.beat('playlist-curve');
     if (moving()) schedule();
   };
