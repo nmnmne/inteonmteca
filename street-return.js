@@ -201,7 +201,7 @@
           stop();
           save();
           endVisit();
-          locationObject.replace("../index.html");
+          locationObject.replace("../listening-room.html");
         }, Math.max(0, endsAt - Date.now()));
       };
       reschedule = start;

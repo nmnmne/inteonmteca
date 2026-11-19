@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 const root = path.join(__dirname, '..');
 test('player is visible and disabled before a track is chosen, with no close control', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = fs.readFileSync(path.join(root, 'listening-room.html'), 'utf8');
   assert.match(html, /id="active-player"[^>]*aria-hidden="false"/);
   assert.doesNotMatch(html, /id="close-track"/);
   for (const id of ['immersive-play', 'previous-track', 'next-track', 'track-progress', 'track-volume']) {

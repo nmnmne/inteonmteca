@@ -22,7 +22,8 @@ class BakedShadowAssets(unittest.TestCase):
             self.assertEqual(len(row['matrix']), 16)
         self.assertGreater(m['meshCount'], 100)
         for name, digest in m['sourceHashes'].items():
-            self.assertEqual(hashlib.sha256((ROOT/name).read_bytes()).hexdigest(), digest, f'Rebake after changing {name}')
+            source = (ROOT / name).read_text(encoding='utf-8').encode('utf-8')
+            self.assertEqual(hashlib.sha256(source).hexdigest(), digest, f'Rebake after changing {name}')
         for row in m['presets']:
             self.assertEqual(hashlib.sha256((path.parent/row['file']).read_bytes()).hexdigest(),row['sha256'])
 if __name__ == '__main__': unittest.main()

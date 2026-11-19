@@ -3,7 +3,15 @@ const backgroundViewport = window.matchMedia("(max-width: 800px), (pointer: coar
 let isMobileViewport = backgroundViewport.matches;
 const isListeningRoom = document.body.classList.contains("spatial-room");
 document.documentElement.dataset.backgroundMode = isMobileViewport ? "static" : "live";
-const player = document.getElementById("album-player");
+const isConsoleRoom = Boolean(document.querySelector("#studio.room-console"));
+const player = isConsoleRoom ? null : document.getElementById("album-player");
+const roomMusic = window.DJEngine?.visuals || player;
+if (isConsoleRoom && roomMusic) {
+  const syncRoomSignal = () => document.body.classList.toggle("is-signal", !roomMusic.paused);
+  roomMusic.addEventListener("playing", syncRoomSignal);
+  roomMusic.addEventListener("pause", syncRoomSignal);
+  syncRoomSignal();
+}
 const perceptionVisual = document.getElementById("perception-visual");
 let perceptionContext = isMobileViewport ? null : perceptionVisual?.getContext("2d");
 const immersiveMode = document.getElementById("immersive-mode");
@@ -48,7 +56,7 @@ const trackProgress = document.getElementById("track-progress");
 const trackVolume = document.getElementById("track-volume");
 const currentTime = document.getElementById("current-time");
 const durationTime = document.getElementById("duration-time");
-const playlistList = document.getElementById("track-list");
+const playlistList = isConsoleRoom ? null : document.getElementById("track-list");
 const playlistShell = document.getElementById("playlist-shell");
 const trackViewport = document.getElementById("track-viewport");
 const scrollbar = document.getElementById("track-scrollbar");
@@ -119,7 +127,6 @@ const themeDuration = document.getElementById("theme-duration");
 const themeDurationOutput = document.getElementById("theme-duration-output");
 const themeRandom = document.getElementById("theme-random");
 const themeStatus = document.getElementById("theme-status");
-const streetLink = document.getElementById("street-link");
 const apiMeta = document.querySelector('meta[name="inteonmteca-api"]');
 const isFileMode = location.protocol === "file:";
 const canUseNetwork = location.protocol === "http:" || location.protocol === "https:";
@@ -490,7 +497,7 @@ const renderPerceptionField = (now) => {
   if (isListeningRoom) {
     perceptionContext.save();
     perceptionContext.translate(motionState.x * 20, motionState.y * 14);
-    window.inteonRoom?.drawMist(perceptionContext, innerWidth, innerHeight, now, player.paused ? 0 : energy.avg);
+    window.inteonRoom?.drawMist(perceptionContext, innerWidth, innerHeight, now, roomMusic?.paused ? 0 : energy.avg);
     perceptionContext.restore();
   }
   if (!immersiveState.active && !isListeningRoom) {
@@ -680,7 +687,8 @@ const getAudioNode = (audio, context = sharedAudioContext) => {
     analyser.fftSize = 256;
     analyser.smoothingTimeConstant = .82;
     source.connect(analyser);
-    analyser.connect(context.destination);
+    if (window.InteonSoundFilter) window.InteonSoundFilter.connect(analyser, context.destination);
+    else analyser.connect(context.destination);
     const node = { context, analyser, data: new Uint8Array(analyser.frequencyBinCount) };
     audioNodes.set(audio, node);
     return node;
@@ -688,6 +696,10 @@ const getAudioNode = (audio, context = sharedAudioContext) => {
     return null;
   }
 };
+
+window.addEventListener("inteon:sound-settings", () => {
+  if (player && !player.paused) void attachPlaybackAnalysis();
+});
 
 const averageBand = (data, from, to) => {
   const start = Math.max(0, Math.floor(data.length * from));
@@ -700,7 +712,7 @@ const averageBand = (data, from, to) => {
 const audioEnergy = (now = performance.now()) => {
   if (now - spectrumState.at < 10) return spectrumState;
   spectrumState.at = now;
-  const node = activeAudioNode || (immersiveState.analyser ? {
+  const node = window.DJEngine?.visuals.analysis || activeAudioNode || (immersiveState.analyser ? {
     analyser: immersiveState.analyser,
     data: immersiveState.data,
   } : null);
@@ -708,7 +720,7 @@ const audioEnergy = (now = performance.now()) => {
   let mid = 0;
   let high = 0;
   let avg = 0;
-  if (node?.analyser && node.data && player && !player.paused) {
+  if (node?.analyser && node.data && roomMusic && !roomMusic.paused) {
     node.analyser.getByteFrequencyData(node.data);
     bass = averageBand(node.data, 0, .14);
     mid = averageBand(node.data, .14, .52);
@@ -747,9 +759,10 @@ window.inteonAudioBands = (() => {
   };
   return Object.freeze({read() {
     audioEnergy();
-    const node = activeAudioNode || (immersiveState.analyser ? {analyser: immersiveState.analyser, data: immersiveState.data} : null);
+    const music = window.DJEngine?.visuals || player;
+    const node = music?.analysis || activeAudioNode || (immersiveState.analyser ? {analyser: immersiveState.analyser, data: immersiveState.data} : null);
     const context = node?.context || node?.analyser?.context || sharedAudioContext;
-    signal.playing = Boolean(node?.data && context?.state === "running" && player && !player.paused && !player.ended);
+    signal.playing = Boolean(node?.data && context?.state === "running" && music && !music.paused && !music.ended);
     const binHz = context?.sampleRate / node?.analyser?.fftSize;
     let data = node?.data, floating = false;
     // Float dB values retain bass headroom above the byte analyser's -30 dB ceiling.
@@ -1398,7 +1411,7 @@ const setPlaybackStatus = (text = "", state = "") => {
 };
 
 const resolveTrackUrl = (track) => {
-  const source = String(track?.audio || track?.file || "").replace(/\\/g, "/");
+  const source = String(window.DJ_LOUDNESS?.[track?.audio]?.src || track?.audio || track?.file || "").replace(/\\/g, "/");
   if (!source) return "";
   try {
     return new URL(source, document.baseURI).href;
@@ -1585,7 +1598,7 @@ const launchTrackFlight = (sourceRect, sourceFontSize, track) => {
 };
 
 const playTrack = (track, sourceItem = null, options = {}) => {
-  if (!track) return;
+  if (!track || !player) return;
   const now = performance.now();
   if (now - playLockAt < 220 && currentTrack === track) return;
   playLockAt = now;
@@ -1649,12 +1662,13 @@ const playTrack = (track, sourceItem = null, options = {}) => {
   if (player && src && options.shared?.paused) {
     syncTransport();
   } else if (player && src && !options.audioStarted) {
+    // Unlock Web Audio inside the playback gesture, before the media loads.
+    void attachPlaybackAnalysis();
     const attempt = player.play();
     if (attempt && typeof attempt.then === "function") {
       attempt.then(() => {
         if (requestId !== playbackRequestId) return;
         setPlaybackStatus();
-        attachPlaybackAnalysis();
         syncTransport();
       }).catch((error) => {
         if (requestId !== playbackRequestId) return;
@@ -1671,7 +1685,6 @@ const playTrack = (track, sourceItem = null, options = {}) => {
         syncTransport();
       });
     } else {
-      attachPlaybackAnalysis();
       syncTransport();
     }
   } else if (player && src && options.audioStarted) {
@@ -1954,10 +1967,10 @@ const togglePlayback = () => {
   playbackStamp = "";
   if (player.paused) {
     setPlaybackStatus("", "");
+    void attachPlaybackAnalysis();
     player.play()
       .then(() => {
         setPlaybackStatus();
-        attachPlaybackAnalysis();
       })
       .catch(() => { setPlaybackStatus("Не удалось воспроизвести. Повторите попытку", "error"); syncTransport(); });
   } else {
@@ -2714,7 +2727,9 @@ const renderChatMessages = (messages) => {
 // mobile-sections loads later; its first event reconciles this conservative default.
 let mobileChatCollapsed = Boolean(chatPanel?.classList.contains('is-mobile-collapsed') ||
   inlineChat && matchMedia('(max-width: 800px), (pointer: coarse)').matches);
-const chatWorkVisible = () => !document.hidden && !chatPanel?.hidden && !mobileChatCollapsed;
+const roomChatPopover = chatPanel?.closest('[popover]');
+const chatWorkVisible = () => !document.hidden && !chatPanel?.hidden && !mobileChatCollapsed
+  && (!roomChatPopover || roomChatPopover.matches(':popover-open'));
 const loadChat = async () => {
   if (chatLoading || !chatWorkVisible()) return;
   if (useLocalPass()) {
@@ -3289,7 +3304,7 @@ const renderReactiveLogo = (now) => {
   setLogoCssVariable("--logo-ry", `${(x * 3.25).toFixed(2)}deg`);
   const live = immersiveState.active ? 1.45 : 1;
   let musicAccent = 0;
-  if (isListeningRoom && !player.paused && !player.ended) {
+  if (isListeningRoom && roomMusic && !roomMusic.paused && !roomMusic.ended) {
     if (!roomMusicAccentAt) roomMusicAccentAt = now + 3000;
     if (now >= roomMusicAccentAt) {
       roomMusicAccentUntil = now + 4200;
@@ -3555,7 +3570,7 @@ const scheduleLogo = (callback, delay) => {
   return id;
 };
 // Text is intentionally live, but never driven by the decorative frame loop.
-if (!prefersReducedMotion && playlistList?.dataset?.layout !== "catalog") window.setInterval(() => {
+if (playlistList && !prefersReducedMotion && playlistList.dataset.layout !== "catalog") window.setInterval(() => {
   if (!isMobileViewport || document.hidden || window.inteonHomeEffects?.ambientBlocked || window.inteonHomeEffects?.ambientPaused || (!inlineChat && !chatPanel?.hidden)) return;
   const now = window.inteonHomeEffects?.ambientNow?.() ?? performance.now();
   renderTitleMutation(now);
@@ -3703,7 +3718,7 @@ window.addEventListener('pageshow', syncBackgroundRenderer);
 window.addEventListener("resize", resizeLogoCanvas, { passive: true });
 
 try { initializeThemeSystem(); } catch {}
-window.setTimeout(() => {
+if (!isConsoleRoom) window.setTimeout(() => {
   try {
     bindFallbackTracks();
     if (Array.isArray(window.INTEONMTECA_PLAYLIST) && window.INTEONMTECA_PLAYLIST.length) {
@@ -3715,22 +3730,9 @@ window.setTimeout(() => {
 }, 0);
 loadSession();
 
-streetLink?.addEventListener("click", (event) => {
-  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-  if (window.inteonPortal?.busy) { event.preventDefault(); return; }
-  rememberPlayback();
-  if (window.inteonPlayback?.read?.()?.origin !== "yard") {
-    window.inteonPlayback?.intent?.(player, false);
-    if (player && !player.paused) window.inteonPlayback?.fadeOut?.(player);
-    playbackStamp = "";
-    rememberPlayback();
-  }
-  if (window.inteonPortal) { event.preventDefault(); window.inteonPortal.exit(streetLink.href); }
-  else window.inteonStreet?.prepareExit();
-});
 window.addEventListener("pagehide", () => { rememberPlayback(); playbackLeaving = true; });
 window.addEventListener("pageshow", (event) => {
-  if (!event.persisted) return;
+  if (isConsoleRoom || !event.persisted) return;
   // A restored document must not overwrite the newer document's session.
   const saved = window.inteonPlayback?.read?.();
   if (!saved) { exitImmersiveMode(); playbackLeaving = false; return; }

@@ -1,5 +1,5 @@
 (() => {
-  const body = document.body, music = document.querySelector('#album-player');
+  const body = document.body, music = window.DJEngine?.visuals || document.querySelector('#album-player');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const mobile = matchMedia('(max-width: 800px), (pointer: coarse)');
   const root = document.documentElement;
@@ -49,9 +49,9 @@
     body.classList.add('is-interlude'); body.dataset.interludePhase = 'dark';
     window.dispatchEvent(new Event('inteon-interlude'));
     sceneLater(() => {
-      const list = document.querySelector('.track-list');
-      const bounds = list.getBoundingClientRect();
-      const visible = [...list.children].filter(el => { const r=el.getBoundingClientRect(); return r.top >= bounds.top-.5 && r.top < bounds.bottom; });
+      const list = document.querySelector('#studio #track-list') || document.querySelector('.track-list');
+      const bounds = (list?.closest('.table-pane') || list)?.getBoundingClientRect();
+      const visible = [...(list?.children || [])].filter(el => { const r=el.getBoundingClientRect(); return r.height > 0 && r.top >= bounds.top-.5 && r.top < bounds.bottom; });
       visible.forEach((el, i) => { el.classList.add('scene-peek-track'); el.style.setProperty('--return-delay', `${i * 1000}ms`); });
       body.classList.add('scene-peek'); body.dataset.interludePhase = 'tracks';
       const rebuiltAt=visible.length*1000+500;
@@ -74,10 +74,14 @@
     if (cloud || document.hidden || reduced.matches) return;
     cloudAt = Date.now() + 260000; write('inteon-cloud-next', cloudAt); publish();
     cloud = document.createElement('div'); cloud.className = 'sky-clouds'; cloud.setAttribute('aria-hidden', 'true');
-    const level = readLevel(), octaves = 1 + Math.round(2 * (level - 1) / 9);
+    const level = readLevel(), cloudCount = 1 + Math.round(2 * (level - 1) / 9);
     cloud.dataset.graphicsLevel = String(level);
-    cloud.innerHTML = `<svg viewBox="0 0 900 300" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><defs><filter id="passing-cloud-noise" x="-10%" y="-20%" width="120%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".006 .017" numOctaves="${octaves}" seed="17"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.6 0 0 0 -.55"/><feGaussianBlur stdDeviation="3"/><feComposite in="SourceGraphic" operator="in"/></filter></defs><rect width="900" height="300" fill="currentColor" filter="url(#passing-cloud-noise)"/></svg>`;
-    if (level <= 3) cloud.querySelector('svg').style.filter = 'none';
+    for (let i = 0; i < cloudCount; i++) {
+      const tuft = new Image();
+      tuft.alt = '';
+      tuft.src = 'assets/cotton-cloud.webp';
+      cloud.append(tuft);
+    }
     body.append(cloud);
     if (preview) { cloud.style.animationDuration = '16s'; cloud.style.animationDelay = '-4s'; }
     cloudTimer = setTimeout(stopCloud, preview ? 12000 : 80000);

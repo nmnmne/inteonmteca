@@ -55,7 +55,12 @@ def main():
                 print(index,row['bytes'],row['metersPerTexel'],flush=True)
             assert not errors, errors
             sources = [*sorted((ROOT/'yard').glob('*.js')),ROOT/'yard/data/site-layout.json',Path(__file__).with_suffix('.js')]
-            manifest['sourceHashes']={str(s.relative_to(ROOT)).replace('\\','/'):hashlib.sha256(s.read_bytes()).hexdigest() for s in sources if s.name not in ('main.js','wall-player.js','boundary-music.js','quality.js','input-controller.js','navigation.js')}
+            # Hash the same source text on LF and CRLF Git checkouts.
+            excluded = {'main.js', 'wall-player.js', 'boundary-music.js', 'quality.js', 'input-controller.js', 'navigation.js'}
+            manifest['sourceHashes'] = {
+                path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_text(encoding='utf-8').encode('utf-8')).hexdigest()
+                for path in sources if path.name not in excluded
+            }
             (output/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
             print(json.dumps({'meshCount':meta['meshCount'],'instances':meta['instances'],'totalBytes':sum(r['bytes'] for r in manifest['presets']),'errors':errors}))
             browser.close()

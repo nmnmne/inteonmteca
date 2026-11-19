@@ -32,7 +32,7 @@ class DeployReleaseTests(unittest.TestCase):
                 "playlist.json": "[]", "playlist-data.js": "window.playlist=[];",
                 "yard/index.html": '<link href="yard.css?v=old"><script data-development-only src="../development-debug.js"></script>',
                 "yard/yard.css": "body {}", "yard/main.js": "void 0;",
-                "tools/generate_playlist.py": "raise RuntimeError('must not execute')",
+                "tools/prepare_dj_library.py": "raise RuntimeError('must not execute')",
                 "styles.20000101-000000.css": "old local asset",
             }
             for name, content in files.items():

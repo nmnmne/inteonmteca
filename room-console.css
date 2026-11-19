@@ -1,0 +1,266 @@
+/* The live room frames a full-size deck surface. The courtyard reflection shares
+   the console's isolated stacking context, below the controls and their lacquer. */
+html[data-theme] body.room-console-home {
+  --room-edge: clamp(6px, .8vw, 17px);
+  --brand-width: clamp(155px, 17vw, 265px);
+  --room-mast: clamp(66px, 8.2dvh, 85px);
+  --room-title-edge: calc(var(--room-edge) + 4px);
+}
+html[data-theme] body.room-console-home .release-content.player-dock {
+  position: fixed;
+  inset: var(--room-mast) var(--room-edge) max(23px, env(safe-area-inset-bottom));
+  width: auto; height: auto; min-height: 0; max-height: none;
+  display: block; padding: 0; margin: 0;
+  overflow: visible; transform: none; z-index: 4;
+}
+html[data-theme] body.room-console-home #logo-wrap {
+  position: fixed; inset: 9px auto auto calc(var(--room-edge) + 6px);
+  width: var(--brand-width); height: auto; max-width: none;
+  margin: 0; transform: none; pointer-events: none;
+}
+html[data-theme] body.room-console-home .mobile-visual-stage {
+  position: fixed; inset: 9px auto auto calc(var(--room-edge) + 6px);
+  width: var(--brand-width); height: calc(var(--brand-width) * .2004);
+  margin: 0; transform: none; pointer-events: none;
+}
+html[data-theme] body.room-console-home #mobile-visual-stage #logo-wrap {
+  position: absolute; inset: 0; width: 100%; height: 100%; transform: none;
+}
+html[data-theme] body.room-console-home .listening-intro h1 {
+  position: fixed; inset: 29px var(--room-title-edge) auto auto;
+  width: auto; max-width: none; margin: 0; transform: none;
+  text-align: right; white-space: nowrap; font-size: clamp(21px, 2.15vw, 33px); line-height: 1;
+}
+html[data-theme] body.room-console-home .listening-intro .label {
+  position: fixed; inset: 10px var(--room-title-edge) auto auto;
+  width: auto; margin: 0; transform: none; justify-content: end; text-align: right;
+}
+html[data-theme] body.room-console-home .hero-intro {
+  position: fixed; inset: auto auto calc(100dvh - var(--room-mast) + 4px) calc(var(--room-edge) + 8px);
+  width: auto; margin: 0; transform: none;
+}
+html[data-theme] body.room-console-home .room-presence {
+  position: fixed; inset: 10px auto auto calc(var(--brand-width) + 20px);
+  width: 38px; height: 38px; margin: 0;
+}
+html[data-theme] body.room-console-home .room-toolbar {
+  position: fixed; inset: 0 var(--room-edge) auto;
+  width: max-content; max-width: calc(100% - 2 * var(--room-edge)); height: var(--room-mast); min-height: 0;
+  display: flex; align-items: center; justify-content: center; gap: 5px; padding: 0; margin-inline: auto;
+}
+html[data-theme] body.room-console-home .room-toolbar #auth-hint {
+  max-width: clamp(50px, 9vw, 140px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+html[data-theme] body.room-console-home .room-toolbar :is(#auth-hint, #theme-hint, #room-chat-open, .street-return, .visit-counter) {
+  position: static; inset: auto; margin: 0; flex: none; transform: none;
+}
+html[data-theme] body.room-console-home .room-toolbar .development-debug-master {
+  position: static; inset: auto !important; margin: 0; transform: none;
+}
+html[data-theme] .room-console-home .room-toolbar #room-chat-open {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: auto; min-width: 38px; min-height: 32px; height: 32px;
+  padding: 0 8px; border: 1px solid #c5d7c136; border-radius: 5px;
+  background: #151c17a3; color: rgb(var(--theme-text-rgb)); font: 600 12px ui-monospace, monospace;
+}
+html[data-theme] .room-console-home .room-toolbar .street-return::before { content: none; }
+html[data-theme] body.room-console-home .text.matrix-text {
+  position: fixed; inset: auto auto 4px 50%; width: auto; white-space: nowrap;
+  margin: 0; transform: translateX(-50%); pointer-events: none;
+}
+
+.room-console {
+  --console-edge: clamp(5px,.6vw,12px);
+  --line: #cbd6c74a; --ink: #f3f5eb; --acid: rgb(var(--theme-accent-rgb));
+  --mono: JetBrains, ui-monospace, monospace; --sans: 'Segoe UI', sans-serif;
+  position: relative; isolation: isolate; container: console / inline-size;
+  box-sizing: border-box; display: flex; flex-direction: column;
+  width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden;
+  pointer-events: auto; text-align: left; color: var(--ink); font: 14px/1.3 var(--sans);
+  border: 1px solid #d6e4d079; border-radius: 16px 7px 16px 7px;
+  background: linear-gradient(115deg,#c5d2b710,transparent 17% 68%,#cadae30d), rgba(12, 20, 19, .26);
+  box-shadow: inset 0 1px 0 #fbffed59, inset 1px 0 0 #eaffeb29, 0 8px 30px #0004;
+}
+.room-console-top, .console-nav, .console-tools, .console-nav a {
+  display: flex; align-items: center; gap: 6px;
+}
+.room-console-top {
+  flex: none; justify-content: space-between; padding: 6px max(8px, .8vw);
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg,#ccd4c517,transparent 52%), #0b161844;
+}
+.console-nav a {
+  min-height: 31px; padding: 0 11px; color: #e0e5df;
+  font: 600 13px/1 var(--sans); text-decoration: none; border-radius: 4px;
+}
+.console-nav a[aria-current] {
+  color: var(--acid); background: rgba(var(--theme-accent-rgb), .12);
+  box-shadow: inset 0 0 0 1px rgba(var(--theme-accent-rgb), .20);
+}
+.console-tools .rec { min-height: 32px; font-size: 13px; }
+.room-console .workspace {
+  flex: 1; display: flex; flex-direction: column; width: 100%; min-height: 0;
+  padding: 0 var(--console-edge); overflow: auto; overscroll-behavior: contain;
+  scrollbar-width: thin; scrollbar-color: #a2b49b80 transparent;
+}
+.room-console #performance { flex: 1; min-height: 0; }
+.room-console .page-title { padding: 3px 4px; min-height: clamp(33px,4.5dvh,52px); }
+.room-console .page-title h2 { margin: 0; color: var(--ink); font: 600 clamp(14px,1.1vw,20px)/1.2 var(--sans); }
+.room-console .monitor-status { gap: 9px; }
+.room-console .status-bar { flex: none; min-height: 24px; padding: 3px 5px; margin: 0; color: #e4e8df; }
+.room-console :is(.status-bar,.status-bar button,.meter-copy,.dd-track-text,.dd-bpm-box,.page-title h2,.section-heading,.strip-tag,.dial-name,.cross-title) { text-shadow: 0 1px 3px #081014; }
+.room-console .meter-copy, .room-console .dd-artist, .room-console .dd-remaining { color: #d7dedb; }
+.room-console .meter-readout { background: #0b131c50; border-radius: 4px; padding: 3px 5px; }
+.room-console .deck-bank { margin: 0; gap: var(--console-edge); }
+.room-console :is(.dj-deck, .mixer-panel, .library) {
+  color: var(--ink);
+  border: 1px solid #d8e6d557; border-radius: 12px 6px 12px 6px;
+  background:
+    linear-gradient(111deg, transparent 13%, #f5ffe909 25%, #effee820 25.3%, #eaffed05 25.8%, transparent 48%),
+    linear-gradient(155deg,#16232842,#0c141c5c 64%,#1e252635);
+  box-shadow: inset 0 1px 0 #e2ffef42, inset 1px 0 0 #fff2, inset -1px -1px 0 #1010154d;
+}
+.room-console :is(.dd-head,.dd-pads,.panel-head,.cross-section,.crate-nav) {
+  background: linear-gradient(180deg,#ecf8eb0d,transparent 65%),#0b171c3d;
+  border-color: #cfdfd32b;
+}
+.room-console :is(.dd-hardware,.dd-transport,.dial-bank,.browser-body,.table-pane) { background: transparent; }
+.room-console .mixer-bed { background: linear-gradient(100deg,#c8ddd10a,transparent 35%,#d8e8e609 50%,transparent 67%); }
+.room-console .channel-strip { background: transparent; }
+.room-console .dd-pitch { background: linear-gradient(115deg,#d6e8da17,#101a235c); border-color:#bfcee23f; }
+.room-console .dd-scope { background: #08121794; border-color: #b5ced247; }
+.room-console .dd-pads, .room-console .cross-section { border-top-color: #d2e0d442; }
+.room-console .dj-deck h2 { text-transform: none; letter-spacing: -.035em; }
+.room-console .library { display: none; }
+.room-console-home.library-only { display: block; }
+.room-console-home.library-only .room-console .library { display: flex; flex: 1; margin: 5px 0; min-height: 0; }
+.room-console .browser-body { min-height: 0; }
+.room-console .table-pane { overflow: auto; }
+.room-console .library thead th { background: #172022eb; color: #e3e7df; }
+
+@container console (min-width: 900px) {
+  .room-console #performance { display: flex; flex-direction: column; min-height: 415px; }
+  .room-console .deck-bank {
+    flex: 1; display: grid; height: auto; min-height: 0; align-items: stretch;
+    grid-template: 'deck-a mixer deck-b' minmax(0,1fr) / minmax(0, 1fr) clamp(195px,22cqw,400px) minmax(0,1fr);
+  }
+  .room-console .controller-tabs, .room-console .quick-cross { display: none; }
+  .room-console .dj-deck { display: grid; height: 100%; grid-template-rows: auto auto auto minmax(0,1fr) auto auto; }
+  .room-console .dd-hardware { min-height: 0; }
+  .room-console .dd-wheel-column {
+    display: grid; align-items: center; align-self: stretch; align-content: stretch; container-type: size;
+    --mode-height: clamp(26px, 3.7dvh, 40px); --mode-gap: 6px;
+    grid-template-rows: minmax(0,1fr) var(--mode-height); gap: var(--mode-gap);
+  }
+  .room-console .dd-wheel-mount { width: min(100cqw, calc(100cqh - var(--mode-height) - var(--mode-gap))); }
+  .room-console .dd-pitch { min-height: 0; grid-template-rows: auto auto minmax(28px,1fr) auto auto; }
+  .room-console .dd-rail { min-height: 0; }
+  .room-console .dd-wave { height: clamp(36px,7dvh,100px); }
+  .room-console .mixer-panel { display: flex; flex-direction: column; }
+  .room-console .mixer-bed { flex: 1; display: grid; grid-template: minmax(0,1fr) auto / 1fr 1fr; }
+  .room-console .mixer-panel .cross-section { grid-area: 2 / 1 / 3 / 3; }
+  .room-console .mixer-panel .dial-bank { align-content: space-evenly; }
+  .room-console .mixer-panel .dial-face { width: clamp(32px, min(3.4vw, 5.5dvh), 75px); }
+}
+@container console (max-width: 899px) {
+  .room-console #performance { flex: none; min-height: 0; }
+  .room-console .deck-bank { display: block; height: auto; }
+  .room-console .deck-bank:not([data-panel=a]) #deck-a,
+  .room-console .deck-bank:not([data-panel=b]) #deck-b,
+  .room-console .deck-bank:not([data-panel=mixer]) #mixer { display: none; }
+  .room-console .controller-tabs { display: grid; grid-template-columns: repeat(3,1fr); gap: 3px; }
+  .room-console .controller-tabs button {
+    min-height: 33px; padding: 2px 6px; border: 1px solid #d1e3dc40; border-radius: 5px;
+    color: #e5e9e3; background: #14211e4d; font: 600 12px var(--sans);
+  }
+  .room-console .controller-tabs button[aria-pressed=true] { color: var(--acid); background: #2432219c; border-color: #abce7e; }
+  .room-console .quick-cross { display: flex; align-items: center; min-height: 29px; gap: 7px; }
+  .room-console .quick-cross input { min-width: 0; flex: 1; }
+  .room-console .lib-head { display: grid; grid-template-columns: 1fr; }
+  .room-console .lib-actions, .room-console .crate-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+  .room-console .search { flex: 1 1 100px; min-width: 70px; }
+  .room-console .search input { min-width: 0; width: 100%; }
+  .room-console .crate-nav { flex-direction: row; padding: 4px; border-right: none; border-bottom: 1px solid var(--line); }
+  .room-console .crate-nav .side-label { display: none; }
+  .room-console .crate-nav button { width: auto; padding: 4px 6px; }
+  .room-console-home.library-only .room-console :is(.workspace,.library,.browser-body) { display: block; height: auto; }
+  .room-console-home.library-only .room-console .table-pane { max-height: none; height: auto; overflow: visible; }
+}
+@container console (max-width: 460px) {
+  .room-console table :is(th, td):is(:nth-child(4), :nth-child(5), :nth-child(6)) { display: none; }
+  .room-console .lib-head { padding: 6px; }
+  .room-console .crate-nav button { gap: 3px; font-size: 11px; }
+}
+
+#room-chat {
+  position: fixed; inset: calc(var(--room-mast) - 4px) var(--room-edge) auto auto;
+  max-width: calc(100vw - 20px); width: 360px; max-height: calc(100dvh - var(--room-mast) - 8px);
+  margin: 0; padding: 10px; overflow: auto; box-sizing: border-box;
+  color: #eef3eb; background: #17201bf5; border: 1px solid #d4dfc96e; border-radius: 9px;
+  box-shadow: 0 12px 30px #060b0a70;
+}
+.console-chat-heading { display: flex; align-items: center; justify-content: space-between; }
+.console-chat-heading h2 { margin: 0; font: 600 16px/1.3 var(--sans); }
+.console-chat-heading button { width: 36px; height: 36px; color: inherit; border: 0; background: transparent; font-size: 22px; }
+html[data-theme] .room-console-home #room-chat #chat-panel.chat-inline {
+  position: static; inset: auto; display: flex; height: auto; width: 100%; max-height: none;
+  padding: 0; margin: 0; transform: none; overflow: visible; visibility: visible;
+}
+html[data-theme] .room-console-home #room-chat .chat-stream {
+  display: block; position: static; width: 100%; min-height: 90px; height: min(220px, 32dvh);
+  margin: 0; padding: 0; overflow-y: auto; visibility: visible; opacity: 1;
+}
+html[data-theme] .room-console-home #room-chat .chat-compose { display: flex; width: 100%; opacity: 1; visibility: visible; }
+html[data-theme] .room-console-home #room-chat .mobile-chat-toggle { display: none; }
+
+@media (max-width: 800px), (pointer: coarse) {
+  html[data-theme] body.room-console-home { --brand-width: clamp(95px,30vw,170px); --room-mast: 79px; }
+  html[data-theme] body.room-console-home .room-toolbar { inset: 41px var(--room-edge) auto var(--room-edge); height: 34px; gap: 3px; }
+  html[data-theme] body.room-console-home .room-toolbar :is(#auth-hint,#theme-hint,#room-chat-open,.sound-trigger) {
+    min-width: 32px; height: 32px; min-height: 32px; padding: 0 5px; font-size: 11px;
+  }
+  html[data-theme] body.room-console-home .room-toolbar .sound-trigger { position: static; }
+  html[data-theme] body.room-console-home .room-toolbar .visit-counter { width: 25px; min-width: 0; font-size: 7px; }
+  html[data-theme] body.room-console-home .listening-intro h1 { top: calc(26px - 1em); font-size: clamp(16px,4.8vw,23px); }
+  html[data-theme] body.room-console-home .listening-intro .label { top: 29px; }
+  html[data-theme] body.room-console-home .hero-intro { inset: calc(9px + var(--brand-width) * .2004) auto auto calc(var(--room-edge) + 7px); }
+  html[data-theme] body.room-console-home .room-presence { inset: 5px auto auto calc(var(--brand-width) + 20px); width: 26px; height: 26px; }
+  .console-tools .rec { padding: 0 8px; font-size: 12px; }
+  .console-nav a { padding: 0 6px; font-size: 12px; }
+}
+@media (max-width: 680px) and (orientation:portrait) {
+  .room-console .dd-wheel-mount { width: min(100%, clamp(90px,calc(100dvh - 510px),340px)); }
+  .room-console .dd-hardware { padding-block: 6px; }
+  .room-console .dd-pitch { grid-template-rows:auto auto minmax(40px,1fr) auto auto; padding-block: 4px; gap: 2px; }
+  .room-console .dd-rail { min-height: 40px; }
+  .room-console .dd-wave { height: clamp(28px,5dvh,54px); }
+  .room-console .dd-track { min-height: 40px; padding-block: 5px; }
+}
+@media (max-width: 899px) and (max-height: 540px) and (orientation:landscape) {
+  .room-console .dj-deck { height: max(190px,calc(100dvh - var(--room-mast) - 130px)); }
+}
+@media (min-width: 761px) and (max-height: 540px) and (orientation:landscape) {
+  html[data-theme] body.room-console-home { --room-mast: 45px; --brand-width: 125px; }
+  html[data-theme] body.room-console-home .hero-intro { inset: 32px auto auto 12px; }
+  html[data-theme] body.room-console-home .listening-intro h1 { top: 21px; font-size: 18px; }
+  html[data-theme] body.room-console-home .listening-intro .label { top: 5px; }
+  html[data-theme] body.room-console-home .room-presence { inset: 5px auto auto 132px; width: 23px; height: 23px; }
+  html[data-theme] body.room-console-home .room-toolbar { top: 0; height: var(--room-mast); }
+  html[data-theme] body.room-console-home .release-content.player-dock { bottom: 15px; }
+}
+@media (min-width: 2100px) {
+  html[data-theme] body.room-console-home { --brand-width: clamp(300px,14vw,540px); --room-mast: clamp(100px,7.8dvh,168px); }
+  html[data-theme] body.room-console-home #logo-wrap { top: 14px; }
+  html[data-theme] body.room-console-home .listening-intro h1 { top: 2.8dvh; font-size: clamp(37px,1.6vw,64px); }
+  html[data-theme] body.room-console-home .listening-intro .label { top: 1.2dvh; font-size: clamp(12px,.5vw,20px); }
+  html[data-theme] body.room-console-home .hero-intro .topline { font-size: clamp(12px,.5vw,20px); }
+  html[data-theme] body.room-console-home .room-presence { top: 22px; width: 58px; height: 58px; }
+  html[data-theme] body.room-console-home .room-toolbar :is(#auth-hint,#theme-hint,#room-chat-open,.sound-trigger,.development-debug-master),
+  .room-console .console-nav a, .room-console .console-tools button { min-height: clamp(43px,1.65vw,64px); font-size: clamp(15px,.66vw,26px); padding-inline: 14px; }
+  .room-console .console-tools .icon-btn { width: clamp(45px,1.7vw,65px); }
+  .room-console .deck-bank { grid-template-columns: minmax(0,1fr) min(21%,810px) minmax(0,1fr); }
+  .room-console .mixer-panel .dial-face { width: clamp(65px,3vw,120px); }
+  .room-console .mixer-panel .cross-slide, .room-console .mixer-panel .gain-control { padding-block: 8px; }
+  .room-console .dd-rail input { inset: 2px auto auto 25%; }
+  .room-console .status-bar, .room-console .status-bar button { font-size: clamp(13px,.55vw,21px); }
+}

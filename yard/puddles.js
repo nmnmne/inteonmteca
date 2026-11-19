@@ -1,0 +1,99 @@
+import * as THREE from './vendor/three.module.js';
+
+// The grayscale shoreline and probe lookup use the same X/Z bounds as the
+// walkable asphalt. Their top scanline is the north edge of the courtyard.
+export function addPuddles(scene, layout, onReady = () => {}) {
+  const x = layout.walkable.map(point => point[0]), z = layout.walkable.map(point => point[1]);
+  const west = Math.min(...x), north = Math.min(...z);
+  const width = Math.max(...x) - west, length = Math.max(...z) - north;
+  const uniforms = {
+    shores: { value: null }, probes: { value: null }, panorama: { value: null },
+    atlasGrid: { value: new THREE.Vector2() }, seconds: { value: 0 }, daylight: { value: 1 },
+  };
+  const material = new THREE.ShaderMaterial({
+    uniforms, transparent: true, depthWrite: false, visible: false,
+    vertexShader: `
+      varying vec2 mapUV;
+      varying vec3 surface;
+      void main() {
+        mapUV = vec2(uv.x, 1.0 - uv.y);
+        vec4 world = modelMatrix * vec4(position, 1.0);
+        surface = world.xyz;
+        gl_Position = projectionMatrix * viewMatrix * world;
+      }`,
+    fragmentShader: `
+      uniform sampler2D shores, probes, panorama;
+      uniform vec2 atlasGrid;
+      uniform float seconds, daylight;
+      varying vec2 mapUV;
+      varying vec3 surface;
+      const float pi = 3.14159265;
+      vec3 radiance(float index, vec2 direction) {
+        vec2 tile = vec2(mod(index, atlasGrid.x), floor(index / atlasGrid.x));
+        // Keep linear filtering inside this probe's 512 by 128 texel tile.
+        vec2 uv = clamp(direction, vec2(0.5/512.0, 0.5/128.0), vec2(1.0-0.5/512.0, 1.0-0.5/128.0));
+        return texture2D(panorama, (tile + uv) / atlasGrid).rgb;
+      }
+      void main() {
+        float depth = texture2D(shores, mapUV).r;
+        if (depth < 0.26 || daylight < 0.01) discard;
+        vec3 toEye = normalize(cameraPosition - surface);
+        // Barely disturb the reflection; shallow puddles reveal aggregate
+        // underfoot and pick up the sky most strongly at a grazing angle.
+        vec2 p = surface.xz;
+        vec2 slope = vec2(sin(dot(p, vec2(4.1, 1.8)) + seconds * 0.48),
+                          sin(dot(p, vec2(-2.4, 3.7)) - seconds * 0.38));
+        float detail = 1.0 - smoothstep(7.0, 35.0, distance(cameraPosition, surface));
+        vec3 normal = normalize(vec3(slope.x * 0.003 * detail, 1.0, slope.y * 0.004 * detail));
+        vec3 ray = reflect(-toEye, normal);
+        vec2 direction = vec2(atan(ray.z, ray.x) / (2.0 * pi) + 0.5,
+                              acos(clamp(ray.y, 0.0, 1.0)) / (pi * 0.5));
+        vec3 selection = texture2D(probes, mapUV).rgb;
+        vec3 light = mix(radiance(floor(selection.r * 255.0 + 0.5), direction),
+                         radiance(floor(selection.g * 255.0 + 0.5), direction), selection.b);
+        float grazing = pow(1.0 - max(dot(toEye, normal), 0.0), 3.0);
+        float reflection = 0.22 + 0.73 * grazing;
+        vec3 color = mix(vec3(0.040, 0.041, 0.033), light, reflection);
+        float wet = smoothstep(0.35, 0.65, depth);
+        gl_FragColor = vec4(color, wet * (0.52 + 0.43 * grazing) * daylight);
+        #include <colorspace_fragment>
+      }`,
+  });
+
+  const geometry = new THREE.PlaneGeometry(width, length).rotateX(-Math.PI / 2);
+  const water = new THREE.Mesh(geometry, material);
+  water.name = 'courtyard-puddles';
+  water.position.set(west + width / 2, 0.034, north + length / 2);
+  water.userData.bakedShadowCaster = false;
+  water.userData.bakedShadowReceiver = false;
+  scene.add(water);
+
+  const loader = new THREE.TextureLoader();
+  let loaded = 0, disposed = false;
+  const textures = [];
+  for (const [name, filename] of [
+    ['panorama', 'puddle-reflections.jpg'], ['probes', 'puddle-probes.png'], ['shores', 'puddle-shores.png'],
+  ]) {
+    const texture = loader.load(new URL('./assets/' + filename, import.meta.url).href, image => {
+      if (disposed) return;
+      if (name === 'panorama') uniforms.atlasGrid.value.set(image.image.width / 512, image.image.height / 128);
+      if (++loaded === 3) { material.visible = true; onReady(); }
+    });
+    texture.flipY = false;
+    if (name === 'panorama') texture.colorSpace = THREE.SRGBColorSpace;
+    if (name !== 'shores') {
+      texture.generateMipmaps = false;
+      texture.minFilter = texture.magFilter = name === 'probes' ? THREE.NearestFilter : THREE.LinearFilter;
+    } else texture.anisotropy = 4;
+    uniforms[name].value = texture;
+    textures.push(texture);
+  }
+  material.addEventListener('dispose', () => {
+    disposed = true;
+    textures.forEach(texture => texture.dispose());
+  });
+  return seconds => {
+    uniforms.seconds.value = seconds;
+    uniforms.daylight.value = 1 - (scene.userData.virtuality || 0);
+  };
+}

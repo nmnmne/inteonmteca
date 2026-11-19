@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const { test } = require('node:test');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8');
-const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, '..', 'listening-room.html'), 'utf8');
 const constants = source.slice(source.indexOf('const THEME_MIN_MS ='), source.indexOf('// Curated dark palettes'));
 const keys = source.slice(source.indexOf('const themeStorageKey ='), source.indexOf('const localSessionStorageKey ='));
 const state = source.slice(source.indexOf('let themeRotationTimer ='), source.indexOf('let themeShiftTimer ='));

@@ -128,14 +128,37 @@ export function createFacadeMaterial(id) {
   const spec = facadeSpec(id);
   return new THREE.MeshStandardMaterial({
     map: facadeTexture(spec),
-    roughness: spec.kind === "panel" ? 0.76 : 0.9,
+    roughness: 1,
     metalness: 0,
   });
 }
 
-export function createWindowMaterial() {
-  return new THREE.MeshStandardMaterial({
-    map: texture(256, 256, (context, width, height) => {
+export function createWindowMaterial(environment, kind = 'cross', tint = 0xffffff) {
+  // All panes share one courtyard probe. Painted frames and mullions have a
+  // black specular mask, keeping their diffuse paint intact as the viewer moves.
+  const material = new THREE.MeshPhongMaterial({
+    color: tint, envMap: environment, combine: THREE.MixOperation,
+    reflectivity: 0.34, specular: 0x252b2d, shininess: 72,
+  });
+  if (kind === 'pane') return material;
+  const cross = kind === 'cross';
+  const width = cross ? 256 : 192, height = 256;
+  function paintFrames(context, color) {
+    context.fillStyle = color;
+    if (cross) {
+      context.strokeStyle = color;
+      context.lineWidth = 10;
+      context.strokeRect(6, 6, width - 12, height - 12);
+      context.fillRect(width / 2 - 3, 11, 6, height - 22);
+      context.fillRect(11, height / 2 - 3, width - 22, 6);
+    } else {
+      if (kind === 'casement') context.fillRect(width * 0.58, 8, 6, height - 16);
+      context.fillRect(8, height * (kind === 'stair' ? 0.28 : 0.22), width - 16, 5);
+    }
+  }
+  const inset = cross ? 11 : 8;
+  material.map = texture(width, height, context => {
+    if (cross) {
       context.fillStyle = "#26373f";
       context.fillRect(0, 0, width, height);
       const light = context.createLinearGradient(0, 0, width, height);
@@ -144,35 +167,31 @@ export function createWindowMaterial() {
       light.addColorStop(1, "rgba(15, 29, 36, 0.52)");
       context.fillStyle = light;
       context.fillRect(11, 11, width - 22, height - 22);
-      context.strokeStyle = "#ded9d1";
-      context.lineWidth = 10;
-      context.strokeRect(6, 6, width - 12, height - 12);
-      context.lineWidth = 6;
-      context.beginPath();
-      context.moveTo(width / 2, 11);
-      context.lineTo(width / 2, height - 11);
-      context.moveTo(11, height / 2);
-      context.lineTo(width - 11, height / 2);
-      context.stroke();
-    }),
-    roughness: 0.32,
-    metalness: 0.06,
+    } else {
+      context.fillStyle = '#dbd8ce';
+      context.fillRect(0, 0, width, height);
+      const glass = context.createLinearGradient(0, 0, width, height);
+      glass.addColorStop(0, '#89938e');
+      glass.addColorStop(0.42, '#586561');
+      glass.addColorStop(1, '#273435');
+      context.fillStyle = glass;
+      context.fillRect(8, 8, width - 16, height - 16);
+      context.fillStyle = '#d8d4c238';
+      context.fillRect(width * 0.72, 16, width * 0.18, height - 30);
+      context.fillStyle = '#fff5';
+      context.fillRect(10, 10, 2, height - 20);
+    }
+    paintFrames(context, cross ? '#ded9d1' : '#d9d8d0');
   });
-}
-
-export function createPhotoWindowMaterial(kind = 'casement') {
-  return new THREE.MeshStandardMaterial({
-    map: texture(192,256,(ctx,w,h)=>{
-      ctx.fillStyle='#dbd8ce';ctx.fillRect(0,0,w,h);
-      const glass=ctx.createLinearGradient(0,0,w,h);glass.addColorStop(0,'#89938e');glass.addColorStop(.42,'#586561');glass.addColorStop(1,'#273435');
-      ctx.fillStyle=glass;ctx.fillRect(8,8,w-16,h-16);
-      ctx.fillStyle='#d9d8d0';
-      if(kind==='casement')ctx.fillRect(w*.58,8,6,h-16);
-      ctx.fillRect(8,h*(kind==='stair'?.28:.22),w-16,5);
-      ctx.fillStyle='#d8d4c238';ctx.fillRect(w*.72,16,w*.18,h-30);
-      ctx.fillStyle='#fff5';ctx.fillRect(10,10,2,h-20);
-    }),roughness:.58,metalness:.02,
+  material.specularMap = texture(width, height, context => {
+    context.fillStyle = '#000';
+    context.fillRect(0, 0, width, height);
+    context.fillStyle = '#fff';
+    context.fillRect(inset, inset, width - 2 * inset, height - 2 * inset);
+    paintFrames(context, '#000');
   });
+  material.specularMap.colorSpace = THREE.NoColorSpace;
+  return material;
 }
 
 export function createBalconyMaterial() {

@@ -75,7 +75,7 @@
   let blocked = false, lastPointerWork = 0, lastEncounter = -60000;
   let cinematic = false;
   let encounter = 0, hoverArmed = true, ignoreUntil = 0, chaseUntil = 0;
-  const music = document.getElementById("album-player");
+  const music = window.DJEngine?.visuals || document.getElementById("album-player");
   const musicPlaying = () => music && !music.paused && !music.ended;
   let pointer = { x: -9999, y: -9999, at: 0 };
   let obstacles = [];
@@ -105,7 +105,7 @@
   const refreshObstacles = () => {
     obstacles = [...document.querySelectorAll(
       '.logo-wrap, .listening-intro h1, .listening-intro .label, .hero-intro, '
-      + '.catalog-heading, .playlist-shell, #active-player, .text, '
+      + '.catalog-heading, .playlist-shell, #active-player, #studio.room-console, .text, '
       + '#auth-hint, #theme-hint, #chat-hint, #street-link, .street-return, .chat-compose, .chat-stream:not(:empty), '
       + '#theme-panel, #auth-panel, .theme-options, .visit-counter, .development-animation-menu, .development-debug-toggle'
     )].filter(el => el.checkVisibility({checkVisibilityCSS:true, checkOpacity:true}))
@@ -232,10 +232,10 @@
       look({x:rect.left + rect.width * .35, y:rect.top + rect.height * .5});
     };
     pose("watching");
-    glance(".playlist-shell");
+    glance("#studio #collection, .playlist-shell");
     later(() => {
       if (blocked || journey || resident.dataset.state !== "watching" || performance.now() < reactionUntil) return;
-      glance("#active-player");
+      glance("#studio #mixer, #active-player");
       pose("listening");
       later(() => {
         if (blocked || journey || resident.dataset.state !== "listening" || performance.now() < reactionUntil) return;
@@ -364,7 +364,7 @@
   };
   const explore = () => {
     refreshObstacles();
-    const selectors=['.playlist-shell','.logo-wrap','.listening-intro h1','.chat-compose','.transport-play','#track-progress'];
+    const selectors=['#studio #collection, .playlist-shell','.logo-wrap','.listening-intro h1','.chat-compose','#studio .dd-play, .transport-play','#studio #cross, #track-progress'];
     const interest=document.querySelector(selectors[Math.floor(Math.random()*selectors.length)]);
     const target=interest?.closest('#active-player') || interest;
     if (!target) return false;
@@ -437,7 +437,7 @@
     spaceGuard = requestAnimationFrame(() => { spaceGuard = 0; guardSpace(); });
   };
   const obstacleObserver = new ResizeObserver(invalidateSpace);
-  document.querySelectorAll('.playlist-shell, #active-player, .listening-intro, #logo-wrap, #chat-panel, #auth-panel, #theme-panel')
+  document.querySelectorAll('#studio.room-console, .playlist-shell, #active-player, .listening-intro, #logo-wrap, #chat-panel, #auth-panel, #theme-panel')
     .forEach(el => obstacleObserver.observe(el));
   ['inteon-catalog-fit', 'inteon-mobile-chat-change', 'inteon-popup-open', 'inteon-debug-change', 'resize', 'pageshow']
     .forEach(type => window.addEventListener(type, invalidateSpace, {passive: true}));

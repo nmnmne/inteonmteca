@@ -3,13 +3,47 @@
 .room-resident.is-detonating .resident-mist { inset: -38px; opacity: .9; filter: blur(12px); background: radial-gradient(ellipse, rgba(var(--theme-accent-rgb), .22), transparent 68%); }
 .room-resident.is-detonating .resident-body { animation: resident-listen 3.8s ease-in-out infinite; }
 
-.sky-clouds { position: fixed; left: -25%; top: -15vh; width: 150%; height: min(65vh, 650px); z-index: 1; pointer-events: none; opacity: 0; color: rgb(var(--theme-a-rgb)); mix-blend-mode: screen; animation: sky-cloud-passage 80s ease-in-out both; mask-image: radial-gradient(ellipse at 45% 25%, #000 10%, transparent 68%); }
-.sky-clouds svg { width: 100%; height: 100%; filter: blur(12px); }
+.sky-clouds {
+  --cloud-width: clamp(275px, 43vw, 830px);
+  position: fixed; inset: 0 0 auto; height: min(48vh, 500px); overflow: hidden;
+  z-index: 1; pointer-events: none; user-select: none;
+  animation: sky-cloud-passage 80s ease-in-out both;
+}
+.sky-clouds img {
+  --drift: 16vw;
+  position: absolute; left: 20%; top: 2%; width: var(--cloud-width); height: auto;
+  animation: cotton-cloud-drift linear both;
+  animation-duration: inherit; animation-delay: inherit;
+}
+.sky-clouds img:nth-child(2) {
+  --drift: 10vw;
+  left: 3%; top: 36%; width: calc(var(--cloud-width) * .62);
+  scale: -1 .85; opacity: .65;
+}
+.sky-clouds img:nth-child(3) {
+  --drift: 7vw;
+  left: 78%; top: 8%; width: calc(var(--cloud-width) * .43);
+  scale: 1 .74; opacity: .55;
+}
+.room-console-home .sky-clouds {
+  --cloud-width: clamp(260px, 42vw, 760px);
+  height: var(--room-mast);
+}
+.room-console-home .sky-clouds img:first-child { left: 58%; top: -8%; }
+.room-console-home .sky-clouds img:nth-child(2) { left: 25%; top: 22%; }
+.room-console-home .sky-clouds img:nth-child(3) { left: 5%; }
+@media (max-width: 800px) {
+  .sky-clouds img:first-child { left: 3%; top: 10%; }
+  .room-console-home .sky-clouds img:first-child { left: 35%; }
+  .room-console-home .sky-clouds img:nth-child(2) { left: 76%; top: 42%; }
+}
+@keyframes cotton-cloud-drift {
+  from { translate: calc(-.5 * var(--drift)) 0; }
+  to { translate: var(--drift) -5%; }
+}
 @keyframes sky-cloud-passage {
-  0% { opacity: 0; transform: translate(-9%, -8%) scale(.94); }
-  25% { opacity: .24; }
-  55% { opacity: .34; }
-  100% { opacity: 0; transform: translate(12%, 4%) scale(1.08); }
+  0%, 100% { opacity: 0; }
+  12%, 65% { opacity: .78; }
 }
 .scene-curtain { position: fixed; inset: 0; z-index: 1; background: #000; pointer-events: none; opacity: 0; transition: opacity 2.8s ease; }
 body.is-interlude .scene-curtain { opacity: 1; }
@@ -22,7 +56,6 @@ body.scene-dawn .scene-digits { opacity: 0; transition-duration: 12s; }
 @keyframes scene-number-drift { 0% { transform: translate(0, 100vh) rotate(-8deg); opacity: 0; } 16%, 72% { opacity: .5; } 100% { transform: translate(12vw, -8vh) rotate(16deg); opacity: 0; } }
 
 body.is-interlude :is(.hero-intro, .listening-intro, .catalog-heading, .text, .auth-hint, .street-return, .chat-hint, .theme-hint, .room-resident) { opacity: 0 !important; pointer-events: none; transition: opacity 2.5s ease; }
-body.is-interlude .sky-clouds { visibility: hidden; }
 body.is-interlude::before, body.is-interlude::after { opacity: 0; }
 body.is-interlude .active-player { background: transparent; border-color: transparent; box-shadow: none; backdrop-filter: none; transition: background-color 2.5s, border-color 2.5s; }
 body.is-interlude .active-player > :not(.transport), body.is-interlude .transport > :not(.transport-seek-field) { opacity: 0; pointer-events: none; transition: opacity 2.5s; }

@@ -67,7 +67,7 @@ try:
         page.reload();ready();assert state()['deadline']==first['deadline']
         assert 0<state()['deadline']-evaluate('Date.now()')<200000
         # Actual home navigation forfeits, later switch still works without bonus.
-        page.goto(url+'/index.html'); assert state()['ended'] and state()['deadline'] is None
+        page.goto(url+'/listening-room.html'); assert state()['ended'] and state()['deadline'] is None
         page.evaluate('inteonStreet.noteExit()');page.goto(url+'/yard/');ready()
         assert evaluate('inteonStreet.seconds()')==380
         ordinary=state()['deadline'];pose(163);pose(165)

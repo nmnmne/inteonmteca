@@ -34,7 +34,7 @@ with sync_playwright() as p:
         for slot in [0, 5, 11]:
             page.goto('http://127.0.0.1:8080/')
             page.evaluate('i=>localStorage.setItem("inteon.yard.lighting.next.v1",i)', str(slot))
-            page.locator('#street-link').click()
+            page.goto('http://127.0.0.1:8080/yard/', wait_until='domcontentloaded')
             page.wait_for_function('window.__yard?.scene.userData.bakedLightingStatus === "ready"', timeout=45000)
             # Inspection uses a long test visit, never changing the production timer rule.
             page.evaluate('inteonStreet.boundaryPlaybackSucceeded()')

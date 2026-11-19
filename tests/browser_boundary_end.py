@@ -71,7 +71,7 @@ try:
         # A second boundary selection retains the original daily bonus.
         cross()
         assert page.evaluate('JSON.parse(localStorage.getItem("inteonmteca-street-walk-v1")).deadline')==bonus['deadline']
-        page.goto(url+'/index.html')
+        page.goto(url+'/listening-room.html')
         page.wait_for_function('document.querySelector("audio").currentTime>.1 && !document.querySelector("audio").paused')
         home = saved(); assert home['stopAtEnd'] and home['origin']=='yard', home
         end()

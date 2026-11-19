@@ -1,6 +1,6 @@
 /* Playback variant of setupLogoParticles: the same wordmark tiles, in screen space. */
 (() => {
-  const music = document.querySelector('#album-player');
+  const music = window.DJEngine?.visuals || document.querySelector('#album-player');
   const logo = document.querySelector('#logo-wrap');
   if (!music || !logo) return;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');

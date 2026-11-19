@@ -80,7 +80,7 @@ test('controls have a shared 44px hit area and visible keyboard focus', () => {
   assert.ok(/:focus-visible[\s\S]*outline: 2px solid/.test(rule));
 });
 test('panel triggers declare their controls before JavaScript loads', () => {
-  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, '../listening-room.html'), 'utf8');
   for (const name of ['auth', 'theme']) {
     const tag = html.match(new RegExp(`<button[^>]+id="${name}-hint"[^>]*>`))?.[0] || '';
     assert.ok(tag.includes(`aria-controls="${name}-panel"`), name);

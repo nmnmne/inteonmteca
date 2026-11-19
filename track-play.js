@@ -23,7 +23,7 @@
   };
 
   const mediaUrl = (track) => {
-    const raw = String(track.audio || "").replace(/\\/g, "/");
+    const raw = String(window.DJ_LOUDNESS?.[track.audio]?.src || track.audio || "").replace(/\\/g, "/");
     try {
       return new URL(raw, document.baseURI).href;
     } catch {

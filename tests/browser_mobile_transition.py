@@ -48,7 +48,7 @@ try:
                 return original?.(...args);
               };
             });""")
-            page.goto(url, wait_until='networkidle')
+            page.goto(url+'/listening-room.html', wait_until='networkidle')
             page.wait_for_selector('.track-select')
             for panel in ['theme', 'auth', 'chat']:
                 page.locator(f'#{panel}-hint').tap()
@@ -59,7 +59,10 @@ try:
             assert page.evaluate("Number(sessionStorage.getItem('qa-picks') || 0) === 0"), 'Scrolling selected a song'
             street = page.locator('#street-link').bounding_box()
             page.locator('#street-link').tap()
-            page.wait_for_url('**/yard/')
+            page.wait_for_function("['live','fallback'].includes(document.body.dataset.yardBackdrop)")
+            assert page.url.endswith('/listening-room.html')
+            page.locator('#street-link').tap()
+            page.goto(url+'/yard/', wait_until='domcontentloaded')
             page.wait_for_function('!!window.__yard')
             page.wait_for_function('!document.documentElement.dataset.portalPhase')
             page.screenshot(path=str(output / f'mobile-yard-{width}.png'))
@@ -76,7 +79,7 @@ try:
             pose = page.evaluate('({x:__yard.body.x,z:__yard.body.z,yaw:__yard.body.yaw})')
             assert pose['yaw'] != old_yaw, 'Real touch look must work'
             page.locator('.home-link').tap()
-            page.wait_for_url('**/index.html')
+            page.wait_for_url('**/listening-room.html')
             page.wait_for_function('!document.documentElement.dataset.portalPhase')
             saved = page.evaluate('inteonStreet.resumePose()')
             assert saved and abs(saved['yaw']-pose['yaw']) < .01, 'Manual home lost the yard pose'
@@ -90,16 +93,15 @@ try:
                 page.wait_for_function('!!window.__yard')
                 page.locator('.home-link').focus()
                 page.keyboard.press('Enter')
-                page.wait_for_url('**/index.html')
+                page.wait_for_url('**/listening-room.html')
                 page.wait_for_function('!document.documentElement.dataset.portalPhase')
-                page.locator('#street-link').tap()
-                page.wait_for_url('**/yard/')
+                page.goto(url+'/yard/', wait_until='domcontentloaded')
                 page.wait_for_function('!!window.__yard')
                 page.set_viewport_size({'width':568, 'height':320})
                 assert page.locator('.home-link').is_visible()
                 assert page.evaluate('document.documentElement.scrollWidth <= innerWidth && scrollY === 0')
                 # Let the real timer perform the second visit's automatic return.
-                page.wait_for_url('**/index.html', timeout=22000)
+                page.wait_for_url('**/listening-room.html', timeout=22000)
                 page.wait_for_function('!document.documentElement.dataset.portalPhase')
                 assert page.evaluate('!document.querySelector(".page").inert && scrollY === 0')
                 assert page.locator('#street-link').is_visible()

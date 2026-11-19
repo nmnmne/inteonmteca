@@ -5,7 +5,10 @@ import os
 from pathlib import Path
 from urllib.parse import unquote
 
-from app import ROOT, serve
+if __package__:
+    from .app import ROOT, serve, watch_library
+else:
+    from app import ROOT, serve, watch_library
 
 
 def public_file(url_path: str) -> bool:
@@ -25,7 +28,7 @@ def public_file(url_path: str) -> bool:
         '.html', '.css', '.js', '.mjs', '.json', '.webmanifest', '.png', '.jpg',
         '.jpeg', '.webp', '.svg', '.ico', '.gif', '.avif', '.woff', '.woff2',
         '.ttf', '.otf', '.mp3', '.wav', '.flac', '.ogg', '.opus', '.m4a',
-        '.aac', '.mp4', '.webm', '.glb', '.gltf', '.bin', '.ktx2', '.wasm',
+        '.aac', '.wv', '.pcm', '.mp4', '.webm', '.glb', '.gltf', '.bin', '.ktx2', '.wasm',
     }
 
 
@@ -40,7 +43,7 @@ def main() -> None:
     # The localhost developer login shortcut must not be inherited by LAN users.
     os.environ['INTEONMTECA_DEV'] = '0'
     os.environ['INTEONMTECA_DIRECT_CODE'] = '0'
-    server = serve(root=ROOT, host=str(address), port=args.port)
+    server = serve(root=ROOT, host=str(address), port=args.port, prepared_catalog=True)
     original = server.RequestHandlerClass
 
     class LanHandler(original):
@@ -54,7 +57,8 @@ def main() -> None:
     server.RequestHandlerClass = LanHandler
     print(f'inteonmteca LAN  http://{address}:{args.port}/', flush=True)
     try:
-        server.serve_forever()
+        with watch_library(ROOT):
+            server.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:

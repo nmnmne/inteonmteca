@@ -122,7 +122,7 @@ test('alternate logo defers to other scenes, hidden pages and reduced motion, bu
 });
 
 test('entry page and static deployment include the alternate-logo assets and original artwork', () => {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = fs.readFileSync(path.join(root, 'listening-room.html'), 'utf8');
   const deploy = fs.readFileSync(path.join(root, 'deploy-site.ps1'), 'utf8');
   assert.match(html, /alternate-logo\.css\?v=/);
   assert.match(html, /alternate-logo\.js\?v=/);
@@ -133,7 +133,7 @@ test('entry page and static deployment include the alternate-logo assets and ori
 });
 
 test('every handwritten logo consumer uses the transparent vector-only artwork', () => {
-  for (const file of ['index.html', 'logo-variants-preview.html', 'logo-variants-next-preview.html']) {
+  for (const file of ['listening-room.html', 'logo-variants-preview.html', 'logo-variants-next-preview.html']) {
     const html = fs.readFileSync(path.join(root, file), 'utf8');
     assert.match(html, /assets\/logo-handwriting\.svg/);
     assert.doesNotMatch(html, /logo-(?:handwriting|full)\.png/);

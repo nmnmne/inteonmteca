@@ -8,6 +8,7 @@ const source = fs.readFileSync(path.join(root, "playback-link.js"), "utf8");
 const home = fs.readFileSync(path.join(root, "script.js"), "utf8");
 const yard = fs.readFileSync(path.join(root, "yard", "wall-player.js"), "utf8");
 const yardHtml = fs.readFileSync(path.join(root, "yard", "index.html"), "utf8");
+const listeningRoom = fs.readFileSync(path.join(root, "listening-room.html"), "utf8");
 
 const store = new Map();
 const context = {
@@ -37,7 +38,8 @@ assert.match(home, /restoreSharedPlayback\(\)/);
 assert.match(yard, /inteonPlayback\.save\(audio, track\)/);
 assert.match(yard, /event\.code === "Space"/);
 assert.match(yard, /event\.code === "BracketLeft"/);
-assert.match(yardHtml, /class="yard-player"/);
-assert.doesNotMatch(yardHtml, /id="player-panel"/);
+assert.match(listeningRoom, /<audio\b[^>]*\bid="album-player"/, "the listening room owns the audio element");
+assert.match(listeningRoom, /<script\b[^>]*src="playback-link\.js\b/, "the listening room loads shared playback");
+assert.doesNotMatch(yardHtml, /<audio\b|class="yard-player"/, "the legacy entry cannot start a second player");
 
 console.log("PASS: playback link");

@@ -140,3 +140,14 @@ server/data/
 
 # Local Hermes files
 /.hermes/
+
+# Optional production bundle (see tools/build-bundle.mjs)
+node_modules/
+site.bundle.css
+site.bundle.js
+index.bundled.html
+
+# Rendered from the tracked original music and spatial preset before deployment.
+/assets/dj-audio/*.flac
+/assets/dj-audio/*.pcm
+/assets/dj-spatial/*.wv

@@ -7,6 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preload" href="assets/fonts/JetBrainsMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="room-portal.css?v=instant-yard-20261031">
   <script src="room-portal.js?v=instant-yard-20261031"></script>
   <title>Интеонмтека — Погрузись в глубину звука</title>
@@ -38,24 +39,33 @@
   <link rel="icon" href="assets/favicon.ico" sizes="any">
   <link rel="icon" href="assets/logo-inteonmteca.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="dj-studio.css?v=1">
+  <link rel="stylesheet" href="dj-decks.css?v=1">
   <link rel="stylesheet" href="styles.css?v=text-only-20261029">
   <link rel="stylesheet" href="home-player.css?v=frosted-20261005-1">
   <link rel="stylesheet" href="text-waves.css?v=fps-20261026">
   <link rel="stylesheet" href="room-finish.css?v=cosmic-room-20261026">
-  <link rel="stylesheet" href="atmosphere-events.css?v=shared-scene-design-20261010">
+  <link rel="stylesheet" href="atmosphere-events.css?v=cotton-clouds-20261119">
   <link rel="stylesheet" href="room-composition.css?v=ambient-eight-four-20261031">
   <link rel="stylesheet" href="charged-material.css?v=cosmic-room-20261026">
   <link rel="stylesheet" href="room-grid.css?v=20261005-2">
   <link rel="stylesheet" href="room-editor.css?v=20261005-1">
-  <link rel="stylesheet" href="room-recesses.css?v=bounded-heading-20261031">
+  <link rel="stylesheet" href="room-recesses.css?v=cotton-clouds-20261119">
   <link rel="stylesheet" href="mobile-stage.css?v=now-playing-20261103">
   <link rel="stylesheet" href="desktop-edition.css?v=continuous-tail-20261031">
 
   <link rel="stylesheet" href="graphics-quality.css?v=public-debug-20261026">
   <link rel="stylesheet" href="alternate-logo.css?v=restrained-lime-20261029">
   <link rel="stylesheet" href="responsive-ui.css?v=inset-panels-20261031">
+  <link rel="stylesheet" href="pointer-life.css?v=pointer-life-20261103">
+  <link rel="stylesheet" href="sound-controls.css?v=1">
+  <link rel="stylesheet" href="yard-backdrop.css?v=2">
+  <script defer src="sound-filter.js?v=1"></script>
+  <script defer src="sound-controls.js?v=2"></script>
+  <link rel="stylesheet" href="room-console.css?v=2">
+  <script defer src="yard-backdrop.js?v=2"></script>
 </head>
-<body class="perception-interface listening-room spatial-room">
+<body class="perception-interface listening-room spatial-room room-console-home">
   <div class="perception-field" aria-hidden="true"></div>
   <div class="theme-lights" aria-hidden="true">
     <span class="theme-light theme-light-a"></span>
@@ -68,8 +78,9 @@
   <nav class="room-toolbar" aria-label="Навигация">
     <button class="auth-hint" id="auth-hint" type="button" aria-controls="auth-panel" aria-expanded="false">вход</button>
     <button class="theme-hint" id="theme-hint" type="button" aria-controls="theme-panel" aria-expanded="false"><span aria-hidden="true">◈</span> тема</button>
+    <button type="button" class="chat-hint" id="room-chat-open" popovertarget="room-chat" aria-controls="room-chat">чат</button>
     <div class="street-return">
-    <a class="street-link" id="street-link" href="yard/">на улицу</a>
+    <button type="button" class="sound-trigger" id="settings-open" data-sound-open aria-haspopup="dialog" aria-controls="dialog" aria-label="Настройки звука" title="Настройки звука"><span class="sound-glyph" aria-hidden="true"></span>Звук</button>
   </div>
     <div class="visit-counter" aria-label="Посетители и посещения"><span title="Уникальные посетители">u:<b id="unique-count">--</b></span><span title="Посещения">v:<b id="visit-count">--</b></span></div>
   </nav>
@@ -164,46 +175,50 @@
           </div>
           <div class="mirage-layer" aria-hidden="true"><span class="mirage-word">inteonmteca</span><span class="mirage-word">from all ours</span></div>
           <div class="release-content player-dock">
-            <div class="catalog-heading"><h2>Каталог</h2><p class="ours matrix-text">from all ours</p></div>
-            <section class="active-player is-visible" id="active-player" aria-label="Музыкальный плеер" aria-hidden="false" data-state="empty">
-              <div class="player-art" aria-hidden="true"><span></span></div>
-              <div class="active-track-copy">
-                <span class="player-caption">Плеер</span>
-                <div class="active-track-heading">
-                  <p class="now-playing-title" id="now-playing-title">Выберите трек</p>
-                </div>
-                <p class="active-track-artist" id="active-track-artist"></p>
+            <section id="studio" class="room-console" aria-label="DJ-пульт">
+              <div class="room-console-top">
+                <nav class="console-nav" aria-label="Разделы пульта">
+                  <a href="#studio" data-view="studio" aria-current="page"><i data-i="decks"></i>Пульт</a>
+                  <a href="#library" data-view="library"><i data-i="library"></i>Фонотека</a>
+                </nav>
+                <div class="console-tools"><button type="button" class="rec" id="record"><span class="record-dot"></span><span id="record-text">Запись микса</span></button><button type="button" class="icon-btn" id="keys-open" aria-label="Горячие клавиши" title="Горячие клавиши (?)"><i data-i="keyboard"></i></button></div>
               </div>
-              <div class="transport" aria-label="Управление воспроизведением">
-                <button class="transport-skip" id="previous-track" type="button" aria-label="Предыдущий трек" disabled><span class="skip-mark skip-mark-previous" aria-hidden="true"></span></button>
-                <button class="transport-play" id="immersive-play" type="button" aria-label="Воспроизвести" disabled><span id="immersive-play-icon" class="play-mark" data-state="paused" aria-hidden="true"></span></button>
-                <button class="transport-skip" id="next-track" type="button" aria-label="Следующий трек" disabled><span class="skip-mark" aria-hidden="true"></span></button>
-                <span class="transport-time" id="current-time">0:00</span>
-                <div class="transport-seek-field">
-                  <span class="transport-seek-volume" aria-hidden="true"></span>
-                  <input class="transport-progress" id="track-progress" type="range" min="0" max="1000" value="0" step="1" aria-label="Позиция трека" disabled>
+              <div class="workspace">
+                <div id="performance">
+                  <div class="page-title">
+                    <div><h2>Пульт сведения</h2></div>
+                    <div class="monitor-status"><div class="meter-readout"><div class="meter-copy"><span>MASTER OUT</span><span id="master-db">−∞ dB</span></div><div class="stereo-bars" aria-hidden="true"><div class="leds" id="left-meter"></div><div class="leds" id="right-meter"></div></div></div><button type="button" id="expand" class="icon-btn" title="Во весь экран (F)" aria-label="Во весь экран" aria-pressed="false" aria-keyshortcuts="F"><i data-i="expand"></i></button></div>
+                  </div>
+                  <div class="controller-tabs" role="group" aria-label="Панели контроллера">
+                    <button type="button" data-panel="a" aria-controls="deck-a" aria-pressed="true">Дека A</button>
+                    <button type="button" data-panel="mixer" aria-controls="mixer" aria-pressed="false">Микшер</button>
+                    <button type="button" data-panel="b" aria-controls="deck-b" aria-pressed="false">Дека B</button>
+                  </div>
+                  <label class="quick-cross"><span class="a-color">A</span><input type="range" id="mobile-cross" min="-100" max="100" value="0" aria-label="Кроссфейдер A — B"><span class="b-color">B</span></label>
+                  <div class="deck-bank" data-panel="a"><div id="deck-a"></div>
+                  <section class="mixer-panel panel" id="mixer" aria-labelledby="mix-heading">
+                    <header class="panel-head"><div class="section-heading"><i data-i="sliders"></i><h2 id="mix-heading">Микшер</h2></div><div class="master-control"><i data-i="volume"></i><label for="master">MASTER</label><input id="master" type="range" min="0" max="100" value="82"><output id="master-value" for="master">82%</output></div></header>
+                    <div class="mixer-bed">
+                      <div id="channel-a" class="channel-strip tone-a"></div>
+                      <div class="cross-section">
+                        <div class="cross-title"><i data-i="crossfade"></i><label for="cross">CROSSFADER</label></div>
+                        <div class="cross-slide"><span class="mono a-color">A</span><div class="cross-track"><span class="cross-ruler"></span><input type="range" id="cross" min="-100" max="100" value="0" aria-label="Кроссфейдер между A и B"></div><span class="mono b-color">B</span></div>
+                        <div class="cross-actions"><button class="center-cross" title="Вернуть кроссфейдер в центр" id="center-cross">CENTER</button><button class="center-cross" id="curve-cross" type="button" aria-label="Резкая кривая кроссфейдера" aria-pressed="false" title="Резкая кривая для скретча">CUT</button></div>
+                      </div>
+                      <div id="channel-b" class="channel-strip tone-b"></div>
+                    </div>
+                  </section>
+                  <div id="deck-b"></div></div>
                 </div>
-                <span class="transport-time" id="duration-time">0:00</span>
+                <section class="library panel" id="collection" aria-labelledby="lib-heading">
+                  <header class="panel-head lib-head"><div class="section-heading"><i data-i="library"></i><h2 id="lib-heading">Фонотека</h2><span id="track-count" class="count-tag">0</span></div><div class="lib-actions"><label class="search"><i data-i="search"></i><input id="search" type="search" placeholder="Поиск треков" autocomplete="off" aria-label="Поиск по названию или артисту"><kbd>/</kbd></label><button type="button" id="masters" class="import-btn" title="Скачать обработанный FLAC или 7.1.4 WavPack"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></svg>Мастеры</button><button type="button" id="import" class="import-btn"><i data-i="plus"></i>Импорт</button><input id="import-files" type="file" accept="audio/*,.flac,.aiff,.wav,.mp3,.m4a,.ogg,.opus" multiple hidden></div></header>
+                  <div class="browser-body"><aside class="crate-nav" aria-label="Коллекции"><span class="side-label">КОЛЛЕКЦИЯ</span><button data-crate="all" aria-pressed="true"><i data-i="discs"></i>Все треки<span class="crate-total"></span></button><button data-crate="starred" aria-pressed="false"><i data-i="star"></i>Избранное<span class="crate-total"></span></button><button data-crate="imports" aria-pressed="false"><i data-i="folder"></i>Импорт<span class="crate-total"></span></button></aside>
+                    <div class="table-pane"><table><thead><tr><th class="col-index" scope="col">#</th><th class="col-title" scope="col"><button data-sort="title">Трек</button></th><th class="col-artist" scope="col"><button data-sort="artist">Артист</button></th><th class="col-bpm" scope="col"><button data-sort="bpm">BPM</button></th><th class="col-key" scope="col"><button data-sort="key">Тон.</button></th><th class="col-time" scope="col"><button data-sort="duration" aria-label="Сортировать по длительности"><i data-i="clock"></i></button></th><th class="col-load" scope="col">В деку</th><th class="col-fav" scope="col"><i data-i="star"></i></th></tr></thead><tbody id="track-list"></tbody></table><p hidden class="empty-state" id="empty-state"></p></div>
+                  </div>
+                </section>
+                <footer class="status-bar"><span><b class="status-led"></b><span id="audio-status">Студия готова</span></span><button type="button" id="keys-footer"><i data-i="keyboard"></i>Горячие клавиши</button></footer>
               </div>
-              <div class="volume-control"><label for="track-volume">Громкость</label><span class="volume-rail" aria-hidden="true"></span><input id="track-volume" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="Громкость" disabled><span id="volume-note" class="volume-note" hidden>Кнопками устройства</span></div>
-              <p class="playback-status" id="playback-status" aria-live="polite"></p>
             </section>
-            <!--noindex-->
-            <div class="playlist-shell" id="playlist-shell" data-nosnippet>
-              <div class="track-viewport" id="track-viewport">
-                <ol class="track-list" id="track-list" data-layout="catalog" aria-label="Треки">
-                  <li class="track-item" data-track-title="Light Of The Night"><button class="track-select" type="button" onclick="window.inteonPick && window.inteonPick(event)"><span class="track-fold"><span class="track-meta"><span class="track-title" data-ink="Light Of The Night">Light Of The Night</span><span class="track-artist">Sonyx</span></span></span></button></li>
-                  <li class="track-item" data-track-title="Inteonmteca_"><button class="track-select" type="button" onclick="window.inteonPick && window.inteonPick(event)"><span class="track-fold"><span class="track-meta"><span class="track-title" data-ink="Inteonmteca_">Inteonmteca_</span><span class="track-artist">ыьек</span></span></span></button></li>
-                  <li class="track-item" data-track-title="Высоко до предела"><button class="track-select" type="button" onclick="window.inteonPick && window.inteonPick(event)"><span class="track-fold"><span class="track-meta"><span class="track-title" data-ink="Высоко до предела">Высоко до предела</span><span class="track-artist">Матт</span></span></span></button></li>
-                  <li class="track-item" data-track-title="Last Eclipse"><button class="track-select" type="button" onclick="window.inteonPick && window.inteonPick(event)"><span class="track-fold"><span class="track-meta"><span class="track-title" data-ink="Last Eclipse">Last Eclipse</span><span class="track-artist">Матт</span></span></span></button></li>
-                </ol>
-                <div class="track-scrollbar" id="track-scrollbar" hidden>
-                  <span class="track-scrollbar-glow" aria-hidden="true"></span>
-                  <button class="track-scrollbar-thumb" id="track-scrollbar-thumb" type="button" aria-label="Прокрутка треков"></button>
-                </div>
-              </div>
-            </div>
-            <!--/noindex-->
           </div>
         </section>
       </article>
@@ -223,7 +238,6 @@
       <button class="immersive-back" id="immersive-back" type="button" hidden aria-hidden="true">закрыть поле</button>
     </div>
   </section>
-  <audio id="album-player" preload="metadata" playsinline></audio>
   <div class="vr-reticle" aria-hidden="true"></div>
   <section class="auth-panel" id="auth-panel" aria-hidden="true" hidden>
     <p class="auth-kicker">виртуальный пропуск</p>
@@ -242,6 +256,8 @@
     <button class="auth-close" id="auth-close" type="button">закрыть</button>
   </section>
 
+  <div id="room-chat" popover="auto">
+    <header class="console-chat-heading"><h2>Чат</h2><button type="button" popovertarget="room-chat" popovertargetaction="hide" aria-label="Закрыть чат">×</button></header>
   <section class="chat-panel chat-inline" id="chat-panel" role="region" aria-label="Чат">
     <button class="mobile-chat-toggle" id="mobile-chat-toggle" type="button" aria-controls="chat-panel" aria-expanded="false" aria-label="Развернуть чат"><span aria-hidden="true">⌁</span></button>
     <div class="chat-aura" aria-hidden="true"></div>
@@ -254,6 +270,7 @@
       <button class="chat-send" type="submit" aria-label="отправить сообщение">↵</button>
     </form>
   </section>
+  </div>
   <dialog id="chat-delete-dialog" class="chat-delete-dialog" aria-labelledby="chat-delete-question">
     <p id="chat-delete-question">Вы уверены, что хотите удалить сообщение?</p>
     <p id="chat-delete-error" role="alert"></p>
@@ -280,9 +297,22 @@
     </div>
     <p class="theme-status" id="theme-status" aria-live="polite"></p>
   </section>
+  <dialog id="dialog" aria-labelledby="dialog-title"><div class="dialog-heading"><h2 id="dialog-title"></h2><button class="icon-btn" id="dialog-close" aria-label="Закрыть"><i data-i="close"></i></button></div><div class="dialog-body" id="dialog-body"></div></dialog>
+  <div class="toast" id="notice" role="status"></div>
   <script defer src="popup-coordinator.js?v=bounded-heading-20261031"></script>
   <script defer src="playlist-data.js?v=text-only-20261029"></script>
-  <script defer src="track-play.js?v=vr-room-20261004-2"></script>
+  <script defer src="dj-loudness.js?v=1"></script>
+  <script defer src="dj-spatial.js?v=1"></script>
+  <script defer src="dj-spatial-tracks.js?v=1"></script>
+  <script defer src="dj-analysis.js?v=1"></script>
+  <script defer src="dj-scratch.js?v=1"></script>
+  <script defer src="dj-engine.js?v=1"></script>
+  <script defer src="dj-decks.js?v=1"></script>
+  <script defer src="dj-import-loudness.js?v=1"></script>
+  <script defer src="dj-import.js?v=1"></script>
+  <script defer src="dj-storage.js?v=1"></script>
+  <script defer src="dj-midi.js?v=1"></script>
+  <script defer src="dj-studio.js?v=1"></script>
   <script defer src="street-return.js?v=spawn-reset-20261029"></script>
   <script defer src="playback-link.js?v=walk-minute-20261010"></script>
   <script defer src="media-session.js?v=text-only-20261029"></script>
@@ -290,7 +320,7 @@
   <script defer src="alternate-logo.js?v=selected-seven-handmarks-20261026"></script>
   <script defer src="graphics-quality.js?v=ellipse-scene-20261026"></script>
   <script defer src="theme-morph.js?v=fps-20261026"></script>
-  <script defer src="script.js?v=text-only-20261029"></script>
+  <script defer src="script.js?v=audio-gesture-2"></script>
   <script defer src="theme-picker.js?v=responsive-controls-20261026"></script>
   <script defer src="logo-acid.js?v=state-duty-20261026"></script>
   <script defer src="logo-materials.js?v=cosmic-room-20261026"></script>
@@ -300,10 +330,10 @@
   <script defer src="logo-storm.js?v=state-duty-20261026"></script>
   <script defer src="text-waves.js?v=smooth-cadence-20261103"></script>
   <script defer src="room-finish.js?v=compact-window-20261026"></script>
-  <script defer src="playlist-curve.js?v=smooth-cadence-20261103"></script>
   <script defer src="energy-field.js?v=cosmic-room-20261026"></script>
-  <script defer src="atmosphere-events.js?v=adaptive-20261026"></script>
+  <script defer src="atmosphere-events.js?v=cotton-clouds-20261119"></script>
   <script defer src="mobile-logo-effects.js?v=state-duty-20261026"></script>
   <script defer src="logo-ripples.js?v=adaptive-20261026"></script>
+  <script defer src="pointer-life.js?v=pointer-life-20261103"></script>
 </body>
 </html>

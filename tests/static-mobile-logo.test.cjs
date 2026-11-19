@@ -30,7 +30,7 @@ test('mobile uses an actual baked logo asset and no decorative scene loop',()=>{
  assert.match(css,/mask-image: url\("assets\/logo-fragmented.png"\)/);
 });
 test('listening room keeps original copy',()=>{
- const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+ const html=fs.readFileSync(path.join(root,'listening-room.html'),'utf8');
  assert.doesNotMatch(html,/Независимые голоса|Одна частота|LISTENING ROOM/);
 });
 
@@ -62,13 +62,13 @@ test('catalogue wraps in both directions without growing rows or changing the vi
 });
 
 test('listening room exposes a complete transport',()=>{
- const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+ const html=fs.readFileSync(path.join(root,'listening-room.html'),'utf8');
  assert.match(html,/data-layout="catalog"/);
  for (const id of ['previous-track','next-track','current-time','duration-time','track-volume']) assert.ok(html.includes(`id="${id}"`),id);
  assert.match(html,/class="listening-intro"/);
 });
 test('public inline chat shares the page with tracks and has no section switch or teaser',()=>{
- const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+ const html=fs.readFileSync(path.join(root,'listening-room.html'),'utf8');
  assert.doesNotMatch(html,/class="chat-sign"/);
  assert.match(html,/<section[^>]*class="chat-panel chat-inline"[^>]*id="chat-panel"[^>]*role="region"[^>]*aria-label="Чат"/);
  assert.doesNotMatch(html,/id="mobile-section-slider"/);

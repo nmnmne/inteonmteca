@@ -25,7 +25,7 @@ test('timeout ends the bonus and an ended visit rejects stale playback callbacks
 test('local midnight does not reset an existing deadline; a later visit can earn the new day',()=>{
  const a=load(new Map(),new Date(2026,9,4,23,59,55).getTime());a.arm();a.street.boundaryPlaybackSucceeded();a.advance(10000);
  const b=load(a.store,a.now());b.arm();assert.equal(b.left(),290);
- load(a.store,a.now(),'/index.html');const c=load(a.store,a.now());
+ load(a.store,a.now(),'/listening-room.html');const c=load(a.store,a.now());
  assert.equal(c.street.noteExit(),60);c.arm();
  assert.equal(c.street.boundaryPlaybackSucceeded(),true);assert.equal(c.left(),300);
 });
@@ -40,7 +40,7 @@ test('successful switch adds four minutes once per day; reload keeps the deadlin
  const b=load(a.store,a.now()); b.arm(); assert.equal(b.left(),287);
  assert.equal(b.street.boundaryPlaybackSucceeded(),false); assert.equal(b.left(),287);
  assert.equal(b.street.seconds(),300,'a duplicate playback event does not grow the duration');
- load(a.store,a.now(),'/index.html');
+ load(a.store,a.now(),'/listening-room.html');
  const c=load(a.store,a.now()); c.street.noteExit(); c.arm(); assert.equal(c.left(),120);
  assert.equal(c.street.boundaryPlaybackSucceeded(),false);
  assert.equal(c.street.noteExit(),180,'each later exit adds one minute according to its visit number');
@@ -59,7 +59,7 @@ test('a later ordinary visit gets four minutes in addition to its existing durat
 test('old daily rule resets its duration while retaining the already consumed daily bonus',()=>{
  const a=load();a.street.noteExit();a.arm();a.street.boundaryPlaybackSucceeded();
  a.store.set('inteonmteca-street-rule','10..65');a.store.set('inteonmteca-street-return-sec','65');
- load(a.store,a.now(),'/index.html');
+ load(a.store,a.now(),'/listening-room.html');
  const b=load(a.store,a.now());assert.equal(b.street.noteExit(),60);b.arm();
  assert.equal(b.street.boundaryPlaybackSucceeded(),false);
  assert.equal(b.left(),60);

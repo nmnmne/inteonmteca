@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'script.js'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
 const consumers = fs.readdirSync(root).filter(f => /\.(?:css|js)$/.test(f)).map(f => fs.readFileSync(path.join(root,f),'utf8')).join('\n');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(root, 'listening-room.html'), 'utf8');
 assert.ok(source.includes('const themeRegistry ='), 'embedded registry exists');
 const registry = source.slice(source.indexOf('const themeCoreFilters ='), source.indexOf('const themeStorageKey ='));
 const behavior = source.slice(source.indexOf('const themeSliderToDuration ='), source.indexOf('themeHint?.addEventListener'));

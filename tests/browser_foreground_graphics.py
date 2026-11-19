@@ -47,8 +47,7 @@ ATMOSPHERE = """level => {
   result.sameScene=node===document.querySelector('.scene-digits')&&node.dataset.graphicsLevel===String(level);
   inteonAtmosphere.stop();inteonGraphicsQuality.setManualLevel(level);inteonAtmosphere.replayCloud({preview:true});
   const cloud=document.querySelector('.sky-clouds');
-  result.octaves=Number(cloud.querySelector('feTurbulence').getAttribute('numOctaves'));
-  result.blur=cloud.querySelector('svg').style.filter;
+  result.clouds=cloud.querySelectorAll('img').length;
   inteonGraphicsQuality.setManualLevel(level===10?1:10);
   result.sameCloud=cloud===document.querySelector('.sky-clouds')&&cloud.dataset.graphicsLevel===String(level);
   inteonAtmosphere.stop();return result;
@@ -103,7 +102,7 @@ with sync_playwright() as p:
     assert [r['storm']['count'] for r in report['desktop']]==[12,44,108]
     assert [r['scatter']['count'] for r in report['mobile']]==[8,16,36]
     assert [r['atmosphere']['digits'] for r in report['desktop']]==[6,18,34]
-    assert [r['atmosphere']['octaves'] for r in report['desktop']]==[1,2,3]
+    assert [r['atmosphere']['clouds'] for r in report['desktop']]==[1,2,3]
     assert not report['errors'],report['errors']
     (OUT/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps(report,ensure_ascii=False),flush=True)

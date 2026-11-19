@@ -1,4 +1,4 @@
-"""Immediate yard entrance and retained cross-document home logo layering."""
+"""The standalone interactive yard still returns to the listening room."""
 import json
 import os
 import tempfile
@@ -22,19 +22,17 @@ with sync_playwright() as p:
             sessionStorage.setItem('inteon-storm-last', String(Date.now()));
             window.addEventListener('inteon-yard-entered', () => { window.firstYardFrameAt = Date.now(); });
         """)
-        page.goto(base + '/', wait_until='domcontentloaded')
-        # Intent warms only source/layout, without creating another scene or consuming a visit.
+        page.goto(base + '/listening-room.html', wait_until='domcontentloaded')
+        # Focusing the background toggle does not start a second scene or outing.
         before = page.evaluate("inteonStreet.visits()")
-        with page.expect_response(lambda r: '/yard/data/site-layout.json' in r.url and r.status == 200):
-            page.locator('#street-link').focus()
+        page.locator('#street-link').focus()
         assert page.evaluate("inteonStreet.visits()") == before
         assert page.locator('iframe').count() == 0
         assert not any('/yard/data/shadows/' in url or 'portal-preview' in url for url in requests), requests
         # A poster staged by a previous client version must not survive entry.
         page.evaluate("sessionStorage.setItem('inteon-room-portal-v1', JSON.stringify({to:'yard',at:Date.now(),poster:'data:image/jpeg;base64,obsolete'}))")
         begin = time.monotonic()
-        page.locator('#street-link').click()
-        page.wait_for_url('**/yard/', wait_until='domcontentloaded')
+        page.goto(base + '/yard/', wait_until='domcontentloaded')
         page.wait_for_function("!!window.__yard && !!document.documentElement.dataset.yardReady && yardWalkClock.deadline > Date.now()")
         elapsed = time.monotonic() - begin
         state = page.evaluate("""() => ({
@@ -47,11 +45,11 @@ with sync_playwright() as p:
         })""")
         assert state['phase'] is None and not state['overlay'] and state['storage'] is None, state
         assert state['firstFrame'] <= state['clock'] <= state['firstFrame'] + 100, state
-        assert state['visits'] == before + 1, state
+        assert state['visits'] == before, state
         assert not any('portal-preview' in url or '/assets/spawn-' in url or '/assets/portal-' in url for url in requests), requests
         page.screenshot(path=str(out / f'yard-{mobile}.png'))
         page.locator('.home-link').click()
-        page.wait_for_url('**/index.html')
+        page.wait_for_url('**/listening-room.html')
         page.wait_for_function("document.documentElement.dataset.portalPhase === 'snapshot'")
         home = page.evaluate("""() => ({
             logo: getComputedStyle(document.querySelector('#logo-wrap')).viewTransitionName,

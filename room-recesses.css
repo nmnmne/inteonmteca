@@ -589,17 +589,6 @@ html[data-theme] body.spatial-room .chat-inline .chat-compose:focus-within::afte
 }
 html[data-theme] body.spatial-room .reactive-logo { animation-duration:6s; }
 html[data-theme] body.spatial-room .logo-veins { display:none; }
-html[data-theme] .sky-clouds {
-  color: rgb(var(--theme-text-rgb)); mix-blend-mode:normal;
-  mask-image:radial-gradient(ellipse at 45% 35%, #000 25%, transparent 75%);
-}
-@keyframes sky-cloud-passage {
-  0% { opacity:0; transform:translate(-9%, -8%) scale(.94); }
-  5% { opacity:.3; }
-  25% { opacity:.48; }
-  55% { opacity:.42; }
-  100% { opacity:0; transform:translate(12%, 4%) scale(1.08); }
-}
 html[data-theme] body.spatial-room .logo-wrap.release-logo:not(.is-assembled) .logo-particles {
   z-index:5; opacity:1; mix-blend-mode:difference;
 }
@@ -611,8 +600,6 @@ html[data-theme] body.spatial-room .logo-wrap.release-logo:not(.is-assembled) .l
 html[data-theme] body.spatial-room .logo-wrap.release-logo:not(.is-assembled) .reactive-logo { opacity:.82; }
 html[data-theme] body.spatial-room .logo-ripples { opacity:1; z-index:4; filter:none; }
 
-/* Clouds are a separate background layer, including during scene transitions. */
-body.is-interlude .sky-clouds { visibility:visible; }
 @media (max-width:800px), (pointer:coarse) {
   html[data-theme] body.spatial-room .track-select::before { background:rgba(var(--theme-text-rgb),.19); }
   html[data-theme] body.spatial-room .track-select:hover::before { background:rgba(var(--theme-text-rgb),.24); }

@@ -1,0 +1,38 @@
+/* Event-driven pointer life. Nothing here runs while the visitor is idle:
+   the aura follows a mouse only while it moves, rings live for ~1s and remove
+   themselves. Reduced motion and the low-quality tier remove both. */
+.pointer-aura {
+  position: fixed; left: 0; top: 0; z-index: 1;
+  width: 46vmin; height: 46vmin; margin: -23vmin 0 0 -23vmin;
+  border-radius: 50%; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle,
+    rgba(var(--theme-accent-rgb, 211, 255, 105), .17) 0%,
+    rgba(var(--theme-accent-rgb, 211, 255, 105), .07) 38%,
+    transparent 68%);
+  transition: opacity .7s ease;
+  will-change: transform, opacity;
+  contain: strict;
+}
+.pointer-aura.is-on { opacity: 1; }
+
+.pointer-ring {
+  position: fixed; left: 0; top: 0; z-index: 9990;
+  width: 12px; height: 12px; margin: -6px 0 0 -6px;
+  border: 1px solid rgba(var(--theme-accent-rgb, 211, 255, 105), .72);
+  border-radius: 50%; pointer-events: none; opacity: 0;
+  will-change: transform, opacity;
+  animation: pointer-ring 760ms cubic-bezier(.16, .72, .12, 1) forwards;
+}
+.pointer-ring.is-big {
+  border-color: rgba(var(--theme-accent-rgb, 211, 255, 105), .46);
+  animation-duration: 1100ms;
+}
+@keyframes pointer-ring {
+  0% { opacity: .9; transform: translate3d(var(--ring-x, 0), var(--ring-y, 0), 0) scale(.4); }
+  100% { opacity: 0; transform: translate3d(var(--ring-x, 0), var(--ring-y, 0), 0) scale(var(--ring-scale, 7)); }
+}
+
+html[data-animation-quality="low"] .pointer-aura { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .pointer-aura, .pointer-ring { display: none !important; }
+}

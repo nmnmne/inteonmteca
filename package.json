@@ -1,0 +1,12 @@
+{
+  "name": "inteonmteca",
+  "private": true,
+  "description": "Static site for the inteonmteca label. Node is used only for the optional production bundle.",
+  "scripts": {
+    "build:bundle": "node tools/build-bundle.mjs --root . --html index.html --out-html index.bundled.html"
+  },
+  "devDependencies": {
+    "acorn": "^8.18.0",
+    "esbuild": "^0.28.2"
+  }
+}

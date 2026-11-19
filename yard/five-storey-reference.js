@@ -15,7 +15,7 @@ export function addFiveStoreyReference(scene, materials, building) {
     plinth: materials.flat(0x735149), frame: materials.flat(0xd5d1c2),
     slab: materials.flat(0xaaa699), white: materials.flat(0xc3c4bb),
     blue: materials.flat(0x254d9e), dark: materials.flat(0x334048),
-    glass: materials.flat(0x405461), glassLight: materials.flat(0x657a80),
+    glass: materials.photoWindow('pane', 0x405461), glassLight: materials.photoWindow('pane', 0x657a80),
     door: materials.flat(0x685138), metal: materials.flat(0x5f6864),
   };
   if (pebble) {

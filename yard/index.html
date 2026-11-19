@@ -1,92 +1,11 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="../room-portal.css?v=instant-yard-20261031">
-  <script src="../room-portal.js?v=instant-yard-20261031"></script>
-  <title>inteonmteca — двор</title>
-  <link rel="icon" href="../assets/logo-inteonmteca.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./yard.css?v=yard-guide-20261103">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="0; url=../index.html">
+  <title>Интеонмтека</title>
+  <script>location.replace(location.protocol === 'file:' ? '../index.html' : '../');</script>
 </head>
-<body>
-  <canvas id="yard-view" aria-label="Серый прототип двора"></canvas>
-  <section class="file-fallback" id="file-fallback" hidden>
-    <p>Трёхмерный двор открывается через локальный сервер. Обычный плеер работает и отсюда.</p>
-    <p><a href="../index.html">домой</a></p>
-  </section>
-  <div class="yard-corner">
-    <a class="home-link" href="../index.html">домой</a>
-    <div class="montana" id="street-watch" hidden>
-      <span class="montana-label" id="street-watch-label">До возвращения</span>
-      <div class="montana-screen">
-        <span class="montana-ghost" aria-hidden="true">88:88</span>
-        <time class="montana-face" id="street-watch-face" aria-describedby="street-watch-label">00:20</time>
-      </div>
-    </div>
-  </div>
-  <section class="scheme" id="scheme">
-    <canvas id="scheme-canvas" width="384" height="384" aria-label="Мини-карта: ближайшие окрестности, север сверху"></canvas>
-  </section>
-  <aside class="yard-guide" id="yard-guide" aria-labelledby="yard-guide-title" hidden>
-    <div class="yard-guide-copy">
-      <h2 id="yard-guide-title">Осмотрись во дворе</h2>
-      <p class="yard-guide-desktop">Нажми на двор: WASD или стрелки — идти, мышь — смотреть. Shift — быстрее, Esc — отпустить курсор.</p>
-      <p class="yard-guide-touch">Левый джойстик — идти. Проведи пальцем по правой части экрана, чтобы осмотреться.</p>
-    </div>
-    <button id="yard-guide-dismiss" type="button">Понятно</button>
-  </aside>
-  <div class="stick" id="stick" aria-hidden="true">
-    <span id="stick-nub"></span>
-    <span class="control-label">движение</span>
-  </div>
-  <div class="look-pad" aria-hidden="true"><span class="control-label">обзор</span></div>
-  <section class="yard-player" aria-label="Трек">
-    <button id="yard-prev" type="button" aria-label="Предыдущий трек" title="[">←</button>
-    <button id="yard-play" type="button" aria-label="Воспроизвести" title="пробел">▶</button>
-    <button id="yard-next" type="button" aria-label="Следующий трек" title="]">→</button>
-    <p id="yard-now"></p>
-  </section>
-  <audio id="album-player" preload="none" playsinline></audio>
-  <script src="../playlist-data.js?v=tracks-20261006-1"></script>
-  <script src="../playback-link.js?v=walk-minute-20261010"></script>
-  <script src="../media-session.js?v=media-controls-20261020"></script>
-  <script src="../street-return.js?v=spawn-reset-20261029"></script>
-  <script>
-    // Consume the actual return timer, including reloads and boundary extensions.
-    window.yardWalkClock = { enteredAt: Date.now(), deadline: null };
-    let yardFrameReady = false, yardClockStarted = false;
-    const startYardClock = () => {
-    if (!yardFrameReady || yardClockStarted || document.prerendering || new URLSearchParams(location.search).has("portal-preview")) return;
-    yardClockStarted = true;
-    window.yardWalkClock.enteredAt = Date.now();
-    window.inteonStreet?.armReturn({ replace: url => window.inteonPortal ? window.inteonPortal.returnHome(url, true) : location.replace(url) }, location.protocol, (left) => {
-      window.yardWalkClock.deadline = Date.now() + left * 1000;
-      const watch = document.getElementById("street-watch");
-      const face = document.getElementById("street-watch-face");
-      if (!watch || !face) return;
-      watch.hidden = false;
-      const text = window.inteonStreet.formatWatch(left);
-      if (face.textContent !== text) face.textContent = text;
-    }, () => {
-      const body = window.__yard?.body;
-      if (!body) return null;
-      return window.__yard.rememberedPose?.() || { x: body.x, z: body.z, yaw: body.yaw, pitch: body.pitch };
-    });
-    };
-    // Loading code/textures never consumes the walk: main.js signals its first rendered frame.
-    window.addEventListener('inteon-yard-entered', () => { yardFrameReady = true; startYardClock(); }, { once: true });
-    if (document.prerendering) document.addEventListener('prerenderingchange', startYardClock, { once: true });
-  </script>
-  <script>
-    if (location.protocol === "file:") {
-      document.getElementById("file-fallback").hidden = false;
-      document.getElementById("yard-view").hidden = true;
-    }
-  </script>
-  <script src="./yard-guide.js?v=yard-guide-20261103"></script>
-  <script type="module" src="./main.js?v=instant-yard-20261031"></script>
-  <script data-development-only src="../development-debug.js?v=server-only-20261029"></script>
-  <script data-development-only src="./debug-pose.js?v=20261006-2"></script>
-</body>
+<body><a href="../index.html">Открыть пульт</a></body>
 </html>

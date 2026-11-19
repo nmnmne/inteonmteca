@@ -5,7 +5,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const root = path.resolve(__dirname, "..");
-const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const html = fs.readFileSync(path.join(root, "listening-room.html"), "utf8");
 const script = fs.readFileSync(path.join(root, "script.js"), "utf8");
 
 test("public desktop chat is an accessible inline region and starts loading automatically", () => {
@@ -47,7 +47,7 @@ function mobileLayoutFixture(width = 390, height = 844) {
       setProperty(name, value) { properties[name] = value; },
       getPropertyValue(name) { return properties[name] || ''; }, getPropertyPriority() { return ''; },
       removeProperty(name) { delete properties[name]; }},
-      querySelector() { return null; }, dispatchEvent(event) { events[event.type]?.(event); },
+      querySelector() { return null; }, closest() { return null; }, dispatchEvent(event) { events[event.type]?.(event); },
       classList: {add(name) { classes.add(name); }, remove(...names) { names.forEach(name => classes.delete(name)); },
         contains(name) { return classes.has(name); }, toggle(name, enabled) { enabled ? classes.add(name) : classes.delete(name); }},
       setAttribute(name, value) { attributes[name] = String(value); }, getAttribute(name) { return attributes[name]; },
@@ -73,7 +73,7 @@ function mobileLayoutFixture(width = 390, height = 844) {
   composer.getBoundingClientRect = () => ({height: 36});
   dock.getBoundingClientRect = () => ({top: viewport.height - 84});
   chat.querySelector = selector => selector === '.chat-compose' ? composer : null;
-  tracks.querySelector = () => playlist;
+  tracks.querySelector = selector => selector === '.playlist-shell' ? playlist : null;
   const context = {innerWidth: width, innerHeight: height, openChat() { opened++; },
     Event: class { constructor(type) { this.type = type; } },
     CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } },
@@ -81,7 +81,7 @@ function mobileLayoutFixture(width = 390, height = 844) {
     requestAnimationFrame(fn) { frames.set(++frameId, fn); return frameId; },
     ResizeObserver: class { observe() {} },
     document: {body, documentElement: rootElement, createElement: node, createComment: node,
-      querySelector: selector => selector === '.release-content' ? tracks : oldSwitch,
+      querySelector: selector => ({'.release-content': tracks, '.mobile-sections': oldSwitch})[selector] ?? null,
       getElementById: id => ({'chat-panel': chat, 'mobile-chat-toggle': toggle, 'logo-wrap': logo, 'active-player': dock})[id]},
     window: {visualViewport: viewport, addEventListener(name, fn) { listeners[name] = fn; }, dispatchEvent(event) { listeners[event.type]?.(event); }, scrollTo() {}},
   };

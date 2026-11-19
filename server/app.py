@@ -26,6 +26,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from tools.generate_playlist import build_playlist
+from tools.prepare_dj_library import watch_library
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 COOKIE_NAME = "inteonmteca_session"
@@ -253,8 +254,15 @@ class Store:
         ]
 
 
-def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_dev_code: bool = False, debug: bool = False):
+def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_dev_code: bool = False,
+                 debug: bool = False, prepared_catalog: bool = False):
     root = root.resolve()
+    audio_directories = ("media", "assets/dj-audio", "assets/dj-spatial")
+
+    def audio_directory(url_path: str) -> Path | None:
+        decoded = unquote(url_path)
+        return next((root / directory for directory in audio_directories
+                     if decoded.startswith(f"/{directory}/")), None)
 
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
@@ -267,7 +275,7 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
 
         def end_headers(self) -> None:
             # API and frontend are same-origin; never reflect untrusted origins.
-            if unquote(urlparse(self.path).path).startswith("/media/"):
+            if audio_directory(urlparse(self.path).path) is not None:
                 self.send_header("Accept-Ranges", "bytes")
             self.send_header("Cache-Control", "no-store")
             super().end_headers()
@@ -291,8 +299,9 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
             if self._forbidden(parsed.path):
                 self.send_error(HTTPStatus.NOT_FOUND, "Not found")
                 return
-            if parsed.path.startswith("/media/") and self.headers.get("Range"):
-                return self._serve_media_range(parsed.path, self.headers["Range"])
+            range_root = audio_directory(parsed.path)
+            if range_root is not None and self.headers.get("Range"):
+                return self._serve_media_range(parsed.path, self.headers["Range"], range_root)
             if parsed.path == "/api/auth/me":
                 email = store.email_for(self._token())
                 if not email:
@@ -301,7 +310,13 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
             if parsed.path == "/api/chat":
                 return self._json(HTTPStatus.OK, {"messages": store.messages()})
             if parsed.path == "/api/playlist":
-                playlist = build_playlist(root / "media", root / "assets", root)
+                if prepared_catalog:
+                    try:
+                        playlist = json.loads((root / "playlist.json").read_text(encoding="utf-8"))
+                    except FileNotFoundError:
+                        playlist = []
+                else:
+                    playlist = build_playlist(root / "media", root / "assets", root)
                 return self._json(HTTPStatus.OK, playlist)
             if parsed.path == "/api" or parsed.path.startswith("/api/"):
                 return self._json(HTTPStatus.NOT_FOUND, {"error": "unknown api"})
@@ -310,14 +325,14 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
                 return
             super().do_GET()
 
-        def _serve_media_range(self, url_path: str, range_header: str) -> None:
+        def _serve_media_range(self, url_path: str, range_header: str, range_root: Path) -> None:
             if self._forbidden(url_path):
                 self.send_error(HTTPStatus.NOT_FOUND, "Not found")
                 return
             relative = unquote(url_path).lstrip("/")
             try:
                 path = (root / relative).resolve()
-                path.relative_to(root / "media")
+                path.relative_to(range_root)
             except Exception:
                 self.send_error(HTTPStatus.NOT_FOUND, "Not found")
                 return
@@ -402,6 +417,8 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
             except Exception:
                 return True
             parts = set(path.relative_to(root).parts)
+            if path.is_relative_to(root / "server" / "data"):
+                return True
             if not debug and path in {root / "development-debug.js", root / "yard" / "debug-pose.js"}:
                 return True
             if ".git" in parts or path.name == ".env" or path.suffix == ".db":
@@ -515,6 +532,7 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
     Handler.extensions_map = {
         **getattr(SimpleHTTPRequestHandler, "extensions_map", {}),
         ".flac": "audio/flac",
+        ".wv": "audio/x-wavpack",
         ".json": "application/json",
         ".js": "application/javascript",
         ".mjs": "application/javascript",
@@ -524,12 +542,14 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
     return Handler
 
 
-def serve(root: Path | None = None, host: str = "127.0.0.1", port: int = 8080, db_path: Path | None = None, debug: bool = False, local_guest_code: bool = False) -> ThreadingHTTPServer:
+def serve(root: Path | None = None, host: str = "127.0.0.1", port: int = 8080, db_path: Path | None = None,
+          debug: bool = False, local_guest_code: bool = False, prepared_catalog: bool = False) -> ThreadingHTTPServer:
     site_root = (root or ROOT).resolve()
     database = db_path or (Path(__file__).resolve().parent / "data" / "inteonmteca.db")
     store = Store(database)
     show_code = (local_guest_code and host in {"127.0.0.1", "localhost", "::1"}) or os.environ.get("INTEONMTECA_DEV") == "1"
-    handler = make_handler(site_root, store, smtp_config(), force_dev_code=show_code, debug=debug)
+    handler = make_handler(site_root, store, smtp_config(), force_dev_code=show_code, debug=debug,
+                           prepared_catalog=prepared_catalog)
     server = ThreadingHTTPServer((host, port), handler)
     return server
 
@@ -542,10 +562,11 @@ def main() -> int:
     host = os.environ.get("INTEONMTECA_HOST", "127.0.0.1")
     port = int(os.environ.get("INTEONMTECA_PORT", "8080"))
     debug = not args.production and os.environ.get("INTEONMTECA_ENV", "development") == "development" and host in {"127.0.0.1", "localhost", "::1"}
-    server = serve(host=host, port=port, debug=debug, local_guest_code=debug)
+    server = serve(host=host, port=port, debug=debug, local_guest_code=debug, prepared_catalog=True)
     print(f"inteonmteca  http://{host}:{port}", flush=True)
     try:
-        server.serve_forever()
+        with watch_library(ROOT):
+            server.serve_forever()
     except KeyboardInterrupt:
         print("\nstop")
     finally:

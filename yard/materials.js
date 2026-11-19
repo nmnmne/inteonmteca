@@ -1,5 +1,5 @@
 import * as THREE from "./vendor/three.module.js";
-import { createBalconyMaterial, createFacadeMaterial, createWindowMaterial, createPhotoWindowMaterial } from "./material-textures.js";
+import { createBalconyMaterial, createFacadeMaterial, createWindowMaterial } from "./material-textures.js";
 
 const BRICK_W = 1.04;
 const BRICK_H = 0.6;
@@ -72,12 +72,29 @@ export function createYardMaterials() {
   }, { repeat: true });
 
   const asphalt = canvasTexture(512, 512, (context, width, height) => {
-    context.fillStyle = "#514f4b";
+    let seed = 97421;
+    const random = () => ((seed = (1664525 * seed + 1013904223) >>> 0) / 4294967296);
+    context.fillStyle = "#656664";
     context.fillRect(0, 0, width, height);
-    for (let index = 0; index < 400; index += 1) {
-      context.fillStyle = index % 2 ? "#464745" : "#615c54";
-      context.fillRect((index * 47) % width, (index * 29) % height, 3, 2);
+    // Broad, seamless variation from patched binder underneath the crushed stone.
+    for (let i = 0; i < 64; i++) {
+      const x = random() * width, y = random() * height, radius = 15 + random() * 79;
+      const color = i % 3 ? '62,65,65' : '137,139,134';
+      for (const ox of [-width, 0, width]) for (const oy of [-height, 0, height]) {
+        const stain = context.createRadialGradient(x+ox, y+oy, 0, x+ox, y+oy, radius);
+        stain.addColorStop(0, `rgba(${color},.32)`);
+        stain.addColorStop(1, `rgba(${color},0)`);
+        context.fillStyle = stain;
+        context.fillRect(x+ox-radius, y+oy-radius, radius*2, radius*2);
+      }
     }
+    const pixels = context.getImageData(0, 0, width, height);
+    for (let i = 0; i < pixels.data.length; i += 4) {
+      const grit = random(), grain = (random() - .5) * 26;
+      const tone = grain + (grit > .94 ? 24 : grit < .09 ? -21 : 0);
+      for (let c = 0; c < 3; c++) pixels.data[i + c] += tone;
+    }
+    context.putImageData(pixels, 0, 0);
   }, { repeat: true });
 
   const utility = canvasTexture(256, 256, (context, width, height) => {
@@ -120,7 +137,10 @@ export function createYardMaterials() {
   const facades = new Map();
   const photoWindows = new Map();
   const flatMaterials = new Map();
-  const windowMaterial = createWindowMaterial();
+  const environment = new THREE.TextureLoader().load(new URL('./assets/window-probe.jpg', import.meta.url).href);
+  environment.mapping = THREE.EquirectangularReflectionMapping;
+  environment.colorSpace = THREE.SRGBColorSpace;
+  const windowMaterial = createWindowMaterial(environment);
   const balconyMaterial = createBalconyMaterial();
 
   return {
@@ -134,9 +154,10 @@ export function createYardMaterials() {
     window() {
       return windowMaterial;
     },
-    photoWindow(kind='casement') {
-      if(!photoWindows.has(kind))photoWindows.set(kind,createPhotoWindowMaterial(kind));
-      return photoWindows.get(kind);
+    photoWindow(kind = 'casement', tint = 0xffffff) {
+      const key = `${kind}:${tint}`;
+      if (!photoWindows.has(key)) photoWindows.set(key, createWindowMaterial(environment, kind, tint));
+      return photoWindows.get(key);
     },
     balcony() {
       return balconyMaterial;

@@ -49,6 +49,13 @@ def ready(page, yard=False):
 def playing(page):
     wait_js(page, "!document.querySelector('#album-player').paused && document.querySelector('#album-player').currentTime > 0")
 
+def resume_yard(page):
+    wait_js(page, "!document.querySelector('#album-player').paused || Boolean(document.querySelector('#yard-boundary-play:not([hidden])'))")
+    if state(page)['paused']:
+        assert state(page)['saved']['playingIntent'],state(page)
+        page.locator('#yard-boundary-play').tap()
+    playing(page)
+
 try:
     with sync_playwright() as p:
         browser = p.chromium.launch(channel='msedge', headless=True, args=['--autoplay-policy=document-user-activation-required'])
@@ -58,30 +65,35 @@ try:
             page.route('https://**/*', lambda route: route.abort())
             errors=[]
             page.on('pageerror',lambda e: errors.append(str(e)))
-            page.goto(url)
-            page.locator('.track-select').first.tap()
+            page.goto(url+'/listening-room.html')
+            page.locator('.track-select').first.press('Enter')
             playing(page)
             page.evaluate("document.querySelector('#album-player').currentTime=12")
             page.locator('#street-link').tap()
-            page.wait_for_url('**/yard/')
+            wait_js(page, "['live','fallback'].includes(document.body.dataset.yardBackdrop)")
+            playing(page)
+            assert page.url.endswith('/listening-room.html') and state(page)['time'] >= 11
+            page.locator('#street-link').tap()
+            page.locator('#immersive-play').tap()
+            page.goto(url+'/yard/')
             ready(page,True)
             s=state(page)
             assert s['paused'] and not s['saved']['playingIntent'] and s['saved']['origin']=='home',s
             assert s['time'] >= 11,s
             # The actual courtyard keyboard transport starts the selected track;
-            # touch taps on both navigation links remain real touch input.
+            # the standalone home link remains real touch input.
             page.keyboard.press('Space')
             playing(page)
             page.evaluate("document.querySelector('#album-player').currentTime=24")
             page.locator('.home-link').tap()
-            page.wait_for_url('**/index.html')
+            page.wait_for_url('**/listening-room.html')
             ready(page)
             playing(page)
             s=state(page)
             assert s['saved']['origin']=='yard' and s['saved']['playingIntent'] and s['time']>=23,s
             page.go_back()
             ready(page,True)
-            playing(page)
+            resume_yard(page)
             assert state(page)['saved']['origin']=='yard',state(page)
             page.go_forward()
             ready(page)
@@ -93,35 +105,34 @@ try:
                 page.locator('#immersive-play').tap()
             playing(page)
             assert state(page)['saved']['origin']=='yard',state(page)
-            page.locator('#street-link').tap()
-            page.wait_for_url('**/yard/')
+            page.goto(url+'/yard/')
             ready(page,True)
-            playing(page)
+            resume_yard(page)
             s=state(page)
             assert s['saved']['origin']=='yard' and s['time']>=23,s
             page.keyboard.press('Space')
-            assert state(page)['paused']
+            wait_js(page, "document.querySelector('#album-player').paused")
             page.locator('.home-link').tap()
-            page.wait_for_url('**/index.html')
+            page.wait_for_url('**/listening-room.html')
             ready(page)
             s=state(page)
             assert s['paused'] and not s['saved']['playingIntent'],s
-            # A deliberate home start becomes home-origin; returning outside stops.
+            # A deliberate room start becomes home-origin. Pausing retains that
+            # intent when the listener opens the independent interactive yard.
             page.locator('#immersive-play').tap()
             playing(page)
             wait_js(page, "inteonPlayback.read()?.origin === 'home'")
-            page.locator('#street-link').tap()
-            page.wait_for_url('**/yard/')
+            page.locator('#immersive-play').tap()
+            page.goto(url+'/yard/')
             ready(page,True)
             assert state(page)['paused'],state(page)
             page.locator('.home-link').tap()
-            page.wait_for_url('**/index.html')
+            page.wait_for_url('**/listening-room.html')
             ready(page)
             assert page.locator('#active-player').is_visible()
             page.keyboard.press('Escape')
             assert page.locator('#active-player').is_visible()
-            page.locator('#street-link').tap()
-            page.wait_for_url('**/yard/')
+            page.goto(url+'/yard/')
             wait_js(page, '!!window.__yard')
             assert not state(page)['saved']['playingIntent'] and state(page)['paused'],state(page)
             assert not errors,errors

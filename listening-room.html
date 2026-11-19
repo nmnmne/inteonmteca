@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="graphite">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Language" content="ru">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preload" href="assets/fonts/JetBrainsMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="room-portal.css?v=instant-yard-20261031">
+  <script src="room-portal.js?v=instant-yard-20261031"></script>
+  <title>Интеонмтека — Погрузись в глубину звука</title>
+  <meta name="description" content="Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри.">
+  <meta name="inteonmteca-api" content="">
+  <link rel="canonical" href="https://inteonmteca.online/listening-room.html">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:site_name" content="inteonmteca">
+  <meta property="og:title" content="Интеонмтека — Погрузись в глубину звука">
+  <meta property="og:description" content="Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри.">
+  <meta property="og:url" content="https://inteonmteca.online/listening-room.html">
+  <meta property="og:image" content="https://inteonmteca.online/assets/og-image.png">
+  <meta property="og:image:alt" content="inteonmteca">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Интеонмтека — Погрузись в глубину звука">
+  <meta name="twitter:description" content="Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри.">
+  <meta name="twitter:image" content="https://inteonmteca.online/assets/og-image.png">
+  <meta name="twitter:image:alt" content="inteonmteca">
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "MusicGroup",
+      "name": "inteonmteca",
+      "url": "https://inteonmteca.online/",
+      "description": "Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри."
+    }
+  </script>
+  <link rel="icon" href="assets/favicon.ico" sizes="any">
+  <link rel="icon" href="assets/logo-inteonmteca.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css?v=text-only-20261029">
+  <link rel="stylesheet" href="home-player.css?v=frosted-20261005-1">
+  <link rel="stylesheet" href="text-waves.css?v=fps-20261026">
+  <link rel="stylesheet" href="room-finish.css?v=cosmic-room-20261026">
+  <link rel="stylesheet" href="atmosphere-events.css?v=cotton-clouds-20261119">
+  <link rel="stylesheet" href="room-composition.css?v=ambient-eight-four-20261031">
+  <link rel="stylesheet" href="charged-material.css?v=cosmic-room-20261026">
+  <link rel="stylesheet" href="room-grid.css?v=20261005-2">
+  <link rel="stylesheet" href="room-editor.css?v=20261005-1">
+  <link rel="stylesheet" href="room-recesses.css?v=cotton-clouds-20261119">
+  <link rel="stylesheet" href="mobile-stage.css?v=now-playing-20261103">
+  <link rel="stylesheet" href="desktop-edition.css?v=continuous-tail-20261031">
+
+  <link rel="stylesheet" href="graphics-quality.css?v=public-debug-20261026">
+  <link rel="stylesheet" href="alternate-logo.css?v=restrained-lime-20261029">
+  <link rel="stylesheet" href="responsive-ui.css?v=inset-panels-20261031">
+  <link rel="stylesheet" href="pointer-life.css?v=pointer-life-20261103">
+  <link rel="stylesheet" href="yard-backdrop.css?v=2">
+  <link rel="stylesheet" href="sound-controls.css?v=1">
+  <script defer src="sound-filter.js?v=1"></script>
+  <script defer src="sound-controls.js?v=2"></script>
+  <script defer src="yard-backdrop.js?v=2"></script>
+</head>
+<body class="perception-interface listening-room spatial-room">
+  <div class="perception-field" aria-hidden="true"></div>
+  <div class="theme-lights" aria-hidden="true">
+    <span class="theme-light theme-light-a"></span>
+    <span class="theme-light theme-light-b"></span>
+    <span class="theme-light theme-light-c"></span>
+  </div>
+  <canvas id="perception-visual" class="perception-visual" aria-hidden="true"></canvas>
+  <div class="logo-atmosphere" aria-hidden="true"></div>
+  <div class="depth-floor" aria-hidden="true"></div>
+  <nav class="room-toolbar" aria-label="Навигация">
+    <button class="auth-hint" id="auth-hint" type="button" aria-controls="auth-panel" aria-expanded="false">вход</button>
+    <button class="theme-hint" id="theme-hint" type="button" aria-controls="theme-panel" aria-expanded="false"><span aria-hidden="true">◈</span> тема</button>
+    <div class="street-return">
+    <button type="button" class="sound-trigger" data-sound-open aria-haspopup="dialog" aria-controls="sound-dialog" aria-label="Настройки звука" title="Настройки звука"><span class="sound-glyph" aria-hidden="true"></span>Звук</button>
+  </div>
+    <div class="visit-counter" aria-label="Посетители и посещения"><span title="Уникальные посетители">u:<b id="unique-count">--</b></span><span title="Посещения">v:<b id="visit-count">--</b></span></div>
+  </nav>
+  <main class="page">
+    <p class="visually-hidden">Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри.</p>
+    <section class="hero">
+      <canvas class="ink-field" id="ink-field" aria-hidden="true"></canvas>
+      <header class="hero-header" aria-hidden="true"></header>
+      <!-- Frozen brand copy. Do not rewrite these phrases. -->
+      <div class="hero-intro">
+        <p class="topline matrix-text">от всех наших</p>
+      </div>
+      <article class="release-stage player-console" aria-label="Проигрыватель inteonmteca">
+        <section class="release-card holo-stage" aria-label="Треки">
+          <div class="listening-intro">
+            <p class="label matrix-text">music label</p>
+            <h1>Выбери <em>свой звук</em></h1>
+          <div class="logo-wrap release-logo" id="logo-wrap" aria-hidden="true">
+            <div class="reactive-logo" id="reactive-logo" aria-hidden="true">
+              <div class="logo-symbol-echo" id="logo-symbol-echo">inteonmteca</div>
+              <svg class="logo-vector" id="logo-vector" viewBox="0 0 534 107" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <mask id="logo-wordmark-mask" maskUnits="userSpaceOnUse" x="-24" y="-24" width="582" height="155">
+                    <image href="assets/logo-wordmark.svg" x="0" y="0" width="534" height="107"/>
+                  </mask>
+                  <linearGradient id="logo-core-gradient" x1="0" y1="8" x2="534" y2="101" gradientUnits="userSpaceOnUse">
+                    <stop offset="0" stop-color="#ded8b8"/>
+                    <stop offset=".23" stop-color="#bac48b"/>
+                    <stop offset=".42" stop-color="#d7b18a"/>
+                    <stop offset=".67" stop-color="#ba8158"/>
+                    <stop offset=".85" stop-color="#bec893"/>
+                    <stop offset="1" stop-color="#e0d4b2"/>
+                  </linearGradient>
+                  <filter id="logo-grain-filter"><feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="3" seed="19"/><feColorMatrix type="saturate" values="0"/></filter>
+                  <clipPath id="logo-rebuild-clip" clipPathUnits="objectBoundingBox"></clipPath>
+                  <radialGradient id="logo-gaze-gradient" cx="50%" cy="50%" r="34%">
+                    <stop offset="0" stop-color="#e6ddae" stop-opacity=".24"/>
+                    <stop offset=".24" stop-color="#bbcf85" stop-opacity=".14"/>
+                    <stop offset=".68" stop-color="#c79463" stop-opacity=".05"/>
+                    <stop offset="1" stop-color="#302312" stop-opacity="0"/>
+                  </radialGradient>
+                  <filter id="logo-warp-filter" x="-18%" y="-80%" width="136%" height="260%" color-interpolation-filters="sRGB">
+                    <feTurbulence id="logo-turbulence" type="fractalNoise" baseFrequency=".004 .038" numOctaves="3" seed="41" result="noise"/>
+                    <feDisplacementMap id="logo-displacement" in="SourceGraphic" in2="noise" scale="2" xChannelSelector="R" yChannelSelector="B" result="warped"/>
+
+                  </filter>
+                  <filter id="logo-edge-filter" x="-20%" y="-80%" width="140%" height="260%">
+                    <feMorphology in="SourceAlpha" operator="dilate" radius=".5" result="dilated"/>
+                    <feMorphology in="SourceAlpha" operator="erode" radius=".3" result="eroded"/>
+                    <feComposite in="dilated" in2="eroded" operator="out" result="edge"/>
+                    <feFlood flood-color="#d7d19c" flood-opacity=".45" result="color"/>
+                    <feComposite in="color" in2="edge" operator="in" result="colored-edge"/>
+
+                  </filter>
+                  <filter id="logo-ghost-filter" x="-24%" y="-100%" width="148%" height="300%">
+                    <feGaussianBlur stdDeviation="0"/>
+                    <feColorMatrix values="1 0 0 0 .24  0 .44 0 0 .08  0 0 .18 0 .02  0 0 0 .72 0"/>
+                  </filter>
+                </defs>
+                <g class="logo-vector-ghost logo-vector-ghost-a">
+                  <image href="assets/logo-wordmark.svg" x="0" y="0" width="534" height="107" filter="url(#logo-ghost-filter)"/>
+                </g>
+                <g class="logo-vector-ghost logo-vector-ghost-b">
+                  <image href="assets/logo-wordmark.svg" x="0" y="0" width="534" height="107" filter="url(#logo-ghost-filter)"/>
+                </g>
+                <g class="logo-ink-base" mask="url(#logo-wordmark-mask)"><rect width="534" height="107" fill="#06090e"/></g>
+                <g class="logo-vector-core" mask="url(#logo-wordmark-mask)" filter="url(#logo-warp-filter)">
+                  <rect x="-20" y="-20" width="574" height="147" fill="url(#logo-core-gradient)"/>
+                  <rect id="logo-gaze" x="-80" y="-80" width="160" height="160" rx="80" fill="url(#logo-gaze-gradient)"/>
+                  <g class="logo-veins">
+                    <path d="M-12 84C62 18 98 116 161 39S267 103 332 31 445 96 552 20"/>
+                    <path d="M18 24C91 89 135 3 203 72S318 8 387 75 486 23 548 82"/>
+                    <path d="M44 104C117 61 153 112 225 51S341 116 414 45 492 72 536 36"/>
+                    <path d="M-8 52C80 44 102 65 184 48S304 65 390 41 486 58 552 49"/>
+                  </g>
+                </g>
+                <image class="logo-vector-outline" href="assets/logo-wordmark.svg" x="0" y="0" width="534" height="107" filter="url(#logo-edge-filter)"/>
+                <g class="logo-vector-slices" id="logo-vector-slices"></g>
+                <g class="logo-grain" mask="url(#logo-wordmark-mask)"><rect width="534" height="107" filter="url(#logo-grain-filter)"/></g>
+              </svg>
+              <canvas class="logo-reactive-canvas" id="logo-reactive-canvas"></canvas>
+            </div>
+            <div class="logo-particles" id="logo-particles" aria-hidden="true"></div>
+            <div class="alternate-wordmark" id="alternate-wordmark" aria-hidden="true">
+              <img class="alternate-logo-image alternate-echo" src="assets/logo-handwriting.svg" alt="">
+              <img class="alternate-logo-image alternate-signal-green" src="assets/logo-handwriting.svg" alt="">
+              <img class="alternate-logo-image alternate-signal-warm" src="assets/logo-handwriting.svg" alt="">
+              <img class="alternate-logo-image alternate-base" src="assets/logo-handwriting.svg" alt="">
+            </div>
+          </div>
+            <div class="room-presence" aria-hidden="true"><span></span></div>
+          </div>
+          <div class="mirage-layer" aria-hidden="true"><span class="mirage-word">inteonmteca</span><span class="mirage-word">from all ours</span></div>
+          <div class="release-content player-dock">
+            <div class="catalog-heading"><h2>Каталог</h2><p class="ours matrix-text">from all ours</p></div>
+            <section class="active-player is-visible" id="active-player" aria-label="Музыкальный плеер" aria-hidden="false" data-state="empty">
+              <div class="player-art" aria-hidden="true"><span></span></div>
+              <div class="active-track-copy">
+                <span class="player-caption">Плеер</span>
+                <div class="active-track-heading">
+                  <p class="now-playing-title" id="now-playing-title">Выберите трек</p>
+                </div>
+                <p class="active-track-artist" id="active-track-artist"></p>
+              </div>
+              <div class="transport" aria-label="Управление воспроизведением">
+                <button class="transport-skip" id="previous-track" type="button" aria-label="Предыдущий трек" disabled><span class="skip-mark skip-mark-previous" aria-hidden="true"></span></button>
+                <button class="transport-play" id="immersive-play" type="button" aria-label="Воспроизвести" disabled><span id="immersive-play-icon" class="play-mark" data-state="paused" aria-hidden="true"></span></button>
+                <button class="transport-skip" id="next-track" type="button" aria-label="Следующий трек" disabled><span class="skip-mark" aria-hidden="true"></span></button>
+                <span class="transport-time" id="current-time">0:00</span>
+                <div class="transport-seek-field">
+                  <span class="transport-seek-volume" aria-hidden="true"></span>
+                  <input class="transport-progress" id="track-progress" type="range" min="0" max="1000" value="0" step="1" aria-label="Позиция трека" disabled>
+                </div>
+                <span class="transport-time" id="duration-time">0:00</span>
+              </div>
+              <div class="volume-control"><label for="track-volume">Громкость</label><span class="volume-rail" aria-hidden="true"></span><input id="track-volume" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="Громкость" disabled><span id="volume-note" class="volume-note" hidden>Кнопками устройства</span></div>
+              <p class="playback-status" id="playback-status" aria-live="polite"></p>
+            </section>
+            <!--noindex-->
+            <div class="playlist-shell" id="playlist-shell" data-nosnippet>
+              <div class="track-viewport" id="track-viewport">
+                <ol class="track-list" id="track-list" data-layout="catalog" aria-label="Треки">
+                  <li class="track-item" data-track-title="Light Of The Night"><button class="track-select" type="button" onclick="window.inteonPick && window.inteonPick(event)"><span class="track-fold"><span class="track-meta"><span class="track-title" data-ink="Light Of The Night">Light Of The Night</span><span class="track-artist">Sonyx</span></span></span></button></li>
+                  <li class="track-item" data-track-title="Inteonmteca_"><button class="track-select" type="button" onclick="window.inteonPick && window.inteonPick(event)"><span class="track-fold"><span class="track-meta"><span class="track-title" data-ink="Inteonmteca_">Inteonmteca_</span><span class="track-artist">ыьек</span></span></span></button></li>
+                  <li class="track-item" data-track-title="Высоко до предела"><button class="track-select" type="button" onclick="window.inteonPick && window.inteonPick(event)"><span class="track-fold"><span class="track-meta"><span class="track-title" data-ink="Высоко до предела">Высоко до предела</span><span class="track-artist">Матт</span></span></span></button></li>
+                  <li class="track-item" data-track-title="Last Eclipse"><button class="track-select" type="button" onclick="window.inteonPick && window.inteonPick(event)"><span class="track-fold"><span class="track-meta"><span class="track-title" data-ink="Last Eclipse">Last Eclipse</span><span class="track-artist">Матт</span></span></span></button></li>
+                </ol>
+                <div class="track-scrollbar" id="track-scrollbar" hidden>
+                  <span class="track-scrollbar-glow" aria-hidden="true"></span>
+                  <button class="track-scrollbar-thumb" id="track-scrollbar-thumb" type="button" aria-label="Прокрутка треков"></button>
+                </div>
+              </div>
+            </div>
+            <!--/noindex-->
+          </div>
+        </section>
+      </article>
+
+      <p class="text matrix-text">Музыка, люди, вайб. Уже здесь</p>
+
+      <!-- /Frozen brand copy -->
+    </section>
+  </main>
+  <section class="immersive-mode" id="immersive-mode" aria-hidden="true">
+    <canvas id="immersive-visual" class="immersive-visual" aria-hidden="true"></canvas>
+    <div class="immersive-noise" aria-hidden="true"></div>
+    <div class="immersive-logo-echo" aria-hidden="true"><img src="assets/logo-wordmark.svg" alt=""></div>
+    <div class="immersive-content">
+      <h1 class="immersive-title" id="immersive-title"></h1>
+      <p class="immersive-artist" id="immersive-artist"></p>
+      <button class="immersive-back" id="immersive-back" type="button" hidden aria-hidden="true">закрыть поле</button>
+    </div>
+  </section>
+  <audio id="album-player" preload="metadata" playsinline></audio>
+  <div class="vr-reticle" aria-hidden="true"></div>
+  <section class="auth-panel" id="auth-panel" aria-hidden="true" hidden>
+    <p class="auth-kicker">виртуальный пропуск</p>
+    <form class="auth-form" id="auth-email-form">
+      <label class="auth-label" for="auth-email">почта</label>
+      <input class="auth-input" id="auth-email" name="email" type="email" autocomplete="email" required placeholder="твоя почта">
+      <button class="auth-submit" type="submit">получить код</button>
+    </form>
+    <form class="auth-form" id="auth-code-form" hidden>
+      <label class="auth-label" for="auth-code" id="auth-code-label">код входа</label>
+      <input class="auth-input" id="auth-code" name="code" inputmode="numeric" autocomplete="one-time-code" required maxlength="6" placeholder="000000">
+      <button class="auth-submit" type="submit">войти</button>
+    </form>
+    <p class="auth-status" id="auth-status" aria-live="polite"></p>
+    <button class="auth-logout" id="auth-logout" type="button" hidden>выйти</button>
+    <button class="auth-close" id="auth-close" type="button">закрыть</button>
+  </section>
+
+  <section class="chat-panel chat-inline" id="chat-panel" role="region" aria-label="Чат">
+    <button class="mobile-chat-toggle" id="mobile-chat-toggle" type="button" aria-controls="chat-panel" aria-expanded="false" aria-label="Развернуть чат"><span aria-hidden="true">⌁</span></button>
+    <div class="chat-aura" aria-hidden="true"></div>
+    <div class="chat-stream" id="chat-stream" aria-live="polite"></div>
+    <p id="chat-status" class="chat-status" role="status" hidden></p>
+    <form class="chat-compose" id="chat-form">
+      <span class="chat-prompt" aria-hidden="true">&gt;_</span>
+      <label class="visually-hidden" for="chat-input">сообщение</label>
+      <input class="chat-input" id="chat-input" name="text" autocomplete="off" placeholder="написать в воздух">
+      <button class="chat-send" type="submit" aria-label="отправить сообщение">↵</button>
+    </form>
+  </section>
+  <dialog id="chat-delete-dialog" class="chat-delete-dialog" aria-labelledby="chat-delete-question">
+    <p id="chat-delete-question">Вы уверены, что хотите удалить сообщение?</p>
+    <p id="chat-delete-error" role="alert"></p>
+    <div class="chat-delete-actions">
+      <button id="chat-delete-yes" type="button">Да</button>
+      <button id="chat-delete-no" type="button" autofocus>Нет</button>
+    </div>
+  </dialog>
+  <section class="theme-panel" id="theme-panel" aria-hidden="true" hidden>
+    <div class="theme-panel-head">
+      <p class="theme-kicker">состояние среды</p>
+      <button class="theme-close" id="theme-close" type="button" aria-label="Закрыть меню тем">×</button>
+    </div>
+    <label class="theme-label" for="theme-select">палитра</label>
+    <select class="theme-select" id="theme-select">
+      <!-- Complete grouped options come from the embedded script.js registry. -->
+      <option value="graphite">Матовый углерод</option>
+    </select>
+    <label class="theme-label" for="theme-duration">случайная смена через</label>
+    <input class="theme-duration" id="theme-duration" type="range" min="0" max="1000" value="227" step="1" data-min-seconds="4" data-max-seconds="604800">
+    <output class="theme-duration-output" id="theme-duration-output" for="theme-duration">1 минута</output>
+    <div class="theme-actions">
+      <a class="theme-action" href="index.html#studio">DJ-пульт</a>
+      <button class="theme-action" id="theme-random" type="button">другая сейчас</button>
+    </div>
+    <p class="theme-status" id="theme-status" aria-live="polite"></p>
+  </section>
+  <script defer src="popup-coordinator.js?v=bounded-heading-20261031"></script>
+  <script defer src="playlist-data.js?v=text-only-20261029"></script>
+  <script defer src="dj-loudness.js?v=1"></script>
+  <script defer src="track-play.js?v=vr-room-20261004-2"></script>
+  <script defer src="street-return.js?v=spawn-reset-20261029"></script>
+  <script defer src="playback-link.js?v=walk-minute-20261010"></script>
+  <script defer src="media-session.js?v=text-only-20261029"></script>
+  <script defer src="home-effects.js?v=ambient-eight-four-20261031"></script>
+  <script defer src="alternate-logo.js?v=selected-seven-handmarks-20261026"></script>
+  <script defer src="graphics-quality.js?v=ellipse-scene-20261026"></script>
+  <script defer src="theme-morph.js?v=fps-20261026"></script>
+  <script defer src="script.js?v=audio-gesture-2"></script>
+  <script defer src="theme-picker.js?v=responsive-controls-20261026"></script>
+  <script defer src="logo-acid.js?v=state-duty-20261026"></script>
+  <script defer src="logo-materials.js?v=cosmic-room-20261026"></script>
+  <script data-development-only defer src="development-debug.js?v=server-only-20261029"></script>
+  <script defer src="mobile-sections.js?v=now-playing-20261103"></script>
+  <script defer src="room-resident.js?v=top-composition-20261031"></script>
+  <script defer src="logo-storm.js?v=state-duty-20261026"></script>
+  <script defer src="text-waves.js?v=smooth-cadence-20261103"></script>
+  <script defer src="room-finish.js?v=compact-window-20261026"></script>
+  <script defer src="playlist-curve.js?v=smooth-cadence-20261103"></script>
+  <script defer src="energy-field.js?v=cosmic-room-20261026"></script>
+  <script defer src="atmosphere-events.js?v=cotton-clouds-20261119"></script>
+  <script defer src="mobile-logo-effects.js?v=state-duty-20261026"></script>
+  <script defer src="logo-ripples.js?v=adaptive-20261026"></script>
+  <script defer src="pointer-life.js?v=pointer-life-20261103"></script>
+</body>
+</html>

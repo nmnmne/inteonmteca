@@ -4,20 +4,28 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const root = path.resolve(__dirname, "..");
-const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const studio = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const html = fs.readFileSync(path.join(root, "listening-room.html"), "utf8");
 const script = fs.readFileSync(path.join(root, "script.js"), "utf8");
 const yard = fs.readFileSync(path.join(root, "yard", "index.html"), "utf8");
 const styles = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 const source = fs.readFileSync(path.join(root, "street-return.js"), "utf8");
 
 assert.doesNotMatch(html, /street-return-scale/, "the street duration is not a user control");
-assert.match(html, /<a class="street-link" id="street-link" href="yard\/">на улицу<\/a>/);
-assert.match(script, /else window\.inteonStreet\?\.prepareExit\(\);/, "navigation without a portal stages an outing for destination entry");
+for (const page of [studio, html]) {
+  assert.match(page, /<script\b[^>]*src="yard-backdrop\.js\b/, "both players load the ambient courtyard");
+  assert.doesNotMatch(page, /id="street-link"|data-yard-toggle\b/, "the background needs no street control");
+}
 assert.doesNotMatch(script, /inteonStreet\?\.noteExit\(/, "clicking must not consume an outing before the preview succeeds");
 assert.match(script, /document\.body\.classList\.toggle\("is-signal", signal\)/, "playback changes the page signal");
 assert.match(styles, /body\.is-signal \.topline/, "playing shifts the visible inscriptions");
-assert.match(yard, /class="montana"/, "the yard shows a Montana-style countdown");
-assert.match(yard, /inteonStreet\?\.armReturn\(\{ replace: url =>[^\n]+location\.protocol, \(left\)/, "the countdown uses the same return deadline through the animated navigation adapter");
+const redirect = yard.match(/<script>([\s\S]*?)<\/script>/)[1];
+for (const [protocol, target] of [["https:", "../"], ["file:", "../index.html"]]) {
+  let destination;
+  vm.runInNewContext(redirect, { location: { protocol, replace(url) { destination = url; } } });
+  assert.equal(destination, target, "old courtyard links return to the studio");
+}
+assert.match(yard, /<a\b[^>]*href="\.\.\/index\.html"/, "the studio is reachable without JavaScript");
 
 const load = (store, iso, { session = new Map(), pathname = "", search = "" } = {}) => {
   const scheduled = [];
@@ -84,7 +92,7 @@ assert.equal(morning.street.resumePose().x, 3, "the third visit still returns to
 
 const evening = load(memory, "2026-10-04T21:00:00");
 assert.equal(evening.street.seconds(), 180, "the same day keeps the grown duration");
-evening.street.armReturn({ replace() {} }, "https:", null, () => ({ x: 8, z: 2, yaw: 0.4, pitch: 0 }));
+evening.street.armReturn({ replace(url) { assert.equal(url, "../listening-room.html"); } }, "https:", null, () => ({ x: 8, z: 2, yaw: 0.4, pitch: 0 }));
 assert.equal(evening.scheduled[0].ms, 180000);
 assert.equal(evening.intervals[0].ms, 1000);
 evening.scheduled[0].fn();
@@ -132,7 +140,7 @@ blocked.street.armReturn({ replace() { throw new Error("file mode must stay put"
 assert.equal(blocked.scheduled.length, 0);
 
 const entryStore = new Map(), session = new Map(), iso = "2026-10-04T12:00:00";
-const home = load(entryStore, iso, {session, pathname: "/index.html"}).street;
+const home = load(entryStore, iso, {session, pathname: "/listening-room.html"}).street;
 for (let i = 0; i < 9; i++) home.noteExit();
 home.savePose({x: 42, z: -2.5, yaw: 1, pitch: .1});
 home.armReturn({replace() {}}, "https:");
@@ -157,7 +165,7 @@ const entryReload = load(entryStore, iso, {session, pathname: "/yard/"}).street;
 assert.equal(entryReload.visits(), 10);
 assert.equal(entryReload.resumePose().x, 42);
 assert.deepEqual(entryStore, afterEntry, "reload retains the entire active visit");
-const nextHome = load(entryStore, iso, {session, pathname: "/index.html"}).street;
+const nextHome = load(entryStore, iso, {session, pathname: "/listening-room.html"}).street;
 const beforeNextPreview = new Map(entryStore);
 const nextPreview = load(entryStore, iso, {session, pathname: "/yard/", search: "?portal-preview=1"}).street;
 assert.equal(nextPreview.resumePose(), null, "preview renders the upcoming eleventh spawn at base");

@@ -10,6 +10,7 @@ import { facadeSpec, openingsForFacade } from "./models.js?v=refinement-20261009
 import { addHruDetails } from "./hru-details.js";
 import { addRoadDetails } from "./road-details.js";
 import { addLandscaping } from "./landscaping.js";
+import { addCourtyardClouds } from "./clouds.js";
 import { addReferenceUtilities, addUtilityStructures } from "./site-structures.js";
 import { addGasPipes, addSiteEntrances } from "./site-details.js?v=five-storey-20261006-2";
 import { fixedSunForLayout } from "./baked-lighting.js";
@@ -355,6 +356,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), { 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(fixedSun.skyColor);
   scene.fog = new THREE.Fog(fixedSun.fogColor, 90, 260);
+  addCourtyardClouds(scene);
   const materials = createYardMaterials();
   const solids = [];
 
@@ -468,14 +470,13 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), { 
   logo.rotation.y = near.yaw;
   scene.add(logo);
   solids.push(logo);
-  const loader = new THREE.TextureLoader();
-  loader.load("../assets/logo-wordmark.svg", (texture) => {
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.generateMipmaps = false;
-    texture.minFilter = THREE.LinearFilter;
-    logo.material.map = texture;
-    logo.material.needsUpdate = true;
-  });
+  // The same scene can be mounted in the courtyard or in the studio at the site root.
+  const logoURL = new URL("../assets/logo-wordmark.svg", import.meta.url);
+  const logoTexture = new THREE.TextureLoader().load(logoURL.href);
+  logoTexture.colorSpace = THREE.SRGBColorSpace;
+  logoTexture.generateMipmaps = false;
+  logoTexture.minFilter = THREE.LinearFilter;
+  logo.material.map = logoTexture;
 
   addPlayground(scene, materials, layout.playground);
   for (const circle of layout.circles || []) {

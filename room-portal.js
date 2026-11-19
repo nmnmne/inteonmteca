@@ -49,44 +49,14 @@
     navigating = true;
     if (replace) location.replace(url); else location.assign(url);
   };
-  const returnHome = async (url = '../index.html', replace = false) => {
+  const homePath = '../listening-room.html';
+  const returnHome = async (url = homePath, replace = false) => {
     if (busy) return;
     busy = true;
     await window.__yard?.flyToSpawn?.();
     save({to: 'home', at: Date.now()});
     window.__yard?.renderSnapshot?.();
     navigate(url, replace);
-  };
-  // Fetch code and layout on intent, without running a second scene or loading
-  // textures. Navigation never waits for this optional cache warm-up.
-  const warmed = new Set();
-  const warmYard = async url => {
-    const base = new URL(url, location.href);
-    if (warmed.has(base.href)) return;
-    warmed.add(base.href);
-    const seen = new Set(), controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 18000);
-    const get = async url => {
-      const response = await fetch(url, { signal: controller.signal, priority: 'low' });
-      if (!response.ok) throw Error(response.status);
-      return response;
-    };
-    const module = async url => {
-      if (seen.has(url)) return;
-      seen.add(url);
-      const source = await (await get(url)).text();
-      const imports = [...source.matchAll(/(?:from\s*|import\s*)["'](\.[^"']+)["']/g)];
-      const layouts = [...source.matchAll(/["'](\.\/data\/site-layout\.json[^"']*)["']/g)];
-      await Promise.allSettled([
-        ...imports.map(match => module(new URL(match[1], url).href)),
-        ...layouts.map(match => get(new URL(match[1], url)).then(response => response.arrayBuffer())),
-      ]);
-    };
-    try {
-      const html = await (await get(base)).text();
-      const main = html.match(/src=["']([^"']*main\.js[^"']*)/);
-      if (main) await module(new URL(main[1], base).href);
-    } catch {} finally { clearTimeout(timeout); }
   };
   const exit = url => {
     if (busy) return;
@@ -97,19 +67,10 @@
     navigate(url);
   };
   window.inteonPortal = { exit, returnHome, get busy() { return busy; } };
-  if (!inYard) {
-    const warmOnIntent = event => {
-      const link = event.target.closest?.('#street-link');
-      if (link?.href) void warmYard(link.href);
-    };
-    document.addEventListener('pointerover', warmOnIntent, { passive: true });
-    document.addEventListener('focusin', warmOnIntent);
-    document.addEventListener('touchstart', warmOnIntent, { passive: true });
-  }
   document.addEventListener('click', event => {
     if (!inYard || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const link = event.target.closest('a[href]');
-    if (!link || link.target || new URL(link.href).pathname !== new URL('../index.html', location.href).pathname) return;
+    if (!link || link.target || new URL(link.href).pathname !== new URL(homePath, location.href).pathname) return;
     event.preventDefault(); returnHome(link.href);
   });
 })();

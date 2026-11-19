@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class SiteContentTests(unittest.TestCase):
     def test_home_lists_the_four_selected_tracks_in_release_order(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        html = (ROOT / "listening-room.html").read_text(encoding="utf-8")
 
         self.assertEqual(html.count('class="track-item"'), 4)
         self.assertNotIn('class="track-toggle"', html)
@@ -43,7 +43,7 @@ class SiteContentTests(unittest.TestCase):
         self.assertNotIn('Матт - Сигнал.flac', html)
 
     def test_clip_is_absent_from_site_source_and_deployment(self):
-        for relative_path in ("index.html", "script.js", "styles.css", "deploy-site.ps1", "update-site.cmd"):
+        for relative_path in ("listening-room.html", "script.js", "styles.css", "deploy-site.ps1", "update-site.cmd"):
             source = (ROOT / relative_path).read_text(encoding="utf-8")
             self.assertNotIn("loud-silence", source.lower(), relative_path)
             self.assertNotIn("data-show-clip", source.lower(), relative_path)
@@ -58,13 +58,13 @@ class SiteContentTests(unittest.TestCase):
         self.assertNotIn("introFreezeTimeout", script)
 
     def test_site_descriptions_use_the_wave_manifesto(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        html = (ROOT / "listening-room.html").read_text(encoding="utf-8")
         description = "Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри."
 
         self.assertGreaterEqual(html.count(description), 3)
 
     def test_page_and_social_titles_are_inteonmteca(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        html = (ROOT / "listening-room.html").read_text(encoding="utf-8")
 
         title = "Интеонмтека — Погрузись в глубину звука"
         self.assertIn(f"<title>{title}</title>", html)
@@ -72,13 +72,13 @@ class SiteContentTests(unittest.TestCase):
         self.assertIn(f'<meta name="twitter:title" content="{title}">', html)
 
     def test_selected_track_label_is_absent(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        html = (ROOT / "listening-room.html").read_text(encoding="utf-8")
 
         self.assertNotIn("выбранный трек", html.lower())
         self.assertIn('<ol class="track-list" id="track-list" data-layout="catalog" aria-label="Треки">', html)
 
     def test_homepage_uses_the_liquid_perception_copy(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        html = (ROOT / "listening-room.html").read_text(encoding="utf-8")
 
         self.assertIn('<p class="topline matrix-text">от всех наших</p>', html)
         self.assertIn('<p class="text matrix-text">Музыка, люди, вайб. Уже здесь</p>', html)
@@ -90,7 +90,7 @@ class SiteContentTests(unittest.TestCase):
         self.assertNotIn("музыка в движении", html)
 
     def test_search_snippet_metadata_is_exact(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        html = (ROOT / "listening-room.html").read_text(encoding="utf-8")
         description = "Погрузись в глубину звука. Почувствуй волновую природу мира — музыку, которая остаётся внутри."
 
         title = "Интеонмтека — Погрузись в глубину звука"
@@ -118,7 +118,7 @@ class SiteContentTests(unittest.TestCase):
         self.assertIn("LEGACY_MEDIA_DIRECTORIES", (ROOT / "tools" / "generate_playlist.py").read_text(encoding="utf-8"))
 
     def test_homepage_uses_the_new_brand_copy(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        html = (ROOT / "listening-room.html").read_text(encoding="utf-8")
 
         self.assertIn('<p class="topline matrix-text">от всех наших</p>', html)
         self.assertIn('<p class="text matrix-text">Музыка, люди, вайб. Уже здесь</p>', html)
@@ -129,7 +129,7 @@ class SiteContentTests(unittest.TestCase):
         self.assertNotIn("музыка в движении", html)
 
     def test_immersive_audio_mode_is_wired_into_the_page(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        html = (ROOT / "listening-room.html").read_text(encoding="utf-8")
         script = (ROOT / "script.js").read_text(encoding="utf-8")
         styles = (ROOT / "styles.css").read_text(encoding="utf-8")
 
@@ -147,7 +147,7 @@ class SiteContentTests(unittest.TestCase):
         self.assertIn(".perception-visual", styles)
 
     def test_playlist_is_loaded_from_the_manual_embedded_manifest(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        html = (ROOT / "listening-room.html").read_text(encoding="utf-8")
         script = (ROOT / "script.js").read_text(encoding="utf-8")
 
         self.assertIn('id="track-list"', html)
@@ -164,10 +164,10 @@ class SiteContentTests(unittest.TestCase):
         self.assertGreaterEqual(len(manifest), 1)
         self.assertTrue(all(item.get("audio", "").startswith("media/") for item in manifest))
         self.assertIn("playlist.json", deploy)
-        self.assertIn("generate_playlist.py", deploy)
+        self.assertIn("prepare_dj_library.py", deploy)
 
     def test_homepage_uses_a_centered_vr_player_shell(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        html = (ROOT / "listening-room.html").read_text(encoding="utf-8")
         script = (ROOT / "script.js").read_text(encoding="utf-8")
         styles = (ROOT / "styles.css").read_text(encoding="utf-8")
 
@@ -215,7 +215,7 @@ class SiteContentTests(unittest.TestCase):
         self.assertIn("track-scrollbar", html)
 
     def test_perceptual_vr_shell_replaces_cosmic_shell(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        html = (ROOT / "listening-room.html").read_text(encoding="utf-8")
         styles = (ROOT / "styles.css").read_text(encoding="utf-8")
         script = (ROOT / "script.js").read_text(encoding="utf-8")
 
@@ -237,7 +237,7 @@ class SiteContentTests(unittest.TestCase):
         self.assertIn("track.audio", script)
 
     def test_player_shows_four_tracks_and_a_custom_scrollbar_when_needed(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        html = (ROOT / "listening-room.html").read_text(encoding="utf-8")
         styles = (ROOT / "styles.css").read_text(encoding="utf-8")
         script = (ROOT / "script.js").read_text(encoding="utf-8")
 
@@ -249,7 +249,7 @@ class SiteContentTests(unittest.TestCase):
         self.assertIn("scrollbarPulse", styles)
 
     def test_liquid_ink_glyph_mutation_and_transport_are_wired(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        html = (ROOT / "listening-room.html").read_text(encoding="utf-8")
         styles = (ROOT / "styles.css").read_text(encoding="utf-8")
         script = (ROOT / "script.js").read_text(encoding="utf-8")
 
@@ -270,7 +270,7 @@ class SiteContentTests(unittest.TestCase):
         self.assertIn("fillInfiniteWheel", script)
 
     def test_random_playlist_theme_rotation_and_adaptive_rendering_are_wired(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        html = (ROOT / "listening-room.html").read_text(encoding="utf-8")
         styles = (ROOT / "styles.css").read_text(encoding="utf-8")
         script = (ROOT / "script.js").read_text(encoding="utf-8")
 
@@ -312,7 +312,7 @@ class SiteContentTests(unittest.TestCase):
         self.assertNotRegex(script, r"if \(immersiveState\.active\) \{\s*if \(logoReactiveCanvas")
 
     def test_immersive_mode_has_large_volumetric_seek_field(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        html = (ROOT / "listening-room.html").read_text(encoding="utf-8")
         styles = (ROOT / "styles.css").read_text(encoding="utf-8")
 
         self.assertIn('class="transport-seek-field"', html)
@@ -321,7 +321,7 @@ class SiteContentTests(unittest.TestCase):
         self.assertIn("width: min(142vw, 1500px)", styles)
 
     def test_email_auth_and_airborne_chat_are_wired(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        html = (ROOT / "listening-room.html").read_text(encoding="utf-8")
         script = (ROOT / "script.js").read_text(encoding="utf-8")
         styles = (ROOT / "styles.css").read_text(encoding="utf-8")
 
@@ -356,7 +356,7 @@ class SiteContentTests(unittest.TestCase):
         self.assertIn("drawGrid", script)
 
     def test_original_wordmark_is_traced_to_a_reactive_vector(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        html = (ROOT / "listening-room.html").read_text(encoding="utf-8")
         script = (ROOT / "script.js").read_text(encoding="utf-8")
         styles = (ROOT / "styles.css").read_text(encoding="utf-8")
         vector = (ROOT / "assets" / "logo-wordmark.svg").read_text(encoding="utf-8")

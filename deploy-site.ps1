@@ -37,24 +37,28 @@ $indexPath = Join-Path $root "index.html"
 $stylesPath = Join-Path $root "styles.css"
 $scriptPath = Join-Path $root "script.js"
 $playlistPath = Join-Path $root "playlist.json"
-$playlistGeneratorPath = Join-Path $root "tools\generate_playlist.py"
+$libraryPreparer = Join-Path $root "tools\prepare_dj_library.py"
 $versionedStylesName = "styles.$version.css"
 $versionedScriptName = "script.$version.js"
 $deployIndexPath = Join-Path $env:TEMP "inteonmteca-index-$version.html"
 $deployYardIndexPath = Join-Path $env:TEMP "inteonmteca-yard-index-$version.html"
 $yardIndexPath = Join-Path $root "yard\index.html"
+$roomIndexPath = Join-Path $root "listening-room.html"
 $python = Get-Command python -ErrorAction SilentlyContinue
-if (-not $python -or -not (Test-Path $playlistGeneratorPath)) {
-  throw "Python and tools\generate_playlist.py are required for the shared playlist."
+if (-not $python -or -not (Test-Path -LiteralPath $libraryPreparer)) {
+  throw "Python and tools\prepare_dj_library.py are required to prepare the music library."
 }
-& $python.Source $playlistGeneratorPath --root $root
-if ($LASTEXITCODE -ne 0) { throw "Playlist generation failed." }
+& $python.Source $libraryPreparer --root $root
+if ($LASTEXITCODE -ne 0) { throw "Music library preparation failed." }
 
 $syncArgs = @(
   "--exclude", "*",
   "--include", "index.html",
   "--include", "styles.css",
   "--include", "home-player.css",
+  "--include", "sound-controls.css",
+  "--include", "sound-filter.js",
+  "--include", "sound-controls.js",
   "--include", "script.js",
   "--include", "home-effects.js",
   "--include", "alternate-logo.css",
@@ -75,6 +79,7 @@ $syncArgs = @(
   "--include", "logo-materials.js",
   "--include", "mobile-logo-effects.js",
   "--include", "room-composition.css",
+  "--include", "room-console.css",
   "--include", "room-editor.css",
   "--include", "room-finish.css",
   "--include", "room-finish.js",
@@ -96,6 +101,26 @@ $syncArgs = @(
   "--include", "mobile-stage.css",
   "--include", "desktop-edition.css",
   "--include", "graphics-quality.css",
+  "--include", "pointer-life.css",
+  "--include", "pointer-life.js",
+  "--include", "dj-studio.css",
+  "--include", "dj-decks.css",
+  "--include", "dj-studio.js",
+  "--include", "dj-decks.js",
+  "--include", "dj-engine.js",
+  "--include", "dj-scratch.js",
+  "--include", "dj-analysis.js",
+  "--include", "dj-import.js",
+  "--include", "dj-midi.js",
+  "--include", "dj-storage.js",
+  "--include", "dj-loudness.js",
+  "--include", "dj-spatial.js",
+  "--include", "dj-spatial-tracks.js",
+  "--include", "dj-import-loudness.js",
+  "--include", "yard-backdrop.css",
+  "--include", "yard-backdrop.js",
+  "--include", "site.bundle.css",
+  "--include", "site.bundle.js",
   "--include", "playlist.json",
   "--include", "playlist-data.js",
   "--include", "robots.txt",
@@ -129,17 +154,40 @@ $staleKeys = @(
 # Keep local versioned assets: deployment must not clean the working tree.
 
 Write-Host "Updating asset version to $version..." -ForegroundColor Yellow
-$indexHtml = [System.IO.File]::ReadAllText($indexPath, [System.Text.Encoding]::UTF8)
-$indexHtml = $indexHtml -replace '<meta name="inteonmteca-api" content="[^"]*">', '<meta name="inteonmteca-api" content="https://api.inteonmteca.online">'
-$indexHtml = $indexHtml -replace '<script data-development-only[^>]*></script>', ''
+function Read-PublicEntry([string]$path) {
+  $html = [System.IO.File]::ReadAllText($path, [System.Text.Encoding]::UTF8)
+  $html = $html -replace '<meta name="inteonmteca-api" content="[^"]*">', '<meta name="inteonmteca-api" content="https://api.inteonmteca.online">'
+  $html = $html -replace '<script data-development-only[^>]*></script>', ''
+  return $html -replace '\?v=[0-9A-Za-z._-]+', "?v=$version"
+}
+$indexHtml = Read-PublicEntry $indexPath
+$roomHtml = if (Test-Path -LiteralPath $roomIndexPath -PathType Leaf) { Read-PublicEntry $roomIndexPath }
+
+# Optional production bundle: one minified stylesheet and one minified script
+# instead of ~16 CSS and ~26 JS requests. It needs Node plus a one-time
+# `npm install`; without them the release publishes the individual files as before.
+$nodeCommand = Get-Command node -ErrorAction SilentlyContinue
+$bundleTool = Join-Path $root "tools\build-bundle.mjs"
+if ($nodeCommand -and (Test-Path $bundleTool) -and (Test-Path (Join-Path $root "node_modules\esbuild"))) {
+  $bundleInput = Join-Path $env:TEMP "inteonmteca-bundle-in-$version.html"
+  $bundleOutput = Join-Path $env:TEMP "inteonmteca-bundle-out-$version.html"
+  [System.IO.File]::WriteAllText($bundleInput, $indexHtml, [System.Text.UTF8Encoding]::new($false))
+  & $nodeCommand.Source $bundleTool --root $root --html $bundleInput --out-html $bundleOutput | Out-Host
+  if ($LASTEXITCODE -eq 0 -and (Test-Path $bundleOutput)) {
+    $indexHtml = [System.IO.File]::ReadAllText($bundleOutput, [System.Text.Encoding]::UTF8)
+    Write-Host "Homepage CSS/JS bundled and minified." -ForegroundColor Yellow
+  } else {
+    Write-Host "Bundling failed; publishing the individual files instead." -ForegroundColor DarkYellow
+  }
+  Remove-Item -LiteralPath $bundleInput, $bundleOutput -Force -ErrorAction SilentlyContinue
+} else {
+  Write-Host "Bundling skipped (run 'npm install' once to enable it); publishing the individual files." -ForegroundColor DarkYellow
+}
 $deployIndexHtml = $indexHtml -replace 'href="styles(?:\.[0-9]{8}-[0-9]{6})?\.css(?:\?v=[^"]*)?"', "href=`"$versionedStylesName`""
 $deployIndexHtml = $deployIndexHtml -replace 'src="script(?:\.[0-9]{8}-[0-9]{6})?\.js(?:\?v=[^"]*)?"', "src=`"$versionedScriptName`""
-$deployIndexHtml = $deployIndexHtml -replace '\?v=[0-9A-Za-z._-]+', "?v=$version"
 [System.IO.File]::WriteAllText($deployIndexPath, $deployIndexHtml, [System.Text.UTF8Encoding]::new($false))
 if (Test-Path $yardIndexPath) {
-  $yardHtml = [System.IO.File]::ReadAllText($yardIndexPath, [System.Text.Encoding]::UTF8)
-  $yardHtml = $yardHtml -replace '<script data-development-only[^>]*></script>', ''
-  $yardHtml = $yardHtml -replace '\?v=[0-9A-Za-z._-]+', "?v=$version"
+  $yardHtml = Read-PublicEntry $yardIndexPath
   [System.IO.File]::WriteAllText($deployYardIndexPath, $yardHtml, [System.Text.UTF8Encoding]::new($false))
 }
 
@@ -238,12 +286,25 @@ foreach ($assetFile in $assetFiles) {
   foreach ($alias in $aliases) {
     $pattern = '((?:src|href)=")' + [regex]::Escape($alias) + '(?:\?[^" ]*)?"'
     $deployIndexHtml = [regex]::Replace($deployIndexHtml, $pattern, ('${1}' + $assetName + '"'))
+    if ($null -ne $roomHtml) {
+      $roomHtml = [regex]::Replace($roomHtml, $pattern, ('${1}' + $assetName + '"'))
+    }
   }
 }
 [System.IO.File]::WriteAllText($deployIndexPath, $deployIndexHtml, [System.Text.UTF8Encoding]::new($false))
 
 Write-Host ""
 # Publish entry points only after every dependency upload has succeeded.
+if ($null -ne $roomHtml) {
+  $deployRoomPath = Join-Path $env:TEMP "inteonmteca-room-$version-$PID.html"
+  try {
+    [System.IO.File]::WriteAllText($deployRoomPath, $roomHtml, [System.Text.UTF8Encoding]::new($false))
+    Invoke-Aws --endpoint-url $endpoint s3 cp $deployRoomPath "$bucketUrl/listening-room.html" `
+      --content-type "text/html; charset=utf-8" `
+      --cache-control $noCache `
+      --metadata-directive REPLACE | Out-Host
+  } finally { Remove-Item -LiteralPath $deployRoomPath -Force -ErrorAction SilentlyContinue }
+}
 if (Test-Path $deployYardIndexPath) {
   Invoke-Aws --endpoint-url $endpoint s3 cp $deployYardIndexPath "$bucketUrl/yard/index.html" `
     --content-type "text/html; charset=utf-8" `

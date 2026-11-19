@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "layout": "7.1.4",
+  "channels": [
+    {"speaker":"FL",  "left":0.85,  "right":-0.08},
+    {"speaker":"FR",  "left":-0.08, "right":0.85},
+    {"speaker":"FC",  "left":0.32,  "right":0.32, "highpass":100, "lowpass":11000},
+    {"speaker":"LFE", "left":0.14,  "right":0.14, "highpass":18, "lowpass":80, "lowpassStages":2},
+    {"speaker":"BL",  "left":0.21,  "right":-0.14,"highpass":160, "lowpass":5900, "allpass":540,  "delayMs":26},
+    {"speaker":"BR",  "left":-0.14, "right":0.21, "highpass":160, "lowpass":6100, "allpass":790,  "delayMs":29},
+    {"speaker":"SL",  "left":0.27,  "right":-0.19,"highpass":130, "lowpass":8700, "allpass":970,  "delayMs":12},
+    {"speaker":"SR",  "left":-0.19, "right":0.27, "highpass":130, "lowpass":8900, "allpass":1240, "delayMs":15},
+    {"speaker":"TFL", "left":0.17,  "right":-0.10,"highpass":540, "lowpass":9400, "allpass":1740, "delayMs":18},
+    {"speaker":"TFR", "left":-0.10, "right":0.17, "highpass":580, "lowpass":9100, "allpass":2090, "delayMs":21},
+    {"speaker":"TBL", "left":0.15,  "right":-0.09,"highpass":680, "lowpass":7400, "allpass":2290, "delayMs":33},
+    {"speaker":"TBR", "left":-0.09, "right":0.15, "highpass":650, "lowpass":7700, "allpass":2600, "delayMs":37}
+  ]
+}

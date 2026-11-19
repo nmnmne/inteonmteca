@@ -7,6 +7,7 @@ import { createWallPlayer } from "./wall-player.js?v=seek-fade-20261006-2";
 import { createBoundaryMusic } from "./boundary-music.js";
 import { createLightingCycle, addBakedLighting } from "./baked-lighting.js";
 import { createLightingTransition } from "./lighting-transition.js?v=black-outer-dome-20261031";
+import { addPuddles } from "./puddles.js";
 
 const portalPreview = new URLSearchParams(location.search).has('portal-preview');
 const fallback = document.querySelector("#file-fallback");
@@ -86,6 +87,7 @@ if (location.protocol === "file:") {
   };
 
   let renderRevision = 0;
+  const updateWater = addPuddles(scene, layout, () => { renderRevision += 1; });
   let firstFrame = true;
   canvas.addEventListener("webglcontextlost", () => {
     delete document.documentElement.dataset.yardReady;
@@ -271,6 +273,8 @@ if (location.protocol === "file:") {
       renderRevision += 1;
     }
     if (!returnPose && !document.hidden && !renderer.getContext().isContextLost() && dirty) {
+      updateWater(now / 1000);
+      if (scene.userData.grassWind) scene.userData.grassWind.value = now / 1000;
       renderer.render(scene, camera);
       document.documentElement.dataset.yardReady = "true";
       if (firstFrame) {

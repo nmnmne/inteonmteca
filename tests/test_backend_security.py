@@ -179,6 +179,19 @@ class BackendSecurityTests(unittest.TestCase):
         code = send.call_args.args[2]
         self.assertTrue(self.store.check_code("mail@example.com", code))
 
+    def test_generated_stereo_and_spatial_audio_accept_byte_ranges(self):
+        self.start(smtp=None)
+        for folder, filename in (("dj-audio", "song.flac"), ("dj-spatial", "song.wv")):
+            dest = self.root / "assets" / folder
+            dest.mkdir(parents=True, exist_ok=True)
+            (dest / filename).write_bytes(b"0123456789")
+            url = f"/assets/{folder}/{filename}"
+            status, headers, body = self.request("GET", url, headers={"Range": "bytes=2-5"})
+            self.assertEqual((status, headers["Content-Range"], body), (206, "bytes 2-5/10", b"2345"))
+            self.assertEqual(headers["Accept-Ranges"], "bytes")
+            status, headers, _ = self.request("GET", url, headers={"Range": "bytes=20-"})
+            self.assertEqual((status, headers["Content-Range"]), (416, "bytes */10"))
+
     def test_range_cannot_escape_media_or_bypass_private_file_rules(self):
         self.start(smtp=None)
         for path in ("/media/../.git/config", "/media/%2e%2e/.git/config", "/media/../index.html", "/media/../fixture.db"):

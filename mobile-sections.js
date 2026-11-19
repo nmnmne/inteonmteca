@@ -6,10 +6,12 @@
   const tracks = document.querySelector('.release-content');
   const logo = document.getElementById('logo-wrap');
   const dock = document.getElementById('active-player');
-  const playlist = tracks?.querySelector('.playlist-shell');
-  if (!chat || !tracks || !logo || !dock || !playlist) return;
+  const studio = tracks?.querySelector('#studio.room-console');
+  const playlist = studio ? null : tracks?.querySelector('.playlist-shell');
+  if (!chat || !tracks || !logo || (!studio && (!dock || !playlist))) return;
   const composer = chat.querySelector('.chat-compose');
   const toggle = document.getElementById('mobile-chat-toggle');
+  const chatPopover = chat.closest('[popover]');
   const oldSwitch = document.querySelector('.mobile-sections');
   if (oldSwitch) { oldSwitch.hidden = true; oldSwitch.inert = true; }
   const marker = document.createComment('desktop logo position');
@@ -20,17 +22,17 @@
   document.body.append(stage);
   tracks.id = 'mobile-track-section';
   let layoutFrame = 0, keyboard = 0, collapsed = true, lastCollapsed;
-  const originalSlots = playlist.style.getPropertyValue('--catalog-slots');
-  const originalSlotsPriority = playlist.style.getPropertyPriority('--catalog-slots');
+  const originalSlots = playlist?.style.getPropertyValue('--catalog-slots');
+  const originalSlotsPriority = playlist?.style.getPropertyPriority('--catalog-slots');
   const notifyChat = () => {
-    const value = mobile.matches && collapsed;
+    const value = (Boolean(chatPopover) || mobile.matches) && collapsed;
     if (value === lastCollapsed) return;
     lastCollapsed = value;
     window.dispatchEvent(new CustomEvent('inteon-mobile-chat-change', {detail: {collapsed: value}}));
   };
-  const requestCatalogFit = () => playlist.dispatchEvent(new Event('inteon-catalog-refit'));
+  const requestCatalogFit = () => playlist?.dispatchEvent(new Event('inteon-catalog-refit'));
   const minimumRowHeight = () => {
-    const item = playlist.querySelector('.track-item');
+    const item = playlist?.querySelector('.track-item');
     const button = item?.querySelector('.track-select');
     const meta = item?.querySelector('.track-meta');
     if (!button || !meta) return 48;
@@ -67,7 +69,7 @@
     const fullChatHeight = row * 5 + 6 + composerHeight;
     const collapsedHeight = 14;
     const chatHeight = collapsed ? collapsedHeight : fullChatHeight;
-    const dockTop = Math.min(dock.getBoundingClientRect().top, visibleBottom - 76);
+    const dockTop = studio ? visibleBottom - 24 : Math.min(dock.getBoundingClientRect().top, visibleBottom - 76);
     let listTop, listHeight, chatTop, logoTop, logoWidth;
     if (sideBySide) {
       listTop = 94;
@@ -82,7 +84,7 @@
       listTop = chatTop + chatHeight + 6;
       listHeight = 190;
       logoTop = 0; logoWidth = 0;
-      set('--mobile-document-height', listTop + listHeight + dock.getBoundingClientRect().height + 20 + keyboard);
+      set('--mobile-document-height', listTop + listHeight + (dock?.getBoundingClientRect().height || 0) + 20 + keyboard);
     } else {
       const baseListHeight = editing ? 190 : Math.round(Math.max(38, Math.min(56, innerHeight * .056)) * 5) + minimumRowHeight();
       if (collapsed) {
@@ -115,7 +117,7 @@
     // collapsed chat earns additional rows only when they genuinely fit.
     const slots = Math.max(1, Math.min(30, Math.floor(Math.round(listHeight) / minimumRowHeight())));
     setRaw('--mobile-catalog-slots', slots);
-    playlist.style.setProperty('--catalog-slots', slots);
+    playlist?.style.setProperty('--catalog-slots', slots);
     set('--mobile-heading-top', sideBySide ? 57 : 90);
     set('--mobile-resident-top', sideBySide ? 90 : 86);
     requestCatalogFit();
@@ -126,7 +128,8 @@
   const sync = () => {
     const active = mobile.matches;
     const wasHidden = chat.hidden;
-    chat.hidden = false; chat.inert = false; tracks.inert = false; playlist.inert = false;
+    chat.hidden = false; chat.inert = false; tracks.inert = false;
+    if (playlist) playlist.inert = false;
     delete document.body.dataset.mobileSection;
     document.body.classList.remove('mobile-section-dragging');
     document.body.style.setProperty('--mobile-section-progress', '0');
@@ -155,11 +158,23 @@
     if (active) fit();
     else {
       if (originalSlots) playlist.style.setProperty('--catalog-slots', originalSlots, originalSlotsPriority);
-      else playlist.style.removeProperty('--catalog-slots');
+      else playlist?.style.removeProperty('--catalog-slots');
       requestCatalogFit();
     }
   };
+  chatPopover?.addEventListener('toggle', () => {
+    collapsed = !chatPopover.matches(':popover-open');
+    sync();
+    if (!collapsed) {
+      const target = chat.querySelector('input:not([readonly]):not([disabled])')
+        || chatPopover.querySelector('[popovertargetaction="hide"]');
+      target?.focus({ preventScroll: true });
+    } else if (document.activeElement === document.body) {
+      document.getElementById('room-chat-open')?.focus({ preventScroll: true });
+    }
+  });
   toggle?.addEventListener('click', () => {
+    if (chatPopover) { chatPopover.hidePopover(); return; }
     if (!mobile.matches) return;
     collapsed = !collapsed;
     chat.classList.toggle('is-mobile-collapsed', collapsed);
@@ -171,11 +186,13 @@
   mobile.addEventListener('change', sync);
   landscape.addEventListener('change', sync);
   window.addEventListener('resize', sync);
-  window.addEventListener('pageshow', event => {if (event.persisted) {collapsed = true; sync();}});
+  window.addEventListener('pageshow', event => {
+    if (event.persisted) { collapsed = !chatPopover?.matches(':popover-open'); sync(); }
+  });
   window.visualViewport?.addEventListener('resize', sync);
   window.visualViewport?.addEventListener('scroll', sync);
   const observer = new ResizeObserver(scheduleLayout);
-  observer.observe(dock);
+  if (!studio && dock) observer.observe(dock);
   if (composer) observer.observe(composer);
   document.fonts?.ready.then(scheduleLayout);
   sync();

@@ -26,7 +26,7 @@ with sync_playwright() as p:
         page.route('https://**/*', lambda route: route.abort())
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
-        page.goto(URL, wait_until='networkidle')
+        page.goto(URL.rstrip('/')+'/listening-room.html', wait_until='networkidle')
         if width <= 640 and page.locator('.visit-counter').is_visible():
             counter = page.locator('.visit-counter').bounding_box()
             street = page.locator('.street-link').bounding_box()
@@ -61,7 +61,7 @@ with sync_playwright() as p:
         page.close()
     page = browser.new_page(viewport={'width':1440,'height':900})
     page.route('https://**/*', lambda route: route.abort())
-    page.goto(URL,wait_until='networkidle')
+    page.goto(URL.rstrip('/')+'/listening-room.html',wait_until='networkidle')
     page.locator('#chat-hint').click()
     page.set_viewport_size({'width':800,'height':700})
     page.wait_for_timeout(300)
@@ -117,7 +117,7 @@ with sync_playwright() as p:
         page.screenshot(path=str(OUTPUT/f'yard-{width}.png'))
         check(not errors,f'yard {width}: JS errors {errors}')
         page.locator('.home-link').click()
-        page.wait_for_url(URL.rstrip('/')+'/index.html*')
+        page.wait_for_url(URL.rstrip('/')+'/listening-room.html*')
         check(page.locator('#track-list').is_visible(),f'yard {width}: home navigation works')
         page.close()
     page = browser.new_page(viewport={'width':390,'height':844})

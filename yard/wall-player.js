@@ -17,6 +17,33 @@ export function createWallPlayer(root) {
   let pendingBoundary = null;
   let selection = 0;
   let leaving = false;
+  let soundContext, soundSource;
+  // Autoplay can be permitted for the media element while Web Audio is still
+  // suspended. Leave native playback in place until this context is running.
+  const prepareSound = async () => {
+    const filter = window.InteonSoundFilter;
+    const Context = window.AudioContext || window.webkitAudioContext;
+    if (!audio || !filter || !Context || location.protocol === "file:"
+        || (!soundSource && !filter.getSettings().enabled)) return;
+    try {
+      soundContext ||= new Context();
+      if (soundContext.state !== "running") await soundContext.resume();
+      if (soundSource || soundContext.state !== "running" || !filter.getSettings().enabled) return;
+      const input = soundContext.createGain();
+      const disconnect = filter.connect(input, soundContext.destination);
+      try {
+        soundSource = soundContext.createMediaElementSource(audio);
+        soundSource.connect(input);
+      } catch (error) {
+        disconnect();
+        throw error;
+      }
+    } catch {
+      // A later playback gesture can unlock Web Audio.
+    }
+  };
+  window.addEventListener("inteon:sound-settings", () => { if (!audio?.paused) void prepareSound(); });
+  audio?.addEventListener("play", prepareSound);
   const boundaryDayKey = 'inteon-boundary-track-day';
   const localDay = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; };
   let playedDay = '';
@@ -65,7 +92,8 @@ export function createWallPlayer(root) {
     const track = tracks[index];
     if (!track?.audio || !audio) return;
     const request = ++selection;
-    pendingBoundary = boundary ? { request, visit: window.inteonStreet?.boundaryVisit?.(), src: rootUrl(pathOf(track)) } : null;
+    const src = rootUrl(window.DJ_LOUDNESS?.[pathOf(track)]?.src || pathOf(track));
+    pendingBoundary = boundary ? { request, visit: window.inteonStreet?.boundaryVisit?.(), src } : null;
     hideBoundaryRetry();
     if (pendingSeek) {
       audio.removeEventListener("loadedmetadata", pendingSeek);
@@ -75,7 +103,6 @@ export function createWallPlayer(root) {
     if (shared) window.inteonPlayback?.restore?.(audio, shared);
     else window.inteonPlayback?.select?.(audio, "yard", { stopAtEnd: boundary });
     stamp = "";
-    const src = rootUrl(pathOf(track));
     const startPlayback = () => {
       if (request !== selection || paused || (shared?.fade && shared.fade.until <= Date.now())) return;
       const failed = (error) => {
@@ -83,6 +110,7 @@ export function createWallPlayer(root) {
         if (request === selection && audio.paused && error?.name === "NotAllowedError") offerBoundaryRetry();
       };
       try {
+        void prepareSound();
         const started = audio.play();
         if (started && typeof started.catch === "function") started.catch(failed);
       } catch (error) { failed(error); }
@@ -137,6 +165,7 @@ export function createWallPlayer(root) {
     window.inteonPlayback?.intent?.(audio, audio.paused);
     stamp = "";
     if (audio.paused) {
+      void prepareSound();
       const started = audio.play();
       if (started && typeof started.catch === "function") started.catch(() => paint());
     } else {

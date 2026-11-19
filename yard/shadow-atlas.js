@@ -3,7 +3,7 @@ import * as THREE from "./vendor/three.module.js";
 // Precomputed light-space depth, NOT per-object UV lightmaps. No render target,
 // scene rasterization or shadow-map generation occurs in this runtime module.
 export function isBakedReceiver(mesh) {
-  return mesh.isMesh && !mesh.userData.digitalProxy && mesh.name !== "music-logo" &&
+  return mesh.isMesh && mesh.userData.bakedShadowReceiver !== false && !mesh.userData.digitalProxy && mesh.name !== "music-logo" &&
     (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).some(m => !m.wireframe && (!m.transparent || m.opacity === 1));
 }
 

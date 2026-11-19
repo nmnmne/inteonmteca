@@ -70,7 +70,7 @@ def new_visit(browser, slot=0, mobile=True, exits=1):
     page.on('console', lambda m: report['errors'].append(m.text) if m.type == 'error' and 'Failed to load resource' not in m.text else None)
     page.clock.install(time=BASE)
     page.clock.pause_at(BASE)
-    page.goto(URL + '/index.html')
+    page.goto(URL + '/listening-room.html')
     page.evaluate('''({slot,exits}) => {
       localStorage.setItem('inteon.yard.lighting.next.v1',String(slot));
       for(let i=0;i<exits;i++) inteonStreet.noteExit();
@@ -169,7 +169,7 @@ try:
         short.clock.fast_forward(30)
         # The return now includes an animated camera flight and portal transition.
         short.clock.run_for(2500)
-        short.wait_for_url('**/index.html', wait_until='domcontentloaded')
+        short.wait_for_url('**/listening-room.html', wait_until='domcontentloaded')
         report['firstVisitReturnedAfterFade'] = True
         short.close()
 

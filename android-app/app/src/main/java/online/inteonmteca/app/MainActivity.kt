@@ -52,6 +52,6 @@ class MainActivity : Activity() {
     }
 
     companion object {
-        private const val SITE_URL = "https://inteonmteca.online/"
+        private const val SITE_URL = "https://inteonmteca.online/listening-room.html"
     }
 }
