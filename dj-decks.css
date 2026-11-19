@@ -103,39 +103,62 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  padding: 4px;
-  background: linear-gradient(140deg,#060809,#383f42 39%,#191e20 72%,#41494d);
-  box-shadow: inset 0 2px 3px #050707,0 1px 0 #6c73724f,0 4px 8px #080a0b99;
+  padding: clamp(4px,1.7%,8px);
+  background: linear-gradient(155deg,#080a0c 8%,#0d0f11 48%,#464b48 90%,#191c1c);
+  box-shadow: inset 1px 2px 4px #020303, inset -1px -1px 0 #bdc6bd45, 0 2px 1px #0009;
 }
 .dd-wheel-mount::before {
   content: "";
   position: absolute;
-  inset: -2px;
+  inset: 0;
   border-radius: 50%;
-  background: conic-gradient(from 220deg,transparent 0deg 14deg,rgba(var(--dd-channels),.75) 15deg 30deg,transparent 31deg 360deg);
+  background: conic-gradient(from 223deg,transparent 0deg,#ed98607a 4deg,#f0a16a8c 8deg,transparent 13deg);
+  mask-image: radial-gradient(closest-side,transparent 90%,#000 96%,transparent 100%);
+  pointer-events: none;
+}
+.dd-wheel-mount::after {
+  content: "";
+  position: absolute;
+  left: 5.8%;
+  top: 76%;
+  width: 7%;
+  height: 3.1%;
+  transform: rotate(54deg);
+  border-radius: 35%;
+  border: 1px solid #111614;
+  background: linear-gradient(180deg,#986941,#e8b481 25%,#9e694b 40%,#474840 54%,#272d29 78%,#686c64);
+  box-shadow: 0 1px 2px #030504ab;
   pointer-events: none;
 }
 .dd-jog {
   position: relative;
   width: 100%;
   height: 100%;
-  padding: 3px;
+  padding: 1.2%;
   border-radius: 50%;
-  border: 1px solid #90989b;
-  background: linear-gradient(140deg,#777c80,#1b2023 39%,#929899 66%,#252a2c);
-  box-shadow: inset 0 1px 1px #b7c3c566,inset 0 -2px 2px #0c0f10,0 0 0 1px #0b0e10;
+  border: 1px solid #151919;
+  background: conic-gradient(from 8deg,#777d7c,#282c2d 11%,#555c5b 25%,#b2b3a9 35%,#3c4142 48%,#202526 62%,#6e7572 80%,#c1c4b9 89%,#777d7c);
+  box-shadow: inset 0 0 0 1px #d5ded13d,0 2px 2px #030404d9;
   user-select: none;
   touch-action: none;
   cursor: grab;
 }
-.dd-jog::after {
+.dd-jog::before,.dd-jog::after {
   content: "";
   position: absolute;
-  inset: 7%;
   pointer-events: none;
   border-radius: 50%;
-  background: conic-gradient(from -42deg,transparent 0deg 19deg,#c5d0ce17 48deg,transparent 85deg 162deg,#bcc7c512 209deg,transparent 244deg 360deg);
-  mask-image: radial-gradient(circle,transparent 0 23%,#000 24%);
+  z-index: 1;
+}
+.dd-jog::before {
+  inset: 1.2%;
+  background: conic-gradient(from 20deg,#0008,#0001 18%,#f1f1dc26 28%,#0009 40%,#0003 52%,#d38a5d24 59%,#0009 68%,#e9f1eb36 83%,#0008);
+  mask-image: radial-gradient(closest-side,transparent 89.6%,#000 90.3%);
+}
+.dd-jog::after {
+  inset: 6%;
+  background: conic-gradient(from -53deg,#c8d8d921 0deg,#dce5e047 12deg,#bfcac831 22deg,#aabbba0d 37deg,transparent 55deg 124deg,#b6c6c509 142deg,#c6d1d02c 169deg,#d7d9c939 183deg,#bfbea91a 198deg,transparent 221deg 311deg,#c8d8d921 360deg);
+  mask-image: radial-gradient(closest-side,transparent 35.6%,#000 37%,#000 98.3%,transparent 100%);
 }
 .dd-jog[aria-disabled="true"],.dd-scrub[aria-disabled="true"] { opacity: .62; cursor: default; }
 .dd-platter {
@@ -143,50 +166,50 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: repeating-conic-gradient(from 0deg,#737d81 0deg 1.35deg,#535d61 1.35deg 2.05deg,#161b1e 2.05deg 3.4deg,#394246 3.4deg 4.5deg);
-  box-shadow: inset 0 0 0 1px #14191a;
+  background:
+    center / 100% 100% no-repeat url("assets/dj-platter.webp"),
+    radial-gradient(closest-side,#222626 90%,#0c1011 90.5%,#414646 91%,#151818 92%,#131617 96%,#303536 97%,#111617 99.5%);
+  box-shadow: inset 0 0 0 1px #111516;
   pointer-events: none;
 }
 .dd-vinyl {
   position: absolute;
-  inset: 4.6%;
+  inset: 5%;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  border: 1px solid #0a0e10;
-  background:
-    repeating-radial-gradient(circle,transparent 0 1.15px,#acb7ba30 1.3px,#04070780 1.7px,transparent 2.4px),
-    conic-gradient(from -60deg,#2c3134,#121517 19%,#343b3d 34%,#24292b 46%,#111416 65%,#353c3f 82%,#23292c);
-  box-shadow: 0 0 0 1px #747e8280,inset 0 0 0 2px #1c2022;
+  border: 1px solid #0a0c0d;
+  box-shadow: 0 0 0 1px #aeb6ae4a, inset 0 0 0 2px #131718;
 }
-.dd-vinyl::before { content:""; position:absolute; inset:14%; border-radius:50%; border:1px solid #05060680; box-shadow:0 0 0 1px #858b8b30; }
+.dd-vinyl::before { content:""; position:absolute; inset:28.8%; border-radius:50%; border:1px solid #8c939134; box-shadow:0 0 0 1px #0607088c, inset 0 0 0 4px #0e111257; }
 .dd-strobe {
   position: absolute;
-  left: calc(50% - 2px);
-  top: 3%;
-  width: 4px;
-  height: 11%;
-  border-radius: 2px;
-  background: var(--dd-accent);
-  box-shadow: 0 0 0 1px #0006;
+  left: 50%;
+  top: 7%;
+  width: clamp(2px,.7%,5px);
+  height: 6.5%;
+  border-radius: 1px;
+  background: #dfdfcf;
+  box-shadow: 0 0 0 1px #1116;
 }
 .dd-art {
   position: relative;
-  width: 38%;
+  width: 35.5%;
   aspect-ratio: 1;
   display: grid;
   place-items: center;
   border-radius: 50%;
   overflow: hidden;
-  outline: 1px solid #0a0e10;
-  box-shadow: 0 0 0 4px #272c2f, 0 0 0 5px rgba(var(--dd-channels),.6);
-  color: var(--dd-accent);
-  background: linear-gradient(146deg,rgba(var(--dd-channels),.45),transparent 52%),#152022;
+  outline: 1px solid #131515;
+  box-shadow: 0 0 0 2px #252929, 0 0 0 3px #949b943b;
+  color: #c4c8bd;
+  background: radial-gradient(circle at 40% 28%,#4d5552,#303936 76%);
 }
 .dd-art::after {
-  content:""; position:absolute; z-index:1; inset:calc(50% - 4px); border-radius:50%;
-  background:radial-gradient(circle at 34% 27%,#ecf2f2,#9aa3a8 35%,#3f4548 65%,#161a1b);
-  box-shadow:0 1px 2px #000b;
+  content:""; position:absolute; z-index:1; left:50%;top:50%; translate:-50% -50%;
+  width:clamp(5px,5.8%,12px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 35% 26%,#f2f4e7,#a6aaa3 29%,#585e5b 55%,#292e2d 72%,#a3a79c 89%);
+  box-shadow:0 0 0 1px #111c,1px 2px 3px #060807a8;
 }
 .dd-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .dd-scrub {
@@ -365,18 +388,28 @@
   text-transform: uppercase;
 }
 .dd-btn:not(:disabled):active, .dd-pad:not(:disabled):active { transform: translateY(1px); }
-.dd-play {
-  width: clamp(57px, 14cqw, 79px);
-  height: 32px;
+.dd-btn:is(.dd-play,.dd-cue) {
+  --lamp: #72a78a;
+  position: relative;
+  flex: none;
+  width: auto;
+  min-width: 34px;
+  height: clamp(34px,4.8dvh,76px);
+  aspect-ratio: 1;
   padding: 0;
-  background: var(--dd-accent);
-  border-color: rgba(var(--dd-channels), .9);
-  color: #152522;
-  box-shadow: inset 0 1px 0 #ffffff30, 0 2px 4px #0003;
+  border-radius: 50%;
+  border: 2px solid #101313;
+  background: radial-gradient(ellipse at 37% 15%,#484e4b,#303633 68%,#232825 92%);
+  color: #dfe6da;
+  box-shadow: 0 1px 1px #c3cdb451, 0 -1px 2px #0204049c, inset 0 0 0 2px var(--lamp), inset 0 0 0 3px #1a201e, inset 0 5px 4px #ffffff14;
 }
-.dd-play svg { width: 19px; height: 19px; }
-.dj-deck--b .dd-play { color: #30201d; }
-.dd-cue { min-width: 43px; }
+.dd-btn.dd-cue { --lamp:#cba467; font: 650 clamp(9px,1.85cqw,19px)/1 var(--dd-mono) !important; letter-spacing: .02em; }
+.dd-play svg { width: 42%; height: 42%; }
+.dd-playing .dd-play { --lamp:#93e9aa; color:#c6f4d3; }
+.dd-btn:is(.dd-play,.dd-cue):not(:disabled):active {
+  background: radial-gradient(ellipse at 42% 12%,#282e2c,#222724 78%);
+  box-shadow: 0 1px 0 #dbe2d733,inset 0 0 0 2px var(--lamp),inset 0 0 0 4px #121715,inset 0 4px 7px #111a;
+}
 .dd-loop-group { border-radius: 4px; }
 .dd-loop { height: 29px; padding: 0 8px; border-radius: 4px 0 0 4px; }
 .dd-loop[aria-pressed="true"] { border-color: rgba(var(--dd-channels), .56); color: var(--dd-accent); background: var(--dd-wash); }
@@ -421,7 +454,6 @@
   .dd-scope { margin-inline: 9px; }
   .dd-transport, .dd-pads { padding-inline: 9px; }
   .dd-btn { padding-inline: 8px; }
-  .dd-play { width: 48px; }
   .dd-transport-group { gap: 4px; }
   .dd-pads { gap: 4px; }
   .dd-pad-label { margin-right: 2px; font-size: 9px; }
@@ -481,8 +513,6 @@
   .dd-transport { height: clamp(48px,6.3dvh,128px); }
   .dd-btn, .dd-loop-select { height: clamp(33px,4.5dvh,83px); font-size: clamp(11px,2cqw,26px) !important; }
   .dd-loop-select svg { top: 50%; transform: translateY(-50%); }
-  .dd-play { width: clamp(58px,17cqw,256px); }
-  .dd-play svg { width: clamp(20px,4.1cqw,58px); height:auto; }
   .dd-pad { height: clamp(28px,4.7dvh,90px); font-size: clamp(12px,2cqw,25px) !important; }
   .dd-pads { padding-block: clamp(5px,.85dvh,16px); }
 }

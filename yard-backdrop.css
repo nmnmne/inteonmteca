@@ -49,6 +49,15 @@ body.spatial-room[data-yard-backdrop] { isolation: isolate; }
   inset: 0;
   background: linear-gradient(180deg, rgb(8 12 15 / 25%), transparent 30%, rgb(8 12 15 / 42%));
 }
+/* The open parts of the DJ faceplate pick up the passing yard. Keep the
+   standalone listening room's original lighting and diffusion. */
+.room-console-home [data-yard-layer] {
+  --yard-blur: clamp(2px, .3vw, 5px);
+  opacity: .72;
+}
+.room-console-home [data-yard-layer]::after {
+  background: linear-gradient(180deg, rgb(8 12 15 / 20%), transparent 36%, rgb(8 12 15 / 29%));
+}
 @media (prefers-reduced-motion: reduce) {
   [data-yard-layer] canvas { transition: none; }
 }

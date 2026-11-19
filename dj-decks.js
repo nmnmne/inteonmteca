@@ -575,6 +575,7 @@
     pressed(refs.lock, state.keyLock);
     if (deck.lastPlaying !== Boolean(state.playing)) {
       deck.lastPlaying = Boolean(state.playing);
+      deck.root.classList.toggle('dd-playing', deck.lastPlaying);
       refs.play.innerHTML = icon(state.playing ? 'pause' : 'play', 20);
       refs.play.title = (state.playing ? 'Приостановить деку ' : 'Воспроизвести деку ') + id;
       refs.play.setAttribute('aria-label', refs.play.title);

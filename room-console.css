@@ -1,7 +1,7 @@
 /* The live room frames a full-size deck surface. The courtyard reflection shares
    the console's isolated stacking context, below the controls and their lacquer. */
 html[data-theme] body.room-console-home {
-  --room-edge: clamp(6px, .8vw, 17px);
+  --room-edge: clamp(6px, 1.45vw, 30px);
   --brand-width: clamp(155px, 17vw, 265px);
   --room-mast: clamp(66px, 8.2dvh, 85px);
   --room-title-edge: calc(var(--room-edge) + 4px);
@@ -77,9 +77,9 @@ html[data-theme] body.room-console-home .text.matrix-text {
   box-sizing: border-box; display: flex; flex-direction: column;
   width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden;
   pointer-events: auto; text-align: left; color: var(--ink); font: 14px/1.3 var(--sans);
-  border: 1px solid #d6e4d079; border-radius: 16px 7px 16px 7px;
-  background: linear-gradient(115deg,#c5d2b710,transparent 17% 68%,#cadae30d), rgba(12, 20, 19, .26);
-  box-shadow: inset 0 1px 0 #fbffed59, inset 1px 0 0 #eaffeb29, 0 8px 30px #0004;
+  border: 1px solid #b6c7c13b; border-radius: 11px;
+  background: linear-gradient(117deg,#b6c9c51c,transparent 36% 68%,#1823221a), rgba(12, 17, 18, .17);
+  box-shadow: inset 0 1px 0 #ecfff224, 0 3px 2px #08101262, 0 9px 19px #070b0c52;
 }
 .room-console-top, .console-nav, .console-tools, .console-nav a {
   display: flex; align-items: center; gap: 6px;
@@ -111,8 +111,7 @@ html[data-theme] body.room-console-home .text.matrix-text {
 .room-console :is(.status-bar,.status-bar button,.meter-copy,.dd-track-text,.dd-bpm-box,.page-title h2,.section-heading,.strip-tag,.dial-name,.cross-title) { text-shadow: 0 1px 3px #081014; }
 .room-console .meter-copy, .room-console .dd-artist, .room-console .dd-remaining { color: #d7dedb; }
 .room-console .meter-readout { background: #0b131c50; border-radius: 4px; padding: 3px 5px; }
-.room-console .deck-bank { margin: 0; gap: var(--console-edge); }
-.room-console :is(.dj-deck, .mixer-panel, .library) {
+.room-console .library {
   color: var(--ink);
   border: 1px solid #d8e6d557; border-radius: 12px 6px 12px 6px;
   background:
@@ -120,16 +119,107 @@ html[data-theme] body.room-console-home .text.matrix-text {
     linear-gradient(155deg,#16232842,#0c141c5c 64%,#1e252635);
   box-shadow: inset 0 1px 0 #e2ffef42, inset 1px 0 0 #fff2, inset -1px -1px 0 #1010154d;
 }
-.room-console :is(.dd-head,.dd-pads,.panel-head,.cross-section,.crate-nav) {
+.room-console :is(.library .panel-head,.crate-nav) {
   background: linear-gradient(180deg,#ecf8eb0d,transparent 65%),#0b171c3d;
   border-color: #cfdfd32b;
 }
 .room-console :is(.dd-hardware,.dd-transport,.dial-bank,.browser-body,.table-pane) { background: transparent; }
-.room-console .mixer-bed { background: linear-gradient(100deg,#c8ddd10a,transparent 35%,#d8e8e609 50%,transparent 67%); }
-.room-console .channel-strip { background: transparent; }
-.room-console .dd-pitch { background: linear-gradient(115deg,#d6e8da17,#101a235c); border-color:#bfcee23f; }
-.room-console .dd-scope { background: #08121794; border-color: #b5ced247; }
-.room-console .dd-pads, .room-console .cross-section { border-top-color: #d2e0d442; }
+
+/* One machined faceplate spans both transports and the centre mixer. The
+   translucent grain lets the real courtyard supply its broad light and shade. */
+.room-console .deck-bank {
+  --cap-metal: linear-gradient(to bottom,#a7afad 0%,#616969 13%,#303738 37%,#111717 42%,#cbd1c9 48% 55%,#414a4a 62%,#252c2c 91%,#5e6765);
+  --cap-shadow: inset 1px 0 0 #eef1df38, inset -1px 0 0 #0008, 0 2px 3px #070a0bcc;
+  margin: 0; gap: 0; position: relative; isolation: isolate;
+  border-radius: 7px;
+  background: linear-gradient(112deg, #c9d2ce1f, #686e6712 31%, #1723263b 68%, #9ba29c14);
+  box-shadow: inset 0 1px 0 #e5ecdd4a, inset 0 -2px 0 #04080a9e, 0 2px 5px #09101259;
+}
+.room-console .deck-bank::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
+  background: url("assets/deck-faceplate.webp") center / 256px 256px repeat;
+  opacity: .28;
+}
+.room-console :is(.dj-deck,.mixer-panel) {
+  color: var(--ink); border: 0; border-radius: 0;
+  background: linear-gradient(180deg,#11181912,#18222221 55%,#0b111337);
+  box-shadow: none;
+}
+.room-console .mixer-panel { background: linear-gradient(180deg,#141a1c5e,#0a11154d); }
+.room-console .mixer-bed, .room-console .channel-strip { background: transparent; }
+.room-console .dd-hardware { position: relative; }
+.room-console .dd-hardware::before, .room-console .dd-hardware::after {
+  content: ""; position: absolute; left: 5px; width: 5px; height: 5px;
+  border-radius: 50%; pointer-events: none;
+  background:
+    linear-gradient(138deg,transparent 37%,#131717 40% 57%,#767b71 60%,transparent 67%) center / 68% 68% no-repeat,
+    linear-gradient(140deg,#838b83,#424b47 55%,#242a28);
+  box-shadow: 0 0 0 1px #17201e, 0 1px 0 1px #cbd1be32;
+}
+.room-console .dd-hardware::before { top: 9px; }
+.room-console .dd-hardware::after { bottom: 9px; }
+.room-console :is(.dd-head,.mixer-panel .panel-head,.dd-pads,.cross-section) {
+  border-color: #0c111470; border-radius: 0;
+  background: linear-gradient(#d9e4d908,#10161715);
+}
+.room-console .dd-head { border-bottom-color: #e1ecd615; }
+.room-console .dd-track, .room-console .dd-scope {
+  margin-inline: clamp(9px, 2.65cqw, 15px);
+  background: linear-gradient(118deg,#253238f5,#11191df5 47%,#182225f5);
+  border: 1px solid #0d1316;
+}
+.room-console .dd-track {
+  margin-top: 6px; padding-inline: 10px; border-radius: 5px 5px 0 0; border-bottom: 0;
+  box-shadow: inset 0 2px 4px #0008;
+}
+.room-console .dd-scope {
+  border-top: 0; border-radius: 0 0 5px 5px;
+  box-shadow: inset 1px 0 1px #0005, 0 1px 0 #d5deca3d;
+}
+.room-console .dd-pitch {
+  background: linear-gradient(90deg,#060d1017,#17202218 50%,transparent);
+  border: 0; border-left: 1px solid #d3dad221; border-radius: 0; box-shadow: none;
+}
+.room-console .dd-pitch-range, .room-console .dd-wheel-modes {
+  background: #192021d9; border: 1px solid #121818; box-shadow: 0 1px 0 #e7eddf24, inset 0 1px 2px #070c0e77;
+}
+.room-console .dd-rail input {
+  background-image: linear-gradient(90deg,#676d67,#242b2b 19%,#03090a 38% 69%,#393e3a 86%,#959d8f);
+}
+.room-console :is(.dd-rail input,.gain-input)::-webkit-slider-thumb {
+  background: var(--cap-metal); border: 1px solid #191f20; box-shadow: var(--cap-shadow);
+}
+.room-console :is(.dd-rail input,.gain-input)::-moz-range-thumb {
+  background: var(--cap-metal); border: 1px solid #191f20; box-shadow: var(--cap-shadow);
+}
+.room-console .cross-track { --cap-metal: linear-gradient(90deg,#828b87,#42494a 18%,#272d2e 41%,#c5cec6 45% 54%,#444d4d 59%,#202727 91%,#737b76); }
+.room-console .cross-track input::-webkit-slider-thumb { background: var(--cap-metal); border-color: #171d1e; box-shadow: var(--cap-shadow); }
+.room-console .cross-track input::-moz-range-thumb { background: var(--cap-metal); border-color: #171d1e; box-shadow: var(--cap-shadow); }
+.room-console .dial-face::before {
+  inset: 2px; border: 2px solid #191e1f;
+  background:
+    radial-gradient(circle at 46% 39%,#525959 0%,#383f40 52%,transparent 55%),
+    repeating-conic-gradient(from 8deg,#1d2324 0 5deg,#444a49 6deg 10deg);
+  box-shadow: inset 0 1px 2px #a1aaa36b, inset 0 -2px 2px #05090ab3, 1px 3px 3px #050b0bc9;
+}
+.room-console .dial-marker::after { background: #e5e9da; box-shadow: 0 0 1px #0e1213; }
+.room-console .dd-pad {
+  position: relative;
+  border: 1px solid #141b1c; border-radius: 5px;
+  background: linear-gradient(170deg,#525b59,#363f40 72%);
+  box-shadow: inset 0 1px 0 #d9e5dc32, inset 0 -2px 0 #151b1dd9, 0 1px 2px #060c0db8;
+  color: #dce1d8;
+}
+.room-console .dd-pad::before {
+  content: ""; position: absolute; inset: 4px auto auto 5px; width: 4px; height: 2px;
+  border-radius: 1px; pointer-events: none; background: #202725;
+}
+.room-console .dd-pad--set::before { background: var(--dd-accent); box-shadow: 0 0 3px rgba(var(--dd-channels), .65); }
+.room-console .dd-pad--set {
+  color: var(--dd-accent); border-color: rgba(var(--dd-channels), .56);
+  background: linear-gradient(170deg,var(--dd-wash),#262c2c);
+  box-shadow: inset 0 -2px 0 rgba(var(--dd-channels), .77), 0 1px 2px #060c0db8;
+}
 .room-console .dj-deck h2 { text-transform: none; letter-spacing: -.035em; }
 .room-console .library { display: none; }
 .room-console-home.library-only { display: block; }
@@ -146,6 +236,7 @@ html[data-theme] body.room-console-home .text.matrix-text {
   }
   .room-console .controller-tabs, .room-console .quick-cross { display: none; }
   .room-console .dj-deck { display: grid; height: 100%; grid-template-rows: auto auto auto minmax(0,1fr) auto auto; }
+  .room-console .mixer-panel { box-shadow: -1px 0 #080d10a8, 1px 0 #080d10a8, inset 1px 0 #e2e9d924, inset -1px 0 #e2e9d91f; }
   .room-console .dd-hardware { min-height: 0; }
   .room-console .dd-wheel-column {
     display: grid; align-items: center; align-self: stretch; align-content: stretch; container-type: size;
@@ -229,6 +320,7 @@ html[data-theme] .room-console-home #room-chat .mobile-chat-toggle { display: no
   .console-nav a { padding: 0 6px; font-size: 12px; }
 }
 @media (max-width: 680px) and (orientation:portrait) {
+  .room-console .dd-track { padding-right: 42px; }
   .room-console .dd-wheel-mount { width: min(100%, clamp(90px,calc(100dvh - 510px),340px)); }
   .room-console .dd-hardware { padding-block: 6px; }
   .room-console .dd-pitch { grid-template-rows:auto auto minmax(40px,1fr) auto auto; padding-block: 4px; gap: 2px; }
