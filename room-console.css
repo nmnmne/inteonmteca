@@ -228,6 +228,52 @@ html[data-theme] body.room-console-home .text.matrix-text {
 .room-console .table-pane { overflow: auto; }
 .room-console .library thead th { background: #172022eb; color: #e3e7df; }
 
+@media (hover: hover) and (pointer: fine) {
+  .room-console {
+    background:
+      radial-gradient(ellipse at 3% 0%, #69737442, transparent 54%),
+      linear-gradient(112deg, #292d30, #171a1d 57%, #26292b);
+    background-color: #1b1e20;
+    border-color: #717777 #353a3c #101214 #53595b;
+    box-shadow: inset 0 1px 0 #e5eded57, inset 0 -4px 1px #0b0d10,
+      0 3px 0 #111417, 0 9px 17px #05070894;
+  }
+  /* The canvas sits between the opaque enclosure and the controls. */
+  .room-console > .console-reflection {
+    transform: scale(1.10, -1.06) skewX(-6deg);
+    opacity: .51;
+    mix-blend-mode: screen;
+    filter: saturate(.48) blur(clamp(2px, .18vw, 6px));
+    mask-image:
+      linear-gradient(108deg, transparent 2%, #0005 17%, #000c 25%, #0002 38%, transparent 49%),
+      radial-gradient(ellipse 44% 46% at 92% 45%, #0008, transparent 89%);
+  }
+  .room-console .deck-bank {
+    background: linear-gradient(118deg, #e0e7e516, transparent 31% 57%, #05070945);
+    box-shadow: inset 0 1px 0 #e8ece747, inset 0 -2px 0 #07090b, 0 2px 3px #06080b99;
+  }
+  .room-console .deck-bank::before { opacity: .16; }
+  .room-console .dd-wheel-mount {
+    box-shadow: inset 1px 2px 4px #020303, 0 1px 0 #b5c0b652,
+      1px 3px 3px #080b0dc4, 3px 8px 9px #07090b66;
+  }
+  .room-console .dd-jog::after {
+    background: conic-gradient(from -62deg, transparent, #e8f0eb15 8deg, #ebf3ef67 17deg,
+      #c9dadc20 28deg, transparent 48deg 149deg, #dbdacc1b 173deg,
+      #e8e6d641 195deg, transparent 224deg 360deg);
+  }
+  .room-console .dial-face::before {
+    background:
+      radial-gradient(ellipse at 38% 28%, #677071, #41484a 51%, #2c3132 65%, transparent 68%),
+      repeating-conic-gradient(from 8deg, #202527 0 5deg, #545b5a 6deg 10deg);
+    box-shadow: inset 0 1px 1px #c3ccc17a, inset -1px -2px 2px #080b0cd9,
+      1px 3px 2px #07090be6, 2px 5px 4px #080a0b80;
+  }
+  .room-console .dd-track, .room-console .dd-scope {
+    background: linear-gradient(113deg, #2d383d, #283237 15%, #1b242a 24%, #10181d 53%, #172025);
+  }
+}
+
 @container console (min-width: 900px) {
   .room-console #performance { display: flex; flex-direction: column; min-height: 415px; }
   .room-console .deck-bank {
