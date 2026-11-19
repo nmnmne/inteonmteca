@@ -439,7 +439,7 @@
     }
   ],
   "sourceHashes": {
-    "yard/ambient-scene.js": "86168179a080f4fad00ef8708a042d980ddda96665bb853ba3acd42e56ecc7d4",
+    "yard/ambient-scene.js": "8709e5de60111e5186774acf592aa3ec3714c8cde7464fc05c5c97a5b4f88008",
     "yard/auto-walk.js": "580e0fd568602db8bf9c3653f62e097480b63d4c1966a69215d9ba1e6f40d66b",
     "yard/baked-lighting.js": "ef10f5f932da370dda697ab00e1f86075fa5ff4723777990dd19ec1720d10a6b",
     "yard/clouds.js": "ca7db184ca390d016621b7da5470d15512fd821b14d8ca0172e891f4f0e1631b",

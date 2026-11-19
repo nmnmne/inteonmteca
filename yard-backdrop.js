@@ -58,10 +58,11 @@
       document.body.dataset.yardBackdrop = 'fallback';
     };
     try {
-      const { startAmbientScene } = await import('./yard/ambient-scene.js?v=2');
+      const { startAmbientScene } = await import('./yard/ambient-scene.js?v=3');
       if (run.signal.aborted) return;
       await startAmbientScene(canvas, {
         signal: run.signal,
+        clearView: Boolean(consoleSurface),
         onFrame: reflectionContext ? reflect : undefined,
         onReady() { if (!run.signal.aborted) document.body.dataset.yardBackdrop = 'live'; },
         onError: fallback,

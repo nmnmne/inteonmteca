@@ -8,7 +8,7 @@ html[data-theme] body.room-console-home {
 }
 html[data-theme] body.room-console-home .release-content.player-dock {
   position: fixed;
-  inset: var(--room-mast) var(--room-edge) max(23px, env(safe-area-inset-bottom));
+  inset: max(var(--room-mast), 16dvh) var(--room-edge) max(23px, env(safe-area-inset-bottom));
   width: auto; height: auto; min-height: 0; max-height: none;
   display: block; padding: 0; margin: 0;
   overflow: visible; transform: none; z-index: 4;
@@ -73,13 +73,18 @@ html[data-theme] body.room-console-home .text.matrix-text {
   --console-edge: clamp(5px,.6vw,12px);
   --line: #cbd6c74a; --ink: #f3f5eb; --acid: rgb(var(--theme-accent-rgb));
   --mono: JetBrains, ui-monospace, monospace; --sans: 'Segoe UI', sans-serif;
+  --cap-side: linear-gradient(90deg,#76807f,#484f50 17%,#252d2e 40%,#e0e3d8 45% 54%,#4f5958 59%,#202727 88%,#828b87);
   position: relative; isolation: isolate; container: console / inline-size;
   box-sizing: border-box; display: flex; flex-direction: column;
   width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden;
   pointer-events: auto; text-align: left; color: var(--ink); font: 14px/1.3 var(--sans);
-  border: 1px solid #b6c7c13b; border-radius: 11px;
-  background: linear-gradient(117deg,#b6c9c51c,transparent 36% 68%,#1823221a), rgba(12, 17, 18, .17);
-  box-shadow: inset 0 1px 0 #ecfff224, 0 3px 2px #08101262, 0 9px 19px #070b0c52;
+  border: solid; border-width: 2px clamp(3px,.34vw,8px) 4px;
+  border-color: #bac7c6 #697677 #303b3c #8d9c9b; border-radius: 12px;
+  background:
+    linear-gradient(115deg, transparent 17%, #e6f2f91a 26%, #deedfa0c 29%, transparent 30% 72%, #e4f0f40c 83%, transparent 86%),
+    rgb(17 29 33 / 12%);
+  box-shadow: inset 0 1px 1px #fff9, inset 2px 0 1px #e5f6f74d, inset -2px -3px 2px #233333b3,
+    0 2px 0 #4d5757, 0 5px 0 #1a2122, 0 6px 1px #77817a, 0 10px 14px #0a121466;
 }
 .room-console-top, .console-nav, .console-tools, .console-nav a {
   display: flex; align-items: center; gap: 6px;
@@ -87,15 +92,15 @@ html[data-theme] body.room-console-home .text.matrix-text {
 .room-console-top {
   flex: none; justify-content: space-between; padding: 6px max(8px, .8vw);
   border-bottom: 1px solid var(--line);
-  background: linear-gradient(180deg,#ccd4c517,transparent 52%), #0b161844;
+  background: linear-gradient(180deg,#e4eced54,#32404380 12%,#1823268c 84%,#0d171bb0);
 }
 .console-nav a {
   min-height: 31px; padding: 0 11px; color: #e0e5df;
   font: 600 13px/1 var(--sans); text-decoration: none; border-radius: 4px;
 }
 .console-nav a[aria-current] {
-  color: var(--acid); background: rgba(var(--theme-accent-rgb), .12);
-  box-shadow: inset 0 0 0 1px rgba(var(--theme-accent-rgb), .20);
+  color: var(--acid); background: #202829;
+  box-shadow: inset 0 1px 2px #050a0c, 0 1px 0 #e1ece35c;
 }
 .console-tools .rec { min-height: 32px; font-size: 13px; }
 .room-console .workspace {
@@ -110,13 +115,13 @@ html[data-theme] body.room-console-home .text.matrix-text {
 .room-console .status-bar { flex: none; min-height: 24px; padding: 3px 5px; margin: 0; color: #e4e8df; }
 .room-console :is(.status-bar,.status-bar button,.meter-copy,.dd-track-text,.dd-bpm-box,.page-title h2,.section-heading,.strip-tag,.dial-name,.cross-title) { text-shadow: 0 1px 3px #081014; }
 .room-console .meter-copy, .room-console .dd-artist, .room-console .dd-remaining { color: #d7dedb; }
-.room-console .meter-readout { background: #0b131c50; border-radius: 4px; padding: 3px 5px; }
+.room-console .meter-readout { background: #101a1e; border-radius: 4px; padding: 3px 5px; box-shadow: inset 0 2px 3px #040708, 0 1px 0 #dfe7e54d; }
 .room-console .library {
   color: var(--ink);
   border: 1px solid #d8e6d557; border-radius: 12px 6px 12px 6px;
   background:
     linear-gradient(111deg, transparent 13%, #f5ffe909 25%, #effee820 25.3%, #eaffed05 25.8%, transparent 48%),
-    linear-gradient(155deg,#16232842,#0c141c5c 64%,#1e252635);
+    linear-gradient(155deg,#162328d9,#0c141cd1 64%,#1e2526cb);
   box-shadow: inset 0 1px 0 #e2ffef42, inset 1px 0 0 #fff2, inset -1px -1px 0 #1010154d;
 }
 .room-console :is(.library .panel-head,.crate-nav) {
@@ -132,20 +137,20 @@ html[data-theme] body.room-console-home .text.matrix-text {
   --cap-shadow: inset 1px 0 0 #eef1df38, inset -1px 0 0 #0008, 0 2px 3px #070a0bcc;
   margin: 0; gap: 0; position: relative; isolation: isolate;
   border-radius: 7px;
-  background: linear-gradient(112deg, #c9d2ce1f, #686e6712 31%, #1723263b 68%, #9ba29c14);
-  box-shadow: inset 0 1px 0 #e5ecdd4a, inset 0 -2px 0 #04080a9e, 0 2px 5px #09101259;
+  background: linear-gradient(112deg, #dbe6eb16, transparent 37% 76%, #c6d8dc12);
+  box-shadow: inset 0 1px 0 #e5ecdd70, inset 0 -2px 0 #04080a9e, 0 2px 5px #09101259;
 }
 .room-console .deck-bank::before {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
   background: url("assets/deck-faceplate.webp") center / 256px 256px repeat;
-  opacity: .28;
+  opacity: .09;
 }
 .room-console :is(.dj-deck,.mixer-panel) {
   color: var(--ink); border: 0; border-radius: 0;
-  background: linear-gradient(180deg,#11181912,#18222221 55%,#0b111337);
+  background: transparent;
   box-shadow: none;
 }
-.room-console .mixer-panel { background: linear-gradient(180deg,#141a1c5e,#0a11154d); }
+.room-console .mixer-panel { background: linear-gradient(90deg,#12212655,#17242975 50%,#12212655); }
 .room-console .mixer-bed, .room-console .channel-strip { background: transparent; }
 .room-console .dd-hardware { position: relative; }
 .room-console .dd-hardware::before, .room-console .dd-hardware::after {
@@ -177,8 +182,8 @@ html[data-theme] body.room-console-home .text.matrix-text {
   box-shadow: inset 1px 0 1px #0005, 0 1px 0 #d5deca3d;
 }
 .room-console .dd-pitch {
-  background: linear-gradient(90deg,#060d1017,#17202218 50%,transparent);
-  border: 0; border-left: 1px solid #d3dad221; border-radius: 0; box-shadow: none;
+  background: linear-gradient(90deg,#0b13197d,#1c252a75 76%,#2c353872);
+  border: 1px solid #17232199; border-radius: 4px; box-shadow: inset 0 1px 1px #070a0b70, 0 1px 0 #e7eeea66;
 }
 .room-console .dd-pitch-range, .room-console .dd-wheel-modes {
   background: #192021d9; border: 1px solid #121818; box-shadow: 0 1px 0 #e7eddf24, inset 0 1px 2px #070c0e77;
@@ -192,17 +197,47 @@ html[data-theme] body.room-console-home .text.matrix-text {
 .room-console :is(.dd-rail input,.gain-input)::-moz-range-thumb {
   background: var(--cap-metal); border: 1px solid #191f20; box-shadow: var(--cap-shadow);
 }
-.room-console .cross-track { --cap-metal: linear-gradient(90deg,#828b87,#42494a 18%,#272d2e 41%,#c5cec6 45% 54%,#444d4d 59%,#202727 91%,#737b76); }
-.room-console .cross-track input::-webkit-slider-thumb { background: var(--cap-metal); border-color: #171d1e; box-shadow: var(--cap-shadow); }
-.room-console .cross-track input::-moz-range-thumb { background: var(--cap-metal); border-color: #171d1e; box-shadow: var(--cap-shadow); }
-.room-console .dial-face::before {
-  inset: 2px; border: 2px solid #191e1f;
-  background:
-    radial-gradient(circle at 46% 39%,#525959 0%,#383f40 52%,transparent 55%),
-    repeating-conic-gradient(from 8deg,#1d2324 0 5deg,#444a49 6deg 10deg);
-  box-shadow: inset 0 1px 2px #a1aaa36b, inset 0 -2px 2px #05090ab3, 1px 3px 3px #050b0bc9;
+.room-console .cross-track input::-webkit-slider-thumb { background: var(--cap-side); border-color: #171d1e; box-shadow: var(--cap-shadow); }
+.room-console .cross-track input::-moz-range-thumb { background: var(--cap-side); border-color: #171d1e; box-shadow: var(--cap-shadow); }
+.room-console :is(.master-control,.quick-cross) input {
+  appearance: none; height: 28px; border: 0;
+  background: linear-gradient(#677371,#10181a 25% 72%,#87928d) center / 100% 5px no-repeat;
 }
-.room-console .dial-marker::after { background: #e5e9da; box-shadow: 0 0 1px #0e1213; }
+.room-console :is(.master-control,.quick-cross) input::-webkit-slider-thumb {
+  appearance: none; width: 14px; height: 18px; border: 1px solid #202728; border-radius: 2px;
+  background: var(--cap-side); box-shadow: 1px 2px 2px #091013a8;
+}
+.room-console :is(.master-control,.quick-cross) input::-moz-range-thumb {
+  width: 14px; height: 18px; border: 1px solid #202728; border-radius: 2px;
+  background: var(--cap-side); box-shadow: 1px 2px 2px #091013a8;
+}
+.room-console .dial-face::after {
+  content: ""; position: absolute; inset: -4px; pointer-events: none; border-radius: 50%;
+  background: repeating-conic-gradient(from -140deg, #d7e0d7 0deg 2deg, transparent 2.5deg 28deg);
+  mask-image: radial-gradient(closest-side, transparent 89%, #000 90%),
+    conic-gradient(from -141deg,#000 0deg 283deg,transparent 283deg);
+  mask-composite: intersect;
+}
+.room-console .dial-face::before {
+  inset: 3px; border: 1px solid #171e1f;
+  background:
+    radial-gradient(ellipse at 43% 36%,#697071,#414849 47%,#293233 61%,transparent 64%),
+    repeating-conic-gradient(from 8deg,#1a2223 0 5deg,#596361 7deg 11deg);
+  box-shadow: inset 0 1px 1px #c3ccc17a, inset -1px -2px 2px #080b0cd9,
+    1px 3px 1px #101617, 2px 5px 4px #080a0b96;
+}
+.room-console .dial-marker::after { background: #f4f4e6; height: 24%; box-shadow: 0 0 1px #0e1213; }
+.room-console :is(.dial-name,.vol-label,.dd-pitch-title,.dd-scale,.dd-pad-label,.cross-title) {
+  color: #f1f2e9; text-shadow: 0 1px 2px #080d10, 0 0 3px #080d10;
+}
+.room-console :is(.dd-pads,.cross-section) {
+  background: linear-gradient(180deg,#c4d0cb33 0 1px,#172226a8 2px,#243033ac 85%,#151e21dc);
+}
+.room-console :is(.center-cross,.dd-sync,.dd-loop):not([aria-pressed="true"]) {
+  color: #e2e6df; border-color: #171e20;
+  background: linear-gradient(#485251,#293134 72%);
+  box-shadow: inset 0 1px 0 #dfe9e33b, 0 2px 1px #0b1012ae;
+}
 .room-console .dd-pad {
   position: relative;
   border: 1px solid #141b1c; border-radius: 5px;
@@ -228,53 +263,27 @@ html[data-theme] body.room-console-home .text.matrix-text {
 .room-console .table-pane { overflow: auto; }
 .room-console .library thead th { background: #172022eb; color: #e3e7df; }
 
-@media (hover: hover) and (pointer: fine) {
-  .room-console {
-    background:
-      radial-gradient(ellipse at 3% 0%, #69737442, transparent 54%),
-      linear-gradient(112deg, #292d30, #171a1d 57%, #26292b);
-    background-color: #1b1e20;
-    border-color: #717777 #353a3c #101214 #53595b;
-    box-shadow: inset 0 1px 0 #e5eded57, inset 0 -4px 1px #0b0d10,
-      0 3px 0 #111417, 0 9px 17px #05070894;
-  }
-  /* The canvas sits between the opaque enclosure and the controls. */
-  .room-console > .console-reflection {
-    transform: scale(1.10, -1.06) skewX(-6deg);
-    opacity: .51;
-    mix-blend-mode: screen;
-    filter: saturate(.48) blur(clamp(2px, .18vw, 6px));
-    mask-image:
-      linear-gradient(108deg, transparent 2%, #0005 17%, #000c 25%, #0002 38%, transparent 49%),
-      radial-gradient(ellipse 44% 46% at 92% 45%, #0008, transparent 89%);
-  }
-  .room-console .deck-bank {
-    background: linear-gradient(118deg, #e0e7e516, transparent 31% 57%, #05070945);
-    box-shadow: inset 0 1px 0 #e8ece747, inset 0 -2px 0 #07090b, 0 2px 3px #06080b99;
-  }
-  .room-console .deck-bank::before { opacity: .16; }
-  .room-console .dd-wheel-mount {
-    box-shadow: inset 1px 2px 4px #020303, 0 1px 0 #b5c0b652,
-      1px 3px 3px #080b0dc4, 3px 8px 9px #07090b66;
-  }
-  .room-console .dd-jog::after {
-    background: conic-gradient(from -62deg, transparent, #e8f0eb15 8deg, #ebf3ef67 17deg,
-      #c9dadc20 28deg, transparent 48deg 149deg, #dbdacc1b 173deg,
-      #e8e6d641 195deg, transparent 224deg 360deg);
-  }
-  .room-console .dial-face::before {
-    background:
-      radial-gradient(ellipse at 38% 28%, #677071, #41484a 51%, #2c3132 65%, transparent 68%),
-      repeating-conic-gradient(from 8deg, #202527 0 5deg, #545b5a 6deg 10deg);
-    box-shadow: inset 0 1px 1px #c3ccc17a, inset -1px -2px 2px #080b0cd9,
-      1px 3px 2px #07090be6, 2px 5px 4px #080a0b80;
-  }
-  .room-console .dd-track, .room-console .dd-scope {
-    background: linear-gradient(113deg, #2d383d, #283237 15%, #1b242a 24%, #10181d 53%, #172025);
-  }
+.room-console .dd-wheel-mount {
+  box-shadow: inset 1px 2px 4px #020303, 0 1px 0 #ced9d180,
+    0 3px 0 #262e30, 1px 5px 1px #0b1113, 4px 9px 9px #07090b80;
+}
+.room-console .dd-jog::after {
+  background: conic-gradient(from -62deg, transparent, #e8f0eb15 8deg, #ebf3ef67 17deg,
+    #c9dadc20 28deg, transparent 48deg 149deg, #dbdacc1b 173deg,
+    #e8e6d641 195deg, transparent 224deg 360deg);
+}
+.room-console .status-bar {
+  background: linear-gradient(180deg,#303a3dc9,#192023eb);
+  border-top: 1px solid #a9b5b36e;
 }
 
 @container console (min-width: 900px) {
+  .room-console-top { height: clamp(44px,5.3dvh,82px); }
+  .room-console .page-title {
+    position: absolute; inset: 0 50% auto auto; transform: translateX(50%); z-index: 1;
+    height: clamp(44px,5.3dvh,82px); gap: 16px; padding: 0;
+  }
+  .room-console .page-title h2 { font: 600 clamp(11px,.85vw,18px)/1 var(--mono); letter-spacing: .09em; text-transform: uppercase; }
   .room-console #performance { display: flex; flex-direction: column; min-height: 415px; }
   .room-console .deck-bank {
     flex: 1; display: grid; height: auto; min-height: 0; align-items: stretch;
@@ -351,6 +360,7 @@ html[data-theme] .room-console-home #room-chat .chat-compose { display: flex; wi
 html[data-theme] .room-console-home #room-chat .mobile-chat-toggle { display: none; }
 
 @media (max-width: 800px), (pointer: coarse) {
+  html[data-theme] body.room-console-home .release-content.player-dock { top: var(--room-mast); }
   html[data-theme] body.room-console-home { --brand-width: clamp(95px,30vw,170px); --room-mast: 79px; }
   html[data-theme] body.room-console-home .room-toolbar { inset: 41px var(--room-edge) auto var(--room-edge); height: 34px; gap: 3px; }
   html[data-theme] body.room-console-home .room-toolbar :is(#auth-hint,#theme-hint,#room-chat-open,.sound-trigger) {

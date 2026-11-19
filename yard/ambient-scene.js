@@ -24,9 +24,10 @@ function releaseScene(scene) {
   scene.clear();
 }
 
-export async function startAmbientScene(canvas, { signal, onReady, onError, onFrame } = {}) {
+export async function startAmbientScene(canvas, { signal, onReady, onError, onFrame, clearView = false } = {}) {
   const lifetime = new AbortController();
   const mobile = matchMedia('(max-width: 800px), (pointer: coarse)').matches;
+  const maxPixels = clearView ? (mobile ? 400000 : 1048576) : (mobile ? 160000 : 385000);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const frameMs = 1000 / 30;
   let renderer, yard, walk, camera, eyeHeight, resizeObserver, ripplePuddles;
@@ -63,8 +64,6 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
   function resize() {
     const width = Math.max(1, canvas.clientWidth);
     const height = Math.max(1, canvas.clientHeight);
-    // The defocused backdrop can render smaller frames at a steadier cadence.
-    const maxPixels = mobile ? 160000 : 385000;
     const ratio = Math.min(devicePixelRatio || 1, 1, Math.sqrt(maxPixels / (width * height)));
     renderer.setDrawingBufferSize(width, height, ratio);
     camera.aspect = width / height;

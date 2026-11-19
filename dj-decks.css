@@ -161,6 +161,48 @@
   mask-image: radial-gradient(closest-side,transparent 35.6%,#000 37%,#000 98.3%,transparent 100%);
 }
 .dd-jog[aria-disabled="true"],.dd-scrub[aria-disabled="true"] { opacity: .62; cursor: default; }
+/* The gimbal stays on the plinth while the pickup pivots independently of the record. */
+.dd-arm-base {
+  position: absolute; z-index: 2; left: 88%; top: 7%;
+  width: 12%; aspect-ratio: 1; border-radius: 50%; pointer-events: none;
+  background:
+    radial-gradient(circle, #1e2829 38%, transparent 41% 56%, #172021 58% 64%, transparent 65%),
+    conic-gradient(from 35deg,#858e8b,#2c3638 20%,#a6aeaa 43%,#394245 60%,#c7cfcc 85%,#858e8b);
+  box-shadow: 0 0 0 1px #29302e, 0 2px 0 #141c1e, 2px 4px 4px #071013a6;
+}
+.dd-tonearm {
+  position: absolute; top: 50%; left: 43%; width: 14%; height: 415%;
+  transform-origin: 50% 0; border-radius: 2px;
+  background: linear-gradient(90deg,#353d3e,#96a5a5 18%,#f2f5ee 38%,#bbc6c3 56%,#5b696c 80%,#303b3c);
+  box-shadow: 2px 3px 2px #070e115e;
+}
+.dd-tonearm::before, .dd-tonearm::after {
+  content: ""; position: absolute; left: 50%; translate: -50% 0; border-radius: 24%;
+}
+.dd-tonearm::before {
+  bottom: 99%; width: 345%; height: 18%;
+  background: repeating-linear-gradient(0deg,transparent 0 3px,#1a21264d 3px 4px),
+    linear-gradient(90deg,#3e494a,#a3ada9 18%,#e1e5df 42%,#929d9b 64%,#465153);
+  box-shadow: 1px 2px 2px #080e1282;
+}
+.dd-tonearm::after {
+  top: -4.5%; width: 460%; height: 10%;
+  background: radial-gradient(circle at 50% 50%,#73807e 15%,#273133 18% 29%,transparent 32%),
+    linear-gradient(105deg,#535e60,#d6deda 28%,#8e9a99 53%,#414d4e 88%);
+  border: 1px solid #465152;
+}
+.dd-headshell {
+  position: absolute; top: 93%; left: -70%; width: 240%; height: 18%;
+  transform-origin: 50% 0; transform: rotate(18deg); border-radius: 22% 22% 10% 10%;
+  background:
+    radial-gradient(circle at 50% 42%,#929c97 7%,#0a1113 10% 17%,transparent 19%),
+    linear-gradient(90deg,#1a2226,#5a6667 30%,#303b3e 76%,#171f22);
+  border-bottom: 2px solid var(--dd-accent); box-shadow: 1px 2px 2px #060a0bbd;
+}
+.dd-headshell::after {
+  content: ""; position: absolute; left: 94%; top: 48%; width: 85%; height: 11%;
+  transform: rotate(-15deg); background: linear-gradient(#cbd3cd,#616b6a); border-radius: 2px;
+}
 .dd-platter {
   position: relative;
   width: 100%;

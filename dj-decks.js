@@ -74,6 +74,7 @@
               <div class="dd-platter"><div class="dd-vinyl"><span class="dd-art">${icon('grooves', 22)}<img alt="" draggable="false" hidden></span></div><i class="dd-strobe"></i></div>
             </div>
             <div class="dd-scrub" tabindex="0" role="slider" aria-label="Перемотка пластинки деки ${id}" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" title="Тяните этикетку для перемотки. Shift — точнее, стрелки — по одной доле." hidden></div>
+            <div class="dd-arm-base" aria-hidden="true"><div class="dd-tonearm"><i class="dd-headshell"></i></div></div>
             <span class="dd-scratch-status" role="status" hidden>Загрузка звука…</span>
           </div>
           <div class="dd-wheel-modes" role="group" aria-label="Режим диска деки ${id}">
@@ -107,7 +108,7 @@
     container.replaceChildren(root);
     const find = selector => root.querySelector(selector);
     const refs = {
-      art: find('.dd-art img'), jog: find('.dd-jog'), platter: find('.dd-platter'), vinyl: find('.dd-vinyl'), title: find('h2'), artist: find('.dd-artist'), key: find('.dd-key'),
+      art: find('.dd-art img'), jog: find('.dd-jog'), platter: find('.dd-platter'), arm: find('.dd-tonearm'), vinyl: find('.dd-vinyl'), title: find('h2'), artist: find('.dd-artist'), key: find('.dd-key'),
       bpm: find('.dd-bpm'), time: find('.dd-current'), remaining: find('.dd-remaining'),
       wave: find('canvas'), zoom: find('.dd-zoom'), lock: find('.dd-lock'), scrub: find('.dd-scrub'), scratchStatus: find('.dd-scratch-status'),
       range: find('.dd-pitch-range'), steps: find('.dd-tempo-steps'), modes: find('.dd-wheel-modes'),
@@ -559,6 +560,13 @@
     }
     const duration = Number(state.duration || track?.duration) || 0;
     const time = Number(state.time) || 0;
+    // The stylus travels from the lead-in to the inner groove, including seeks and scratches.
+    const progress = duration > 0 ? Math.max(0, Math.min(1, time / duration)) : 0;
+    const armAngle = loaded ? 6 + Math.round(progress * 260) / 10 : -6;
+    if (deck.armAngle !== armAngle) {
+      deck.armAngle = armAngle;
+      refs.arm.style.transform = 'rotate(' + armAngle + 'deg)';
+    }
     const scratchMode = deck.mode === 'scratch';
     const jogLimit = scratchMode ? Math.ceil(duration) : deck.mode === 'bend' ? 12 : Number(refs.range.value);
     const jogValue = scratchMode ? Math.floor(time * 10) / 10 : deck.mode === 'bend' ? Number(state.bend || 0) : tempo;

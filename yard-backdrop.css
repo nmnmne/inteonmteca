@@ -32,13 +32,13 @@ body.spatial-room[data-yard-backdrop] { isolation: isolate; }
   border-radius: inherit;
   background: center / cover url("yard/assets/spawn-desktop.jpg");
   transform: scaleY(-1);
-  opacity: .17;
-  filter: blur(clamp(4px, .55vw, 10px)) saturate(.62);
-  /* Keep the mirrored light in small pools along the lacquer's outer edges. */
+  opacity: .36;
+  /* The bevel catches a second view. The broad central pane transmits
+     the original scene so windows and rooflines keep a single outline. */
   mask-image:
-    radial-gradient(ellipse 32% 12% at 6% 15%, #000a 0%, #0006 45%, transparent 80%),
-    radial-gradient(ellipse 24% 9% at 88% 20%, #000a 0%, #0005 50%, transparent 88%),
-    radial-gradient(ellipse 27% 8% at 100% 75%, #0008 0%, transparent 90%);
+    linear-gradient(90deg, #000 0%, #0004 2%, transparent 5% 95%, #0005 98%, #000),
+    linear-gradient(115deg, transparent 15%, #0004 21%, #0001 25%, transparent 25.5%),
+    linear-gradient(0deg, #000 0%, transparent 3% 96%, #0009);
 }
 @media (max-width: 680px) and (orientation: portrait) {
   .room-console > .console-reflection { background-image: url("yard/assets/spawn-mobile.jpg"); }
@@ -52,11 +52,12 @@ body.spatial-room[data-yard-backdrop] { isolation: isolate; }
 /* The open parts of the DJ faceplate pick up the passing yard. Keep the
    standalone listening room's original lighting and diffusion. */
 .room-console-home [data-yard-layer] {
-  --yard-blur: clamp(2px, .3vw, 5px);
-  opacity: .72;
+  inset: 0;
+  filter: none;
+  opacity: 1;
 }
 .room-console-home [data-yard-layer]::after {
-  background: linear-gradient(180deg, rgb(8 12 15 / 20%), transparent 36%, rgb(8 12 15 / 29%));
+  background: linear-gradient(180deg, #10171b38, transparent 21% 86%, #0c121722);
 }
 @media (prefers-reduced-motion: reduce) {
   [data-yard-layer] canvas { transition: none; }
