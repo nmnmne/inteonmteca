@@ -17,7 +17,7 @@ const distance = (a, b) => Math.hypot(b.x - a.x, b.z - a.z);
 
 // One social simulation for the first-person bird and its twelve neighbours.
 // The ordinary birds persist when they split off. No bird is spawned at a reunion.
-export function createCrowFlock(layout, openingView, { random = Math.random, residentVisits = false, allowKeyStory, crowTrees, allowBeacons = () => true } = {}) {
+export function createCrowFlock(layout, openingView, { random = Math.random, residentVisits = false, allowKeyStory, storyDeck, crowTrees, allowBeacons = () => true } = {}) {
   const range = (a, b) => a + (b - a) * random();
   const integer = (a, b) => Math.min(b, Math.floor(range(a, b + 1)));
   const birds = [];
@@ -76,7 +76,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
 
   const visits = residentVisits ? createCrowVisits(layout, birds, clearGround, random) : null;
   const pranks = createCrowPranks(birds, clearGround);
-  const keyStory = allowKeyStory ? createCrowKeyStory(layout,birds,clearGround,allowKeyStory) : null;
+  const keyStory = allowKeyStory ? createCrowKeyStory(layout,birds,clearGround,allowKeyStory,storyDeck) : null;
   const disputes = createCrowDisputes(layout, birds, groundNear, clearGround, relative);
   const allBirds = [...birds, ...disputes.guests];
   const rollCall = createCrowRollCall(birds);

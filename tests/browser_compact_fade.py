@@ -1,4 +1,4 @@
-"""Exercise the compact player's four-minute fade using virtual time and real input."""
+"""Exercise the compact player's one-minute fade using virtual time and real input."""
 import os
 import sys
 
@@ -49,17 +49,17 @@ def check(browser, url, width, height, touch):
 
     assert_level(a, 1)
     press(a)
-    advance(60_000)
+    advance(15_000)
     assert_level(a, .75)
     point(width / 2, height / 4)
-    advance(60_000)
+    advance(15_000)
     assert_level(a, .5)
 
     press(a)
     assert_level(a, 1)
-    advance(180_000)
+    advance(45_000)
     assert_level(a, .25)
-    advance(60_100)
+    advance(15_100)
     assert_level(a, 0)
 
     # Tap exactly where deck B was drawn, allowing the wake surface to intercept it.
@@ -73,19 +73,19 @@ def check(browser, url, width, height, touch):
     picker = compact.locator("#compact-picker")
     press(compact.locator("#compact-track-select"))
     picker.wait_for()
-    advance(241_000)
+    advance(61_000)
     assert_level(b, 1)
     assert picker.is_visible()
     page.keyboard.press("Escape")
     picker.wait_for(state="hidden")
-    page.clock.run_for(35)  # Dispatch the native popover toggle before advancing a minute.
-    advance(60_000)
+    page.clock.run_for(35)  # Dispatch the native popover toggle before advancing the clock.
+    advance(15_000)
     assert_level(b, .75)
 
     press(compact.get_by_role("button", name="Настройки звука"))
     dialog = page.locator("#dialog")
     dialog.wait_for()
-    advance(241_000)
+    advance(61_000)
     assert_level(b, 1)
     assert dialog.is_visible()
     press(dialog.locator("#dialog-close"))
@@ -94,13 +94,13 @@ def check(browser, url, width, height, touch):
     press(compact.locator("[data-dj-mode=full]"))
     studio = page.locator("#studio")
     studio.wait_for()
-    advance(241_000)
+    advance(61_000)
     assert_level(studio, 1)
     press(studio.locator("[data-dj-mode=compact]"))
     b.wait_for()
     assert_level(b, 1)
     assert b.get_attribute("aria-pressed") == "true"
-    advance(241_000)
+    advance(61_000)
     assert_level(b, 0)
     a.focus()
     assert_level(a, 1)

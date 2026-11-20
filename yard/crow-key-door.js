@@ -133,6 +133,50 @@ function createThiefCache() {
   }};
 }
 
+// One ground decal serves the key's expanding ripple and the trail up to the grate.
+function createGroundSigns() {
+  const geometry = new THREE.PlaneGeometry(1.52, 1.86).translate(0,.22,0);
+  const material = new THREE.ShaderMaterial({
+    transparent:true, depthWrite:false,
+    uniforms:{ripple:{value:0}, trail:{value:0}, distanceToCache:{value:0}},
+    vertexShader:`varying vec2 ground;
+      void main(){ground=position.xy; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`
+      uniform float ripple, trail, distanceToCache;
+      varying vec2 ground;
+      float stroke(vec2 point, vec2 tip) {
+        float t=clamp(dot(point,tip)/dot(tip,tip),0.,1.);
+        return length(point-t*tip);
+      }
+      void main() {
+        float radius=length(ground);
+        float halo=abs(radius-mix(.025,.62,ripple));
+        float rim=1.-smoothstep(.008,.018+fwidth(radius),halo);
+        float water=rim*smoothstep(0.,.09,ripple)*(1.-smoothstep(.70,1.,ripple));
+        float ink=0.;
+        for(int i=0;i<5;i++){
+          float stepIndex=float(i), side=mod(stepIndex,2.)*2.-1.;
+          vec2 foot=ground-vec2(side*.057,(stepIndex+.65)*distanceToCache/5.7);
+          foot.x+=side*.18*foot.y;
+          float claw=min(stroke(foot,vec2(0.,.086)),stroke(foot,vec2(.047,.059)));
+          claw=min(claw,min(stroke(foot,vec2(-.047,.059)),stroke(foot,vec2(0.,-.035))));
+          float mark=1.-smoothstep(.007,.015+fwidth(ground.x),claw);
+          ink=max(ink,mark*smoothstep(.025+.14*stepIndex,.12+.14*stepIndex,trail));
+        }
+        ink*=1.-smoothstep(.80,1.,trail);
+        float alpha=max(.80*ink,.75*water);
+        if(alpha<.01) discard;
+        vec3 color=mix(vec3(.23,.58,.58),vec3(.63,.35,.13),ink);
+        gl_FragColor=vec4(color,alpha);
+        #include <colorspace_fragment>
+      }`
+  });
+  const mesh=new THREE.Mesh(geometry,material);
+  mesh.name='crow-key-ground-signs';
+  mesh.userData.bakedShadowCaster=mesh.userData.bakedShadowReceiver=false;
+  return mesh;
+}
+
 export function createCrowKeyDoor() {
   const group=new THREE.Group();
   group.name='crows-thirteenth-door';
@@ -184,6 +228,7 @@ export function createCrowKeyDoor() {
   spill.userData.bakedShadowCaster=spill.userData.bakedShadowReceiver=false;
   const constellation=createKeyConstellation(), props=createThiefCache();
   group.add(door,key,echo,spill,constellation,props.cache,props.seal); group.visible=false;
+  let groundSigns;
   function update(story) {
     group.visible=Boolean(story && story.phase!=='idle');
     if (!group.visible) return;
@@ -195,30 +240,49 @@ export function createCrowKeyDoor() {
     key.scale.setScalar(k.scale);
     // Progressive courtyard batching freezes automatic matrices on every mesh.
     key.updateMatrix();
+    const ripple=story.ripple || 0, trail=story.footprints || 0;
+    if (ripple || trail) {
+      if (!groundSigns) {
+        groundSigns=createGroundSigns();
+        group.add(groundSigns);
+      }
+      const dx=story.cache.x-story.x, dz=story.z-story.cache.z;
+      groundSigns.visible=true;
+      groundSigns.position.set(story.x,.075,story.z);
+      groundSigns.rotation.set(-Math.PI/2,-Math.atan2(dx,dz),0,'YXZ');
+      groundSigns.updateMatrix();
+      const uniforms=groundSigns.material.uniforms;
+      uniforms.ripple.value=ripple;
+      uniforms.trail.value=trail;
+      uniforms.distanceToCache.value=Math.hypot(dx,dz);
+    } else if (groundSigns) groundSigns.visible=false;
     door.visible=open>.01;
     spill.visible=door.visible;
     const x=story.x+Math.sin(yaw)*.19, z=story.z-Math.cos(yaw)*.19;
     const doorYaw=-yaw+.20;
-    constellation.visible=story.elapsed>5.55 && story.elapsed<9.55;
+    const constellationAge=story.constellationAge ?? story.elapsed;
+    constellation.visible=constellationAge>5.55 && constellationAge<9.55;
     if (constellation.visible) {
       constellation.position.set(x,.68,z);
       constellation.rotation.y=doorYaw;
       constellation.updateMatrix();
-      constellation.material.uniforms.age.value=story.elapsed;
+      constellation.material.uniforms.age.value=constellationAge;
     }
-    if (!door.visible) {echo.visible=false;return;}
+    const brassLeft=1-THREE.MathUtils.smoothstep(story.elapsed,5.55,6.36);
+    const echoScale=story.echoScale ?? (open>.53 ? open*brassLeft : 0);
+    echo.visible=echoScale>0;
+    if(echo.visible) {
+      echo.position.set(x+.014*Math.sin(doorYaw),.68,z+.014*Math.cos(doorYaw));
+      echo.rotation.set(0,doorYaw,.21,'YXZ');
+      echo.scale.setScalar(.64*echoScale);
+      echo.updateMatrix();
+    }
+    if (!door.visible) return;
     door.position.set(x,.583,z);
     door.rotation.y=doorYaw;
     door.scale.x=open;
     door.updateMatrix();
     door.material.uniforms.age.value=story.elapsed;
-    // The thief takes the brass key. Its reflection unravels into a different bird.
-    const brassLeft=1-THREE.MathUtils.smoothstep(story.elapsed,5.55,6.36);
-    echo.visible=open>.53 && brassLeft>0;
-    echo.position.set(x+.014*Math.sin(doorYaw),.68,z+.014*Math.cos(doorYaw));
-    echo.rotation.set(0,doorYaw,.21,'YXZ');
-    echo.scale.setScalar(.64*open*brassLeft);
-    echo.updateMatrix();
     spill.rotation.set(-Math.PI/2,doorYaw,0,'YXZ');
     spill.position.set(x+.54*Math.sin(doorYaw),.069,z+.54*Math.cos(doorYaw));
     spill.scale.x=open;
@@ -229,6 +293,7 @@ export function createCrowKeyDoor() {
     group.removeFromParent(); geometry.dispose(); brass.dispose(); door.geometry.dispose(); door.material.dispose();
     spill.geometry.dispose(); spill.material.dispose();
     constellation.geometry.dispose(); constellation.material.dispose();
+    if (groundSigns) {groundSigns.geometry.dispose(); groundSigns.material.dispose();}
     props.dispose();
   }};
 }

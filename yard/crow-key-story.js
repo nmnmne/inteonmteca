@@ -1,5 +1,6 @@
 import { pointInRing } from './navigation.js';
 import { CROW_BEACON_DURATION, crowBeaconCode, crowBeaconPulse } from './crow-beacon-code.js';
+import { createCrowStoryPerformance } from './crow-story-scenes.js';
 
 const gap = (a,b) => Math.hypot(b.x-a.x,b.z-a.z);
 const bearing = (a,b) => Math.atan2(b.x-a.x,a.z-b.z);
@@ -8,15 +9,17 @@ const smooth = v => { const t=Math.max(0,Math.min(1,v)); return t*t*(3-2*t); };
 const beat = (t,start,duration) => Math.sin(Math.PI*smooth((t-start)/duration))**2;
 const callAt=2.78, replyAt=4.20;
 
-// The finder opens the impossible door. Two other flock members use its reflection
-// as a distraction, pass the real key beak-to-beak and hide it under a grate.
-export function createCrowKeyStory(layout,birds,clearGround,allowed) {
+// Reserve three birds and a clear patch of ground for the duration of a performance.
+export function createCrowKeyStory(layout,birds,clearGround,allowed,deck) {
   const leader=birds[0], targets=new Map();
   const state={phase:'idle',count:0,elapsed:0,x:0,z:0,yaw:0,door:0,
     key:{x:0,y:0,z:0,tilt:0,turn:0,scale:1},cache:{x:0,z:0,open:0},evidence:0,
     finder:null,thief:null,accomplice:null,
     beacons:{code:0,call:null,reply:null,acknowledged:false,thief:{pulse:0},accomplice:{pulse:0}}};
   let began=0,nextAt=0,landing=0,finder,thief,accomplice,escape,rendezvous,escapeFrom,handoffAt;
+
+  let stageSet, performance;
+  if (deck) Object.assign(state,{plan:null,scene:null,sceneIndex:-1,echoScale:0,constellationAge:0,ripple:0,footprints:0});
 
   function offset(origin,yaw,side,forward) {
     return {x:origin.x+Math.cos(yaw)*side+Math.sin(yaw)*forward,
@@ -60,12 +63,16 @@ export function createCrowKeyStory(layout,birds,clearGround,allowed) {
     state.beacons.code=crowBeaconCode(accomplice.id,thief.id,state.count);
     state.beacons.call=state.beacons.reply=null; state.beacons.acknowledged=false;
     Object.assign(state.key,{x:state.x,y:.073,z:state.z,tilt:0,turn:0,scale:1});
+    stageSet=set;
+    if (deck) state.key.scale=0;
     escape=set.out; rendezvous=set.meeting; escapeFrom=handoffAt=null;
     began=time; landing=flock.landingCount;
   }
   function clear(time,completed) {
     finder.storyPose=thief.storyPose=accomplice.storyPose=null;
     targets.clear();
+    performance=null;
+    if (deck) Object.assign(state,{plan:null,scene:null,sceneIndex:-1,echoScale:0,constellationAge:0,ripple:0,footprints:0});
     state.phase='idle'; state.door=state.evidence=state.cache.open=0;
     state.finder=state.thief=state.accomplice=null;
     state.beacons.call=state.beacons.reply=null;
@@ -104,11 +111,20 @@ export function createCrowKeyStory(layout,birds,clearGround,allowed) {
     const age=time-began,k=state.key,f=finder.storyPose,t=thief.storyPose,a=accomplice.storyPose;
     if (state.phase==='approach') {
       if ([finder,thief,accomplice].every(b=>b.y<.34 && gap(b,targets.get(b.id))<.39)) {
-        state.phase='knock'; began=time;
+        began=time;
+        if (deck) {
+          state.plan=deck.next();
+          performance=createCrowStoryPerformance(state.plan,state,finder,thief,accomplice,stageSet,targets,face);
+          performance.update(0,dt);
+        } else state.phase='knock';
       } else if (age>8) clear(time,false);
       return;
     }
     state.elapsed=age;
+    if (performance) {
+      if (performance.update(age,dt)) clear(time,true);
+      return;
+    }
     face(finder,state,dt);
     if (age<6.6) face(thief,state,dt);
     else if (age>=8.55 && gap(thief,rendezvous)<.45) face(thief,accomplice,dt);

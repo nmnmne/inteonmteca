@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 from browser_crow_flock import BASE, OBSERVE, observe_walk
+from courtyard_phase import fixed_courtyard_phase
 
 
 def check(browser, mobile):
@@ -12,6 +13,14 @@ def check(browser, mobile):
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.on("console", lambda m: errors.append(m.text) if "Shader Error" in m.text else None)
     page.route("**/yard/auto-walk.js*",observe_walk)
+    # Choose the performance, leaving staging, choreography, camera and renderer live.
+    page.route("**/yard/crow-story-deck.js*", lambda route: route.fulfill(
+        content_type="text/javascript",
+        body="""export function createCrowStoryDeck() {
+          return {next: () => ({opening:'knock',middle:['echo','lookout','relay'],ending:'gift'})};
+        }"""))
+    fixed_courtyard_phase(page)
+    page.add_init_script("Date.now = () => Date.parse('2026-06-21T06:04:00Z') + performance.now()")
     page.goto(BASE+"/",wait_until="domcontentloaded")
     page.wait_for_function("window.crowQA && document.body.dataset.yardBackdrop==='live'",timeout=60000)
     page.evaluate(OBSERVE)
@@ -21,11 +30,12 @@ def check(browser, mobile):
       const q=crowQA;
       for(let i=0;i<3600;i++) {
         q.walk.update(.1);
-        if (q.flock.keyStory?.door>.99) return;
+        const s=q.flock.keyStory;
+        if (s?.phase==='middle' && s.scene==='echo' && s.door>.99 && s.echoScale>.85) return;
       }
-      throw Error('No doorway appeared during the walk');
+      throw Error('The echo scene never staged the key and its double during the walk');
     }""")
-    page.wait_for_function("crowQA.frame.scene.getObjectByName('crow-key-double')?.visible")
+    page.wait_for_function("crowQA.frame.scene.getObjectByName('crow-key-double')?.visible",timeout=15000)
     result=page.evaluate("""async () => {
       const T=await import('/yard/vendor/three.module.js');
       const {scene,camera,renderer}=crowQA.frame;

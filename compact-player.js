@@ -75,7 +75,8 @@
   let side = 'A', importSide = 'A';
   const active = () => document.body.dataset.yardWindow === 'dj' && document.body.dataset.djMode === 'compact';
 
-  const fadeDuration = 4 * 60 * 1000;
+  const fadeDuration = 60_000;
+  const fadeStep = fadeDuration / 256;
   const settings = document.getElementById('dialog');
   let fadeEnd = 0, fadeTimer = 0, openPanel = null;
 
@@ -86,14 +87,14 @@
     display.style.opacity = String(remaining / fadeDuration);
     root.toggleAttribute('data-faded', remaining === 0);
     // Each step is smaller than one level of 8-bit alpha. No frame loop is needed.
-    if (remaining) fadeTimer = setTimeout(drawFade, Math.min(750, remaining));
+    if (remaining) fadeTimer = setTimeout(drawFade, Math.min(fadeStep, remaining));
   }
   function wakeDisplay() {
     clearTimeout(fadeTimer);
     fadeEnd = performance.now() + fadeDuration;
     display.style.opacity = '1';
     root.removeAttribute('data-faded');
-    if (active() && !openPanel && !document.hidden) fadeTimer = setTimeout(drawFade, 750);
+    if (active() && !openPanel && !document.hidden) fadeTimer = setTimeout(drawFade, fadeStep);
   }
   function holdFor(panel, opened) {
     if (opened && active()) openPanel = panel;

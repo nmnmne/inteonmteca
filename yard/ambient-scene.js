@@ -3,6 +3,7 @@ import { createYardScene } from './scene.js?v=ural-courtyard-1';
 import { courtyardSunForLocation, solarLighting } from './solar-clock.js';
 import { ambientOpeningView, createAutoWalk } from './auto-walk.js?v=crow-flock-1';
 import { createCrowFlock } from './crow-flock.js';
+import { createCrowStoryDeck } from './crow-story-deck.js';
 import { createCrowModels } from './crow-models.js';
 import { createResidentLayers } from './resident-layers.js';
 import { addPuddles } from './puddles.js';
@@ -169,7 +170,9 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     const openingView = ambientOpeningView(layout, aspect);
     const residentVisits = Boolean(document.querySelector('.room-presence'));
     const allowCrowSignals = () => !reducedMotion.matches && (yard?.scene.userData.virtuality || 0)<.12;
-    flock = createCrowFlock(layout, openingView, {residentVisits,
+    let storyStorage;
+    try { storyStorage = window.localStorage; } catch { /* Stories can still play in this tab. */ }
+    flock = createCrowFlock(layout, openingView, {residentVisits, storyDeck:createCrowStoryDeck(Math.random, storyStorage),
       crowTrees:() => allowCrowSignals() && yard?.scene.userData.crowTrees,
       allowKeyStory:allowCrowSignals, allowBeacons:allowCrowSignals});
     walk = createAutoWalk(layout, { openingView, flock });
