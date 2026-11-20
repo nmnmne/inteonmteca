@@ -1,4 +1,16 @@
 window.DJ_SPATIAL_TRACKS = {
+  "media/Memphis/Матт - Memphis.flac": {
+    "spatialSrc": "assets/dj-spatial/speaker-bed-v1-a661b5f8-cd9f01196da59bb575e2d6.wv",
+    "layout": "7.1.4",
+    "channels": 12,
+    "sampleRate": 44100,
+    "frames": 5787731,
+    "integrated": -14.0,
+    "truePeak": -5.2,
+    "lra": 2.3,
+    "bytes": 128656550,
+    "sha256": "191405b9d117802ba62095b9c78de49949be20b3985c2a1b66d65b92acf15fd0"
+  },
   "media/Deadsouls/Матт - Deadsouls.flac": {
     "spatialSrc": "assets/dj-spatial/speaker-bed-v1-a661b5f8-49897604b838fac2333e1a.wv",
     "layout": "7.1.4",
@@ -166,18 +178,6 @@ window.DJ_SPATIAL_TRACKS = {
     "lra": 8.6,
     "bytes": 83718532,
     "sha256": "52f638dc98286ec99e3daba827299e24640afde7779dfd93adf1a6f2d566f1e8"
-  },
-  "media/Memphis/Матт - Memphis.flac": {
-    "spatialSrc": "assets/dj-spatial/speaker-bed-v1-a661b5f8-cd9f01196da59bb575e2d6.wv",
-    "layout": "7.1.4",
-    "channels": 12,
-    "sampleRate": 44100,
-    "frames": 5787731,
-    "integrated": -14.0,
-    "truePeak": -5.2,
-    "lra": 2.3,
-    "bytes": 128656550,
-    "sha256": "191405b9d117802ba62095b9c78de49949be20b3985c2a1b66d65b92acf15fd0"
   },
   "media/N01Dentity/Матт - N01Dentity.flac": {
     "spatialSrc": "assets/dj-spatial/speaker-bed-v1-a661b5f8-d8479a0e5cb1ccba896521.wv",

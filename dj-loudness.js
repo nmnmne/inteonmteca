@@ -1,4 +1,22 @@
 window.DJ_LOUDNESS = {
+  "media/Memphis/Матт - Memphis.flac": {
+    "src": "assets/dj-audio/r128-stereo-v1-f5a39f3c9f70f8df3b9db1c1.flac",
+    "integrated": -14.0,
+    "truePeak": -4.5,
+    "lra": 2.9,
+    "gainDb": -4.2,
+    "limited": false,
+    "inputIntegrated": -9.8,
+    "inputTruePeak": -0.3,
+    "sampleRate": 44100,
+    "frames": 5787731,
+    "sourceHash": "f5a39f3c9f70f8df3b9db1c14e91f50d599bdff1fb51740b587389d827e0a5dd",
+    "sha256": "cd9f01196da59bb575e2d62e3b63c4511e4e6b81b2ae8aea06b5457b81ea9bde",
+    "scratchSrc": "assets/dj-audio/scratch-v1-cd9f01196da59bb575e2d62e.pcm",
+    "scratchRate": 44100,
+    "scratchFrames": 5787731,
+    "scratchHash": "42f5f9260b7230d6b38159be37790802d16f371f058536d2b8e3d4b1cc8935f0"
+  },
   "media/Deadsouls/Матт - Deadsouls.flac": {
     "src": "assets/dj-audio/r128-stereo-v1-c1eb0471d5c133cd168938b5.flac",
     "integrated": -14.0,
@@ -250,24 +268,6 @@ window.DJ_LOUDNESS = {
     "scratchRate": 48000,
     "scratchFrames": 4794095,
     "scratchHash": "2ab07f4aee2012b3a5b1d5743f205aa0f175f650e16125a9766e226478d01daa"
-  },
-  "media/Memphis/Матт - Memphis.flac": {
-    "src": "assets/dj-audio/r128-stereo-v1-f5a39f3c9f70f8df3b9db1c1.flac",
-    "integrated": -14.0,
-    "truePeak": -4.5,
-    "lra": 2.9,
-    "gainDb": -4.2,
-    "limited": false,
-    "inputIntegrated": -9.8,
-    "inputTruePeak": -0.3,
-    "sampleRate": 44100,
-    "frames": 5787731,
-    "sourceHash": "f5a39f3c9f70f8df3b9db1c14e91f50d599bdff1fb51740b587389d827e0a5dd",
-    "sha256": "cd9f01196da59bb575e2d62e3b63c4511e4e6b81b2ae8aea06b5457b81ea9bde",
-    "scratchSrc": "assets/dj-audio/scratch-v1-cd9f01196da59bb575e2d62e.pcm",
-    "scratchRate": 44100,
-    "scratchFrames": 5787731,
-    "scratchHash": "42f5f9260b7230d6b38159be37790802d16f371f058536d2b8e3d4b1cc8935f0"
   },
   "media/N01Dentity/Матт - N01Dentity.flac": {
     "src": "assets/dj-audio/r128-stereo-v1-6f19fffb84db11103171ead4.flac",
