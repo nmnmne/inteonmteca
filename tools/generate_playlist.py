@@ -10,6 +10,7 @@ from typing import Iterable
 
 AUDIO_EXTENSIONS = {".flac", ".mp3", ".wav", ".m4a", ".ogg", ".opus", ".aac"}
 LEGACY_MEDIA_DIRECTORIES = {"wave-phonk"}
+OPENING_TRACK = "media/Memphis/Матт - Memphis.flac"
 
 DASH_SPLIT = re.compile(r"\s*-\s*", re.UNICODE)
 
@@ -57,7 +58,7 @@ def build_playlist(media_root: Path, assets_root: Path, public_root: Path) -> li
         }
 
         playlist.append(item)
-    return playlist
+    return sorted(playlist, key=lambda track: track["id"] != OPENING_TRACK)
 
 
 def write_playlist(root: Path) -> Path:

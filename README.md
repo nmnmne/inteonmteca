@@ -4,7 +4,9 @@ The home page combines the original `inteonmteca` listening room, animated wordm
 
 ## Structure
 
-- `index.html` opens the decks and mixer in the room's former playlist area. Press **F** or the fullscreen button to expand the console. Each deck has a searchable playlist next to the waveform. A track can also be dragged from either list onto the desired deck.
+- `index.html` opens a compact player between two narrow panels overlooking the live courtyard. Expand the player to use both decks and the mixer. Each full deck has one display with a waveform above four rows of its searchable playlist. Drag a track from either list onto the desired deck.
+- Deck A opens with **Матт — Memphis** and deck B with **High Stage Of Reality**. At the listener’s local midnight, deck A returns to Memphis. During playback, scratching or recording, the reset waits until the mix is idle.
+- Minimize the player to keep the mix playing over the courtyard, or close it to stop playback. The desktop dock reopens the player or launches Eng-Rus, which cycles through 48 English phrases and their Russian translations. Idle desktop panels retract after 20 seconds.
 - Deck A opens with **Echoes Resurface** and B with **High Stage Of Reality**. Use ↑/↓ to select a track, then Enter or **Загрузить** to load it. Both lists stay open during playback. Each has independent search, sorting and filters for all tracks, favourites and imports. Mark the selected track with the star. Loading resets the controls on that deck while preserving the shared crossfader.
 - **Скретч** is active on both digital jog wheels. Hold and turn the top surface with a mouse or finger to scratch, or use the ribbed rim to nudge the beat. One turn corresponds to 1.8 seconds. The central display shows time in scratch mode and the adjustment in **Подгонка** or **Темп** mode. Tap or drag the waveform to seek anywhere at 1×. Zoom to 2×, 4× or 8× for finer placement. On the waveform, use ←/→ to move one beat, or hold Shift for an eighth of a beat. Use **SYNC** to align beats and the **−** and **+** keys next to **Loop** to halve or double the loop length.
 - Catalogue scratches read short, seekable stereo PCM regions prepared from each normalized master. Browser imports use their own audio. Large compressed imports keep a rolling window of roughly 12 seconds of played sound. Play the desired passage first when the deck asks for it.
@@ -109,8 +111,7 @@ with separate tags. `script.js` has top-level declarations and stays bare.
 
 ## Pointer effects
 
-`pointer-life.js` / `pointer-life.css` add a soft aura that follows a mouse (desktop
-only) and short rings on taps and when a track starts. Both are event-driven: nothing
-is scheduled while the visitor is idle, at most four rings exist at once, and both are
-removed by `prefers-reduced-motion` and by the low graphics tier. Strength: the two
-`rgba(..., .17)` / `.07` stops in `.pointer-aura`; ring size: `--ring-scale`.
+On devices with a mouse, `pointer-life.js` and `pointer-life.css` draw an inertial ink spot.
+Its direction changes in 45° steps every half second. While visible, it displays a newly
+generated eight-digit code each second. The low graphics tiers keep a smaller spot.
+Touch uses the existing tap response, and reduced motion turns off the moving ink.

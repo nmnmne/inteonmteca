@@ -75,6 +75,11 @@ if (location.protocol === "file:") {
   const raycaster = new THREE.Raycaster();
   const coarsePointer = matchMedia("(pointer: coarse)").matches;
   if (coarsePointer) input.setMode("walking");
+  function renderScene() {
+    const level = Number(document.documentElement.dataset.graphicsLevel) || (coarsePointer ? 3 : 5);
+    scene.userData.updateLandscapingDetail?.(camera.position, level);
+    renderer.render(scene, camera);
+  }
   let nearWall = false;
   let reading = false;
   let last = performance.now();
@@ -280,7 +285,7 @@ if (location.protocol === "file:") {
     if (!returnPose && !document.hidden && !renderer.getContext().isContextLost() && dirty) {
       updateWater(now / 1000);
       if (scene.userData.grassWind) scene.userData.grassWind.value = now / 1000;
-      renderer.render(scene, camera);
+      renderScene();
       document.documentElement.dataset.yardReady = "true";
       if (firstFrame) {
         firstFrame = false;
@@ -397,7 +402,7 @@ if (location.protocol === "file:") {
           body.yaw = origin.yaw + turn*blend;
           body.pitch = origin.pitch + ((target.pitch || 0)-origin.pitch)*blend;
           flightEye = layout.movement.eyeM + Math.sin(Math.PI*t)*Math.min(6, Math.hypot(target.x-origin.x,target.z-origin.z)*.15);
-          placeCamera(); renderer.render(scene, camera);
+          placeCamera(); renderScene();
           if (t<1 && !disposed) requestAnimationFrame(fly);
           else {
             Object.assign(body, target); flightEye = layout.movement.eyeM; placeCamera();
@@ -406,13 +411,13 @@ if (location.protocol === "file:") {
               appliedLook = { ...input.sample().look }; input.setMode(previousMode); placeCamera();
               window.inteonStreet?.savePose(body);
             }
-            renderer.render(scene, camera); requestAnimationFrame(() => { flightPromise = null; resolve(); });
+            renderScene(); requestAnimationFrame(() => { flightPromise = null; resolve(); });
           }
         };
         requestAnimationFrame(fly);
       });
     },
-    renderSnapshot: () => { if (!disposed) renderer.render(scene, camera); },
+    renderSnapshot: () => { if (!disposed) renderScene(); },
     reading: () => reading,
     openPlayer: () => setReading(true),
   };

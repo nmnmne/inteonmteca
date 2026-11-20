@@ -58,7 +58,7 @@
     root.setAttribute('aria-label', 'Deck ' + id);
     root.innerHTML = `
       <header class="dd-head">
-        <div class="dd-heading"><span class="dd-ident">${id}</span><span class="dd-deck-state">Свободна</span></div>
+        <div class="dd-heading"><span class="dd-ident">${id}</span></div>
         <div class="dd-head-controls">
           <button type="button" class="dd-chip dd-lock" title="Сохранять тональность при изменении темпа" aria-pressed="true">${icon('lock', 12)}<span>Key lock</span></button>
         </div>
@@ -70,15 +70,18 @@
         </div>
         <div class="dd-scope">
           <div class="dd-wave-controls">
-            <span class="dd-current">00:00</span>
+            <span class="dd-wave-position"><span class="dd-current">00:00</span><span class="dd-deck-state">Свободна</span></span>
             <span class="dd-beats" role="img" aria-label="Сетка долей недоступна"><i></i><i></i><i></i><i></i></span>
             <div class="dd-wave-tools"><span class="dd-remaining">−00:00</span><button type="button" class="dd-zoom" title="Изменить масштаб волны" aria-label="Масштаб волны 1×">${icon('zoom',12)}<span>1×</span></button></div>
           </div>
-          <canvas class="dd-wave" tabindex="0" role="slider" aria-label="Позиция на волне деки ${id}" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" title="Коснитесь волны или потяните для перемотки. Стрелки — по доле, с Shift — точнее."></canvas>
+          <div class="dd-wave-surface">
+            ${id === 'B' ? `<svg class="dd-wave-clip" width="0" height="0" aria-hidden="true"><defs><clipPath id="dd-sunset-clip"><path/></clipPath></defs></svg><div class="dd-wave-sunset" aria-hidden="true"></div>` : ''}
+            <canvas class="dd-wave" tabindex="0" role="slider" aria-label="Позиция на волне деки ${id}" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" title="Коснитесь волны или потяните для перемотки. Стрелки — по доле, с Shift — точнее."></canvas>
+          </div>
         </div>
         <section class="dd-browser" id="dd-browser-${id}" aria-label="Плейлист деки ${id}">
           <div class="dd-browser-head">
-            <input type="search" class="dd-browse-search" placeholder="Поиск треков" aria-label="Поиск по плейлисту деки ${id}" autocomplete="off">
+            <input type="search" class="dd-browse-search" placeholder="Поиск" aria-label="Поиск по плейлисту деки ${id}" autocomplete="off">
             <span class="dd-browse-count"></span>
             <button type="button" class="dd-browse-options" popovertarget="dd-options-${id}" aria-label="Подборка и сортировка деки ${id}" title="Подборка и сортировка">${icon('settings',15)}</button>
           </div>
@@ -148,6 +151,7 @@
       title: find('h2'), artist: find('.dd-artist'), key: find('.dd-key'),
       bpm: find('.dd-bpm'), time: find('.dd-current'), remaining: find('.dd-remaining'),
       beats: find('.dd-beats'), wave: find('.dd-wave'), zoom: find('.dd-zoom'), lock: find('.dd-lock'), scratchStatus: find('.dd-scratch-status'),
+      sunsetShape: find('#dd-sunset-clip path'),
       range: find('.dd-pitch-range'), steps: find('.dd-tempo-steps'), modes: find('.dd-wheel-modes'),
       rate: find('.dd-rail input'), rateText: find('.dd-pitch-value'),
       play: find('.dd-play'), cue: find('.dd-cue'), sync: find('.dd-sync'), loop: find('.dd-loop'),
@@ -489,16 +493,15 @@
     const playX = span ? (time - from) / span * width : 0;
     const bpm = baseTempo(state);
     const offset = Number(state.track?.offset) || 0;
-    const key = [Math.round(from / (span || 1) * width), Math.round(playX * scale), Math.round(bpm * 100), offset, state.loopBeats, state.loopStart, state.cue, state.hotCues?.join(','), state.track?.peaks?.length].join('|');
+    const startPixel = Math.round(from / (span || 1) * width);
+    const key = [span, startPixel, Math.round(playX * scale), Math.round(bpm * 100), offset, state.loopBeats, state.loopStart, state.cue, state.hotCues?.join(','), state.track?.peaks?.length].join('|');
     if (!force && key === deck.renderKey) return;
     deck.renderKey = key;
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
     ctx.clearRect(0, 0, width, height);
-    const teal = deck.id === 'A';
-    const outer = teal ? '#3ea7c3' : '#7a6ace';
-    const mid = teal ? '#6ddbe3' : '#ac98f1';
-    const inner = teal ? '#cbfff0' : '#ece4ff';
-    const cursor = teal ? '#e1fffb' : '#f5eeff';
+    const ruby = deck.id === 'A';
+    const mid = ruby ? '#ee1818' : '#ffb586';
+    const cursor = ruby ? '#ffe3d9' : '#fff3cf';
     const center = Math.floor(height / 2) + 0.5;
     ctx.fillStyle = 'rgba(255,255,255,.04)';
     for (const row of [.2, .8]) ctx.fillRect(0, Math.round(row * height), width, 1);
@@ -527,12 +530,14 @@
       for (let i = 1; i < 12; i++) ctx.fillRect(Math.round(width * i / 12), 0, 1, height);
     }
     const peaks = state.track?.peaks;
-    const bass = state.track?.bass;
-    if (peaks?.length && span) {
+    const bass = ruby ? state.track?.bass : null;
+    const shapeKey = [width, height, span, startPixel, peaks?.length].join('|');
+    if (peaks?.length && span && (ruby || force || shapeKey !== deck.sunsetKey)) {
       const pxPerBar = 2;
       const start = from / duration * peaks.length;
       const bins = span / duration * peaks.length / width;
       const half = Math.max(1, (height - 12) / 2);
+      const outline = ruby ? null : [];
       for (let x = 0; x < width; x += pxPerBar) {
         const i = Math.max(0, Math.min(peaks.length - 1, Math.floor(start + bins * x)));
         const j = Math.min(peaks.length, Math.max(i + 1, Math.floor(start + bins * (x + pxPerBar))));
@@ -541,27 +546,39 @@
           const sample = Number(peaks[n]) || 0;
           max = Math.max(max, sample);
           sum += sample;
-          low = Math.max(low, Number(bass?.[n]) || 0);
+          if (bass) low = Math.max(low, Number(bass[n]) || 0);
         }
         if (max <= 0) continue;
         const envelope = .64 * max + .36 * sum / (j - i);
         const high = Math.max(1, Math.min(1, envelope) * half);
+        if (outline) {
+          // The photo moves underneath these exact audio bars. Cues and the playhead stay on the canvas.
+          outline.push(`M${x} ${(center-high).toFixed(3)}h${pxPerBar}v${(2*high).toFixed(3)}h-${pxPerBar}z`);
+          continue;
+        }
         const core = high * (.26 + .45 * Math.min(1, bass?.length ? low : sum / (j - i)));
-        ctx.fillStyle = outer;
+        ctx.fillStyle = '#950909';
         ctx.fillRect(x, center - high, pxPerBar, high * 2);
         ctx.fillStyle = mid;
         ctx.fillRect(x, center - high * .86, pxPerBar - .45, high * 1.72);
-        ctx.fillStyle = inner;
+        ctx.fillStyle = '#ff4040';
         ctx.fillRect(x, center - core, pxPerBar - .45, core * 2);
       }
+      if (outline) {
+        refs.sunsetShape.setAttribute('d', outline.join(''));
+        deck.sunsetKey = shapeKey;
+      }
+    } else if ((!peaks?.length || !span) && deck.sunsetKey) {
+      refs.sunsetShape.removeAttribute('d');
+      deck.sunsetKey = '';
     }
-    ctx.fillStyle = teal ? '#6ddbe36b' : '#ac98f16b';
+    ctx.fillStyle = ruby ? '#ff40406b' : '#ffcc956b';
     ctx.fillRect(0, center, width, 1);
     if (!span) return;
     if (state.loopBeats > 0 && Number.isFinite(state.loopStart)) {
       const startX = (state.loopStart - from) / span * width;
       const loopWidth = beat * state.loopBeats / span * width;
-      ctx.fillStyle = teal ? '#6ddbe322' : '#ac98f125';
+      ctx.fillStyle = ruby ? '#e7191925' : '#f7ad8227';
       ctx.fillRect(startX, 0, loopWidth, height);
       ctx.fillStyle = mid;
       ctx.fillRect(startX, height - 2, loopWidth, 2);

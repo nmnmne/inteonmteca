@@ -4,6 +4,7 @@ import { solarLighting, sunForLocation } from './solar-clock.js';
 import { ambientOpeningView, createAutoWalk } from './auto-walk.js?v=crow-wall-framing-2';
 import { addPuddles } from './puddles.js';
 import { createSolarLighting } from './solar-lighting.js';
+import { createCameraOptics } from './camera-optics.js';
 
 const layoutURL = new URL('./data/site-layout.json?v=zhdanova-entrances-20261120', import.meta.url);
 
@@ -27,11 +28,12 @@ function releaseScene(scene) {
 
 export async function startAmbientScene(canvas, { signal, onReady, onError, onFrame, clearView = false } = {}) {
   const lifetime = new AbortController();
-  const mobile = matchMedia('(max-width: 800px), (pointer: coarse)').matches;
-  const maxPixels = clearView ? (mobile ? 400000 : 1048576) : (mobile ? 160000 : 385000);
+  const compact = matchMedia('(max-width: 800px), (pointer: coarse)');
+  const desktopPixels = [360000, 490000, 640000, 840000, 1100000, 1350000, 1600000, 1850000, 2100000, 2300000];
+  const mobilePixels = [155000, 255000, 400000, 460000, 535000, 610000, 680000, 750000, 825000, 900000];
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const frameMs = 1000 / 30;
-  let renderer, yard, walk, camera, resizeObserver, ripplePuddles, solar;
+  let renderer, yard, walk, camera, resizeObserver, ripplePuddles, solar, optics, graphicsLevel;
   let frame = 0, lastDraw = null, nextDraw = 0, nextDetail = 0, ready = false;
   let moreDetail = true;
 
@@ -40,11 +42,14 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     lifetime.abort();
     signal?.removeEventListener('abort', dispose);
     window.removeEventListener('pagehide', dispose);
+    window.removeEventListener('inteon-quality-change', resize);
+    compact.removeEventListener('change', resize);
     document.removeEventListener('visibilitychange', visibilityChanged);
     canvas.removeEventListener('webglcontextlost', contextLost);
     cancelAnimationFrame(frame);
     resizeObserver?.disconnect();
     solar?.dispose();
+    optics?.dispose();
     if (yard) releaseScene(yard.scene);
     if (renderer) {
       renderer.dispose();
@@ -66,8 +71,15 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
   function resize() {
     const width = Math.max(1, canvas.clientWidth);
     const height = Math.max(1, canvas.clientHeight);
-    const ratio = Math.min(devicePixelRatio || 1, 1, Math.sqrt(maxPixels / (width * height)));
+    const mobile = compact.matches;
+    const level = graphicsLevel = Math.max(1, Math.min(10, Math.round(Number(document.documentElement.dataset.graphicsLevel)) || (mobile ? 3 : 5)));
+    // Share the existing quality meter with the mixer. Labels, hit targets and
+    // waveforms keep their native resolution regardless of the 3D pixel budget.
+    const budget = (mobile ? mobilePixels : desktopPixels)[level-1] * (clearView ? 1 : .37);
+    const ratio = Math.min(devicePixelRatio || 1, clearView && level >= 4 ? 1.35 : 1, Math.sqrt(budget / (width*height)));
+    if (canvas.width === Math.floor(width*ratio) && canvas.height === Math.floor(height*ratio) && camera.aspect === width/height) return;
     renderer.setDrawingBufferSize(width, height, ratio);
+    optics?.reset();
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
   }
@@ -80,6 +92,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     cancelAnimationFrame(frame);
     frame = 0;
     lastDraw = null;
+    optics?.reset();
     nextDraw = 0;
     queueDraw();
   }
@@ -103,7 +116,8 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
         solar.update(Date.now(), camera);
         ripplePuddles(now / 1000);
         if (yard.scene.userData.grassWind) yard.scene.userData.grassWind.value = now / 1000;
-        renderer.render(yard.scene, camera);
+        yard.scene.userData.updateLandscapingDetail?.(camera.position,graphicsLevel);
+        optics.render(yard.scene,camera,dt,graphicsLevel,reducedMotion.matches);
         onFrame?.(canvas, now);
         if (!ready) {
           ready = true;
@@ -131,6 +145,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     const layout = await response.json();
     lifetime.signal.throwIfAborted();
     renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'low-power' });
+    optics = createCameraOptics(renderer);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     camera = new THREE.PerspectiveCamera(64, 1, 0.1, 510);
     const aspect = canvas.clientWidth / Math.max(1, canvas.clientHeight);
@@ -140,6 +155,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
       progressive: true, origin: walk.update(0), passThroughBuildings: true,
     });
     solar = createSolarLighting(renderer, yard, layout);
+    solar.update(Date.now(), camera);
     ripplePuddles = addPuddles(yard.scene, layout);
     canvas.addEventListener('webglcontextlost', contextLost);
     resize();
@@ -147,6 +163,8 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
       if (!lifetime.signal.aborted) resize();
     });
     resizeObserver.observe(canvas);
+    window.addEventListener('inteon-quality-change', resize);
+    compact.addEventListener('change', resize);
     document.addEventListener('visibilitychange', visibilityChanged);
     queueDraw();
     return dispose;

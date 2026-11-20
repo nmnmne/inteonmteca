@@ -6,6 +6,18 @@ from tools.generate_playlist import build_playlist
 
 
 class PlaylistGeneratorTests(unittest.TestCase):
+    def test_canonical_memphis_opens_the_catalog(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            paths = ["media/A/Матт - Memphis.flac", "media/Z/Last.flac",
+                     "media/Memphis/Матт - Memphis.flac"]
+            for item in paths:
+                path = root / item
+                path.parent.mkdir(parents=True)
+                path.write_bytes(b"audio")
+            playlist = build_playlist(root / "media", root / "assets", root)
+            self.assertEqual([track["id"] for track in playlist], [paths[2], paths[0], paths[1]])
+
     def test_legacy_catalog_cannot_restore_artwork(self):
         import json
         with tempfile.TemporaryDirectory() as temporary:

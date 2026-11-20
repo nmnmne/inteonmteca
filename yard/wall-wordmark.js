@@ -1,4 +1,5 @@
 import * as THREE from './vendor/three.module.js';
+import { createWallInscriptions } from './wall-inscriptions.js';
 
 // The wall is filmed in perspective. Paint the original alpha mask on a
 // transparent decal, then composite the live title's own effect layers into it.
@@ -103,6 +104,7 @@ export function createWallWordmark() {
     new THREE.MeshBasicMaterial({ map, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 }));
   logo.name = 'music-logo';
   logo.userData.bakedShadowCaster = false;
+  logo.add(createWallInscriptions(liveView, still));
   let image, theme, lastFrame = -1;
   const moonInk = new THREE.Color(0x96acb9), sunInk = new THREE.Color(0xffffff);
 
@@ -208,10 +210,10 @@ export function createWallWordmark() {
           ctx.drawImage(stamp, (1-scale)*width/2, (1-scale)*height/2, width*scale, height*scale);
         }
       }
-      if (wrap?.classList.contains('is-acid') && animate) {
+      if (bounds?.width && wrap.classList.contains('is-acid')) {
         ctx.clearRect(0,0,width,height);
         overlay(document.querySelector('canvas.logo-acid'), bounds, 1);
-      } else if (bounds) {
+      } else if (bounds?.width) {
         overlay(wrap.querySelector('.logo-ripples'), bounds, .75);
         overlay(wrap.querySelector('#logo-reactive-canvas'), bounds, .32);
         if (shards) drawShards(shards, bounds);

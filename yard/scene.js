@@ -511,7 +511,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
 
   addPlayground(scene, materials, layout.playground);
   addCourtyardFurniture(scene, materials, layout.obstacles);
-  addCourtyardTrees(scene, materials, layout.circles || []);
+  addCourtyardTrees(scene, materials, (layout.circles || []).filter(item => item.id.startsWith('tree-')));
   // Offline depth textures are loaded explicitly by main.js after geometry construction.
 
   scene.add(new THREE.AmbientLight(fixedSun.ambientColor || 0xfff6ea, fixedSun.ambientIntensity));

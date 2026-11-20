@@ -47,6 +47,7 @@ def exercise(browser, route, mobile=False, fallback=False):
     assert page.locator("[data-yard-toggle], #street-link").count() == 0
     studio = route != "/listening-room.html"
     if studio:
+        page.locator('button[data-dj-mode="full"]:visible').first.click()
         play = page.locator("#deck-a .dd-play")
         (play.tap if mobile else play.click)()
         page.wait_for_function("DJEngine.snapshot().A.time > .2 && DJEngine.snapshot().meters.left > .001")
@@ -114,12 +115,13 @@ def exercise(browser, route, mobile=False, fallback=False):
         }""")
         page.wait_for_function("qaYard.matrices >= 3", timeout=25000)
         if studio:
-            # The lacquer samples the live courtyard frame. A fixed poster or
-            # a transparent canvas must not satisfy this check.
+            assert page.locator('#studio > .console-reflection').count() == 0
+            page.locator('#deck-a .dd-jog').scroll_into_view_if_needed()
             page.evaluate("""() => {
-              const canvas = document.querySelector('#studio > .console-reflection');
-              const ctx = canvas.getContext('2d');
               window.qaReflection = () => {
+                const canvas = document.querySelector('#deck-a .jog-refraction');
+                if (!canvas) return null;
+                const ctx = canvas.getContext('2d');
                 const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
                 let hash = 0, lit = 0;
                 for (let i = 0; i < data.length; i += 508) {

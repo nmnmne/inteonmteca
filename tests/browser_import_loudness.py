@@ -9,6 +9,7 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 from playwright.sync_api import sync_playwright
+from studio_window import open_full_studio
 
 
 BASE = os.environ.get("INTEON_BASE_URL", "http://127.0.0.1:8080").rstrip("/")
@@ -80,6 +81,7 @@ def main():
         browser = playwright.chromium.launch(channel="msedge", headless=True)
         page = browser.new_page()
         page.goto(BASE+"/", wait_until="domcontentloaded")
+        open_full_studio(page)
         page.wait_for_function("window.DJImport && window.DJStorage && window.DJImportLoudness")
         for phase, rate, name in [(0,44100,'Quiet'), (.25,48000,'Loud')]:
             t=np.arange(rate*5)/rate
@@ -127,6 +129,7 @@ def main():
             db.close();
         }""", record['id'])
         page.reload(wait_until='domcontentloaded')
+        open_full_studio(page)
         restored=page.evaluate("""async id => {
             const row=(await DJStorage.list()).find(r=>r.id===id);
             if(row.normalization) throw Error('test setup left saved measurement');

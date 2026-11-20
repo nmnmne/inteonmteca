@@ -10,9 +10,9 @@ const restore = script.slice(start, end);
 test('selecting an audio-only playlist entry keeps its actual index', () => {
   const tracks = [{audio:'a.flac'}, {audio:'b.flac'}];
   const context = {tracks, track:tracks[1], currentTrackIndex:-1};
-  const begin = script.indexOf('  currentTrackIndex = tracks.findIndex');
-  const finish = script.indexOf('  if (currentTrackIndex < 0',begin);
-  vm.runInNewContext(script.slice(begin,finish),context);
+  const lookup = script.match(/currentTrackIndex = tracks\.findIndex\(\(candidate\) => \([\s\S]*?\n  \)\);/);
+  assert.ok(lookup, 'expected the selected track lookup');
+  vm.runInNewContext(lookup[0],context);
   assert.equal(context.currentTrackIndex,1);
 });
 function setup() {

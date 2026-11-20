@@ -84,26 +84,43 @@ export function addPuddles(scene, layout, onReady = () => {}) {
   scene.add(water);
 
   const loader = new THREE.TextureLoader();
-  let loaded = 0, disposed = false;
-  const textures = [];
-  let nightTexture, nightReady = false;
-  for (const [name, filename] of [
-    ['panorama', 'puddle-reflections.jpg'], ['probes', 'puddle-probes.png'], ['shores', 'puddle-shores.png'],
-  ]) {
+  let disposed = false;
+  const ready = new Set();
+  const textures = new Map();
+  function load(name, filename, tileWidth = 0) {
+    if (textures.has(name)) return;
     const texture = loader.load(new URL('./assets/' + filename, import.meta.url).href, image => {
       if (disposed) return;
-      if (name === 'panorama') uniforms.atlasGrid.value.set(image.image.width / 512, image.image.height / 128);
-      if (++loaded === 3) { material.visible = true; onReady(); }
+      ready.add(name);
+      if (tileWidth) uniforms.atlasGrid.value.set(image.image.width / tileWidth, image.image.height / (tileWidth / 4));
+      syncMix();
+      if (!material.visible && ready.has('probes') && ready.has('shores') && (ready.has('panorama') || ready.has('nightPanorama'))) {
+        material.visible = true;
+        onReady();
+      }
     });
     texture.flipY = false;
-    if (name === 'panorama') texture.colorSpace = THREE.SRGBColorSpace;
+    if (tileWidth) texture.colorSpace = THREE.SRGBColorSpace;
     if (name !== 'shores') {
       texture.generateMipmaps = false;
       texture.minFilter = texture.magFilter = name === 'probes' ? THREE.NearestFilter : THREE.LinearFilter;
     } else texture.anisotropy = 4;
     uniforms[name].value = texture;
-    textures.push(texture);
+    textures.set(name,texture);
   }
+  function syncMix() {
+    const night = scene.userData.windowNight?.value || 0;
+    uniforms.nightMix.value = ready.has('nightPanorama') ? (ready.has('panorama') ? night : 1) : 0;
+  }
+  function selectLight() {
+    const night = scene.userData.windowNight?.value || 0;
+    if (night < .98) load('panorama', 'puddle-reflections.jpg', 512);
+    if (night > .02) load('nightPanorama', 'puddle-reflections-night.jpg', 128);
+    syncMix();
+  }
+  load('probes','puddle-probes.png');
+  load('shores','puddle-shores.png');
+  selectLight();
   material.addEventListener('dispose', () => {
     disposed = true;
     textures.forEach(texture => texture.dispose());
@@ -112,16 +129,6 @@ export function addPuddles(scene, layout, onReady = () => {}) {
     uniforms.seconds.value = seconds;
     uniforms.daylight.value = 1 - (scene.userData.virtuality || 0);
     if (scene.userData.solarLighting) uniforms.reflectionTint.value.copy(scene.userData.solarLighting.reflectionTint);
-    const night = scene.userData.windowNight?.value || 0;
-    if (night > .02 && !nightTexture && !disposed) {
-      nightTexture = loader.load(new URL('./assets/puddle-reflections-night.jpg', import.meta.url).href, () => { nightReady = true; });
-      nightTexture.flipY = false;
-      nightTexture.colorSpace = THREE.SRGBColorSpace;
-      nightTexture.generateMipmaps = false;
-      nightTexture.minFilter = nightTexture.magFilter = THREE.LinearFilter;
-      uniforms.nightPanorama.value = nightTexture;
-      textures.push(nightTexture);
-    }
-    uniforms.nightMix.value = nightReady ? night : 0;
+    if (!disposed) selectLight();
   };
 }

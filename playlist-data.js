@@ -1,5 +1,11 @@
 window.INTEONMTECA_PLAYLIST = [
   {
+    "id": "media/Memphis/Матт - Memphis.flac",
+    "artist": "Матт",
+    "title": "Memphis",
+    "audio": "media/Memphis/Матт - Memphis.flac"
+  },
+  {
     "id": "media/Deadsouls/Матт - Deadsouls.flac",
     "artist": "Матт",
     "title": "Deadsouls",
@@ -82,12 +88,6 @@ window.INTEONMTECA_PLAYLIST = [
     "artist": "ыьек",
     "title": "M",
     "audio": "media/M/ыьек - M.flac"
-  },
-  {
-    "id": "media/Memphis/Матт - Memphis.flac",
-    "artist": "Матт",
-    "title": "Memphis",
-    "audio": "media/Memphis/Матт - Memphis.flac"
   },
   {
     "id": "media/N01Dentity/Матт - N01Dentity.flac",

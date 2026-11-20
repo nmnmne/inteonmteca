@@ -36,6 +36,7 @@ def check_route(browser, mobile):
     page.on("pageerror", lambda error: errors.append(error.stack))
     page.route("**/yard/auto-walk.js*", expose_walker)
     page.goto(BASE + "/#studio", wait_until="domcontentloaded")
+    page.locator('button[data-dj-mode="full"]:visible').first.click()
     page.wait_for_selector('body[data-yard-backdrop="live"]', timeout=45000)
     page.evaluate("""async () => {
         const {Scene} = await import('/yard/vendor/three.module.js');
@@ -52,7 +53,7 @@ def check_route(browser, mobile):
         };
         const render = Scene.prototype.onBeforeRender;
         Scene.prototype.onBeforeRender = function(renderer, scene, camera, ...rest) {
-            if (renderer.domElement.closest('[data-yard-layer]')) {
+            if (renderer.domElement.closest('[data-yard-layer]') && scene.userData.solarLighting) {
                 const proxy = scene.getObjectByName('digital-buildings'), grid = scene.getObjectByName('digital-ground');
                 qa.decal = scene.getObjectByName('music-logo').material.map;
                 qa.frame = {x:camera.position.x, z:camera.position.z, amount:scene.userData.virtuality,

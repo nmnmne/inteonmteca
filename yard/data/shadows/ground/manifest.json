@@ -18,8 +18,8 @@
       ],
       "file": "ground-00.png",
       "mobileFile": "ground-00-mobile.png",
-      "sha256": "be5f57074f81a4c8c942c00f1b413b475e7be95f0ecf52c6573b42407d9861c3",
-      "mobileSha256": "890149522527823ae0ba435cf35cd55f4a00bebd2bad7c05e880d0a0ce2b1704"
+      "sha256": "1bf36c089c5d9e7ac661873285b362aa6313edac49108572efd6b3a5e5f78b1b",
+      "mobileSha256": "cf54f29869ce8eaa71f2fe264d33d7a904e7f3ab7aae5c25c36b8abb1f5b97f3"
     },
     {
       "presetIndex": 1,
@@ -36,8 +36,8 @@
       ],
       "file": "ground-01.png",
       "mobileFile": "ground-01-mobile.png",
-      "sha256": "0e4647ca35a48174a01dc5d658e9c98cc63f156f87b57f678fea2afdddd1735e",
-      "mobileSha256": "cdb4934f68cfa88d211d5b1b31f7024b60404c8d633cfe437da634fc9ada0ebe"
+      "sha256": "072ba68d5729458c58064da398c0358312f4c42f04ef9c94a82dd29fceb01224",
+      "mobileSha256": "986fbef87dd406e0234a6e2c56dea0ce3c639cb76a95e9d61b9b6df9a22b2c91"
     },
     {
       "presetIndex": 2,

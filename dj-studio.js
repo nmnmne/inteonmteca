@@ -148,6 +148,7 @@
     const sort = find('.dd-browse-sort'), options = find('.dd-browse-options');
     const up = find('.dd-browse-up'), down = find('.dd-browse-down'), load = find('.dd-browse-load');
     const star = find('.dd-browse-star'), remove = find('.dd-browse-remove');
+    const empty = find('.dd-browse-empty');
     let rows = [], selected = -1, lastLoaded;
 
     function revealSelection() {
@@ -207,7 +208,6 @@
           <span class="dd-browse-bpm" title="BPM">${bpm > 0 ? Number(bpm.toFixed(1)) : '—'}</span>
         </div>`;
       }).join('');
-      const empty = find('.dd-browse-empty');
       empty.hidden = Boolean(rows.length);
       empty.textContent = query ? 'Треки не найдены' : 'В этой подборке нет треков';
       options.setAttribute('data-filtered', String(filter.value !== 'all' || Boolean(sort.value)));
@@ -442,10 +442,12 @@
     });
   }
   function schedulePaint() {
-    if (!paintTimer && !document.hidden) paintTimer = requestAnimationFrame(render);
+    if (!paintTimer && !document.hidden && (!document.body.dataset.yardWindow || document.body.dataset.yardWindow === 'dj'))
+      paintTimer = requestAnimationFrame(render);
   }
   function render() {
     paintTimer = 0;
+    if (document.body.dataset.yardWindow && document.body.dataset.yardWindow !== 'dj') return;
     const s = engine.snapshot();
     mixerDisplays.forEach((update) => update(s));
     channels.forEach((id) => window.DJDecks.render(id, s[id]));
@@ -663,6 +665,7 @@
     }
     const deck = $('#grid-deck'),
       bpm = $('#grid-bpm');
+    deck.value = focusedDeck;
     let taps = [];
     const refresh = () => {
       taps = [];
@@ -703,6 +706,7 @@
     const button = $('#import');
     let added = 0,
       duplicates = 0;
+    let firstTrack;
     const problems = [];
     for (const [i, file] of files.entries()) {
       button.textContent = 'Импорт ' + (i + 1) + '/' + files.length;
@@ -726,6 +730,7 @@
           added++;
           if (t.analysisMessage) problems.push(t.title + ' · ' + t.analysisMessage);
         }
+        firstTrack ??= track;
       } catch (e) {
         problems.push(file.name + ' · ' + e.message);
       }
@@ -743,6 +748,7 @@
           problems.map((m) => '<p class="import-note">' + esc(m) + '</p>').join(''),
       );
     else notice(added ? 'Добавлено треков: ' + added : 'Эти треки уже в плейлисте');
+    return firstTrack;
   }
   function importFiles(files, browser) {
     if (!files.length) return;
@@ -750,6 +756,7 @@
     importQueue = importQueue.then(() => importBatch(files, browser))
       .catch(() => notice('Не удалось завершить импорт аудио.'))
       .finally(() => { $('#import').innerHTML = icon('plus', 14) + 'Импорт'; });
+    return importQueue;
   }
   for (const id of channels) {
     const host = $('#deck-' + id.toLowerCase());
@@ -774,6 +781,14 @@
     });
   }
   const studio = $('#studio');
+  window.DJStudioLibrary = {
+    list: () => tracks.map(({id, title, artist}) => ({id, title, artist})),
+    get activeDeck() { return focusedDeck; },
+    revealSelection: side => deckBrowsers.get(side).revealSelection(),
+    load: (side, key) => loadDeck(side, tracks.find(track => track.id === key)),
+    importFiles: (side, files) => importFiles(files, deckBrowsers.get(side)),
+    openSettings
+  };
   studio.addEventListener('dragover', event => {
     if (!event.dataTransfer.types.includes('Files')) return;
     event.preventDefault();
@@ -796,6 +811,7 @@
     window.DJDecks.render(id, engine.snapshot()[id]);
   });
   window.addEventListener('dj-change', schedulePaint);
+  window.addEventListener('yard-app-visibility', schedulePaint);
   window.addEventListener('dj-error', (e) => notice(e.detail.message));
   window.addEventListener('dj-recorded', (e) => notice('Микс сохранён · ' + e.detail.filename));
   window.addEventListener('hashchange', resolveLegacyView);
@@ -861,7 +877,9 @@
     importBrowser = null;
   };
   document.addEventListener('keydown', (e) => {
+    const compact = document.body.dataset.yardWindow === 'dj' && document.body.dataset.djMode === 'compact';
     if (
+      (studio.inert && !compact) ||
       e.repeat ||
       e.ctrlKey ||
       e.metaKey ||
@@ -886,7 +904,10 @@
     else if (code === 'KeyZ' || code === 'KeyM') engine.setCut(code === 'KeyZ' ? 'A' : 'B', true);
     else if (code === 'KeyF' && document.fullscreenEnabled) toggleFullscreen();
     else if (code === 'Slash' && e.shiftKey) openKeys();
-    else if (code === 'Slash') activeBrowser().focusSearch();
+    else if (code === 'Slash') {
+      if (compact) $('#compact-track-select')?.click();
+      else activeBrowser().focusSearch();
+    }
     else return;
     e.preventDefault();
   });
@@ -894,6 +915,8 @@
     if (event.code === 'KeyZ' || event.code === 'KeyM') engine.setCut(event.code === 'KeyZ' ? 'A' : 'B', false);
   });
   function releaseCuts() { channels.forEach(id => engine.setCut(id, false)); }
+  window.addEventListener('yard-app-visibility', ({detail}) => { if (detail.app === 'dj' && !detail.visible) releaseCuts(); });
+  window.addEventListener('yard-dj-mode', ({detail}) => { if (detail.mode === 'compact') releaseCuts(); });
   window.addEventListener('blur', releaseCuts);
   window.addEventListener('pagehide', releaseCuts);
   document.addEventListener('visibilitychange', () => { if (document.hidden) releaseCuts(); });
@@ -904,10 +927,24 @@
     }
   });
   const preferredB = tracks.find(track => track.title === 'High Stage Of Reality');
-  const openingA = tracks.find(track => track.title === 'Echoes Resurface') || tracks.find(track => track !== preferredB);
+  const openingA = window.CourtyardOpening?.find(tracks) || tracks.find(track => track !== preferredB);
   const openingB = preferredB || tracks.find(track => track !== openingA);
   if (openingA) engine.load('A', openingA);
   if (openingB) engine.load('B', openingB);
+  let dailyOpeningPending = false;
+  function restoreDailyOpening() {
+    if (!dailyOpeningPending) return;
+    const state = engine.snapshot();
+    if (state.recording || channels.some(id => state[id].playing || state[id].scratching)) return;
+    dailyOpeningPending = false;
+    ++loadRequests.A;
+    if (openingA) engine.load('A', openingA);
+  }
+  window.CourtyardOpening?.watchDay(() => {
+    dailyOpeningPending = true;
+    restoreDailyOpening();
+  });
+  window.addEventListener('dj-change', restoreDailyOpening);
   resolveLegacyView();
   refreshPlaylists();
   schedulePaint();

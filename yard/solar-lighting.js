@@ -1,6 +1,8 @@
 import * as THREE from './vendor/three.module.js';
 import { solarLighting, sunForLocation } from './solar-clock.js';
 import { isBakedReceiver } from './shadow-atlas.js';
+import { createCourtyardSky } from './sky.js';
+import { addEntranceLighting } from './entrance-lighting.js';
 
 function solarDisk() {
   const canvas = document.createElement('canvas');
@@ -53,6 +55,8 @@ export function createSolarLighting(renderer, yard, layout, {mapSize = 1024} = {
     receivers:0, shadowUpdates:0, mapSize, elevationDeg:0, daylight:0,
   };
   const disk = solarDisk();
+  const sky = createCourtyardSky(scene);
+  const entranceLights = addEntranceLighting(scene,layout);
   scene.add(disk);
   sun.target.position.copy(bounds.center);
   sun.target.updateMatrixWorld();
@@ -84,6 +88,7 @@ export function createSolarLighting(renderer, yard, layout, {mapSize = 1024} = {
       lastSecond = second;
       const sample = sunForLocation(layout.origin, epochMs);
       const light = solarLighting(sample);
+      sky.setLight(light, sample);
       state.direction.fromArray(sample.direction);
       state.elevationDeg = sample.elevationDeg;
       state.daylight = sample.daylight;
@@ -102,6 +107,8 @@ export function createSolarLighting(renderer, yard, layout, {mapSize = 1024} = {
       edgeEffect.setSky(light.skyColor, light.fogColor);
     }
     const physical = 1 - (scene.userData.virtuality || 0);
+    sky.setPhysical(physical);
+    entranceLights(scene.userData.windowNight?.value || 0,physical);
     if (camera) disk.position.copy(camera.position).addScaledVector(state.direction, 410);
     disk.material.opacity = physical * THREE.MathUtils.smoothstep(state.elevationDeg, -.83, .8);
     if (state.daylight === 0 || physical < .65) return;

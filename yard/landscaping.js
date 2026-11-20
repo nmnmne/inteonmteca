@@ -8,7 +8,7 @@ function seeded(seed) {
 // A leafy spray has folded blades with a raised midrib. Its gaps are real
 // geometry, so the same silhouette is visible from the path and from the air.
 function leafSpray() {
-  const points = [], colors = [], indices = [];
+  const points = [], colors = [], indices = [], outline = [];
   const shades = [[.32,.45,.14],[.40,.52,.20],[.28,.40,.12],[.44,.54,.22]];
   for (let i=0;i<14;i++) {
     const t = i / 14, side = i % 2 ? 1 : -1;
@@ -23,18 +23,23 @@ function leafSpray() {
       const winding = side > 0 ? tri : [tri[0],tri[2],tri[1]];
       indices.push(...winding.map(v=>start+v));
     }
+    for (const index of side > 0 ? [0,1,4,0,4,3] : [0,4,1,0,3,4]) outline.push(start+index);
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors,3));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
+  // The far mesh keeps the complete perimeter and the original vertex normals.
+  geometry.setIndex([...indices, ...outline]);
+  geometry.setDrawRange(0, indices.length);
   return geometry;
 }
 
 export function addCourtyardTrees(scene, materials, circles) {
   if (!circles?.length) return;
   const random = seeded(14046), branches = [], foliage = [], up = new THREE.Vector3(0,1,0);
+  const crowns = [];
   const dummy = new THREE.Object3D();
   const branch = (a,b,radius) => {
     const direction = b.clone().sub(a);
@@ -77,16 +82,33 @@ export function addCourtyardTrees(scene, materials, circles) {
   const wood=new THREE.InstancedMesh(new THREE.CylinderGeometry(.7,1,1,7),materials.bark(),branches.length);
   branches.forEach((matrix,i)=>wood.setMatrixAt(i,matrix));
   wood.name='courtyard-tree-branches';
-  const leaves=new THREE.InstancedMesh(leafSpray(),new THREE.MeshLambertMaterial({
+  const leafMaterial=new THREE.MeshLambertMaterial({
     vertexColors:true, side:THREE.DoubleSide,
-  }),foliage.length);
-  const tint=new THREE.Color();
-  foliage.forEach((matrix,i)=>{
-    leaves.setMatrixAt(i,matrix);
-    leaves.setColorAt(i,tint.setRGB(.71+random()*.24,.72+random()*.21,.54+random()*.27));
   });
-  leaves.name='courtyard-tree-foliage';
-  scene.add(wood,leaves);
+  const tint=new THREE.Color();
+  scene.add(wood);
+  // Give each crown its own frustum bounds. Two distant trees used to form
+  // one large sphere which intersected the camera even with both behind it.
+  const perTree = foliage.length / circles.length;
+  circles.forEach(({x,z}, treeIndex) => {
+    const geometry = leafSpray();
+    const leaves = new THREE.InstancedMesh(geometry, leafMaterial, perTree);
+    for (let i=0; i<perTree; i++) {
+      leaves.setMatrixAt(i, foliage[treeIndex*perTree+i]);
+      leaves.setColorAt(i,tint.setRGB(.71+random()*.24,.72+random()*.21,.54+random()*.27));
+    }
+    leaves.name = 'courtyard-tree-foliage-' + treeIndex;
+    scene.add(leaves);
+    crowns.push({x,z,geometry, full:geometry.drawRange.count});
+  });
+  scene.userData.updateTreeDetail = (position, level) => {
+    for (const {x,z,geometry,full} of crowns) {
+      const distance = Math.hypot(position.x-x, position.y-4, position.z-z);
+      const threshold = 9+level*1.8 + (geometry.drawRange.start === 0 ? 2 : 0);
+      if (distance > threshold) geometry.setDrawRange(full, geometry.index.count-full);
+      else geometry.setDrawRange(0, full);
+    }
+  };
 }
 
 function surface(data, material, height) {
@@ -207,6 +229,7 @@ function addLawnTufts(scene, lawns, patches) {
   const transform = new THREE.Object3D();
   const triangle = new THREE.Triangle();
   const tint = new THREE.Color();
+  const cellSize = 16, cells = new Map();
   lawns.forEach((lawn, index) => {
     const ground = lawn.geometry;
     const position = ground.getAttribute('position');
@@ -229,21 +252,60 @@ function addLawnTufts(scene, lawns, patches) {
         samples.push([x, z, size]);
       }
     }
-    if (!samples.length) return;
+    for (const [x,z,size] of samples) {
+      const col = Math.floor(x/cellSize), row = Math.floor(z/cellSize);
+      const key = col + ',' + row;
+      if (!cells.has(key)) cells.set(key,{x:(col+.5)*cellSize, z:(row+.5)*cellSize, samples:[]});
+      const rotation = random() * Math.PI, height = size * (.77 + .52 * random());
+      const shade = .83 + random() * .17;
+      const y = lawn.position.y - .045 * size, green = shade * (.94 + .06 * random());
+      cells.get(key).samples.push([x,y,z,size,rotation,height,shade,green]);
+    }
+  });
+
+  const group = new THREE.Group();
+  group.name = 'lawn-tufts';
+  const patchesByDistance = [], shuffle = seeded(51839);
+  for (const [key, cell] of cells) {
+    const samples = cell.samples;
     const tufts = new THREE.InstancedMesh(geometry, material, samples.length);
-    for (const [i, [x, z, size]] of samples.entries()) {
-      transform.position.set(x, lawn.position.y - .045 * size, z);
-      transform.rotation.y = random() * Math.PI;
-      transform.scale.set(size, size * (.77 + .52 * random()), size);
+    // Distribute every prefix across the cell, regardless of triangulation order.
+    for (let i = samples.length - 1; i > 0; i--) {
+      const j = Math.floor(shuffle() * (i+1));
+      [samples[i], samples[j]] = [samples[j], samples[i]];
+    }
+    samples.forEach(([x,y,z,size,rotation,height,shade,green], i) => {
+      transform.position.set(x,y,z);
+      transform.rotation.y = rotation;
+      transform.scale.set(size,height,size);
       transform.updateMatrix();
       tufts.setMatrixAt(i, transform.matrix);
-      const shade = .83 + random() * .17;
-      tufts.setColorAt(i, tint.setRGB(shade, shade * (.94 + .06 * random()), shade * .92));
-    }
-    tufts.name = 'lawn-tufts-' + index;
+      tufts.setColorAt(i, tint.setRGB(shade,green,shade*.92));
+    });
+    tufts.name = 'lawn-tufts-' + key;
     tufts.userData.bakedShadowCaster = false;
-    scene.add(tufts);
-  });
+    tufts.computeBoundingSphere(); // Always enclose the full-density cell.
+    group.add(tufts);
+    patchesByDistance.push({x:cell.x,z:cell.z,tufts});
+  }
+  cells.clear();
+  scene.add(group);
+  // The digital boundary owns group visibility. Distance changes only its children.
+  const last = new THREE.Vector3(Infinity, Infinity, Infinity);
+  let lastLevel;
+  scene.userData.updateLandscapingDetail = (position, level = 5) => {
+    if (lastLevel === level && last.distanceToSquared(position) < .25) return;
+    last.copy(position);
+    lastLevel = level;
+    const near = 13 + level, far = 31 + level*3;
+    for (const {x,z,tufts} of patchesByDistance) {
+      const d = Math.hypot(x-position.x, position.y, z-position.z);
+      const density = 1 - THREE.MathUtils.smoothstep(d, near, far);
+      tufts.count = Math.round(tufts.instanceMatrix.count * density * density);
+      tufts.visible = tufts.count > 0;
+    }
+    scene.userData.updateTreeDetail?.(position,level);
+  };
 }
 
 export function addLandscaping(scene, materials, data) {

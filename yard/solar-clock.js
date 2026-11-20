@@ -49,13 +49,14 @@ function mixRGB(a, b, amount) {
 export function solarLighting({direction, elevationDeg, daylight}) {
   const twilight = smooth(elevationDeg, -12, -.5);
   const highSun = smooth(elevationDeg, -1, 17);
+  const evening = smooth(-direction[0], 0, .4) * smooth(elevationDeg, -11, -2) * (1-highSun);
   function sky(night, dusk, day) {
     return mixRGB(mixRGB(night, dusk, twilight), day, highSun);
   }
   return {
     sunVectorXYZ: direction,
-    skyColor: sky(0x1d2d48, 0x8994b1, 0xa7c9e3),
-    fogColor: sky(0x29364b, 0xd9a296, 0xc6d7de),
+    skyColor: mixRGB(sky(0x1d2d48, 0x8994b1, 0xa7c9e3), 0x966eaf, evening*.83),
+    fogColor: mixRGB(sky(0x29364b, 0xd9a296, 0xc6d7de), 0xee9b9e, evening*.73),
     sunColor: mixRGB(0xff9357, 0xfff0d8, highSun),
     sunIntensity: daylight * (1.65 + .48 * smooth(elevationDeg, 4, 45)),
     ambientColor: sky(0x9db3db, 0xe8c3c0, 0xfff2e3),
@@ -63,7 +64,7 @@ export function solarLighting({direction, elevationDeg, daylight}) {
     hemisphereSkyColor: sky(0x839bce, 0xc0afc3, 0xc1dcf1),
     hemisphereGroundColor: sky(0x4c546b, 0x927479, 0xa19170),
     hemisphereIntensity: .32 + .55*twilight + .22*highSun,
-    cloudColor: sky(0x333e55, 0xc59eaa, 0xf3f5fa),
-    reflectionTint: sky(0x334661, 0xc5a9aa, 0xffffff),
+    cloudColor: mixRGB(sky(0x333e55, 0xc59eaa, 0xf3f5fa), 0xec9eb7, evening*.73),
+    reflectionTint: mixRGB(sky(0x334661, 0xc5a9aa, 0xffffff), 0xef9eb7, evening*.58),
   };
 }

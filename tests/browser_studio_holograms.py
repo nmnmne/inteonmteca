@@ -3,6 +3,7 @@ import argparse
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
+from studio_window import open_full_studio
 
 
 def verify(browser, url, mobile, screenshots):
@@ -12,6 +13,7 @@ def verify(browser, url, mobile, screenshots):
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     page.goto(url, wait_until="domcontentloaded")
+    open_full_studio(page)
     title = page.locator('#deck-a .dd-track-text h2')
     page.wait_for_selector('#deck-a [aria-current=true]')
     page.evaluate("document.fonts.ready")

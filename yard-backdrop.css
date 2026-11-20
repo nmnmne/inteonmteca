@@ -21,27 +21,9 @@ body.spatial-room[data-yard-backdrop] { isolation: isolate; }
 }
 [data-yard-layer] canvas { opacity: 0; transition: opacity .55s ease; }
 [data-yard-backdrop="live"] [data-yard-layer] canvas { opacity: 1; }
-.room-console > .console-reflection {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  pointer-events: none;
-  border-radius: inherit;
-  background: center / cover url("yard/assets/spawn-desktop.jpg");
-  transform: scaleY(-1);
-  opacity: .22;
-  clip-path: var(--pane-shape);
-  mask-image: linear-gradient(116deg,transparent 6%,#0002 9%,transparent 12% 65%,#0003 72%,transparent 79%);
-}
 .room-console .jog-refraction {
   pointer-events: none; position: absolute; inset: 0; border-radius: 50%; width: 100%; height: 100%;
-  mask-image: radial-gradient(closest-side,transparent 78%,#0002 88%,#0003 91%,transparent 96%);
-}
-@media (max-width: 680px) and (orientation: portrait) {
-  .room-console > .console-reflection { background-image: url("yard/assets/spawn-mobile.jpg"); }
+  mask-image: radial-gradient(closest-side,transparent 79%,#0002 85%,#0005 90%,transparent 96%);
 }
 [data-yard-layer]::after {
   content: "";
@@ -56,9 +38,7 @@ body.spatial-room[data-yard-backdrop] { isolation: isolate; }
   filter: none;
   opacity: 1;
 }
-.room-console-home [data-yard-layer]::after {
-  background: linear-gradient(180deg, #10182421, transparent 18% 90%, #10182414);
-}
+.room-console-home [data-yard-layer]::after { content: none; }
 @media (prefers-reduced-motion: reduce) {
   [data-yard-layer] canvas { transition: none; }
 }

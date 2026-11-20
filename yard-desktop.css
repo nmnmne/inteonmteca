@@ -1,0 +1,159 @@
+/* Window controls belong to the app. The system panels only appear on the desktop. */
+.yard-window-actions {
+  display: inline-flex; align-items: center; gap: 4px; padding-inline-start: 5px;
+  border-inline-start: 1px solid #b4a59e4f;
+}
+.yard-window-actions .yard-win-action, #studio .yard-window-actions .yard-win-action {
+  display: inline-grid; place-items: center; width: 32px; height: 32px; min-width: 0; min-height: 0;
+  margin: 0; padding: 0; border: 1px solid #f8e9da2a; border-radius: 50%;
+  color: #fff5e9; background: #322e30d4; box-shadow: inset 0 1px #fff0df18;
+  font: 400 20px/1 system-ui,sans-serif; text-shadow: none; cursor: pointer; touch-action: manipulation;
+}
+#studio .yard-window-actions .yard-win-action::before { content: none; }
+.yard-window-actions .yard-layout-action i {
+  display: block; box-sizing: border-box; width: 14px; height: 12px;
+  border: 1px solid currentColor; border-radius: 2px;
+}
+.yard-layout-action[data-dj-mode=compact] i {
+  background: linear-gradient(currentColor,currentColor) center 2px / 10px 1px,
+    linear-gradient(currentColor,currentColor) center bottom 1px / 10px 3px;
+  background-repeat: no-repeat;
+}
+.yard-layout-action[data-dj-mode=full] i {
+  background: linear-gradient(currentColor,currentColor) center / 1px 8px,
+    linear-gradient(currentColor,currentColor) center 2px / 10px 1px;
+  background-repeat: no-repeat;
+}
+#studio .yard-layout-action[hidden], #yard-dj-compact[hidden] { display: none !important; }
+#yard-dj-compact { position: fixed; inset: 0; z-index: 35; pointer-events: none; }
+#yard-dj-compact :is(.compact-titlebar,.compact-display) { pointer-events: auto; }
+.yard-window-actions .yard-win-action:hover, #studio .yard-window-actions .yard-win-action:hover { background: #51484a; }
+.yard-window-actions [data-window-action=close]:hover, #studio .yard-window-actions [data-window-action=close]:hover { background: #904b43; }
+.yard-win-action:focus-visible, .yard-app-dock button:focus-visible, .yard-source:focus-visible {
+  outline: 2px solid #ffe2ae; outline-offset: 1px;
+}
+
+body.room-console-home:is([data-yard-window=desktop],[data-yard-window=engrus]) > :not(
+  [data-yard-layer], #yard-desktop-shell, #yard-engrus-window, #yard-map-sources,
+  .sky-clouds, .pointer-fluid, .pointer-ring, script, style, link
+) { display: none !important; }
+body.room-console-home:is([data-yard-window=desktop],[data-yard-window=engrus])::before,
+body.room-console-home:is([data-yard-window=desktop],[data-yard-window=engrus])::after { content: none; }
+body.room-console-home[data-yard-window=dj][data-dj-mode=compact] > :not(
+  [data-yard-layer], #yard-dj-compact, dialog[open], [popover]:popover-open, #notice,
+  .room-resident, .resident-speech, .sky-clouds, .pointer-fluid, .pointer-ring, script, style, link
+) { display: none !important; }
+body.room-console-home[data-yard-window=dj][data-dj-mode=compact]::before,
+body.room-console-home[data-yard-window=dj][data-dj-mode=compact]::after { content: none; }
+
+#yard-desktop-shell { --shell-ink: #f6f4f1; color: var(--shell-ink); }
+#yard-desktop-shell[hidden], #yard-engrus-window[hidden] { display: none; }
+.yard-system-panel, .yard-app-dock, .yard-app-titlebar {
+  font: 500 13px/1.25 system-ui,sans-serif; letter-spacing: normal; text-shadow: none;
+}
+.yard-system-panel, .yard-app-dock {
+  position: fixed; z-index: 38; box-sizing: border-box; color-scheme: dark;
+  transition: opacity .24s ease, translate .24s ease;
+}
+.yard-system-panel {
+  inset: 0 0 auto; min-height: calc(34px + env(safe-area-inset-top)); display: grid;
+  grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center;
+  padding: env(safe-area-inset-top) max(14px,env(safe-area-inset-right)) 0 max(14px,env(safe-area-inset-left));
+  background: #292729f4; box-shadow: 0 1px #120f1466;
+}
+.yard-system-name { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; }
+.yard-system-name i { width: 21px; height: 6px; border-radius: 5px; background: #f3ece5; }
+#yard-system-clock { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.yard-source {
+  justify-self: end; border: 0; border-radius: 5px; padding: 6px; margin: 0; color: #e1dcd5;
+  background: transparent; font: inherit; font-size: 11px; cursor: pointer;
+}
+.yard-source:hover { background: #ffffff18; }
+body:is([data-yard-window=desktop],[data-yard-window=engrus]) #yard-map-sources {
+  inset: calc(41px + env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) auto auto;
+}
+.yard-app-dock {
+  inset: 50% auto auto max(8px,env(safe-area-inset-left)); transform: translateY(-50%);
+  display: grid; gap: 5px; padding: 6px; border-radius: 17px;
+  border: 1px solid #ffffff28; background: #2b282ae8; box-shadow: 0 3px 12px #16111538;
+}
+.yard-app-dock button {
+  position: relative; display: grid; justify-items: center; align-content: center; gap: 5px; min-width: 68px; min-height: 72px;
+  margin: 0; padding: 4px; border: 0; border-radius: 12px; color: #fff8ef; background: transparent;
+  font: 550 11px/1.1 system-ui,sans-serif; letter-spacing: 0; cursor: pointer; touch-action: manipulation;
+}
+.yard-app-dock button:is(:hover,[aria-expanded=true]) { background: #ffffff17; }
+.yard-app-dock button[data-running=true]::after {
+  content: ""; position: absolute; left: -5px; top: 42%; width: 3px; height: 12px; border-radius: 5px; background: #eaa16b;
+}
+.yard-app-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 10px; object-fit: contain; }
+.yard-dj-icon {
+  background: linear-gradient(145deg,#97534a,#4f282d 56%,#35252b);
+  box-shadow: inset 0 1px 1px #f9d4b785, inset 0 -2px 3px #291a1a85;
+}
+.yard-dj-icon i {
+  display: block; width: 28px; height: 28px; border-radius: 50%; border: 1px solid #c69a88;
+  background: radial-gradient(circle,#f5d7ae 0 7%,#9b6055 8% 22%,transparent 23%),
+    conic-gradient(from -46deg,#2e2528,#776266 15%,#35292e 30% 58%,#644f52 74%,#31272b 91%);
+  box-shadow: inset 0 0 0 3px #2b202534;
+}
+
+#yard-desktop-shell[data-idle=true] .yard-system-panel,
+#yard-desktop-shell[data-idle=true] .yard-app-dock { opacity: 0; pointer-events: none; }
+#yard-desktop-shell[data-idle=true] .yard-system-panel { translate: 0 -100%; }
+#yard-desktop-shell[data-idle=true] .yard-app-dock { translate: calc(-100% - 12px) 0; }
+
+#yard-engrus-window {
+  position: fixed; z-index: 30; box-sizing: border-box; inset: calc(48px + env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(104px,env(safe-area-inset-left));
+  display: flex; flex-direction: column; width: min(760px,calc(100% - 120px)); height: fit-content;
+  max-height: calc(100dvh - 66px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  margin: auto; padding: 0; color: #f6f2ea; background: transparent; border: 0;
+}
+#yard-engrus-window:focus { outline: none; }
+.yard-app-titlebar {
+  display: flex; flex: none; justify-content: space-between; align-items: center; gap: 10px;
+  padding: 5px 8px 5px 14px; border-radius: 12px; background: #2c292bee;
+}
+.yard-app-titlebar h1 { margin: 0; color: inherit; font: 600 14px/1.2 system-ui,sans-serif; letter-spacing: 0; }
+.yard-app-titlebar .yard-window-actions { border: 0; }
+#yard-engrus-content { min-height: 0; overflow: auto; overscroll-behavior: contain; }
+@media (min-width: 1001px) and (max-width: 1150px) {
+  /* Keep the meter clear of Record and the entrance to the left mixer aisle. */
+  body[data-yard-window=dj] .room-console .page-title {
+    flex-direction: column; align-items: flex-start; justify-content: center; gap: 0;
+  }
+  body[data-yard-window=dj] .room-console .page-title h2 { font-size: 10px; line-height: 1; }
+}
+@media (max-width: 680px) {
+  #studio .room-console-top { flex-wrap: wrap; justify-content: end; gap: 4px; }
+  #studio .console-nav { margin-inline-end: auto; }
+  #studio .console-tools .rec { width: 29px; min-height: 32px; padding: 0; }
+  #studio .console-tools #record-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  #studio .console-tools, .yard-window-actions { gap: 3px; }
+  .yard-system-panel { padding-inline: max(8px,env(safe-area-inset-left)) max(8px,env(safe-area-inset-right)); }
+  .yard-system-name { gap: 5px; font-size: 11px; }
+  .yard-system-name i { width: 13px; }
+  #yard-system-clock { font-size: 11px; }
+  .yard-source { padding: 4px 0 4px 4px; font-size: 10px; }
+  .yard-app-dock {
+    inset: auto auto max(8px,env(safe-area-inset-bottom)) 50%; transform: translateX(-50%);
+    grid-auto-flow: column; padding: 4px 7px; gap: 4px;
+  }
+  .yard-app-dock button { min-height: 61px; }
+  .yard-app-icon { width: 36px; height: 36px; }
+  .yard-app-dock button[data-running=true]::after { inset: auto auto 0; width: 11px; height: 2px; }
+  #yard-desktop-shell[data-idle=true] .yard-app-dock { translate: 0 calc(100% + 12px); }
+  #yard-engrus-window {
+    inset: calc(42px + env(safe-area-inset-top)) 8px calc(83px + env(safe-area-inset-bottom)); width: auto;
+    max-height: calc(100dvh - 125px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+}
+@media (max-width: 360px) {
+  #studio .console-nav { gap: 3px; }
+  #studio .console-tools .icon-btn { width: 29px; }
+  #studio .yard-window-actions { gap: 2px; padding-inline-start: 2px; }
+  #studio .console-nav .import-btn { padding-inline: 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .yard-system-panel, .yard-app-dock { transition: none; }
+}

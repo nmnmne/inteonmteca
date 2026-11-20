@@ -4,6 +4,7 @@ import sys
 from urllib.parse import urlsplit
 
 from playwright.sync_api import sync_playwright
+from studio_window import open_full_studio
 
 
 def position(resident):
@@ -77,6 +78,7 @@ def check_layout(browser, base, width, height, touch=False):
     # from the running page, including the corners on the way around the decks.
     page.add_init_script("Math.random = () => 0.25")
     page.goto(base, wait_until="domcontentloaded")
+    open_full_studio(page)
     resident = page.locator(".room-resident")
     resident.wait_for()
     anchor = page.locator(".room-presence")
@@ -109,6 +111,7 @@ def check_panel_change(browser, base):
     page.clock.install()
     page.add_init_script("Math.random = () => 0.25")
     page.goto(base, wait_until="domcontentloaded")
+    open_full_studio(page)
     resident = page.locator(".room-resident")
     resident.wait_for()
     tabs = page.locator(".controller-tabs")

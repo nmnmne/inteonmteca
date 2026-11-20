@@ -92,7 +92,9 @@
     return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
   };
   const position = p => `translate3d(${p.x - halfWidth}px, ${p.y - halfHeight}px, 0)`;
+  const compactPlayerVisible = () => document.body.dataset.yardWindow === 'dj' && document.body.dataset.djMode === 'compact';
   const home = () => {
+    if (compactPlayerVisible()) return {x: innerWidth * .17, y: innerHeight * .57};
     const r = anchor.getBoundingClientRect();
     return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
   };
@@ -280,6 +282,7 @@
   };
   let nextStudioStop = 0;
   const visitStudio = () => {
+    if (compactPlayerVisible()) return false;
     const here = center();
     const targets = [...stops,nearestFree(home())];
     // Follow both recessed lanes, then return to the pocket beside the logo.
@@ -388,7 +391,7 @@
   const sync = () => {
     armMidnight();
     if (cinematic) return;
-    const hidden = document.hidden || !anchor.getBoundingClientRect().width
+    const hidden = document.hidden || (!compactPlayerVisible() && !anchor.getBoundingClientRect().width)
       || document.body.classList.contains('is-interlude');
     suspend(); chaseUntil=0; encounter=0; hoverArmed=true; resident.dataset.behavior="independent"; blocked = hidden; resident.hidden = hidden;
     if (hidden) return;
@@ -543,7 +546,7 @@
   };
   const obstacleObserver = new ResizeObserver(invalidateSpace);
   document.querySelectorAll('#studio.room-console, .playlist-shell, #active-player, .listening-intro, #logo-wrap, #chat-panel, #auth-panel, #theme-panel, '
-    + '.room-toolbar, .room-console-top, .console-tools, .deck-bank, #mixer, #mixer .panel-head, #mixer .channel-strip, [data-resident-stop], '+deckObstacles)
+    + '.room-toolbar, .room-console-top, .console-tools, .deck-bank, #mixer, #mixer .panel-head, #mixer .channel-strip, [data-resident-stop], [data-resident-obstacle], '+deckObstacles)
     .forEach(el => obstacleObserver.observe(el));
   if (studio) {
     const panelChanges = new MutationObserver(invalidateSpace);
@@ -590,6 +593,8 @@
     }
   });
   window.addEventListener('inteon-interlude', sync);
+  window.addEventListener('yard-dj-mode', sync);
+  window.addEventListener('yard-app-visibility', sync);
   window.addEventListener("pageshow",event => { if (event.persisted) sync(); });
   sync();
   // One brief comic speech per browser and local calendar day.

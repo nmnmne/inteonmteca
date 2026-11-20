@@ -1,6 +1,6 @@
 {
-  "meshCount": 401,
-  "instances": 24709,
+  "meshCount": 402,
+  "instances": 23455,
   "resolution": 1024,
   "bounds": {
     "min": [
@@ -49,8 +49,8 @@
         0.262186903289385
       ],
       "file": "sun-00.png",
-      "bytes": 162425,
-      "sha256": "c7fd417104c52d3820ba291083cf1fd2b9c71a791c308daf1c32af8c8529fb5a"
+      "bytes": 162024,
+      "sha256": "73d42e59e165c5faa81147f4ccc32a70676b0eeab43cadb47d707ba7d9340a6b"
     },
     {
       "presetIndex": 1,
@@ -84,8 +84,8 @@
         0.2437165593811067
       ],
       "file": "sun-01.png",
-      "bytes": 165948,
-      "sha256": "fe692598d56dd8370ccb03673eb42eb0962590301fbe499ef2d9d87aed0e82cc"
+      "bytes": 165833,
+      "sha256": "42ac29fd7d87e3f7b99f336b8ac627958802c7fb4d4a8bed57df32ceb2a32abc"
     },
     {
       "presetIndex": 2,
@@ -439,9 +439,10 @@
     }
   ],
   "sourceHashes": {
-    "yard/ambient-scene.js": "be7b3453cecbcc5627e2bef46da84b99ed8c3033d4d585d57201a88fc5323df0",
+    "yard/ambient-scene.js": "ddbff8e4f450c5d144d868c7b20fb0ef727261e3875697dc2a80e3d8013699bc",
     "yard/auto-walk.js": "737454845ae3ffea842a4bbfe3c6b5bdcdb1cf007c067a8fe12f23a835e52698",
     "yard/baked-lighting.js": "ef10f5f932da370dda697ab00e1f86075fa5ff4723777990dd19ec1720d10a6b",
+    "yard/camera-optics.js": "5ee0eba6f728d241843651dff894cdd5d679f9b0977a0a53769894d8e1de4c7a",
     "yard/city-hologram.js": "5c562bde34ddf1fe9ea0b36bc4c03c9ebdf14254fef97e14740eedcd0981516e",
     "yard/clouds.js": "64524fc0a7f1797490a5647674f2b4706ac9bcc5a716b7f4c8ae2f8040652d6a",
     "yard/courtyard-details.js": "141072eeddae38c735cad8a51ec1b1513133f3099699a2d72c01f8546e82f0ca",
@@ -449,29 +450,33 @@
     "yard/courtyard-weather.js": "098970cc3f5aab3f3eb90cffa5daa8f2dbe475a1d078139de117d22527964249",
     "yard/debug-pose.js": "f58b52de2f493b31e53d7c5fa63e6f29c65fd9881d96f51cef2c13d18dce805a",
     "yard/digital-boundary.js": "208aa0845628e10e3a2abf12850bad1a620e6c325da9d3d9a88cfe7240406754",
+    "yard/entrance-lighting.js": "76992d5d7477821d9cf2a0cb49f984cd74a3ce55656ad0f103508accdea49456",
     "yard/facade-frame.js": "00ff4cd290dd269d85e37e5e2a140ee3ae3bba347d5e56af514522eaa30c62e4",
     "yard/five-storey-reference.js": "d9db9fa5ea490acc3c168121b9cfc8a8bb738440a1fd9d29d232cba757ca477e",
     "yard/house14-relief.js": "7859366d9751a1186aa8ea399eb945df59522d985b2e66b4e2fb98a5d3dc9120",
     "yard/house14-shops.js": "3e3bb6642d43645214104d7971686e0388467817230f4b8ec94c5515087748a2",
     "yard/hru-details.js": "3c7dcd94c8d6623e19b9da8f2e03c5c5ae40cbe766d84dc2006b35bf91d83872",
-    "yard/landscaping.js": "09d1648a9b2683bdb596c1cac4e1b1182774805d2d70a452b0b82d5ce82a4356",
+    "yard/landscaping.js": "47f3fac937796eae9a8c8b6501446df1f1579e56bf888c90dfd6e7487db065a0",
     "yard/lighting-transition.js": "988df2e6445076861971d207b4380c1c968c1a2a6d3d2a4e5116e8efad5be191",
-    "yard/material-textures.js": "68678c6ec304edba8c8a3474cebd0693890220e59fb177b8dc45763241e261bb",
+    "yard/material-textures.js": "adc6ab643de30f6bf583ea8c990a4eeb5cd7cb24c20a87d6adffcb42f1aaee49",
     "yard/materials.js": "38339d613c326dbee6145441527044a6f742b329e243c9037bc4fa96876820e6",
     "yard/models.js": "2eca95fdd6f4c7c51a7920951ad9450e25328ad81a73646d259fe2b2374dbaab",
-    "yard/puddles.js": "fd94e15f22a65f3bce200359b617ba0eb33705899bde076480248ecc847ec04e",
+    "yard/puddles.js": "15f938da45b806e94ab129fd955a7f9a84d32a86112c460055b51d75f237a2c4",
     "yard/road-details.js": "2938d875b6c2b7265eca0c0ebcaa0f16e490f43b5a51c6e1da2a2ac52c813103",
-    "yard/scene.js": "425d0bd2399b0e39ee03a641f8ad520f9e1a25f1f304bd000018fcc253bca9b4",
+    "yard/scene.js": "3c0b5267ae4c071c470e0d18b1bd710f0fb692f93dbd555435b8395992c918a4",
     "yard/shadow-atlas.js": "5695f54f34e5bbcee954fcf0f6f37d276482e47d6dfcb7b366a9b140ed3634d8",
     "yard/shadow-transition.js": "28326407a11725fc1ff4b087770a0a2986b9a1cdc3609131ffa2bdd31e314202",
     "yard/site-details.js": "0eabb8be78126f00f78532fad199450166093cab6c39c31fe2cc3ca8ded30f3a",
     "yard/site-structures.js": "3c3bed1f5977952e0f1b8b8f35cdbd5b5ab3a0458f297992addaa1a9edeb4c27",
-    "yard/solar-clock.js": "723c0447bae274fd91cc2184299253e1ef2820da81cc06c51011eada061fa696",
-    "yard/solar-lighting.js": "7254e86735fb7b02193579cf2c0c2f310ba95ff8e47046a0596cb728992d3f1d",
+    "yard/sky.js": "49d8705b348946003dd74743ad5341a16253d3f4cfe5e85d1f1e995d1de14099",
+    "yard/solar-clock.js": "fffd70b8722435bfe884386bb921a7b7eba7f48aa91f0e17e02b8586e8c58733",
+    "yard/solar-lighting.js": "7393d0305bee6ef54e677dff379987b3da3b9d3fffe1cc4a63aad2fcd3062eda",
     "yard/static-batches.js": "e2eda8d95e9c43499793dc77ef43f0e3c9eab991fa12b5fc3eb1cf4cd5665a11",
     "yard/tower-reference.js": "5fc1b34372632019bb354af974c030eed44bceef812be2c5340dd925d0c44ae6",
     "yard/walk-lighting.js": "8c9e134c0869d875ab7ad8773c7f513c8eefbe1de85ddcc2d0e7f6849629a695",
-    "yard/wall-wordmark.js": "8455937c4a5921443cc63f2375d5fc4597d7e4aafc50d6ad7a01ea55682ab929",
+    "yard/wall-inscriptions.js": "a008775edfb8a38d41b848f70635412f9d310df784cca13b7f16222749f8f55b",
+    "yard/wall-lyrics.js": "42e91d9cdb5457846f3b04419c32d93f0e21bb6b045c9ca4645e7128490bbb90",
+    "yard/wall-wordmark.js": "c8c6f1d0357e300d2a732e52a11d030cd313d62bc5d4b34600653f0aad1739f3",
     "yard/yard-guide.js": "e9de48eeb7ea282c6cc680d38fdc3c28b9fef21692b44179348a4c2b187ebb0c",
     "yard/data/site-layout.json": "2dc3c9b02117fac5c31bf1fbb27a1c83ed1bbc3ed3524bfe267a965da3540692",
     "tools/bake_yard_shadows.js": "7d0b9ecd507b1272f6f27ef3b59c4d8ac2330778f7e8e924ea09bad709641adc"

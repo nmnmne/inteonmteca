@@ -11,6 +11,8 @@ from urllib.parse import urlparse
 
 from playwright.sync_api import sync_playwright
 
+from studio_window import open_full_studio
+
 
 def import_fixture():
     with io.BytesIO() as buffer:
@@ -18,6 +20,33 @@ def import_fixture():
             wav.setparams((1, 2, 11025, 0, "NONE", ""))
             wav.writeframes(bytes(11025 * 2 * 4))
         return {"name": "QA - Imported Track.wav", "mimeType": "audio/wav", "buffer": buffer.getvalue()}
+
+
+def check_display(screen):
+    track = screen.locator(".dd-track").bounding_box()
+    state = screen.locator(".dd-deck-state").bounding_box()
+    wave = screen.locator(".dd-wave").bounding_box()
+    playlist = screen.get_by_role("listbox")
+    bounds = playlist.bounding_box()
+    assert track and state and wave and bounds
+    assert playlist.evaluate("""list => getComputedStyle(list).scrollbarWidth === 'none'
+        && list.scrollWidth === list.clientWidth""")
+    assert state["y"] + state["height"] <= wave["y"] + 1
+    assert track["y"] + track["height"] <= wave["y"] and wave["y"] + wave["height"] <= bounds["y"]
+    for section in (track, wave):
+        assert abs(section["x"] - bounds["x"]) < 1 and abs(section["width"] - bounds["width"]) < 1
+    assert wave["height"] >= 24
+    rows = playlist.get_by_role("option")
+    if rows.count() >= 4:
+        visible = playlist.evaluate("""list => {
+            const bounds = list.getBoundingClientRect();
+            return Array.from(list.children).filter(option => {
+                const row = option.getBoundingClientRect();
+                return row.top >= bounds.top - 1 && row.bottom <= bounds.bottom + 1;
+            }).length;
+        }""")
+        assert visible == 4
+        assert abs(bounds["height"] - 4 * rows.first.bounding_box()["height"]) < 1
 
 
 def check_controller_layout(page):
@@ -42,10 +71,7 @@ def check_controller_layout(page):
             wheel = page.locator(f"#deck-{side} .dd-wheel-mount").bounding_box()
             assert wheel["width"] >= 75 and abs(wheel["width"] - wheel["height"]) < 1, (width, wheel)
             screen = page.locator(f"#deck-{side} .dd-screen")
-            wave = screen.locator(".dd-wave").bounding_box()
-            assert wave["height"] >= 22 and wave["width"] >= 95, (width, height, wave)
-            options = screen.get_by_role("listbox").bounding_box()
-            assert options and options["height"] >= 24 and options["width"] >= 94, (width, options)
+            check_display(screen)
             page.locator(f"#deck-{side} .dd-play").click(trial=True)
         page.locator("#mobile-cross" if tabs.is_visible() else "#cross").click(trial=True)
     if page.evaluate("document.fullscreenEnabled"):
@@ -105,9 +131,12 @@ def check_deck_browser(page):
     b_list = b.get_by_role("listbox")
     selected_title = "[role=option][aria-selected=true] .dd-browse-title"
     original_a, original_b = page.evaluate("[DJEngine.snapshot().A.track.title, DJEngine.snapshot().B.track.title]")
-    assert (original_a, original_b) == ("Echoes Resurface", "High Stage Of Reality")
+    assert (original_a, original_b) == ("Memphis", "High Stage Of Reality")
     assert a_list.is_visible() and b_list.is_visible()
     assert a.locator(".dd-wave").is_visible() and b.locator(".dd-wave").is_visible()
+    a_list.hover()
+    page.mouse.wheel(0, 160)
+    page.wait_for_function("document.querySelector('#deck-a [role=listbox]').scrollTop >= 20")
     search = a.locator(".dd-browse-search")
     search.fill("no-match-in-the-catalogue")
     assert a_list.get_by_role("option").count() == 0 and a.locator(".dd-browse-load").is_disabled()
@@ -146,10 +175,11 @@ def check_deck_browser(page):
     }""")
     b.locator(".dd-play").click()
     page.wait_for_function("DJEngine.snapshot().B.time > .1")
-    assert b.locator(selected_title).inner_text() == original_b
+    assert b.locator(selected_title).text_content() == original_b
     a_list.focus()
     titles = a_list.locator(".dd-browse-title").all_text_contents()
-    assert len(titles) >= 3 and a.locator(selected_title).inner_text() == original_a
+    assert len(titles) >= 3 and titles[0] == original_a
+    assert a.locator(selected_title).text_content() == original_a
     choose_collection(b, "starred")
     assert b.get_by_role("listbox").get_by_role("option").count() == 0
     assert b.locator(".dd-browse-load").is_disabled()
@@ -167,12 +197,13 @@ def check_deck_browser(page):
     a_list.focus()
     for direction, index in (("Home", 0), ("ArrowDown", 1), ("ArrowDown", 2), ("ArrowUp", 1), ("Home", 0)):
         page.keyboard.press(direction)
-        assert a.locator(selected_title).inner_text() == titles[index]
+        assert a.locator(selected_title).text_content() == titles[index]
         assert a_list.evaluate("""el => document.getElementById(el.getAttribute('aria-activedescendant'))
             === el.querySelector('[aria-selected=true]')""")
     assert page.evaluate("DJEngine.snapshot().A.track.title") == original_a
-    assert a.locator("[role=option][aria-current=true] .dd-browse-title").inner_text() == original_a
-    assert b.locator(selected_title).inner_text() == original_b
+    assert a.locator("[role=option][aria-current=true] .dd-browse-title").text_content() == original_a
+    assert b.locator(selected_title).text_content() == original_b
+    page.keyboard.press("ArrowDown")
     page.keyboard.press("Enter")
     assert a_list.is_visible()
     page.wait_for_function("""expected => {
@@ -181,7 +212,7 @@ def check_deck_browser(page):
             && A.keyLock && A.tempo === 0 && A.bend === 0 && A.loopBeats === 0 && A.eq.low === 0
             && A.echo === 0 && A.filter === 0 && A.channel === .8 && B.eq.high === 3
             && B.playing && cross === .25 && master === .64;
-    }""", arg=titles[0])
+    }""", arg=titles[1])
     assert a.locator(".dd-loop-value").text_content() == "4"
     assert a.locator(".dd-pitch-range").input_value() == "8"
     assert a.locator("[data-jog=scratch]").get_attribute("aria-pressed") == "true"
@@ -197,27 +228,39 @@ def check_deck_browser(page):
     page.wait_for_function("!DJEngine.snapshot().B.playing && DJEngine.snapshot().B.eq.high === 0 && DJEngine.snapshot().B.time === 0")
     assert b.locator(".dd-zoom span").inner_text() == "1×"
     assert b.locator(".dd-loop-value").text_content() == "4"
-    a.locator(".dd-browse-search").fill("Deadsouls")
+    a.locator(".dd-browse-search").fill("Echoes Resurface")
     transfer = a_list.get_by_role("option")
-    title = transfer.locator(".dd-browse-title").inner_text()
+    title = transfer.locator(".dd-browse-title").text_content()
     transfer.drag_to(b.locator(".dd-jog"))
     page.wait_for_function("title => DJEngine.snapshot().B.track.title === title", arg=title)
-    assert b_list.locator('[aria-current=true] .dd-browse-title').inner_text() == title
-    assert page.evaluate("DJEngine.snapshot().A.track.title") == titles[0]
+    assert b_list.locator('[aria-current=true] .dd-browse-title').text_content() == title
+    assert page.evaluate("DJEngine.snapshot().A.track.title") == titles[1]
 
 
 def check_touch_browser(browser, url):
     page = browser.new_page(viewport={"width": 320, "height": 640}, is_mobile=True, has_touch=True)
     page.goto(url, wait_until="domcontentloaded")
+    open_full_studio(page)
     page.locator(".controller-tabs [data-panel=b]").tap()
     b = page.locator("#deck-b")
     assert b.get_by_role("listbox").is_visible() and b.locator(".dd-wave").is_visible()
-    options = b.get_by_role("listbox").get_by_role("option")
+    check_display(b.locator(".dd-screen"))
+    playlist = b.get_by_role("listbox")
+    playlist.scroll_into_view_if_needed()
+    bounds = playlist.bounding_box()
+    before = playlist.evaluate("el => el.scrollTop")
+    cdp = page.context.new_cdp_session(page)
+    for kind, fraction in (("touchStart", .8), ("touchMove", .6), ("touchMove", .3), ("touchEnd", None)):
+        points = [] if fraction is None else [{"x": bounds["x"] + bounds["width"] / 2,
+                                               "y": bounds["y"] + bounds["height"] * fraction}]
+        cdp.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": points})
+    page.wait_for_function("previous => document.querySelector('#deck-b [role=listbox]').scrollTop > previous + 10", arg=before)
+    options = playlist.get_by_role("option")
     options.first.tap()
     b.locator(".dd-browse-down").tap()
     b.locator(".dd-browse-up").tap()
-    selected = b.locator("[aria-selected=true] .dd-browse-title").inner_text()
-    assert selected == options.first.locator(".dd-browse-title").inner_text()
+    selected = b.locator("[aria-selected=true] .dd-browse-title").text_content()
+    assert selected == options.first.locator(".dd-browse-title").text_content()
     assert page.evaluate("DJEngine.snapshot().B.track.title") != selected
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
     b.locator(".dd-browse-load").tap()
@@ -226,14 +269,13 @@ def check_touch_browser(browser, url):
     waveform = b.locator(".dd-wave")
     waveform.scroll_into_view_if_needed()
     size = waveform.bounding_box()
-    cdp = page.context.new_cdp_session(page)
     for kind, pos in (("touchStart", .15), ("touchMove", .79), ("touchEnd", None)):
         points = [] if pos is None else [{"x": size["x"] + size["width"] * pos,
                                           "y": size["y"] + size["height"] / 2}]
         cdp.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": points})
     page.wait_for_function("() => {const s=DJEngine.snapshot().B; return Math.abs(s.time/s.duration - .79) < .02}")
     page.set_viewport_size({"width": 667, "height": 375})
-    assert b.locator(".dd-wave").bounding_box()["height"] >= 22
+    check_display(b.locator(".dd-screen"))
     page.close()
 
 
@@ -241,6 +283,7 @@ def check_file_drops(browser, url):
     context = browser.new_context(viewport={"width": 1440, "height": 900})
     page = context.new_page()
     page.goto(url, wait_until="domcontentloaded")
+    open_full_studio(page)
     page.locator("#deck-b [role=option]").first.wait_for()
     writes = []
     context.on("request", lambda req: writes.append((req.method, req.url))
@@ -271,11 +314,12 @@ def check_file_drops(browser, url):
         page.wait_for_function("DJStorage.list().then(tracks => tracks.length === 3)")
         page.locator("#deck-b [role=option]").filter(has_text="Над домом").wait_for(state="attached")
         assert page.evaluate("[DJEngine.snapshot().A.track.title, DJEngine.snapshot().B.track.title]") == [
-            "Echoes Resurface", "High Stage Of Reality"]
+            "Memphis", "High Stage Of Reality"]
         # Read the exact original bytes after closing the tab (all object URLs are gone).
         page.close()
         page = context.new_page()
         page.goto(url, wait_until="domcontentloaded")
+        open_full_studio(page)
         deck = page.locator("#deck-b")
         choose_collection(deck, "imports")
         for path, title in zip(paths, titles):
@@ -317,6 +361,7 @@ def exercise(browser, url):
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     page.goto(url.rstrip("/") + "/#library", wait_until="domcontentloaded")
+    open_full_studio(page)
     page.wait_for_function("location.hash === '#studio'")
     a = page.locator("#deck-a")
     b = page.locator("#deck-b")
@@ -358,13 +403,14 @@ def exercise(browser, url):
     page.locator("#deck-b .dd-loop-minus").click()
     page.evaluate("DJEngine.setFilter('B',-.6)")
     a.locator(".dd-browse-star").click()
+    starred_title = page.evaluate("DJEngine.snapshot().A.track.title")
     choose_collection(b, "starred")
     assert b_rows.count() == 1 and a_rows.count() == count
     choose_collection(b, "all")
-    b.locator(".dd-browse-search").fill("Echoes Resurface")
+    b.locator(".dd-browse-search").fill(starred_title)
     assert b_rows.count() == 1
     b_rows.dblclick()
-    assert page.evaluate("DJEngine.snapshot().B.track.title === 'Echoes Resurface' && DJEngine.snapshot().B.filter === 0")
+    assert page.evaluate("title => DJEngine.snapshot().B.track.title === title && DJEngine.snapshot().B.filter === 0", starred_title)
     assert page.evaluate("DJEngine.snapshot().B.hotCues[0]") == saved_pad
     assert page.locator("#deck-b .dd-loop-value").text_content() == "4"
     assert page.locator("#deck-b .dd-zoom span").inner_text() == "1×"
@@ -374,13 +420,14 @@ def exercise(browser, url):
     chooser.value.set_files(import_fixture())
     a_rows.filter(has_text="Imported Track").wait_for(state="attached")
     page.reload(wait_until="domcontentloaded")
+    open_full_studio(page)
     a_rows.filter(has_text="Imported Track").wait_for(state="attached")
     assert a_rows.count() == b_rows.count() == count + 1
     choose_collection(b, "starred")
-    assert b_rows.count() == 1 and "Echoes Resurface" in b_rows.inner_text()
+    assert b_rows.count() == 1 and starred_title in b_rows.text_content()
     choose_collection(a, "imports")
     assert a.get_by_role("listbox").get_by_role("option").count() == 1
-    assert a.locator("[aria-selected=true] .dd-browse-title").inner_text() == "Imported Track"
+    assert a.locator("[aria-selected=true] .dd-browse-title").text_content() == "Imported Track"
     a.locator(".dd-browse-load").click()
     page.wait_for_function("DJEngine.snapshot().A.track.imported && DJEngine.snapshot().A.track.src.startsWith('blob:')")
     page.locator("#deck-a .dd-play").click()
@@ -418,6 +465,7 @@ if __name__ == "__main__":
         exercise(browser, url)
         browsing = browser.new_page(viewport={"width": 1440, "height": 900})
         browsing.goto(url, wait_until="domcontentloaded")
+        open_full_studio(browsing)
         check_deck_browser(browsing)
         browsing.close()
         check_touch_browser(browser, url)

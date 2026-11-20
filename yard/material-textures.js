@@ -17,6 +17,7 @@ function texture(width, height, paint) {
 // Scanned mineral surfaces use one colour texture and one linear data texture.
 export function createSurfaceLibrary() {
   const loader = new THREE.TextureLoader();
+  const images = new Map();
   const tiles = new Map();
   const finishes = new Map();
   const relief = { brick: .012, plaster: .007, concrete: .014, asphalt: .018, soil: .031, bark: .025, paint: .005 };
@@ -24,12 +25,28 @@ export function createSurfaceLibrary() {
     const tileKey = `${name}/${repeatX}/${repeatY}`;
     if (!tiles.has(tileKey)) {
       const load = suffix => {
-        const url = new URL(`./assets/surfaces/${name}-${suffix}.webp`, import.meta.url);
-        const map = loader.load(url.href);
+        const file = `${name}-${suffix}.webp`;
+        let image = images.get(file);
+        if (!image) {
+          image = {ready:false, waiting:[]};
+          images.set(file,image);
+          const url = new URL('./assets/surfaces/' + file, import.meta.url);
+          image.source = loader.load(url.href, () => {
+            image.ready = true;
+            for (const view of image.waiting) view.needsUpdate = true;
+            image.waiting.length = 0;
+          }).source;
+        }
+        // Three shares the GPU image of matching samplers. Each material keeps
+        // its own repeat transform, including views created before the image loads.
+        const map = new THREE.Texture();
+        map.source = image.source;
         map.wrapS = map.wrapT = THREE.RepeatWrapping;
         map.repeat.set(repeatX, repeatY);
         map.anisotropy = 4;
         map.colorSpace = suffix === 'color' ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+        if (image.ready) map.needsUpdate = true;
+        else image.waiting.push(map);
         return map;
       };
       tiles.set(tileKey, { map: load('color'), detail: load('surface') });

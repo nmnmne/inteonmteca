@@ -7,6 +7,7 @@ import wave
 from urllib.parse import urlsplit
 
 from playwright.sync_api import sync_playwright
+from studio_window import open_full_studio
 
 
 def load_fixture(page, url):
@@ -16,6 +17,7 @@ def load_fixture(page, url):
             wav.writeframes(bytes(8 * 22050 * 2))
         encoded = base64.b64encode(stream.getvalue()).decode()
     page.goto(url)
+    open_full_studio(page)
     page.locator("#deck-a .dd-jog").wait_for()
     page.evaluate("""encoded => {
       const pcm = Uint8Array.from(atob(encoded), c => c.charCodeAt(0));

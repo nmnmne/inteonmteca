@@ -25,7 +25,7 @@ class SiteContentTests(unittest.TestCase):
         self.assertIn("artistFlicker", styles)
         self.assertEqual(
             re.findall(r'data-track-title="([^"]+)"', html),
-            ["Light Of The Night", "Inteonmteca_", "Высоко до предела", "Last Eclipse"],
+            ["Memphis", "Inteonmteca_", "Высоко до предела", "Last Eclipse"],
         )
         self.assertNotIn('class="track-cover"', html)
         self.assertNotIn('class="track-toggle"', html)
@@ -274,7 +274,8 @@ class SiteContentTests(unittest.TestCase):
         styles = (ROOT / "styles.css").read_text(encoding="utf-8")
         script = (ROOT / "script.js").read_text(encoding="utf-8")
 
-        self.assertIn("tracks = shuffle(discovered)", script)
+        self.assertIn("tracks = shufflePlaylist(discovered)", script)
+        self.assertIn("[opening, ...shuffle(items.filter(track => track !== opening))]", script)
         self.assertIn("playRelativeTrack", script)
         self.assertNotIn("schedulePlaylistRefresh", script)
         self.assertNotIn('id="refresh-media"', html)

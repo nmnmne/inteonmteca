@@ -10,18 +10,11 @@
   if (field) field.after(layer);
   else document.body.prepend(layer);
   const consoleSurface = document.querySelector('.room-console');
-  const reflection = consoleSurface ? document.createElement('canvas') : null;
-  let lenses;
-  let reflectionContext;
-  const reflectionInterval = 1000 / 15;
+  let lenses, lensResize, view;
+  let lensLayoutDirty = true;
   let nextReflection = 0;
-  if (reflection) {
-    reflection.className = 'console-reflection';
-    reflection.setAttribute('aria-hidden', 'true');
-    consoleSurface.prepend(reflection);
-    reflectionContext = reflection.getContext('2d');
-  }
   let controller = null;
+  let retryTimer = 0, lastRetry = -Infinity;
 
   const poster = layer.querySelector('img');
   const mobilePoster = layer.querySelector('source');
@@ -38,9 +31,6 @@
     poster.src = 'yard/assets/spawn-desktop' + suffix + '.jpg';
     layer.dataset.solarPhase = phase;
   }
-  poster.addEventListener('load', () => {
-    if (reflection) reflection.style.backgroundImage = 'url("' + poster.currentSrc + '")';
-  });
   if (location.protocol === 'file:') updatePoster();
   else import('./yard/solar-clock.js').then(module => { clock = module; updatePoster(); }, () => { clock = null; updatePoster(); });
   let posterTimer;
@@ -55,54 +45,62 @@
   document.addEventListener('visibilitychange', schedulePoster);
 
   function reflect(source, now) {
-    if (!reflectionContext || now < nextReflection) return;
-    nextReflection = now + reflectionInterval - (nextReflection ? (now - nextReflection) % reflectionInterval : 0);
-    const scale = Math.min(1, 640 / Math.max(source.width, source.height));
-    const width = Math.max(1, Math.round(source.width * scale));
-    const height = Math.max(1, Math.round(source.height * scale));
-    if (reflection.width !== width || reflection.height !== height) {
-      reflection.width = width;
-      reflection.height = height;
-    }
-    // Sample the completed WebGL frame while its drawing buffer is available.
-    reflectionContext.drawImage(source, 0, 0, width, height);
-
-    // The curved shoulder of each jog refracts the part of the courtyard
-    // directly behind it. The flat centre transmits the original scene.
+    if (document.body.dataset.djMode === 'compact') return;
+    if (document.body.dataset.yardWindow && document.body.dataset.yardWindow !== 'dj') return;
+    if (now < nextReflection) return;
+    const level = Number(document.documentElement.dataset.graphicsLevel) || 3;
+    nextReflection = now + 1000 / (level <= 2 ? 6 : 12);
     if (!lenses) {
       const wheels = consoleSurface.querySelectorAll('.dd-jog');
       if (!wheels.length) return;
+      lensResize = new ResizeObserver(invalidateLenses);
+      lensResize.observe(source);
+      lensResize.observe(consoleSurface);
       lenses = Array.from(wheels, wheel => {
         const lens = document.createElement('canvas');
         lens.className = 'jog-refraction';
         lens.setAttribute('aria-hidden', 'true');
         wheel.prepend(lens);
-        return lens.getContext('2d');
+        const ctx = lens.getContext('2d');
+        lensResize.observe(wheel);
+        return ctx ? {wheel,ctx,lens,ring:null} : null;
       }).filter(Boolean);
+      window.addEventListener('scroll', invalidateLenses, {capture:true,passive:true});
+      window.addEventListener('resize', invalidateLenses);
     }
-    const view = source.getBoundingClientRect();
+    if (lensLayoutDirty) {
+      view = source.getBoundingClientRect();
+      for (const item of lenses) item.ring = item.wheel.getBoundingClientRect();
+      lensLayoutDirty = false;
+    }
     if (!view.width || !view.height) return;
-    for (const lens of lenses) {
-      const canvas = lens.canvas, ring = canvas.getBoundingClientRect();
-      if (!ring.width || ring.bottom <= 0 || ring.top >= view.bottom) continue;
-      const size = Math.min(240, Math.ceil(ring.width));
-      if (canvas.width !== size) canvas.width = canvas.height = size;
-      const sx = width / view.width, sy = height / view.height;
-      // Looking into a convex rim enlarges the scene and bends it slightly
-      // towards the lit upper edge. CSS limits this sample to the curved band.
+    const sx = source.width / view.width, sy = source.height / view.height;
+    for (const {lens,ctx,ring} of lenses) {
+      if (!ring.width || ring.bottom <= view.top || ring.top >= view.bottom || ring.right <= view.left || ring.left >= view.right) continue;
+      const size = Math.min(level <= 2 ? 112 : 200, Math.ceil(ring.width));
+      if (lens.width !== size) lens.width = lens.height = size;
+      // Sample only the visible jog from the live GPU frame. The main faceplate
+      // has no backing image or reflection buffer.
       const x = (ring.left - view.left + .035 * ring.width) * sx;
       const y = (ring.top - view.top + .018 * ring.height) * sy;
-      lens.clearRect(0, 0, size, size);
-      lens.drawImage(reflection, x, y, ring.width * sx * .93, ring.height * sy * .93, 0, 0, size, size);
+      ctx.clearRect(0, 0, size, size);
+      ctx.drawImage(source, x, y, ring.width * sx * .93, ring.height * sy * .93, 0, 0, size, size);
     }
   }
-
+  function invalidateLenses() { lensLayoutDirty = true; }
+  window.addEventListener('yard-app-visibility', invalidateLenses);
+  window.addEventListener('yard-dj-mode', invalidateLenses);
   function clearReflections() {
-    reflectionContext?.clearRect(0, 0, reflection.width, reflection.height);
-    for (const lens of lenses || []) lens.clearRect(0, 0, lens.canvas.width, lens.canvas.height);
+    lensResize?.disconnect();
+    window.removeEventListener('scroll', invalidateLenses, true);
+    window.removeEventListener('resize', invalidateLenses);
+    for (const {lens} of lenses || []) lens.remove();
+    lensResize = lenses = view = null;
+    lensLayoutDirty = true;
   }
 
   function stop() {
+    clearTimeout(retryTimer);
     controller?.abort();
     controller = null;
     layer.querySelector('canvas')?.remove();
@@ -118,27 +116,35 @@
     const canvas = document.createElement('canvas');
     layer.append(canvas);
     document.body.dataset.yardBackdrop = 'loading';
-    const fallback = () => {
-      if (run.signal.aborted) return;
-      clearReflections();
+    const fallback = error => {
+      if (run.signal.aborted || controller !== run) return;
+      stop();
       document.body.dataset.yardBackdrop = 'fallback';
+      // A lost context or interrupted download can recover while the deck keeps
+      // playing. A device without WebGL simply uses its time-of-day poster.
+      const now = performance.now();
+      if (navigator.onLine && !/creating WebGL context/i.test(error?.message || '') && now - lastRetry > 60000) {
+        lastRetry = now;
+        retryTimer = setTimeout(start, 2200);
+      }
     };
     try {
-      const { startAmbientScene } = await import('./yard/ambient-scene.js?v=courtyard-weather-1');
+      const { startAmbientScene } = await import('./yard/ambient-scene.js?v=optical-decks-2');
       if (run.signal.aborted) return;
       await startAmbientScene(canvas, {
         signal: run.signal,
         clearView: Boolean(consoleSurface),
-        onFrame: reflectionContext ? reflect : undefined,
+        onFrame: consoleSurface ? reflect : undefined,
         onReady() { if (!run.signal.aborted) document.body.dataset.yardBackdrop = 'live'; },
         onError: fallback,
       });
-    } catch { fallback(); }
+    } catch (error) { fallback(error); }
   }
 
   document.body.dataset.yardBackdrop = 'still';
   window.addEventListener('pagehide', stop);
   window.addEventListener('pageshow', start);
+  window.addEventListener('online', start);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) void start(); });
   motion.addEventListener('change', () => { if (motion.matches) stop(); else void start(); });
   // Paint the poster and the mixer before compiling the courtyard's WebGL scene.

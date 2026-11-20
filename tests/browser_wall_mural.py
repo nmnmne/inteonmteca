@@ -34,10 +34,11 @@ def sample(browser, day):
         after.call(this, renderer, scene, camera, ...rest);
         if (!renderer.domElement.closest('[data-yard-layer]')) return;
         const logo = scene.getObjectByName('music-logo');
-        if (!logo.userData.inkReady) return;
-        window.mural = logo.material.map;
-        window.muralLight = {day:scene.userData.solarLighting.daylight, color:logo.material.color.getHex()};
-        if (window.captureMural) {
+        if (logo?.userData.inkReady) {
+          window.mural = logo.material.map;
+          window.muralLight = {day:scene.userData.solarLighting.daylight, color:logo.material.color.getHex()};
+        }
+        if (window.captureMural && window.mural && !renderer.getRenderTarget()) {
           window.muralPng = renderer.domElement.toDataURL();
           window.captureMural = false;
         }

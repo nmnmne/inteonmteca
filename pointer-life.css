@@ -1,19 +1,52 @@
-/* Event-driven pointer life. Nothing here runs while the visitor is idle:
-   the aura follows a mouse only while it moves, rings live for ~1s and remove
-   themselves. Reduced motion and the low-quality tier remove both. */
-.pointer-aura {
-  position: fixed; left: 0; top: 0; z-index: 1;
-  width: 46vmin; height: 46vmin; margin: -23vmin 0 0 -23vmin;
-  border-radius: 50%; pointer-events: none; opacity: 0;
-  background: radial-gradient(circle,
-    rgba(var(--theme-accent-rgb, 211, 255, 105), .17) 0%,
-    rgba(var(--theme-accent-rgb, 211, 255, 105), .07) 38%,
-    transparent 68%);
-  transition: opacity .7s ease;
-  will-change: transform, opacity;
-  contain: strict;
+/* Three small composited surfaces, all transparent to hit testing. */
+.pointer-fluid {
+  --pigment: var(--theme-accent-rgb, 179, 241, 215);
+  position: fixed;
+  inset: 0 auto auto 0;
+  z-index: 8;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity .26s ease-out;
 }
-.pointer-aura.is-on { opacity: 1; }
+.pointer-fluid.is-on { opacity: 1; }
+.pointer-fluid-head,
+.pointer-fluid-wake {
+  position: absolute;
+  left: -46px; top: -32px;
+  width: 92px; height: 64px;
+  opacity: .74;
+}
+.pointer-fluid-wake {
+  background:
+    radial-gradient(ellipse at 45% 40%, #d1beb62c 6%, transparent 60%),
+    radial-gradient(ellipse at 55% 62%, #0c142b49 5%, #20233422 38%, transparent 66%);
+}
+.pointer-fluid-head {
+  background:
+    radial-gradient(ellipse at 39% 34%, #f1dcd968 1%, transparent 37%),
+    radial-gradient(ellipse at 59% 59%, #0d172d85 5%, transparent 48%),
+    radial-gradient(ellipse at 48% 51%, rgba(var(--pigment), .18) 11%, transparent 65%);
+}
+.pointer-fluid.is-on:not(.is-light)::after {
+  content: ""; position: absolute; left: -18px; top: -12px; width: 20px; height: 12px;
+  border-radius: 57% 43% 58% 42%;
+  backdrop-filter: invert(.52); -webkit-backdrop-filter: invert(.52);
+  opacity: .39;
+  mask-image: radial-gradient(ellipse,#0004,#000a 46%,transparent 73%);
+}
+.pointer-fluid-code {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  color: #31303c;
+  opacity: .75;
+  font: 600 10px/1 "Deck Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .04em;
+  text-shadow: 0 .75px 0 #e8dfe1a3, .6px 1.4px 1px #10142473;
+}
 
 .pointer-ring {
   position: fixed; left: 0; top: 0; z-index: 9990;
@@ -32,7 +65,17 @@
   100% { opacity: 0; transform: translate3d(var(--ring-x, 0), var(--ring-y, 0), 0) scale(var(--ring-scale, 7)); }
 }
 
-html[data-animation-quality="low"] .pointer-aura { display: none; }
+.pointer-fluid.is-light .pointer-fluid-wake { display: none; }
+.pointer-fluid.is-light .pointer-fluid-head {
+  top: -23px; left: -38px;
+  width: 76px; height: 46px;
+  transform: none !important;
+  background: radial-gradient(ellipse at 42% 38%,#f2ddd54a,transparent 59%),
+    radial-gradient(ellipse at 57% 61%,#15203870,transparent 71%);
+}
+@media (hover: none), (pointer: coarse) {
+  .pointer-fluid { display: none; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .pointer-aura, .pointer-ring { display: none !important; }
+  .pointer-fluid, .pointer-ring { display: none !important; }
 }

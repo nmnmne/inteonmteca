@@ -11,6 +11,7 @@ import tempfile
 import wave
 
 from playwright.sync_api import expect, sync_playwright
+from studio_window import open_full_studio
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -58,6 +59,8 @@ def check_player_outputs(browser, base, mobile=False):
             page = context.new_page()
             page.route(re.compile(r"/[^?]+\.(?:flac|wav|mp3)(?:\?.*)?$"), serve_audio)
             page.goto(base + path, wait_until="domcontentloaded")
+            if not path:
+                open_full_studio(page)
             assert not page.evaluate("InteonSoundFilter.getSettings().enabled")
             play = page.locator(button).first
             if path == "listening-room.html":
@@ -149,6 +152,8 @@ def measure_response(page):
 
 def open_controls(page, base, route):
     page.goto(base + route, wait_until="domcontentloaded")
+    if page.locator('#studio').count():
+        open_full_studio(page)
     trigger = page.locator("[data-sound-open]")
     expect(trigger).to_be_visible()
     trigger.click()

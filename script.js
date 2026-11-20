@@ -1404,6 +1404,11 @@ const shuffle = (items) => {
   return result;
 };
 
+const shufflePlaylist = (items) => {
+  const opening = window.CourtyardOpening?.find(items);
+  return opening ? [opening, ...shuffle(items.filter(track => track !== opening))] : shuffle(items);
+};
+
 const setPlaybackStatus = (text = "", state = "") => {
   if (!playbackStatus) return;
   if (playbackStatus.textContent !== text) playbackStatus.textContent = text;
@@ -1600,8 +1605,8 @@ const launchTrackFlight = (sourceRect, sourceFontSize, track) => {
 const playTrack = (track, sourceItem = null, options = {}) => {
   if (!track || !player) return;
   const now = performance.now();
-  if (now - playLockAt < 220 && currentTrack === track) return;
-  playLockAt = now;
+  if (!options.shared && now - playLockAt < 220 && currentTrack === track) return;
+  playLockAt = options.shared ? -Infinity : now;
   cancelAnimationFrame(playlistScrollRaf);
   playlistScrollRaf = 0;
   playlistScrollVelocity = 0;
@@ -1615,18 +1620,16 @@ const playTrack = (track, sourceItem = null, options = {}) => {
   else if (player) window.inteonPlayback?.select?.(player, options.origin || "home");
   playbackStamp = "";
   setPlaybackStatus("", "");
+  if (!tracks.length && Array.isArray(window.INTEONMTECA_PLAYLIST)) {
+    tracks = shufflePlaylist(window.INTEONMTECA_PLAYLIST.filter((item) => item?.audio));
+  }
   currentTrackIndex = tracks.findIndex((candidate) => (
     candidate === track
     || (track.audio && candidate.audio === track.audio)
     || (track.file && candidate.file === track.file)
   ));
-  if (currentTrackIndex < 0 && Array.isArray(window.INTEONMTECA_PLAYLIST)) {
-    tracks = tracks.length ? tracks : shuffle(window.INTEONMTECA_PLAYLIST.filter((item) => item?.audio));
-    currentTrackIndex = tracks.findIndex((candidate) => (
-      candidate.audio === track.audio || candidate.title === track.title
-    ));
-  }
-  if (!sourceItem && currentTrackIndex >= 0) {
+  const prepared = options.shared?.paused === true;
+  if (!prepared && !sourceItem && currentTrackIndex >= 0) {
     sourceItem = nearestItemForTrackIndex(currentTrackIndex);
   }
   const sourceMeta = sourceItem?.querySelector(".track-meta");
@@ -1638,8 +1641,10 @@ const playTrack = (track, sourceItem = null, options = {}) => {
     nowPlayingTitle.dataset.track = track.title || "track";
   }
   if (activeTrackArtist) activeTrackArtist.textContent = track.artist || "inteonmteca";
-  document.body.classList.add("is-track-diving", "is-player-arranging");
-  launchTrackFlight(sourceRect, sourceFontSize, track);
+  if (!prepared) {
+    document.body.classList.add("is-track-diving", "is-player-arranging");
+    launchTrackFlight(sourceRect, sourceFontSize, track);
+  }
   const src = resolveTrackUrl(track);
   const assigned = player ? (player.getAttribute("src") || player.src || "") : "";
   if (options.shared && player) {
@@ -1652,8 +1657,11 @@ const playTrack = (track, sourceItem = null, options = {}) => {
     const place = () => {
       if (requestId !== playbackRequestId) return;
       const time = Number(options.shared.time);
-      if (Number.isFinite(time) && time > 0) player.currentTime = Number.isFinite(player.duration) ? Math.min(time, player.duration) : time;
+      if (Number.isFinite(time) && time >= 0 && time !== player.currentTime) {
+        player.currentTime = Number.isFinite(player.duration) ? Math.min(time, player.duration) : time;
+      }
       pendingPlaybackSeek = null;
+      rememberPlayback();
     };
     pendingPlaybackSeek = { requestId, place };
     if (player.readyState >= 1) place();
@@ -1706,7 +1714,7 @@ const playTrack = (track, sourceItem = null, options = {}) => {
     }
   });
   updateTrackFold();
-  enterImmersiveMode(player, track);
+  if (!prepared) enterImmersiveMode(player, track);
 };
 
 const renderPlaylist = (playlist, { force = false } = {}) => {
@@ -1732,7 +1740,7 @@ const renderPlaylist = (playlist, { force = false } = {}) => {
     return true;
   }
   const activeAudio = currentTrack?.audio || currentTrack?.file;
-  tracks = shuffle(discovered);
+  tracks = shufflePlaylist(discovered);
   playlistSignature = nextSignature;
   currentTrackIndex = activeAudio
     ? tracks.findIndex((track) => (track.audio || track.file) === activeAudio)
@@ -1756,8 +1764,8 @@ const renderPlaylist = (playlist, { force = false } = {}) => {
 
 const bindFallbackTracks = () => {
   if (tracks.length || !playlistList) return;
-  const randomizedItems = shuffle([...(playlistList.querySelectorAll(".track-item") || [])]);
-  randomizedItems.forEach((item, index) => {
+  const items = [...playlistList.querySelectorAll(".track-item")];
+  items.forEach((item, index) => {
     item.dataset.trackIndex = String(index);
     item.dataset.number = String(index + 1).padStart(2, "0");
     const titleElement = item.querySelector(".track-title");
@@ -1766,8 +1774,7 @@ const bindFallbackTracks = () => {
       titleElement.dataset.ink = titleElement.textContent;
     }
   });
-  playlistList.replaceChildren(...randomizedItems);
-  randomizedItems.forEach((item) => bindTrackItem(item, findTrackForItem(item)));
+  items.forEach((item) => bindTrackItem(item, findTrackForItem(item)));
   refreshTrackNodes();
 };
 
@@ -1951,13 +1958,32 @@ const rememberPlayback = () => {
   window.inteonPlayback.save(player, currentTrack);
 };
 
+const prepareOpeningTrack = () => {
+  const track = window.CourtyardOpening?.find(tracks);
+  if (!track) return;
+  window.inteonPlayback?.select?.(player, "home");
+  if (immersiveState.active) exitImmersiveMode();
+  playTrack(track, null, { shared: { origin: "home", paused: true, playingIntent: false, time: 0 } });
+};
+
+let dailyOpeningPending = false;
+const applyDailyOpening = () => {
+  if (!dailyOpeningPending || playbackLeaving || !player?.paused) return false;
+  dailyOpeningPending = false;
+  prepareOpeningTrack();
+  return true;
+};
+
 const restoreSharedPlayback = () => {
   const saved = window.inteonPlayback?.forPage?.("home") || window.inteonPlayback?.read?.();
-  if (!saved?.audio || currentTrack) return;
-  const wanted = saved.audio;
-  const track = tracks.find((item) => String(item.audio || item.file || "").replace(/\\/g, "/") === wanted);
-  if (!track) return;
-  playTrack(track, null, { shared: { ...saved, paused: !(saved.playingIntent ?? !saved.paused) } });
+  if (saved?.playingIntent) {
+    const track = tracks.find((item) => String(item.audio || item.file || "").replace(/\\/g, "/") === saved.audio);
+    if (track) {
+      playTrack(track, null, { shared: { ...saved, paused: false } });
+      return;
+    }
+  }
+  prepareOpeningTrack();
 };
 
 const togglePlayback = () => {
@@ -2027,8 +2053,15 @@ trackVolume?.addEventListener("input", () => {
 });
 player?.addEventListener("timeupdate", syncTransport);
 player?.addEventListener("durationchange", syncTransport);
-player?.addEventListener("play", syncTransport);
-player?.addEventListener("pause", syncTransport);
+player?.addEventListener("play", () => {
+  if (currentTrack && !immersiveState.active) enterImmersiveMode(player, currentTrack);
+  else syncTransport();
+});
+player?.addEventListener("pause", () => {
+  // At EOF the ended handler decides whether to advance or prepare today's track.
+  if (!player.ended) applyDailyOpening();
+  syncTransport();
+});
 player?.addEventListener("playing", () => { setPlaybackStatus(); syncTransport(); });
 player?.addEventListener("waiting", () => { setPlaybackStatus("Загрузка аудио…", "loading"); syncTransport(); });
 player?.addEventListener("loadedmetadata", syncTransport);
@@ -2045,7 +2078,7 @@ player?.addEventListener("error", () => {
   syncTransport();
 });
 player?.addEventListener("ended", () => {
-  if (!currentTrack) return;
+  if (!currentTrack || applyDailyOpening()) return;
   if (window.inteonPlayback?.stopsAtEnd?.(player)) {
     window.inteonPlayback.intent(player, false);
     player.pause();
@@ -2059,7 +2092,7 @@ player?.addEventListener("ended", () => {
 });
 syncTransport();
 window.addEventListener("keydown", (event) => {
-  if (!immersiveState.active || openPanels.length || document.activeElement?.isContentEditable
+  if (!currentTrack || openPanels.length || document.activeElement?.isContentEditable
       || /^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(document.activeElement?.tagName || "")) return;
   if (event.key === " ") {
     event.preventDefault();
@@ -3723,8 +3756,16 @@ if (!isConsoleRoom) window.setTimeout(() => {
     bindFallbackTracks();
     if (Array.isArray(window.INTEONMTECA_PLAYLIST) && window.INTEONMTECA_PLAYLIST.length) {
       renderPlaylist(window.INTEONMTECA_PLAYLIST);
-      // Restoration retains the original playback origin, including reload.
-      restoreSharedPlayback();
+      if (!currentTrack) {
+        const navigation = performance.getEntriesByType("navigation")[0]?.type;
+        const internal = document.referrer && new URL(document.referrer).origin === location.origin;
+        if (internal || navigation === "reload" || navigation === "back_forward") restoreSharedPlayback();
+        else prepareOpeningTrack();
+      }
+      window.CourtyardOpening?.watchDay(() => {
+        dailyOpeningPending = true;
+        applyDailyOpening();
+      });
     }
   } catch {}
 }, 0);
@@ -3734,8 +3775,6 @@ window.addEventListener("pagehide", () => { rememberPlayback(); playbackLeaving 
 window.addEventListener("pageshow", (event) => {
   if (isConsoleRoom || !event.persisted) return;
   // A restored document must not overwrite the newer document's session.
-  const saved = window.inteonPlayback?.read?.();
-  if (!saved) { exitImmersiveMode(); playbackLeaving = false; return; }
   player?.pause();
   currentTrack = null;
   playbackLeaving = false;
