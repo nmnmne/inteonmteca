@@ -44,7 +44,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
   function showCourtyardResident(shown) {
     if (residentInYard === shown) return;
     residentInYard = shown;
-    window.inteonRoom?.setInCourtyard(shown);
+    window.inteonRoom?.setInCourtyard?.(shown);
   }
 
   function dispose() {
@@ -130,8 +130,8 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
         solar.update(Date.now(), camera);
         crowModels.update(flock.birds, dt, yard.scene.userData.virtuality, yard.scene.userData.solarLighting.daylight);
         if (residentModel) {
-          const show = flock.visit.amount > 0 && yard.scene.userData.virtuality < .5
-            && window.inteonRoom?.canVisitCourtyard() === true;
+          const show = flock.visit?.amount > 0 && yard.scene.userData.virtuality < .5
+            && window.inteonRoom?.canVisitCourtyard?.() === true;
           if (show) residentModel.update(flock.visit, dt, yard.scene.userData.solarLighting.daylight, yard.scene.userData.virtuality);
           else residentModel.group.visible = false;
           showCourtyardResident(residentModel.group.visible);
