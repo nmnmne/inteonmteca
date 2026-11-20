@@ -18,7 +18,7 @@ def verify(browser, zone, utc_midnight_hour):
     compact.wait_for()
     assert page.evaluate("DJEngine.snapshot().A.track.id") == MEMPHIS
     assert page.evaluate("DJStudioLibrary.list()[0].id") == MEMPHIS
-    assert page.evaluate("DJEngine.snapshot().B.track.title") == "High Stage Of Reality"
+    assert page.evaluate("DJEngine.snapshot().B.track.title") == "Виртуальная реальность"
     page.evaluate("DJEngine.setCross(-.25); DJEngine.setFilter('B', .5)")
     compact.locator(".compact-next").click()
     page.wait_for_function("id => DJEngine.snapshot().A.track.id !== id", arg=MEMPHIS)

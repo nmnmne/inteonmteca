@@ -269,6 +269,24 @@ window.DJ_LOUDNESS = {
     "scratchFrames": 4794095,
     "scratchHash": "2ab07f4aee2012b3a5b1d5743f205aa0f175f650e16125a9766e226478d01daa"
   },
+  "media/Mtx/Матт feat. ыьек - Mtx.flac": {
+    "src": "assets/dj-audio/r128-stereo-v1-e4cdbba7370e2f71cecfc17a.flac",
+    "integrated": -14.1,
+    "truePeak": -1.1,
+    "lra": 6.6,
+    "gainDb": 1.3,
+    "limited": true,
+    "inputIntegrated": -15.0,
+    "inputTruePeak": -0.9,
+    "sampleRate": 44100,
+    "frames": 9460356,
+    "sourceHash": "e4cdbba7370e2f71cecfc17a8a3ed4a1d09ac762ee7c529294572a3b84fcab01",
+    "sha256": "5503fccdd9933e14f502674fa128539039f0a579b777a2288019fec132d2da08",
+    "scratchSrc": "assets/dj-audio/scratch-v1-5503fccdd9933e14f502674f.pcm",
+    "scratchRate": 44100,
+    "scratchFrames": 9460356,
+    "scratchHash": "8210aed8e73cfa81a9691aac34aca5dd532fffbec026cdc7d7c751f7843b62e5"
+  },
   "media/N01Dentity/Матт - N01Dentity.flac": {
     "src": "assets/dj-audio/r128-stereo-v1-6f19fffb84db11103171ead4.flac",
     "integrated": -14.2,
@@ -323,6 +341,24 @@ window.DJ_LOUDNESS = {
     "scratchFrames": 10255727,
     "scratchHash": "e767299f7256591d50689eb496c3d1279401e03a0652f5b372c0a3db971c2d22"
   },
+  "media/Виртуальная реальность/Матт - Виртуальная реальность.flac": {
+    "src": "assets/dj-audio/r128-stereo-v1-f23c4142c75c23b38b421ed2.flac",
+    "integrated": -14.0,
+    "truePeak": -2.9,
+    "lra": 2.4,
+    "gainDb": -4.9,
+    "limited": false,
+    "inputIntegrated": -9.1,
+    "inputTruePeak": 2.0,
+    "sampleRate": 44100,
+    "frames": 8981297,
+    "sourceHash": "f23c4142c75c23b38b421ed2c13cb741f8d868a51edd7981132b460a67f5eef4",
+    "sha256": "544bfac89bea37c357e3ecdba2c3174a2a9e3acb064e8ab28b86ea120dbd731e",
+    "scratchSrc": "assets/dj-audio/scratch-v1-544bfac89bea37c357e3ecdb.pcm",
+    "scratchRate": 44100,
+    "scratchFrames": 8981297,
+    "scratchHash": "3e50dea27827b13e9856f5cbf28e28620ee2cf83370d4c691dc3aaae37a41f78"
+  },
   "media/Лифт моего времени/Матт - Лифт моего времени.flac": {
     "src": "assets/dj-audio/r128-stereo-v1-e6559abd6858f2690caa8764.flac",
     "integrated": -14.0,
@@ -340,41 +376,5 @@ window.DJ_LOUDNESS = {
     "scratchRate": 44100,
     "scratchFrames": 13221141,
     "scratchHash": "c0f0e3b25b2abdd92091e12a727b050a0c100e25dfbbdbe7a8153761b5c1e5cf"
-  },
-  "media/Никто не выходил/Матт - Никто не выходил.flac": {
-    "src": "assets/dj-audio/r128-stereo-v1-24503de39526f6c0e722d763.flac",
-    "integrated": -14.0,
-    "truePeak": -4.4,
-    "lra": 2.9,
-    "gainDb": -4.4,
-    "limited": false,
-    "inputIntegrated": -9.6,
-    "inputTruePeak": -0.0,
-    "sampleRate": 44100,
-    "frames": 11009099,
-    "sourceHash": "24503de39526f6c0e722d7630cedd498c5281726e544d55e02f4a0c14d4e2871",
-    "sha256": "b797750adbcf01461793169c7a1ae3b368624fc2bb9f63a3a112a10cc246b464",
-    "scratchSrc": "assets/dj-audio/scratch-v1-b797750adbcf01461793169c.pcm",
-    "scratchRate": 44100,
-    "scratchFrames": 11009099,
-    "scratchHash": "5ccc2b38522277e7c7c178b1820d84f6341e5caa63d9f9776b74553d5adccadb"
-  },
-  "media/Слишком холод/Матт - Слишком холод.flac": {
-    "src": "assets/dj-audio/r128-stereo-v1-0b81c593e94318d8a2913d2a.flac",
-    "integrated": -14.0,
-    "truePeak": -2.4,
-    "lra": 2.7,
-    "gainDb": -3.0,
-    "limited": false,
-    "inputIntegrated": -11.0,
-    "inputTruePeak": 0.6,
-    "sampleRate": 44100,
-    "frames": 10090238,
-    "sourceHash": "0b81c593e94318d8a2913d2ad85b9252d91c6020f4a75543c55da5396cef4321",
-    "sha256": "e657ec92c4caa6ebe8c2cc35d3f3a179b5fe831cbb5c702f19d63e4318393f24",
-    "scratchSrc": "assets/dj-audio/scratch-v1-e657ec92c4caa6ebe8c2cc35.pcm",
-    "scratchRate": 44100,
-    "scratchFrames": 10090238,
-    "scratchHash": "e5c651a6edc4b4323b431780993b484100a6183a37f9ebf4ad261933536b212f"
   }
 };

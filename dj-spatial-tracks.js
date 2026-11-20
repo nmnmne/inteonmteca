@@ -179,6 +179,18 @@ window.DJ_SPATIAL_TRACKS = {
     "bytes": 83718532,
     "sha256": "52f638dc98286ec99e3daba827299e24640afde7779dfd93adf1a6f2d566f1e8"
   },
+  "media/Mtx/Матт feat. ыьек - Mtx.flac": {
+    "spatialSrc": "assets/dj-spatial/speaker-bed-v1-a661b5f8-5503fccdd9933e14f50267.wv",
+    "layout": "7.1.4",
+    "channels": 12,
+    "sampleRate": 44100,
+    "frames": 9460356,
+    "integrated": -14.0,
+    "truePeak": -1.4,
+    "lra": 6.1,
+    "bytes": 207725943,
+    "sha256": "75274f7b243aa069a32b9e6afc8e5902536148fe21a310f3d8650dfb8b7da66a"
+  },
   "media/N01Dentity/Матт - N01Dentity.flac": {
     "spatialSrc": "assets/dj-spatial/speaker-bed-v1-a661b5f8-d8479a0e5cb1ccba896521.wv",
     "layout": "7.1.4",
@@ -215,6 +227,18 @@ window.DJ_SPATIAL_TRACKS = {
     "bytes": 187294290,
     "sha256": "97ed6e1ffeb540f1dd59dbbfb5f16d6e5e4cffae3b3bbe6f124754849a2e5f90"
   },
+  "media/Виртуальная реальность/Матт - Виртуальная реальность.flac": {
+    "spatialSrc": "assets/dj-spatial/speaker-bed-v1-a661b5f8-544bfac89bea37c357e3ec.wv",
+    "layout": "7.1.4",
+    "channels": 12,
+    "sampleRate": 44100,
+    "frames": 8981297,
+    "integrated": -14.0,
+    "truePeak": -3.6,
+    "lra": 2.1,
+    "bytes": 176704846,
+    "sha256": "de92a37d384d3ad0202f8b88780427c3ed35733db112ac182e78d194885ec89c"
+  },
   "media/Лифт моего времени/Матт - Лифт моего времени.flac": {
     "spatialSrc": "assets/dj-spatial/speaker-bed-v1-a661b5f8-4c12c478b08f4967813466.wv",
     "layout": "7.1.4",
@@ -226,29 +250,5 @@ window.DJ_SPATIAL_TRACKS = {
     "lra": 4.2,
     "bytes": 302392305,
     "sha256": "e09ddda555e7824e065a22fb88e69e579097b2368f74afd88a486e4b7742f547"
-  },
-  "media/Никто не выходил/Матт - Никто не выходил.flac": {
-    "spatialSrc": "assets/dj-spatial/speaker-bed-v1-a661b5f8-b797750adbcf0146179316.wv",
-    "layout": "7.1.4",
-    "channels": 12,
-    "sampleRate": 44100,
-    "frames": 11009099,
-    "integrated": -14.0,
-    "truePeak": -4.9,
-    "lra": 2.8,
-    "bytes": 271427291,
-    "sha256": "b25a3d6732d49344e53a978551c5d44f1d6618198c399349c42658e5f68d70e7"
-  },
-  "media/Слишком холод/Матт - Слишком холод.flac": {
-    "spatialSrc": "assets/dj-spatial/speaker-bed-v1-a661b5f8-e657ec92c4caa6ebe8c2cc.wv",
-    "layout": "7.1.4",
-    "channels": 12,
-    "sampleRate": 44100,
-    "frames": 10090238,
-    "integrated": -14.0,
-    "truePeak": -2.6,
-    "lra": 2.5,
-    "bytes": 217845594,
-    "sha256": "b5f9b746574d18b88ec115a3830fd32ddad8e9ca2e2008ac80b9d63ffda45cb8"
   }
 };

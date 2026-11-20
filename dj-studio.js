@@ -927,7 +927,7 @@
       e.returnValue = '';
     }
   });
-  const preferredB = tracks.find(track => track.title === 'High Stage Of Reality');
+  const preferredB = tracks.find(track => track.title === 'Виртуальная реальность');
   const openingA = window.CourtyardOpening?.find(tracks) || tracks.find(track => track !== preferredB);
   const openingB = preferredB || tracks.find(track => track !== openingA);
   if (openingA) engine.load('A', openingA);

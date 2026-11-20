@@ -90,6 +90,12 @@
     "audio": "media/M/ыьек - M.flac"
   },
   {
+    "id": "media/Mtx/Матт feat. ыьек - Mtx.flac",
+    "artist": "Матт feat. ыьек",
+    "title": "Mtx",
+    "audio": "media/Mtx/Матт feat. ыьек - Mtx.flac"
+  },
+  {
     "id": "media/N01Dentity/Матт - N01Dentity.flac",
     "artist": "Матт",
     "title": "N01Dentity",
@@ -108,21 +114,15 @@
     "audio": "media/Random Spiral/Матт - Random Spiral.flac"
   },
   {
+    "id": "media/Виртуальная реальность/Матт - Виртуальная реальность.flac",
+    "artist": "Матт",
+    "title": "Виртуальная реальность",
+    "audio": "media/Виртуальная реальность/Матт - Виртуальная реальность.flac"
+  },
+  {
     "id": "media/Лифт моего времени/Матт - Лифт моего времени.flac",
     "artist": "Матт",
     "title": "Лифт моего времени",
     "audio": "media/Лифт моего времени/Матт - Лифт моего времени.flac"
-  },
-  {
-    "id": "media/Никто не выходил/Матт - Никто не выходил.flac",
-    "artist": "Матт",
-    "title": "Никто не выходил",
-    "audio": "media/Никто не выходил/Матт - Никто не выходил.flac"
-  },
-  {
-    "id": "media/Слишком холод/Матт - Слишком холод.flac",
-    "artist": "Матт",
-    "title": "Слишком холод",
-    "audio": "media/Слишком холод/Матт - Слишком холод.flac"
   }
 ]

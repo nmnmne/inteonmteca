@@ -131,7 +131,7 @@ def check_deck_browser(page):
     b_list = b.get_by_role("listbox")
     selected_title = "[role=option][aria-selected=true] .dd-browse-title"
     original_a, original_b = page.evaluate("[DJEngine.snapshot().A.track.title, DJEngine.snapshot().B.track.title]")
-    assert (original_a, original_b) == ("Memphis", "High Stage Of Reality")
+    assert (original_a, original_b) == ("Memphis", "Виртуальная реальность")
     assert a_list.is_visible() and b_list.is_visible()
     assert a.locator(".dd-wave").is_visible() and b.locator(".dd-wave").is_visible()
     a_list.hover()
@@ -314,7 +314,7 @@ def check_file_drops(browser, url):
         page.wait_for_function("DJStorage.list().then(tracks => tracks.length === 3)")
         page.locator("#deck-b [role=option]").filter(has_text="Над домом").wait_for(state="attached")
         assert page.evaluate("[DJEngine.snapshot().A.track.title, DJEngine.snapshot().B.track.title]") == [
-            "Memphis", "High Stage Of Reality"]
+            "Memphis", "Виртуальная реальность"]
         # Read the exact original bytes after closing the tab (all object URLs are gone).
         page.close()
         page = context.new_page()

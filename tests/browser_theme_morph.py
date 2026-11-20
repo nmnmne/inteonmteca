@@ -38,7 +38,7 @@ with sync_playwright() as p:
         context.route('**/*',route)
         page=context.new_page();errors=[];page.on('pageerror',lambda error:errors.append(str(error)))
         page.goto('http://127.0.0.1:8080/',wait_until='domcontentloaded')
-        page.evaluate("window.inteonPlayTrack(window.INTEONMTECA_PLAYLIST.find(t=>t.title==='Слишком холод'))")
+        page.evaluate("window.inteonPlayTrack(window.INTEONMTECA_PLAYLIST[0])")
         page.wait_for_function("document.querySelector('#album-player').currentTime>0")
         initial=page.evaluate('document.documentElement.dataset.theme');initial_time=page.evaluate("document.querySelector('#album-player').currentTime")
         page.screenshot(path=str(folder/'before.png'))
