@@ -7,13 +7,15 @@ from playwright.sync_api import sync_playwright
 from browser_ambient_route import BASE, expose_walker
 
 
-def check(browser):
-    page = browser.new_page(viewport={"width": 1440, "height": 900})
+def check(browser, mobile=False):
+    viewport = {"width": 390, "height": 844} if mobile else {"width": 1440, "height": 900}
+    page = browser.new_page(viewport=viewport, is_mobile=mobile, has_touch=mobile)
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     page.on("console", lambda msg: errors.append(msg.text) if "Shader Error" in msg.text else None)
     page.route("**/yard/auto-walk.js*", expose_walker)
-    page.add_init_script("Date.now = () => Date.parse('2026-06-21T08:30:00Z') + performance.now()")
+    stamp = "2026-06-21T18:30:00Z" if mobile else "2026-06-21T08:30:00Z"
+    page.add_init_script(f"Date.now = () => Date.parse('{stamp}') + performance.now()")
     page.goto(BASE, wait_until="domcontentloaded")
     page.wait_for_selector('body[data-yard-backdrop="live"]', timeout=60000)
     page.evaluate("""async () => {
@@ -22,7 +24,8 @@ def check(browser):
       T.Scene.prototype.onAfterRender = function(renderer,scene,camera,...rest) {
         previous.call(this,renderer,scene,camera,...rest);
         const logo = this.getObjectByName('music-logo');
-        if (!logo?.userData.inkReady || this.userData.detailLoading.status !== 'ready') return;
+        if (!logo?.userData.inkReady || !logo.getObjectByName('wall-marker-inscriptions')?.material.map.image?.width
+            || this.userData.detailLoading.status !== 'ready') return;
         window.wallFrame = {T,renderer,scene,camera,logo};
         if (window.takeWallPhoto) {
           window.wallPhoto = renderer.domElement.toDataURL();
@@ -33,6 +36,8 @@ def check(browser):
     page.wait_for_function("window.wallFrame", timeout=60000)
     if folder := os.environ.get("INTEON_MURAL_SHOTS"):
         path = Path(folder)
+        if mobile:
+            path = path / "mobile-evening"
         path.mkdir(parents=True, exist_ok=True)
         page.evaluate("window.takeWallPhoto = true")
         page.wait_for_function("window.wallPhoto")
@@ -64,6 +69,8 @@ def check(browser):
         if (bounds.min.x <= -7.56 || bounds.max.x >= 5.6 || bounds.min.y <= -1.9 ||
             (bounds.min.x < 4.1 && bounds.max.x > -4.1 && bounds.min.y < .825 && bounds.max.y > -.825))
           throw Error('Ink crosses a wall edge or the centre lettering: '+s);
+        if (bounds.min.x < -6.739 && bounds.max.x > -7.289 && bounds.min.y < 3.05 && bounds.max.y > 2.35)
+          throw Error('Ink crosses the house number plate: '+s);
       }
       const im = atlas.image, probe = document.createElement('canvas');
       probe.width=im.width; probe.height=im.height;
@@ -116,7 +123,8 @@ def check(browser):
         copy.onBeforeRender = (r,s,c)=>frozen.onBeforeRender(r,scene,c);
         const still=changed(read(0),read(21));
         spare.dispose();frozen.geometry.dispose();frozen.material.dispose();
-        return {slots,inOpeningView,heightM:heights.sort((a,b)=>a-b)[Math.floor(slots/2)],
+        heights.sort((a,b)=>a-b);
+        return {slots,inOpeningView,heightM:heights[Math.floor(slots/2)], maxHeightM:heights.at(-1),
                 calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,
                 tracks:titles.length,lines:repertoire.size,moving,switched,still,
                 stableAtlas:stableAtlas && atlas.version===revision,
@@ -127,15 +135,17 @@ def check(browser):
       }
     }""")
     page.close()
-    assert report["slots"] >= 175 and report["inOpeningView"] >= 80 and report["heightM"] < .21, report
+    assert report["slots"] > 222 and report["inOpeningView"] >= (35 if mobile else 80), report
+    assert .35 < report["heightM"] < .48 and report["maxHeightM"] > .55, report
     assert report["calls"] == 1 and report["triangles"] == 2*report["slots"], report
     assert report["moving"] > 50 and report["switched"] > 280, report
     assert report["still"] == 0 and report["stableAtlas"] and report["refreshed"] and not errors, (report, errors)
-    print(report, flush=True)
+    print("mobile evening" if mobile else "desktop daylight", report, flush=True)
 
 
 if __name__ == "__main__":
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(channel="msedge", headless=True)
         check(browser)
+        check(browser, mobile=True)
         browser.close()

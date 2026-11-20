@@ -4,18 +4,37 @@ import { lyricSheets } from './wall-lyrics.js';
 // Metres in the wordmark plane. On this end wall the left corner is at -7.56,
 // the right at +5.60 and the pavement is at -1.90. Leave the main letters free.
 function handwritingPatches() {
-  const patches = [], pigments = [0x363237,0x57443d,0x39494a,0x454442,0x584148];
+  const patches = [], pigments = [0x262329,0x483233,0x29393d,0x403c35,0x49303f];
   let seed = 9137;
   const random = () => (seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296;
-  for (let row=0; row<30; row++) {
-    const baseline = -1.70 + row*.206;
-    for (let left=-7.37+random()*.28; left<5.26;) {
-      const w = .88+.54*random(), h = .152+.045*random();
-      const x = left+w/2, y = baseline+(random()-.5)*.046;
-      left += w+.035+random()*.12;
-      if (left>5.48 || (Math.abs(x)<4.16+w/2 && Math.abs(y)<.88+h/2)) continue;
-      if (x< -6.60 && y>2.24 && y<3.14) continue; // House number plate.
-      patches.push({x,y,w,h,angle:(random()-.5)*.080,ink:pigments[Math.floor(random()*pigments.length)]});
+  // Big marker strokes share the brickwork with narrow, tightly packed notes.
+  // Give each run its own slope and spacing as it works around the wall fittings.
+  for (let row=0, bottom=-1.83; bottom<13.85; row++) {
+    const narrow = row%4 === 1;
+    const band = narrow ? .22+random()*.08 : .40+random()*.17;
+    const baseline = bottom + band/2, drift = random()*Math.PI*2;
+    const slope = (random()-.5)*.07, tilt = (random()-.5)*.12;
+    const besideLogo = Math.abs(baseline) < .86+band*.55;
+    const logoMargin = 4.22, minWidth = .85;
+    bottom += band*(.79+.17*random());
+    for (let left=-7.44+random()*.22; left<5.40;) {
+      // Use the short strip on either side of the signature, even if a full
+      // line from this run would otherwise extend across the signature.
+      if (besideLogo && left < logoMargin && -logoMargin-left < minWidth) left = logoMargin;
+      const end = besideLogo && left < -logoMargin ? -logoMargin : 5.48;
+      const w = Math.min(end-left, narrow ? .94+random()*.72 : 1.55+random()*1.31);
+      if (w < minWidth) break;
+      const h = band*(.84+random()*.29);
+      const x = left+w/2;
+      const y = baseline+.08*Math.sin(drift+x*.63)+slope*x*.40;
+      const angle = tilt+(random()-.5)*.16;
+      left += w+.015+random()*.13;
+      const halfW = (w*Math.cos(angle)+h*Math.abs(Math.sin(angle)))/2;
+      const halfH = (h*Math.cos(angle)+w*Math.abs(Math.sin(angle)))/2;
+      if (x-halfW <= -7.54 || x+halfW >= 5.58 || y-halfH <= -1.88) continue;
+      if (Math.abs(x)<4.15+halfW && Math.abs(y)<.86+halfH) continue;
+      if (x-halfW < -6.69 && x+halfW > -7.34 && y-halfH < 3.10 && y+halfH > 2.30) continue;
+      patches.push({x,y,w,h,angle,ink:pigments[Math.floor(random()*pigments.length)]});
     }
   }
   return patches;
@@ -114,7 +133,7 @@ export function createWallInscriptions(liveView, still) {
   mesh.userData.bakedShadowCaster = false;
   mesh.userData.bakedShadowReceiver = false;
   mesh.onBeforeRender = (_renderer, scene) => {
-    material.opacity = .73*(1-(scene.userData.virtuality || 0));
+    material.opacity = .81*(1-(scene.userData.virtuality || 0));
     night.value = 1-(scene.userData.solarLighting?.daylight ?? 1);
     time.value = liveView && !still.matches ? (performance.now()-born)/1000 : 0;
     if (material.opacity > .005) selectLyrics(time.value);
