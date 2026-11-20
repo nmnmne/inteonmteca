@@ -91,7 +91,9 @@ test('actual development server starts off and permits opt-in controls', async (
   assert.equal(run.root.dataset.debugEnabled,'true');
   assert.equal(run.master.attributes['aria-checked'],'true');
   assert.ok(run.body.contains(run.quality));
-  assert.equal(run.menu.children.length,6);
+  assert.deepEqual(run.menu.children.map(entry=>entry.textContent),[
+    'Распад на кусочки','Растворение','Разлёт и гроза','Смена сцен','Рекурсия',
+  ]);
   assert.ok(run.menu.children.every(entry=>!entry.disabled));
   run.slider.value='7'; await run.slider.emit('input');
   assert.deepEqual(run.calls,[['manual',7]],'existing one-minute controller receives the choice');
