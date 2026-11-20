@@ -52,7 +52,7 @@ test('resident batches layout changes into one frame and skips background layout
  let reads=0;
  const frames=[];
  const ctx={blocked:false,cinematic:false,document:{hidden:false},compact:{matches:true},
-  refreshObstacles:()=>reads++,center:()=>({}),safe:()=>true,resident:{},journey:null,
+  refreshObstacles:()=>reads++,center:()=>({}),safe:()=>true,resident:{},journey:null,leavingObstacle:false,
   requestAnimationFrame:callback=>frames.push(callback)};
  const invalidate=vm.runInNewContext(sourceRange+'\ninvalidateSpace;',ctx);
  assert.equal(frames.length,0);

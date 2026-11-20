@@ -51,26 +51,11 @@ export function createResidentOrb() {
   mesh.visible=false;
   mesh.userData.visibleInBackstage=true;
   mesh.userData.bakedShadowReceiver=mesh.userData.bakedShadowCaster=false;
-  const target=new THREE.Vector3();
-
-  function update(amount, camera, dt) {
-    // A little hysteresis keeps a grazing flight from repeatedly transferring
-    // the creature between the room and the street.
-    const wasVisible=mesh.visible;
-    mesh.visible=amount >= (wasVisible ? .45 : .50);
-    if (!mesh.visible) return false;
+  function update(amount, center, dt) {
     time.value+=dt;
     strength.value=.45+.55*THREE.MathUtils.smoothstep(amount,.45,.9);
-    const span=5.8*Math.tan(THREE.MathUtils.degToRad(camera.fov*.5));
-    target.set(-span*Math.min(camera.aspect,1.4)*(.37+.045*Math.sin(time.value*.48)),
-      span*(.20+.035*Math.sin(time.value*.66)), -5.8);
-    target.applyQuaternion(camera.quaternion).add(camera.position);
-    // The companion floats in world space. Re-anchor on entry or teleport;
-    // when the camera turns or takes off, it catches up over several frames.
-    if (!wasVisible || dt===0 || mesh.position.distanceToSquared(target)>16) mesh.position.copy(target);
-    else mesh.position.lerp(target,1-Math.exp(-4.5*dt));
+    mesh.position.copy(center);
     mesh.updateMatrix();
-    return true;
   }
   return {mesh,update,dispose() {
     mesh.removeFromParent(); shape.dispose(); skin.dispose();

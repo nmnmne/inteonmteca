@@ -42,9 +42,20 @@
       return !cinematic && !reduced.matches && !document.hidden && performance.now() >= reactionUntil
         && !document.body.classList.contains('is-interlude');
     },
-    setInCourtyard(active, backstage = false) {
+    getResidentCenter() {
+      if (!resident.hidden && resident.getClientRects().length) return center();
+      if (returnSpot) return onScreen(returnSpot);
+      refreshObstacles();
+      const origin = home();
+      return nearestFree(origin) || onScreen(origin);
+    },
+    setInCourtyard(active, backstage = false, screenPoint = null) {
       if (inCourtyard === active && resident.hasAttribute('data-in-backstage') === backstage) return;
-      if (active && !inCourtyard && !resident.hidden && resident.getClientRects().length) returnSpot = center();
+      if (active && !inCourtyard) returnSpot = window.inteonRoom.getResidentCenter();
+      if (!active) {
+        if (Number.isFinite(screenPoint?.x) && Number.isFinite(screenPoint?.y)) returnSpot = onScreen(screenPoint);
+        keepRoomPosition = true;
+      }
       inCourtyard = active;
       resident.toggleAttribute('data-in-courtyard', active && !backstage);
       resident.toggleAttribute('data-in-backstage', backstage);
@@ -88,7 +99,7 @@
   let reactionUntil = 0;
   let blocked = false, lastPointerWork = 0, lastEncounter = -60000;
   let cinematic = false;
-  let inCourtyard = false, returnSpot = null;
+  let inCourtyard = false, returnSpot = null, keepRoomPosition = false, leavingObstacle = false;
   let encounter = 0, hoverArmed = true, ignoreUntil = 0, chaseUntil = 0;
   const music = window.DJEngine?.visuals || document.getElementById("album-player");
   const musicPlaying = () => music && !music.paused && !music.ended;
@@ -105,6 +116,7 @@
     const b = resident.getBoundingClientRect();
     return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
   };
+  const onScreen = p => ({x:Math.max(0,Math.min(innerWidth,p.x)), y:Math.max(0,Math.min(innerHeight,p.y))});
   const position = p => `translate3d(${p.x - halfWidth}px, ${p.y - halfHeight}px, 0)`;
   const compactPlayerVisible = () => document.body.dataset.yardWindow === 'dj' && document.body.dataset.djMode === 'compact';
   const home = () => {
@@ -115,6 +127,7 @@
   const stopJourney = () => {
     if (!journey) return;
     const here = center();
+    journey.onfinish = null;
     journey.cancel();
     journey = null;
     route = [];
@@ -402,18 +415,30 @@
     timers.forEach(clearTimeout); timers.clear();
     stopJourney(); resident.classList.remove("is-blinking");
   };
+  // A form can reappear on top of a control. Start at the shared point and
+  // clear just that obstruction before resuming the ordinary walking routes.
+  const leaveObstacle = here => {
+    if (reduced.matches || (journey && safe(route[route.length-1]))) return;
+    const free = nearestFree(here);
+    if (free && distance(here,free) > 0) {
+      animateRoute([here,free], () => { leavingObstacle = false; invalidateSpace(); }, 440);
+    }
+  };
   const sync = () => {
     armMidnight();
     if (cinematic && !inCourtyard) return;
     const hidden = inCourtyard || document.hidden || (!compactPlayerVisible() && !anchor.getBoundingClientRect().width)
       || document.body.classList.contains('is-interlude');
+    if (keepRoomPosition && !inCourtyard && !returnSpot && !resident.hidden && resident.getClientRects().length) returnSpot = center();
     suspend(); chaseUntil=0; encounter=0; hoverArmed=true; resident.dataset.behavior="independent"; blocked = hidden; resident.hidden = hidden;
     if (hidden) return;
     refreshObstacles();
-    const startingPoint = nearestFree(returnSpot || home());
+    const startingPoint = returnSpot ? onScreen(returnSpot) : nearestFree(home());
+    leavingObstacle = Boolean(returnSpot && !safe(startingPoint));
     returnSpot = null;
     if (startingPoint) resident.style.transform = position(startingPoint);
     resident.hidden = !startingPoint;
+    if (leavingObstacle) leaveObstacle(startingPoint);
     if (performance.now() < reactionUntil) {
       resident.dataset.behavior = 'annoyed'; pose('angry');
       angerTimer = later(finishAnger, reactionUntil - performance.now());
@@ -523,7 +548,8 @@
     if (now-lastPoke<300) return;
     lastPoke = now;
     pointer={x:event.clientX,y:event.clientY,at:now};
-    stopJourney(); clear(decision); clear(stillness);
+    if (!leavingObstacle) stopJourney();
+    clear(decision); clear(stillness);
     clear(angerTimer); chaseUntil = 0;
     restoreAnger(); angerCount = Math.min(Number.MAX_SAFE_INTEGER, angerCount + 1);
     const duration = 2300 + 2200 * Math.log2(angerCount);
@@ -540,6 +566,10 @@
     if (blocked || cinematic || document.hidden) return;
     refreshObstacles();
     const here=resident.hidden ? home() : center();
+    if (leavingObstacle && !resident.hidden) {
+      if (!safe(here)) { leaveObstacle(here); return; }
+      leavingObstacle = false;
+    }
     if (resident.hidden || !safe(here)) {
       stopJourney();
       const free=nearestFree(here);
@@ -596,7 +626,7 @@
       suspend(); cinematic = true; blocked = true;
       resident.style.opacity = '0';
     } else if (phase === 'burst') {
-      if (inCourtyard) return;
+      if (inCourtyard || returnSpot) return;
       refreshObstacles();
       const free = nearestFree({x,y});
       resident.hidden = !free;

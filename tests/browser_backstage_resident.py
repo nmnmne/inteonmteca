@@ -1,4 +1,5 @@
-"""Cross the virtual perimeter with no flock visit, then return to the room."""
+"""Check the resident's screen and world position as its three forms take turns."""
+import math
 import os
 from pathlib import Path
 from playwright.sync_api import sync_playwright
@@ -15,6 +16,7 @@ def control_camera(route):
     route.fulfill(content_type="text/javascript", body=f"""
       export * from '{source}';
       import {{createAutoWalk as make}} from '{source}';
+      import {{facadeNormal}} from '/yard/facade-frame.js';
       export function createAutoWalk(layout,options) {{
         const walk=make(layout,options), home=walk.update(0);
         const outside={{...home,x:Math.min(...layout.walkable.map(p=>p[0]))-72,y:5,
@@ -22,11 +24,42 @@ def control_camera(route):
         const ring=layout.buildings.find(h=>h.id==='house-46-1').footprint;
         const house={{...home,x:ring.reduce((s,p)=>s+p[0],0)/ring.length,
           z:ring.reduce((s,p)=>s+p[1],0)/ring.length,y:3}};
-        window.orbQA={{place:'home'}};
-        const views={{home,house,outside}};
-        return {{...walk, update:()=>views[orbQA.place]}};
+        const [a,b]=ring, [nx,nz]=facadeNormal(a,b,ring);
+        const besideWall = distance => ({{...home,
+          x:(a[0]+b[0])/2+nx*distance,z:(a[1]+b[1])/2+nz*distance,
+          y:1.4,pitch:-.14,yaw:Math.atan2(nx,-nz),roll:0}});
+        const seat=besideWall(5);
+        const visit=options.flock.visit;
+        window.orbQA={{place:'home', seat, setVisit(active) {{
+          Object.assign(visit, {{kind:active?'crows':null,phase:active?'sitting':'idle',
+            x:seat.x,y:0,z:seat.z,yaw:seat.yaw+Math.PI,amount:active?1:0}});
+        }}}};
+        const views={{home,house,outside, yard:besideWall(.25), insideWall:besideWall(-.15)}};
+        return {{...walk, update:()=>{{
+          if(orbQA.expected) orbQA.before=orbQA.sample();
+          return views[orbQA.place];
+        }}}};
       }}
     """)
+
+
+def transfer(page, place, visit, expected, *, world=False):
+    page.evaluate("""([place,visit,expected]) => {
+      const qa=orbQA;
+      qa.transfer=null;
+      qa.expected=expected;
+      qa.setVisit(visit);
+      qa.place=place;
+    }""", [place, visit, expected])
+    page.wait_for_function("orbQA.transfer", timeout=10000)
+    result = page.evaluate("orbQA.transfer")
+    before, after = result["before"], result["after"]
+    assert before["form"] in {"room", "yard", "orb"} and before["form"] != after["form"], result
+    # A real camera move changes the projection of a stationary courtyard body.
+    coordinates = "world" if world else "screen"
+    distance = math.dist(before[coordinates], after[coordinates])
+    assert distance <= (.025 if world else 3), (coordinates, distance, result)
+    return round(distance, 3)
 
 
 def check(browser, mobile):
@@ -46,12 +79,35 @@ def check(browser, mobile):
         if(!orb || !renderer.domElement.closest('[data-yard-layer]')) return;
         Object.assign(orbQA,{scene,camera,renderer,orb,T,actor:scene.getObjectByName('courtyard-resident')});
         T.Scene.prototype.onAfterRender=previous;
+        const room=document.querySelector('.room-resident');
+        const body=orbQA.actor.getObjectByName('resident-body');
+        orbQA.sample=()=>{
+          if(!room.hidden){
+            const r=room.getBoundingClientRect();
+            return {form:'room',screen:[r.x+r.width/2,r.y+r.height/2]};
+          }
+          const mesh=orb.visible ? orb : body;
+          const point=new T.Vector3().setFromMatrixPosition(mesh.matrixWorld);
+          const world=point.toArray(), ndc=point.project(camera);
+          const r=renderer.domElement.getBoundingClientRect();
+          return {form:orb.visible?'orb':orbQA.actor.visible?'yard':'hidden',world,
+            screen:[r.left+(ndc.x+1)*r.width/2,r.top+(1-ndc.y)*r.height/2]};
+        };
+        scene.onAfterRender=function(...args){
+          previous.call(this,...args);
+          if(!orbQA.expected) return;
+          const after=orbQA.sample();
+          if(after.form===orbQA.expected){
+            orbQA.transfer={before:orbQA.before,after};
+            orbQA.expected=null;
+          }
+        };
       };
     }""")
     page.wait_for_function("orbQA.orb && !orbQA.orb.visible && !orbQA.actor.visible")
     overlay = page.locator(".room-resident")
     assert overlay.is_visible()
-    page.evaluate("orbQA.place='outside'")
+    jumps = {"room -> orb (px)": transfer(page, "outside", False, "orb")}
     page.wait_for_function("""orbQA.scene.userData.cityBackstage===1 && orbQA.orb.visible && !orbQA.actor.visible &&
                               document.querySelector('.room-resident[data-in-backstage][hidden]')""")
     pixels = page.evaluate("""() => {
@@ -94,18 +150,32 @@ def check(browser, mobile):
         page.evaluate("""phase=>window.dispatchEvent(new CustomEvent('inteon-storm',
             {detail:{phase,x:innerWidth/2,y:innerHeight/2}}))""", phase)
         assert overlay.is_hidden() and page.locator(".resident-speech").is_hidden()
-    page.evaluate("orbQA.place='home'")
+    jumps["orb -> room (px)"] = transfer(page, "home", False, "room")
     page.wait_for_function("""!orbQA.orb.visible && !orbQA.actor.visible &&
                               !document.querySelector('.room-resident[data-in-backstage]')""")
     assert overlay.is_visible()
-    page.evaluate("orbQA.place='house'")
+    page.evaluate("orbQA.place='yard'")
+    page.wait_for_function("orbQA.scene.userData.virtuality===0 && !orbQA.actor.visible")
+    jumps["room -> yard (px)"] = transfer(page, "yard", True, "yard")
+    # Let the visitor reach its seat before measuring the body on either side
+    # of a small camera move through the facade.
+    page.wait_for_function("""Math.hypot(orbQA.actor.position.x-orbQA.seat.x,
+        orbQA.actor.position.z-orbQA.seat.z)<.015""", timeout=15000)
+    jumps["yard -> orb (m)"] = transfer(page, "insideWall", True, "orb", world=True)
+    # The visitor can walk while behind the facade. The return uses the new
+    # position of the visible orb, rather than the body's previous seat.
+    page.evaluate("orbQA.seat.x+=.4; orbQA.setVisit(true)")
+    page.wait_for_function("""Math.abs(orbQA.sample().world[0]-orbQA.seat.x)<.015""", timeout=10000)
+    jumps["orb -> yard (m)"] = transfer(page, "yard", True, "yard", world=True)
+    jumps["yard -> room (px)"] = transfer(page, "yard", False, "room")
+    jumps["returned room -> orb (px)"] = transfer(page, "house", False, "orb")
     page.wait_for_function("""orbQA.scene.userData.cityBackstage===0 && orbQA.scene.userData.virtuality===1 &&
         orbQA.orb.visible && !orbQA.actor.visible && document.querySelector('.room-resident[hidden]')""")
     page.emulate_media(reduced_motion="reduce")
     page.wait_for_selector("body[data-yard-backdrop=still]")
     assert overlay.is_visible() and overlay.get_attribute("data-in-backstage") is None
     assert not errors, errors
-    print("mobile" if mobile else "desktop", pixels, "entry, storm, exit and disposal passed", flush=True)
+    print("mobile" if mobile else "desktop", pixels, jumps, flush=True)
     page.close()
 
 

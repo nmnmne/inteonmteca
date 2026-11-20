@@ -67,13 +67,14 @@ export function createResidentModel() {
     mesh.userData.bakedShadowReceiver = mesh.userData.bakedShadowCaster = false;
     group.add(mesh);
   }
-  let age = 0, steps = 0, walk = 0, sit = 0;
+  let age = 0, steps = 0, walk = 0, sit = 0, lastVisitX, lastVisitZ;
   function update(visit, dt, daylight, virtuality = 0) {
     const alpha = (visit?.amount || 0) * (1 - virtuality);
-    if (!visit?.kind || alpha < .005) { group.visible = false; return; }
+    if (!visit?.kind || alpha < .005) { group.visible = false; lastVisitX = undefined; return; }
     const seated = visit.phase === 'sitting' || visit.kind === 'crows' && visit.phase === 'approach';
-    const travel = group.visible ? Math.hypot(visit.x-group.position.x, visit.z-group.position.z) : 0;
-    if (!group.visible) { age = steps = walk = 0; sit = Number(seated); }
+    const travel = lastVisitX === undefined ? 0 : Math.hypot(visit.x-lastVisitX, visit.z-lastVisitZ);
+    if (lastVisitX === undefined) { age = steps = walk = 0; sit = Number(seated); }
+    lastVisitX = visit.x; lastVisitZ = visit.z;
     group.visible = true;
     age += dt;
     const smooth = 1-Math.exp(-7*dt);
@@ -97,7 +98,7 @@ export function createResidentModel() {
     skin.opacity = alpha*.93;
     shade.uniforms.opacity.value = alpha*(.17+.18*daylight)*(1+.2*sit);
   }
-  return {group,update,dispose() {
+  return {group,body,update,dispose() {
     group.removeFromParent();
     shape.dispose(); skin.dispose(); markTexture.dispose(); shadowShape.dispose(); shade.dispose();
   }};
