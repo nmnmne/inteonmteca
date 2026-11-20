@@ -11,12 +11,14 @@
   stage.hidden = true;
   document.body.append(stage);
   const effects = window.inteonHomeEffects;
+  const shell = document.getElementById('yard-desktop-shell');
+  const courtyardOnly = () => shell?.matches('[data-minimized][data-idle=true]');
   let next = 0, end = 0, slot = null, ownedEffect = null, act = 0, lastInput = -Infinity;
   const pause = (low, high) => low + Math.random()*(high-low);
 
   function schedule(delay) {
     clearTimeout(next);
-    if (!document.hidden && !reduced.matches) next = setTimeout(present, delay);
+    if (!document.hidden && !reduced.matches && !courtyardOnly()) next = setTimeout(present, delay);
   }
   function restore() {
     if (!slot) return;
@@ -73,8 +75,12 @@
   if (resident) new MutationObserver(() => {
     if (resident.hasAttribute('data-in-courtyard')) restore();
   }).observe(resident,{attributes:true,attributeFilter:['data-in-courtyard']});
-  function stop() { restore(); clearTimeout(next); }
+  function stop() { restore(); clearTimeout(next); next = 0; }
   function resume() { stop(); schedule(pause(26000,43000)); }
+  if (shell) new MutationObserver(() => {
+    if (courtyardOnly()) stop();
+    else if (!next) resume();
+  }).observe(shell,{attributes:true,attributeFilter:['data-idle']});
   document.addEventListener('visibilitychange', () => document.hidden ? stop() : resume());
   reduced.addEventListener('change',resume);
   window.addEventListener('pagehide',stop);

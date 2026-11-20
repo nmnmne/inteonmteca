@@ -23,7 +23,23 @@ def check(browser, url, width, height, touch):
     restore = page.locator('.yard-restore')
     assert compact.is_visible() and page.locator('#studio').is_hidden()
     assert page.locator('body').get_attribute('data-dj-mode') == 'compact'
-    assert 'OpenStreetMap' not in compact.locator('.compact-titlebar').inner_text()
+    assert 'OpenStreetMap' not in compact.inner_text()
+    display = compact.locator('.compact-display')
+    fullscreen = display.locator('.compact-fullscreen')
+    assert fullscreen.is_visible() and display.locator('[data-dj-mode=full]').is_visible()
+    assert compact.locator('button:visible').evaluate_all(
+        'buttons => buttons.every(el => el.getBoundingClientRect().top > innerHeight / 2)')
+    if page.evaluate('document.fullscreenEnabled'):
+        fullscreen.click()
+        page.wait_for_function('document.fullscreenElement !== null')
+        assert compact.is_visible() and page.locator('#studio').is_hidden()
+        action('dj', 'minimize').click()
+        assert page.evaluate('!!document.fullscreenElement') and restore.is_visible()
+        restore.click()
+        assert compact.is_visible() and page.evaluate('!!document.fullscreenElement')
+        fullscreen.click()
+        page.wait_for_function('document.fullscreenElement === null')
+        assert compact.is_visible()
     compact.get_by_role('button', name='Сведения о дворе и источники карты').click()
     assert page.locator('#yard-map-sources a[href*="openstreetmap.org/copyright"]').is_visible()
     page.keyboard.press('Escape')
@@ -35,6 +51,7 @@ def check(browser, url, width, height, touch):
         page.keyboard.press('Escape')
     compact.locator('[data-dj-mode=full]').click()
     assert page.locator('#studio').is_visible()
+    assert page.evaluate('document.fullscreenElement === null')
     for control in ('#import', '#keys-open', '[data-app=dj][data-window-action=minimize]',
                     '[data-app=dj][data-window-action=close]'):
         page.locator(control + ':visible').click(trial=True)
@@ -69,9 +86,31 @@ def check(browser, url, width, height, touch):
     page.keyboard.press('ArrowLeft')
     assert page.evaluate('DJEngine.snapshot().A.playing') is (not touch)
     assert page.evaluate('DJEngine.snapshot().cross === .4')
-    page.clock.fast_forward(21000)
+
+    button_center = [round(rect['x'] + rect['width'] / 2), round(rect['y'] + rect['height'] / 2)]
+    interact = page.touchscreen.tap if touch else page.mouse.move
+    page.clock.fast_forward(18000)
     assert restore.is_visible()
-    restore.press('Enter')
+    interact(width // 2, height // 2)
+    page.clock.fast_forward(19000)
+    assert restore.evaluate("el => el.checkVisibility({opacityProperty: true, visibilityProperty: true})")
+    page.clock.fast_forward(1200)
+    assert not restore.evaluate("el => el.checkVisibility({opacityProperty: true, visibilityProperty: true})")
+    assert page.evaluate("([x,y]) => !document.elementFromPoint(x,y)?.closest('.yard-restore')", button_center)
+    assert page.locator('[data-yard-layer]').is_visible()
+    assert page.locator('.yard-system-panel').is_hidden() and page.locator('.yard-app-dock').is_hidden()
+    if not touch:
+        assert page.evaluate('DJEngine.snapshot().A.playing && DJEngine.snapshot().B.playing')
+
+    # The first touch, even over the old button position, reveals the button without opening the DJ.
+    interact(*button_center)
+    assert page.locator('body').get_attribute('data-yard-window') == 'desktop'
+    assert restore.evaluate("el => el.checkVisibility({opacityProperty: true, visibilityProperty: true})")
+    assert page.evaluate("([x,y]) => !!document.elementFromPoint(x,y)?.closest('.yard-restore')", button_center)
+    if touch:
+        page.touchscreen.tap(*button_center)
+    else:
+        restore.press('Enter')
     assert compact.is_visible()
     action('dj', 'close').click()
     launch('engrus').click()

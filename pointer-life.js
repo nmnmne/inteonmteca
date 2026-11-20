@@ -6,10 +6,12 @@
   const MAX_RINGS = 4;
   const rings = new Set();
   let fluid, head, wake, code;
-  let active = false, frame = 0, clock = 0, idleTimer = 0, lastFrame = 0;
-  let anchorX = 0, anchorY = 0, offsetX = 0, offsetY = 0;
+  let active = false, frame = 0, clock = 0, lastFrame = 0;
+  let pointerX = 0, pointerY = 0, lastMove = 0;
   let x = 0, y = 0, vx = 0, vy = 0, tailX = 0, tailY = 0;
   let axis = 1, turn = 1, halfSeconds = 0;
+  const windPhase = Math.random() * Math.PI * 2;
+  let untilPull = 8 + Math.random() * 6, pullTime = 0;
 
   const motionAllowed = () => !reduced.matches && !document.hidden;
   const lowTier = () => {
@@ -37,8 +39,8 @@
     active = false;
     cancelAnimationFrame(frame);
     clearInterval(clock);
-    clearTimeout(idleTimer);
-    frame = clock = idleTimer = lastFrame = 0;
+    frame = clock = lastFrame = 0;
+    pullTime = 0;
     if (!fluid) return;
     fluid.classList.remove('is-on');
     if (immediate) fluid.hidden = true;
@@ -50,7 +52,7 @@
     axis = (axis + turn + 8) % 8;
     if (++halfSeconds % 2 === 0) refreshCode();
   };
-  const start = (px, py) => {
+  const start = () => {
     if (!fluid) {
       fluid = document.createElement('div');
       fluid.className = 'pointer-fluid';
@@ -62,14 +64,14 @@
       }
       [wake, head, code] = fluid.children;
       document.body.append(fluid);
+      x = innerWidth * (.28 + Math.random() * .44);
+      y = innerHeight * (.25 + Math.random() * .5);
     }
     active = true;
-    anchorX = px;
-    anchorY = py;
-    x = tailX = inViewX(px + 21);
-    y = tailY = inViewY(py + 17);
-    vx = vy = offsetX = offsetY = 0;
-    axis = 1;
+    x = tailX = inViewX(x);
+    y = tailY = inViewY(y);
+    vx *= .3;
+    vy *= .3;
     turn = Math.random() < .5 ? -1 : 1;
     halfSeconds = 0;
     head.style.transform = wake.style.transform = '';
@@ -79,20 +81,37 @@
     fluid.classList.toggle('is-light', lowTier());
     fluid.classList.add('is-on');
     clock = setInterval(tick, 500);
+    frame = requestAnimationFrame(step);
   };
   const step = now => {
     frame = 0;
     if (!enabled()) return stop();
-    const dt = Math.min((now - (lastFrame || now - 16.67)) / 1000, .034);
+    if (now - lastMove >= 3500) return stop(false);
+    const dt = clamp((now - (lastFrame || now - 16.67)) / 1000, 0, .05);
     lastFrame = now;
-    const drift = Math.exp(-dt * 3.3);
-    offsetX *= drift;
-    offsetY *= drift;
-    const dx = inViewX(anchorX + 21 + offsetX) - x;
-    const dy = inViewY(anchorY + 17 + offsetY) - y;
-    const damping = Math.exp(-dt * 15);
-    vx = (vx + dx * 116 * dt) * damping;
-    vy = (vy + dy * 116 * dt) * damping;
+
+    // Wind drives the pigment. Near an edge a soft spring turns it back inwards.
+    const windAngle = windPhase + now * .00016;
+    let ax = 23 * Math.cos(windAngle) + (clamp(x, 76, innerWidth - 76) - x) * 1.8;
+    let ay = 17 * Math.sin(windAngle) + (clamp(y, 52, innerHeight - 52) - y) * 1.8;
+    if (now - lastMove < 450) {
+      untilPull -= dt;
+      if (untilPull <= 0) {
+        pullTime = .75 + Math.random() * .45;
+        untilPull = 11 + Math.random() * 8;
+      }
+      if (pullTime > 0) {
+        const dx = pointerX - x, dy = pointerY - y;
+        const scale = Math.min(.4, 82 / (Math.hypot(dx, dy) || 1));
+        const angle = axis * Math.PI / 4;
+        ax += dx * scale + 10 * Math.cos(angle);
+        ay += dy * scale + 10 * Math.sin(angle);
+      }
+    }
+    pullTime = Math.max(0, pullTime - dt);
+    const drag = Math.exp(-dt * 1.3);
+    vx = (vx + ax * dt) * drag;
+    vy = (vy + ay * dt) * drag;
     x = inViewX(x + vx * dt);
     y = inViewY(y + vy * dt);
     const catchUp = 1 - Math.exp(-dt * 5.8);
@@ -108,37 +127,16 @@
       wake.style.transform = moveTo(-ux * length / 2, -uy * length / 2) + ' ' + stretch(ux, uy, length / 73);
     }
 
-    if (Math.hypot(dx, dy, offsetX, offsetY, trail) > .35 || Math.hypot(vx, vy) > 2) {
-      frame = requestAnimationFrame(step);
-    } else {
-      lastFrame = 0;
-    }
+    frame = requestAnimationFrame(step);
   };
 
   const onMove = event => {
     if (event.pointerType === 'touch') return stop();
     if (!enabled() || (event.pointerType !== 'mouse' && event.pointerType !== 'pen')) return;
-    const px = event.clientX, py = event.clientY;
-    const dx = px - anchorX, dy = py - anchorY;
-    if (fluid && !fluid.hidden && dx * dx + dy * dy < 36) return;
-    if (!active) {
-      start(px, py);
-    } else {
-      anchorX = px;
-      anchorY = py;
-      // Turn the impulse, then relax the displacement towards the pointer.
-      // The bound keeps the ink on screen after a jump across the viewport.
-      const angle = axis * Math.PI / 4;
-      const cos = Math.cos(angle), sin = Math.sin(angle);
-      offsetX += (dx * cos - dy * sin - dx) * .9;
-      offsetY += (dx * sin + dy * cos - dy) * .9;
-      const scale = Math.min(1, 105 / (Math.hypot(offsetX, offsetY) || 1));
-      offsetX *= scale;
-      offsetY *= scale;
-      if (!frame) frame = requestAnimationFrame(step);
-    }
-    clearTimeout(idleTimer);
-    idleTimer = setTimeout(() => stop(false), 3500);
+    pointerX = event.clientX;
+    pointerY = event.clientY;
+    lastMove = performance.now();
+    if (!active) start();
   };
 
   const ring = (cx, cy, big = false) => {

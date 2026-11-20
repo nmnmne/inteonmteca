@@ -19,7 +19,9 @@
     pause: '<path fill="currentColor" stroke="none" d="M6 5h4v14H6zm8 0h4v14h-4z"/>',
     next: '<path d="m6 5 10 7-10 7zm12 0v14"/>',
     previous: '<path d="m18 5-10 7 10 7zM6 5v14"/>',
-    down: '<path d="m6 9 6 6 6-6"/>'
+    down: '<path d="m6 9 6 6 6-6"/>',
+    fullscreen: '<path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/>',
+    exitFullscreen: '<path d="M4 8h4V4m8 0v4h4M4 16h4v4m8 0v-4h4"/>'
   };
   function icon(name) {
     return '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">' + icons[name] + '</svg>';
@@ -30,13 +32,6 @@
   root.setAttribute('aria-label', 'Компактный DJ-пульт');
   root.hidden = true;
   root.innerHTML = `
-    <header class="compact-titlebar" data-resident-obstacle>
-      <img class="compact-brand" src="assets/logo-wordmark.svg" alt="inteonmteca — DJ-пульт">
-      <time data-yard-clock></time>
-      <button type="button" class="compact-credit" popovertarget="yard-map-sources" aria-label="Сведения о дворе и источники карты" title="Сведения о дворе">ⓘ</button>
-      <button type="button" class="compact-sound" aria-label="Настройки звука" title="Настройки звука">${icon('sound')}</button>
-      <div data-dj-window-tools></div>
-    </header>
     <div class="compact-display" data-resident-obstacle>
       <div class="compact-decks" role="group" aria-label="Активная дека">
         <button type="button" data-compact-side="A" aria-label="Дека A">A</button>
@@ -51,6 +46,14 @@
         <button type="button" class="compact-next" aria-label="Следующий трек">${icon('next')}</button>
       </div>
       <div class="compact-wave"></div>
+      <div class="compact-utilities">
+        <img class="compact-brand" src="assets/logo-wordmark.svg" alt="inteonmteca">
+        <time data-yard-clock></time>
+        <button type="button" class="compact-credit" popovertarget="yard-map-sources" aria-label="Сведения о дворе и источники карты" title="Сведения о дворе">ⓘ</button>
+        <button type="button" class="compact-sound" aria-label="Настройки звука" title="Настройки звука">${icon('sound')}</button>
+        <button type="button" class="compact-fullscreen"></button>
+        <div data-dj-window-tools></div>
+      </div>
       <input class="compact-import" type="file" accept="audio/*,.flac,.wav,.mp3,.m4a,.ogg,.wv" multiple hidden>
     </div>
     <div id="compact-picker" popover data-resident-obstacle aria-label="Плейлист активной деки">
@@ -124,6 +127,22 @@
   find('.compact-previous').onclick = () => adjacent(-1);
   find('.compact-next').onclick = () => adjacent(1);
   find('.compact-sound').onclick = () => library.openSettings();
+  const fullscreen = find('.compact-fullscreen');
+  function updateFullscreen() {
+    const expanded = Boolean(document.fullscreenElement);
+    const label = expanded ? 'Выйти' : document.fullscreenEnabled ? 'На весь экран' : 'Весь двор';
+    fullscreen.innerHTML = icon(expanded ? 'exitFullscreen' : 'fullscreen') + '<span>' + label + '</span>';
+    fullscreen.title = expanded ? 'Выйти из полноэкранного режима' : document.fullscreenEnabled
+      ? 'Развернуть сайт на весь экран' : 'Развернуть двор на всю область браузера';
+    fullscreen.setAttribute('aria-label', fullscreen.title);
+    if (document.fullscreenEnabled) fullscreen.setAttribute('aria-pressed', String(expanded));
+  }
+  fullscreen.onclick = () => {
+    if (document.fullscreenEnabled || document.fullscreenElement) void library.toggleFullscreen();
+    else find('[data-window-action=minimize]').click();
+  };
+  document.addEventListener('fullscreenchange', updateFullscreen);
+  updateFullscreen();
   picker.addEventListener('beforetoggle', event => {
     if (event.newState === 'open') {
       librarySlot.append(browsers[side]);

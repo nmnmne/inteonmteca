@@ -56,10 +56,9 @@ OBSERVE = """async () => {
       Object.defineProperty(performance,'now',{configurable:true,value:()=>time});
       renderer.setRenderTarget(target);
       const bare = pixels(false), birds = pixels(true), again = pixels(false);
-      const top = document.querySelector('.compact-titlebar').getBoundingClientRect().bottom / innerHeight;
       const bottom = document.querySelector('.compact-display').getBoundingClientRect().top / innerHeight;
       let ink = 0;
-      for (let y=Math.ceil((1-bottom)*height); y<(1-top)*height; y++) {
+      for (let y=Math.ceil((1-bottom)*height); y<height; y++) {
         for (let x=0; x<width; x++) {
           const i=(y*width+x)*4;
           for (let c=0; c<3; c++) {

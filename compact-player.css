@@ -8,34 +8,31 @@
   color-scheme: dark;
 }
 .yard-dj-compact[data-side=B] { --dd-accent: #f6c28f; --dd-channels: 246,194,143; }
-.compact-titlebar, .compact-display {
+.compact-display {
   position: fixed; z-index: 35; box-sizing: border-box;
   border: 1px solid #ece6da3d;
   background: linear-gradient(118deg,#48484abc,#292b2db8 47%,#494547bd);
   backdrop-filter: blur(14px) saturate(.72);
   -webkit-backdrop-filter: blur(14px) saturate(.72);
   box-shadow: inset 0 1px #fffbef24, inset 0 -1px #18191b99, 0 4px 20px #14131859;
-}
-.compact-titlebar {
-  inset: max(5px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) auto max(8px,env(safe-area-inset-left));
-  min-height: 37px; padding: 2px 7px 2px 12px;
-  display: flex; align-items: center; gap: 8px;
-  border-radius: 9px; background: linear-gradient(180deg,#545254c2,#302f31bd);
-}
-.compact-titlebar .compact-brand { margin-right: auto; width: clamp(74px,13vw,126px); height: 24px; object-fit: contain; object-position: left center; }
-.compact-titlebar time { position: absolute; left: 50%; transform: translateX(-50%); color: #f2ede5; font: 12px/1 var(--dd-mono); }
-.compact-titlebar :is(.compact-sound,.compact-credit) {
-  display: inline-grid; place-items: center; min-height: 32px; margin: 0; padding: 3px 5px;
-  border: 0; background: transparent; color: #ede7e1; cursor: pointer;
-}
-.compact-titlebar .compact-credit { min-width: 32px; font: 500 16px/1 "Segoe UI",sans-serif; }
-.compact-titlebar .compact-sound { width: 32px; }
-.compact-display {
   inset: auto 0 max(12px,env(safe-area-inset-bottom)) 0; margin: 0 auto;
   width: min(780px,calc(100% - 24px)); min-width: 0;
-  display: grid; grid-template: "decks song transport" auto "wave wave wave" auto / auto minmax(0,1fr) auto;
-  align-items: center; gap: 6px 14px; padding: 10px 12px 9px; border-radius: 16px;
+  display: grid; grid-template: "decks song transport" auto "wave wave wave" auto "utilities utilities utilities" auto / auto minmax(0,1fr) auto;
+  align-items: center; gap: 4px 14px; padding: 8px 12px 5px; border-radius: 16px;
 }
+.compact-utilities { grid-area: utilities; display: flex; align-items: center; gap: 4px; }
+.compact-brand { width: 77px; height: 21px; object-fit: contain; }
+.compact-utilities time { margin: 0 auto 0 8px; color: #ded9d2; font: 11px/1 var(--dd-mono); }
+.compact-utilities [data-dj-window-tools] { display: flex; }
+.compact-utilities .compact-fullscreen, .compact-utilities .yard-window-actions [data-dj-mode=full] {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  width: auto; height: 32px; margin: 0; padding-inline: 9px; border-radius: 6px;
+  font: 600 12px/1.1 "Segoe UI", sans-serif; white-space: nowrap;
+}
+.compact-utilities .compact-fullscreen {
+  color: #fff9f0; border: 1px solid #f6eee954; background: linear-gradient(#646365a1,#49484acc);
+}
+.compact-fullscreen svg { width: 15px; height: 15px; }
 .compact-display[data-dragging=true] { outline: 2px solid var(--dd-accent); }
 .compact-decks, .compact-transport { display: flex; align-items: center; gap: 3px; }
 .compact-decks { grid-area: decks; padding: 2px; border-radius: 7px; background: #12141970; }
@@ -54,7 +51,7 @@
   width: 40px; height: 37px; border: 1px solid #f7f0e94a; border-radius: 8px;
   background: linear-gradient(#646163,#454448); color: #fff9f4; box-shadow: inset 0 1px #fff2;
 }
-.compact-display button:not(:disabled):hover, .compact-sound:hover { background-color: #e6dedb17; }
+.compact-display button:not(:disabled):hover { background-color: #e6dedb17; }
 .compact-display button:disabled { opacity: .45; }
 .yard-dj-compact :is(button,canvas):focus-visible, .compact-track:focus-within {
   outline: 2px solid var(--dd-accent); outline-offset: 1px;
@@ -96,13 +93,10 @@
 .compact-library .dd-browser { border-color: #e0d6c82a; }
 .compact-library :is(.dd-browse-search,.dd-browse-options,.dd-browse-controls button) { color: #fff6ee; background: #39393d; border-color: #a69e9666; }
 .compact-library .dd-browse-row { border-color: #e0d6c823; }
-@media (min-width: 500px) and (max-width: 650px) {
-  .compact-titlebar .compact-brand { margin-right: 0; }
-  .compact-titlebar time { position: static; transform: none; margin-inline: auto; font-size: 11px; }
-}
 @media (max-width: 499px) {
-  .compact-titlebar time { display: none; }
-  .compact-titlebar { padding-inline: 8px 4px; gap: 2px; }
+  .compact-utilities { gap: 2px; justify-content: space-between; }
+  .compact-utilities time, .compact-brand { display: none; }
+  .compact-utilities .compact-fullscreen, .compact-utilities .yard-window-actions [data-dj-mode=full] { gap: 3px; padding-inline: 5px; }
   .compact-display { width: calc(100% - 12px); gap: 4px; padding: 6px; border-radius: 12px; }
   .compact-display :where(button:not(.dd-zoom)) { min-width: 32px; height: 40px; padding-inline: 3px; }
   .compact-display .compact-play { width: 33px; }

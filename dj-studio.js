@@ -787,7 +787,8 @@
     revealSelection: side => deckBrowsers.get(side).revealSelection(),
     load: (side, key) => loadDeck(side, tracks.find(track => track.id === key)),
     importFiles: (side, files) => importFiles(files, deckBrowsers.get(side)),
-    openSettings
+    openSettings,
+    toggleFullscreen
   };
   studio.addEventListener('dragover', event => {
     if (!event.dataTransfer.types.includes('Files')) return;

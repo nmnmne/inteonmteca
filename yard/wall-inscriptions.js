@@ -1,5 +1,6 @@
 import * as THREE from './vendor/three.module.js';
 import { lyricSheets } from './wall-lyrics.js';
+import { inkGroups, mixWallPhrase } from './wall-ink-codec.js';
 
 // Metres in the wordmark plane. On this end wall the left corner is at -7.56,
 // the right at +5.60 and the pavement is at -1.90. Leave the main letters free.
@@ -41,14 +42,11 @@ function handwritingPatches() {
 }
 const notes = handwritingPatches();
 const lyrics = [...new Set(lyricSheets.flatMap(sheet=>sheet.lines))];
-const tileByLine = new Map(lyrics.map((text,i)=>[text,i]));
 const columns = 16, rows = Math.ceil(lyrics.length / columns);
-export function wallLyricAt(slot, cycle) {
-  // Every position visits every lyric sheet, then advances its line.
-  const step = slot*5+cycle, sheetIndex = step%lyricSheets.length;
-  const lines = lyricSheets[sheetIndex].lines;
-  const lineIndex = (Math.floor(slot*lines.length/notes.length)+Math.floor(step/lyricSheets.length))%lines.length;
-  return {text:lines[lineIndex],sheetIndex,lineIndex};
+let lastWall = null;
+
+export function readWallInscription(index) {
+  return lastWall?.userData.readInscription(index) ?? null;
 }
 
 // The source PNG is painted by tools/bake-wall-lyrics.py. Each context keeps
@@ -77,24 +75,27 @@ export function createWallInscriptions(liveView, still) {
     geometry.setAttribute(name,new THREE.Float32BufferAttribute(values,size));
   }
   geometry.setIndex(indices);
-  const tile = new THREE.Float32BufferAttribute(new Float32Array(notes.length*4),1);
-  tile.setUsage(THREE.DynamicDrawUsage);
-  geometry.setAttribute('lyricTile',tile);
-  let previousTime=-1, nextChange=0;
-  const current=[];
+  const pairs = new THREE.Float32BufferAttribute(new Float32Array(notes.length*4*3),3);
+  pairs.setUsage(THREE.DynamicDrawUsage);
+  geometry.setAttribute('lyricPair',pairs);
+  let previousTick = -1;
+  const current = new Int32Array(notes.length).fill(-1);
   function selectLyrics(seconds) {
-    if (seconds>=previousTime && seconds<nextChange) return;
-    previousTime=seconds;
-    nextChange=Infinity;
+    const tick = Math.floor(seconds*10);
+    if (tick === previousTick) return;
+    previousTick = tick;
     notes.forEach((_,n)=>{
-      const period=23+(n*7)%17, offset=.19+(n*.38197%1)*.58;
-      const cycle=Math.floor(seconds/period+offset);
-      nextChange=Math.min(nextChange,(cycle+1-offset)*period);
+      const period = 8+(n*5)%8;
+      const cycle = Math.floor((tick+(n*13)%period)/period);
       if (cycle===current[n]) return;
       current[n]=cycle;
-      tile.array.fill(tileByLine.get(wallLyricAt(n,cycle).text),n*4,n*4+4);
+      const first = Math.floor(Math.random()*lyrics.length);
+      let second = Math.floor(Math.random()*(lyrics.length-1));
+      if (second >= first) second++;
+      const key = Math.floor(Math.random()*(1 << inkGroups));
+      for (let v=n*4; v<n*4+4; v++) pairs.setXYZ(v,first,second,key);
     });
-    tile.needsUpdate=true;
+    pairs.needsUpdate=true;
   }
   selectLyrics(0);
   const time = {value:0}, night = {value:0};
@@ -104,39 +105,60 @@ export function createWallInscriptions(liveView, still) {
   material.onBeforeCompile = shader => {
     shader.uniforms.inkTime = time;
     shader.uniforms.nightInk = night;
-    shader.vertexShader = 'attribute float inscription, lyricTile; uniform float inkTime; varying vec4 inkState;\n' + shader.vertexShader;
+    const patchState = 'flat varying vec3 inkState; flat varying vec4 inkTiles;\n';
+    shader.vertexShader = 'attribute float inscription; attribute vec3 lyricPair; uniform float inkTime; ' + patchState + shader.vertexShader;
     shader.vertexShader = shader.vertexShader.replace('#include <uv_vertex>', `#include <uv_vertex>
-      float age = inkTime / (23.0 + mod(inscription*7.0, 17.0)) + .19 + fract(inscription*.38197)*.58;
-      float phase = fract(age);
-      float tile = lyricTile;
-      inkState = vec4(mod(tile,${columns}.), ${rows-1}. - floor(tile/${columns}.),
-        smoothstep(.005,.09,phase)*(1.-smoothstep(.9,.995,phase)), inscription*.797);`);
-    shader.fragmentShader = 'uniform float inkTime, nightInk; varying vec4 inkState;\n'+shader.fragmentShader;
+      float period = 8. + mod(inscription*5.,8.);
+      float phase = fract((inkTime*10. + mod(inscription*13.,period))/period);
+      inkState = vec3(.30+.70*smoothstep(0.,.16,phase)*(1.-smoothstep(.82,1.,phase)), inscription*.797, lyricPair.z);
+      inkTiles = vec4(mod(lyricPair.x,${columns}.), ${rows-1}. - floor(lyricPair.x/${columns}.),
+                      mod(lyricPair.y,${columns}.), ${rows-1}. - floor(lyricPair.y/${columns}.));`);
+    shader.fragmentShader = 'uniform float inkTime, nightInk; '+patchState+shader.fragmentShader;
     shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>',
       '#include <color_fragment>\ndiffuseColor.rgb += vec3(.091,.101,.109)*nightInk;');
     shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `
       vec2 uv = vMapUv;
-      float age = inkTime*.102 + inkState.w;
+      float age = inkTime*.102 + inkState.y;
       float cycle = floor(age), pulse = fract(age);
-      vec2 centre = vec2(.5+.28*sin(cycle*2.4+inkState.w), .48+.17*cos(cycle*1.7-inkState.w));
+      vec2 centre = vec2(.5+.28*sin(cycle*2.4+inkState.y), .48+.17*cos(cycle*1.7-inkState.y));
       vec2 delta = (uv-centre)*vec2(2.7,1.);
       float d = length(delta), radius = .015+.43*pulse;
       float ring = exp(-56.*abs(d-radius)) * sin(pulse*3.14159);
       uv += delta/max(d,.001)*ring*vec2(.016,.066);
-      uv.y += .012*sin(uv.x*17.+inkTime*.42+inkState.w);
-      float ink = texture2D(map,(inkState.xy+clamp(uv,vec2(.008,.035),vec2(.992,.965)))/vec2(${columns}.,${rows}.)).r;
-      diffuseColor.a *= inkState.z * max(ink,ring*.16);
+      uv.y += .012*sin(uv.x*17.+inkTime*.42+inkState.y);
+      vec2 atlasSize = vec2(${columns}.,${rows}.);
+      vec2 gradients = vec2(2.,1.)/atlasSize;
+      float strip = clamp(uv.x,0.,.99999)*${inkGroups*2}.;
+      float group = floor(strip*.5);
+      float swap = mod(floor(inkState.z/exp2(group)),2.);
+      vec2 tile = mix(inkTiles.xy,inkTiles.zw,abs(mod(floor(strip),2.)-swap));
+      vec2 local = vec2((group+fract(strip))/${inkGroups}., clamp(uv.y,.035,.965));
+      // Neighbouring strips can point to distant tiles. Derive mip levels from
+      // the continuous wall coordinates to keep those seams from washing out.
+      float ink = textureGrad(map,(tile+local)/atlasSize,dFdx(uv)*gradients,dFdy(uv)*gradients).r;
+      diffuseColor.a *= inkState.x * max(ink,ring*.16);
     `);
   };
   const mesh = new THREE.Mesh(geometry,material), born = performance.now();
   mesh.name = 'wall-marker-inscriptions';
   mesh.userData.bakedShadowCaster = false;
   mesh.userData.bakedShadowReceiver = false;
+  mesh.userData.readInscription = index => {
+    if (!Number.isInteger(index) || index < 0 || index >= notes.length) return null;
+    const v = index*4, key = pairs.getZ(v);
+    return {chunks:mixWallPhrase(lyrics[pairs.getX(v)],lyrics[pairs.getY(v)],key), key};
+  };
+  geometry.addEventListener('dispose', () => {
+    if (lastWall === mesh) lastWall = null;
+  });
   mesh.onBeforeRender = (_renderer, scene) => {
     material.opacity = .81*(1-(scene.userData.virtuality || 0));
     night.value = 1-(scene.userData.solarLighting?.daylight ?? 1);
     time.value = liveView && !still.matches ? (performance.now()-born)/1000 : 0;
-    if (material.opacity > .005) selectLyrics(time.value);
+    if (material.opacity > .005) {
+      selectLyrics(time.value);
+      lastWall = mesh;
+    }
   };
   return mesh;
 }

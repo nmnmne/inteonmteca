@@ -27,6 +27,7 @@ def check(browser, mobile=False):
         const logo = this.getObjectByName('music-logo');
         if (!logo?.userData.inkReady || !logo.getObjectByName('wall-marker-inscriptions')?.material.map.image?.width
             || this.userData.detailLoading.status !== 'ready') return;
+        if (window.wallFrame && window.wallFrame.camera !== camera) return;
         window.wallFrame = {T,renderer,scene,camera,logo};
         if (window.takeWallPhoto) {
           window.wallPhoto = renderer.domElement.toDataURL();
@@ -52,8 +53,9 @@ def check(browser, mobile=False):
           return renderer.domElement.toDataURL().split(',')[1];
         }""")
         (path / "close-inscriptions.png").write_bytes(base64.b64decode(close_photo))
-    report = page.evaluate("""async () => {
-      const {createWallInscriptions,wallLyricAt} = await import('/yard/wall-inscriptions.js');
+    report = page.evaluate(r"""async () => {
+      const {createWallInscriptions,readWallInscription} = await import('/yard/wall-inscriptions.js');
+      const {mixWallPhrase,separateWallPhrase,wallFragments} = await import('/yard/wall-ink-codec.js');
       const {lyricSheets} = await import('/yard/wall-lyrics.js');
       const {T,renderer,scene,camera,logo} = wallFrame;
       const ink = logo.getObjectByName('wall-marker-inscriptions');
@@ -79,18 +81,48 @@ def check(browser, mobile=False):
       ctx.drawImage(im,0,0);
       const texels=ctx.getImageData(0,0,im.width,im.height).data;
       const titles = lyricSheets.flatMap(s=>s.titles);
-      const repertoire = new Set(lyricSheets.flatMap(s=>s.lines));
-      if (titles.length!==26 || repertoire.size!==648) throw Error('Unexpected lyric library');
-      for (let i=0; i<slots; i++) {
-        const shown = new Set(), period = lyricSheets.length*Math.max(...lyricSheets.map(s=>s.lines.length));
-        for (let cycle=0;cycle<period;cycle++) shown.add(wallLyricAt(i,cycle).text);
-        if (shown.size!==repertoire.size) throw Error('Incomplete rotation at position '+i);
+      const repertoire = [...new Set(lyricSheets.flatMap(s=>s.lines))];
+      if (titles.length!==26 || repertoire.length!==648) throw Error('Unexpected lyric library');
+      // A novel pair makes a lookup into the song sheets insufficient for decoding.
+      for (let key=0; key<256; key++) {
+        const chunks=mixWallPhrase('ABCDEFGH','12345678',key);
+        for (let i=0;i<8;i++) {
+          const swap=(key >> i)&1;
+          if (chunks[2*i+swap]!=='abcdefgh'[i] || chunks[2*i+1-swap]!=='12345678'[i])
+            throw Error('Unexpected order of handwritten groups for key '+key);
+        }
+        const [a,b]=separateWallPhrase(chunks,key);
+        if (a!=='abcdefgh' || b!=='12345678') throw Error('Cannot reverse key '+key);
       }
-      for (let i=0; i<repertoire.size; i++) {
-        let count=0;
-        for (let y=Math.floor(i/16)*28; y<(Math.floor(i/16)+1)*28; y++) for(let x=(i%16)*128;x<(i%16+1)*128;x++)
-          if (texels[(y*im.width+x)*4] > 64) count++;
-        if (count<9) throw Error('Missing handwritten phrase: '+i);
+      for (let i=0; i<repertoire.length; i++) {
+        wallFragments(repertoire[i]).forEach((fragment,group)=>{
+          if (!fragment.trim()) return;
+          const startX=(i%16)*128+group*16, startY=Math.floor(i/16)*28;
+          let count=0;
+          for (let y=startY;y<startY+28;y++) for (let x=startX;x<startX+16;x++)
+            if (texels[(y*im.width+x)*4]>64) count++;
+          if (!count) throw Error('Missing handwritten group '+i+'/'+group);
+        });
+      }
+      const normalized=repertoire.map(line=>line.normalize('NFC').toLowerCase()
+        .replace(/[^\p{L}\p{N}\s]/gu,'').replace(/\s+/gu,' ').trim());
+      const pairs=ink.geometry.getAttribute('lyricPair');
+      function snapshot(mesh, validate=false) {
+        const attr=mesh.geometry.getAttribute('lyricPair');
+        return Array.from({length:slots},(_,i)=>{
+          const v=i*4, a=attr.getX(v), b=attr.getY(v), key=attr.getZ(v);
+          if (validate) {
+            const visible=mesh.userData.readInscription(i);
+            const [first,second]=separateWallPhrase(visible.chunks,visible.key);
+            if (a===b || visible.key!==key || visible.chunks.length!==16 ||
+                first!==normalized[a] || second!==normalized[b])
+              throw Error('Inscription did not decode to both selected lyric lines at '+i);
+            for (let k=1;k<4;k++)
+              if (a!==attr.getX(v+k) || b!==attr.getY(v+k) || key!==attr.getZ(v+k))
+                throw Error('Conflicting inscription across its two triangles');
+          }
+          return (a*repertoire.length+b)*256+key;
+        });
       }
       // Render the pigment alone with the opening projection to measure its
       // motion independently of the moving water, central title and clouds.
@@ -103,8 +135,11 @@ def check(browser, mobile=False):
       const oldTarget = renderer.getRenderTarget(), clear = renderer.getClearColor(new T.Color());
       const alpha = renderer.getClearAlpha(), now = performance.now();
       const oldNow = Object.getOwnPropertyDescriptor(performance,'now');
-      function read(at) {
+      function setTime(at) {
         Object.defineProperty(performance,'now',{configurable:true,value:()=>now+at*1000});
+      }
+      function read(at) {
+        setTime(at);
         renderer.render(isolated,camera);
         const pixels=new Uint8Array(768*480*4);
         renderer.readRenderTargetPixels(target,0,0,768,480,pixels);
@@ -113,23 +148,77 @@ def check(browser, mobile=False):
       function changed(a,b) { let n=0;for(let i=3;i<a.length;i+=4) if(Math.abs(a[i]-b[i])>12) n++;return n; }
       try {
         renderer.setRenderTarget(target); renderer.setClearColor(0,0);
-        const a=read(0), revision=atlas.version, indices=ink.geometry.getAttribute('lyricTile');
-        const selected=Array.from(indices.array);
-        read(0);
-        const stableAtlas=revision===atlas.version, moving=changed(a,read(2)), switched=changed(a,read(21));
+        const a=read(0), revision=atlas.version;
+        const initial=snapshot(ink,true), ticks=Array(slots).fill(-1), periods=new Set(), used=new Set();
+        const exposed=readWallInscription(0);
+        if (!exposed || JSON.stringify(exposed)!==JSON.stringify(ink.userData.readInscription(0)) ||
+            readWallInscription(slots)!==null) throw Error('Displayed inscription cannot be read back');
+        let previous=initial, switchedAtThree=0;
+        for (let tick=1; tick<=60; tick++) {
+          setTime(tick/10); ink.onBeforeRender(renderer,scene,camera);
+          const current=snapshot(ink,tick===60);
+          for (let i=0;i<slots;i++) {
+            if (tick===3 && current[i]!==initial[i]) switchedAtThree++;
+            if (tick===20 && current[i]===initial[i]) throw Error('Unchanged mix after two seconds');
+            if (current[i]===previous[i]) continue;
+            if (ticks[i]>=0) periods.add(tick-ticks[i]);
+            ticks[i]=tick;
+            used.add(pairs.getX(i*4));used.add(pairs.getY(i*4));
+          }
+          previous=current;
+        }
+        const moving=changed(a,read(6)), switched=changed(a,read(21));
         const frozen = createWallInscriptions(true,{matches:true});
         const spare=frozen.material.map;
         frozen.material.map=atlas;
+        copy.geometry = frozen.geometry;
         copy.material = frozen.material;
         copy.onBeforeRender = (r,s,c)=>frozen.onBeforeRender(r,scene,c);
-        const still=changed(read(0),read(21));
+        const firstFrozen=snapshot(frozen,true);
+        const still=changed(read(21),read(41)), frozenState=snapshot(frozen);
+        const calls=renderer.info.render.calls, triangles=renderer.info.render.triangles;
+        if (!frozenState.every((v,i)=>v===firstFrozen[i]) ||
+            frozenState.every((v,i)=>v===initial[i])) throw Error('Invalid reduced-motion selection');
+        // Give each source fragment a unique ink strength. Read the actual GPU
+        // output back in screen order to verify that the pen draws the codec's mix.
+        const stamp=new T.PlaneGeometry(2,2), strengths=new Uint8Array(128*41);
+        for (let k=0;k<8;k++) for (let row=0;row<41;row++) {
+          strengths[row*128+k]=130+15*k;
+          strengths[row*128+8+k]=28+12*k;
+        }
+        const markers=new T.DataTexture(strengths,128,41,T.RedFormat);
+        markers.needsUpdate=true;
+        const pair=new T.Float32BufferAttribute(new Float32Array(12),3);
+        stamp.setAttribute('lyricPair',pair);
+        stamp.setAttribute('inscription',new T.Float32BufferAttribute(new Float32Array(4),1));
+        stamp.setAttribute('color',new T.Float32BufferAttribute(new Float32Array(12).fill(1),3));
+        const swatch=new T.Scene(), front=new T.OrthographicCamera(-1,1,1,-1,.1,5);
+        front.position.z=1;
+        const sample=new T.Mesh(stamp,frozen.material);
+        frozen.material.map=markers;
+        sample.onBeforeRender=(r,s,c)=>frozen.onBeforeRender(r,s,c);
+        swatch.add(sample);
+        const strip=new Uint8Array(768*4);
+        for (const key of [0x69,0x96]) {
+          for (let v=0;v<4;v++) pair.setXYZ(v,0,1,key);
+          pair.needsUpdate=true;
+          renderer.render(swatch,front);
+          renderer.readRenderTargetPixels(target,0,240,768,1,strip);
+          for (let i=0;i<16;i++) {
+            const group=i>>1, second=(i & 1)^((key>>group) & 1);
+            const alpha=.81*.30*strengths[group+(second?8:0)];
+            if (Math.abs(strip[(i*48+24)*4+3]-alpha)>1.6)
+              throw Error('GPU drew the wrong source fragment at strip '+i+' for key '+key);
+          }
+        }
+        markers.dispose();stamp.dispose();
         spare.dispose();frozen.geometry.dispose();frozen.material.dispose();
         heights.sort((a,b)=>a-b);
         return {slots,inOpeningView,heightM:heights[Math.floor(slots/2)], maxHeightM:heights.at(-1),
-                calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,
-                tracks:titles.length,lines:repertoire.size,moving,switched,still,
-                stableAtlas:stableAtlas && atlas.version===revision,
-                refreshed:selected.some((v,i)=>v!==indices.array[i]),atlasBytes:im.width*im.height};
+                calls,triangles,
+                tracks:titles.length,lines:repertoire.length,moving,switched,still,
+                stableAtlas:atlas.version===revision, seenLines:used.size, switchedAtThree,
+                periods:[...periods].sort((a,b)=>a-b),atlasBytes:im.width*im.height};
       } finally {
         if (oldNow) Object.defineProperty(performance,'now',oldNow); else delete performance.now;
         renderer.setRenderTarget(oldTarget);renderer.setClearColor(clear,alpha);target.dispose();
@@ -140,7 +229,9 @@ def check(browser, mobile=False):
     assert .35 < report["heightM"] < .48 and report["maxHeightM"] > .55, report
     assert report["calls"] == 1 and report["triangles"] == 2*report["slots"], report
     assert report["moving"] > 50 and report["switched"] > 280, report
-    assert report["still"] == 0 and report["stableAtlas"] and report["refreshed"] and not errors, (report, errors)
+    assert 0 < report["switchedAtThree"] < report["slots"], report
+    assert report["periods"] == list(range(8, 16)) and report["seenLines"] > 570, report
+    assert report["still"] == 0 and report["stableAtlas"] and not errors, (report, errors)
     print("mobile evening" if mobile else "desktop daylight", report, flush=True)
 
 

@@ -13,6 +13,7 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 PAINTER = r"""async () => {
 const {lyricSheets} = await import('/yard/wall-lyrics.js');
+const {inkGroups,wallFragments} = await import('/yard/wall-ink-codec.js');
 const lyrics = [...new Set(lyricSheets.flatMap(sheet=>sheet.lines))];
 const columns=16, rows=Math.ceil(lyrics.length/columns), cellW=128, cellH=28;
 // A single-line marker alphabet. The two strokes of a letter can cross,
@@ -195,20 +196,22 @@ function rasterizeLyrics() {
     }
     return best;
   }
-  // Every line is painted once. Only a small tile index buffer changes as the
-  // writing fades and reappears; the complete atlas has one byte per texel.
-  lyrics.forEach((text,n) => {
-    const x=n%columns*cellW, y=Math.floor(n/columns)*cellH, areaW=510;
-    let seed=18657+n*997;
+  // Keep the pen inside each group: the GPU can weave the original letters
+  // from two tiles at runtime without cutting a character in half.
+  const groupW = cellW/inkGroups;
+  lyrics.flatMap(wallFragments).forEach((text,index) => {
+    if (!text.trim()) return;
+    const n = Math.floor(index/inkGroups);
+    const x=n%columns*cellW+(index%inkGroups)*groupW, y=Math.floor(n/columns)*cellH, areaW=124;
+    let seed=18657+index*997;
     const random=()=>(seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296;
-    const slant=[-.46,-.25,.16][n%3], weight=1.0+random()*.47;
+    const slant=[-.46,-.25,.16][n%3], weight=1.45+random()*.65;
     const grit=.18+random()*.31, wave=.7+random()*1.05;
     const tracking=.88+random()*.23;
     const {lines,scale}=fit(text,areaW/tracking);
-    ctx.clearRect(x,y,cellW,cellH);
     ctx.save();
-    ctx.beginPath(); ctx.rect(x+2,y+1,cellW-4,cellH-2);ctx.clip();
-    ctx.translate(x,y); ctx.scale(cellW/areaW,cellH/100);
+    ctx.beginPath(); ctx.rect(x+.3,y+1,groupW-.6,cellH-2);ctx.clip();
+    ctx.translate(x,y); ctx.scale(groupW/areaW,cellH/100);
     ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle=ctx.fillStyle='#fff';
     lines.forEach(({line,w:lineW}, j) => {
       const startX=(areaW-lineW*scale*tracking)*(.34+.25*random());
@@ -269,7 +272,7 @@ function rasterizeLyrics() {
     });
     ctx.restore();
     ctx.save();ctx.globalCompositeOperation='destination-out';ctx.globalAlpha=.42;
-    for (let k=0;k<18;k++) ctx.fillRect(x+random()*(cellW-3),y+random()*cellH,1.2+1.8*random(),.7);
+    for (let k=0;k<3;k++) ctx.fillRect(x+random()*(groupW-3),y+random()*cellH,1.2+1.8*random(),.7);
     ctx.restore();
   });
   return atlas.toDataURL('image/png').split(',')[1];

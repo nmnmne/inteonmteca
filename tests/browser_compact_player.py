@@ -17,11 +17,10 @@ def check(browser, url, width, height, touch):
     waveform.wait_for()
     opening_a = page.evaluate("DJEngine.snapshot().A.track.id")
     assert opening_a == "media/Memphis/Матт - Memphis.flac"
-    top = compact.locator(".compact-titlebar").bounding_box()
     bottom = compact.locator(".compact-display").bounding_box()
-    clear = bottom["y"] - top["y"] - top["height"]
+    clear = bottom["y"]
     assert clear >= .56 * height and bottom["x"] >= 0 and bottom["x"] + bottom["width"] <= width
-    assert compact.locator("[data-resident-obstacle]:visible").count() == 2
+    assert compact.locator("[data-resident-obstacle]:visible").count() == 1
 
     compact.get_by_role("button", name="Дека B", exact=True).click()
     page.wait_for_function("document.querySelector('#yard-dj-compact #dd-sunset-clip path')?.getAttribute('d')")
@@ -96,7 +95,7 @@ def check(browser, url, width, height, touch):
             assert page.evaluate("DJEngine.snapshot().A.track.id") == opening_a
             track.click()
             assert options.get_by_role("option").filter(has_text="TestImport").count() == 1
-    print(f"{width} × {height}, {clear:.0f}px clear between controls", flush=True)
+    print(f"{width} × {height}, {clear:.0f}px clear above the player", flush=True)
     page.close()
 
 

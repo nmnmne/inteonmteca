@@ -9,7 +9,7 @@
   const actions = (app, targetMode) => `<div class="yard-window-actions" role="group" aria-label="Окно ${names[app]}">
     ${targetMode ? `<button type="button" class="yard-win-action yard-layout-action" data-dj-mode="${targetMode}"
       aria-label="${targetMode === 'full' ? 'Развернуть полный DJ-пульт' : 'Вернуть компактный плеер'}"
-      title="${targetMode === 'full' ? 'Полный DJ-пульт' : 'Компактный плеер'}"><i aria-hidden="true"></i></button>` : ''}
+      title="${targetMode === 'full' ? 'Полный DJ-пульт' : 'Компактный плеер'}"><i aria-hidden="true"></i>${targetMode === 'full' ? '<span aria-hidden="true">Пульт</span>' : ''}</button>` : ''}
     <button type="button" class="yard-win-action" data-window-action="minimize" data-app="${app}"
       aria-label="Свернуть ${names[app]}" title="Свернуть ${names[app]}"><span aria-hidden="true">−</span></button>
     <button type="button" class="yard-win-action" data-window-action="close" data-app="${app}"
@@ -51,6 +51,7 @@
   const clockFormat = new Intl.DateTimeFormat('ru-RU', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'});
   const lastFocus = {full: studio.querySelector('#import'), compact: null, engrus: cards};
   let view = 'dj', djMode = 'full', compact, mounted = false, keyboard = false;
+  let touchRevealedRestore = false;
   let idleTimer = 0, clockTimer = 0, lastActivity = 0;
   const idleDelay = 20000;
 
@@ -69,7 +70,7 @@
 
   function checkIdle() {
     idleTimer = 0;
-    if (view === 'dj' || document.hidden || (keyboard && shell.contains(document.activeElement)) ||
+    if (view === 'dj' || document.hidden || (restoreButton.hidden && keyboard && shell.contains(document.activeElement)) ||
         document.querySelector('#yard-map-sources:popover-open')) return;
     const remaining = idleDelay - (performance.now() - lastActivity);
     if (remaining > 0) idleTimer = setTimeout(checkIdle, remaining);
@@ -77,17 +78,17 @@
   }
 
   function wake() {
-    if (view === 'dj' || !restoreButton.hidden || document.hidden) return;
+    if (view === 'dj' || document.hidden) return;
     lastActivity = performance.now();
     delete shell.dataset.idle;
     if (!idleTimer) idleTimer = setTimeout(checkIdle, idleDelay);
   }
 
-  function dismissOverlays() {
+  function dismissOverlays({keepFullscreen = false} = {}) {
     for (const panel of document.querySelectorAll(':popover-open')) panel.hidePopover();
     for (const dialog of document.querySelectorAll('dialog[open]')) dialog.close();
     for (const close of document.querySelectorAll('#auth-panel:not([hidden]) .auth-close, #theme-panel:not([hidden]) .theme-close')) close.click();
-    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    if (!keepFullscreen && document.fullscreenElement) document.exitFullscreen().catch(() => {});
   }
 
   function stopDJ() {
@@ -131,7 +132,7 @@
 
   function hideApp(app, action) {
     if (view !== app) return;
-    dismissOverlays();
+    dismissOverlays({keepFullscreen: action === 'minimize'});
     if (app === 'dj' && action === 'close') stopDJ();
     if (action === 'close') launchers[app].dataset.running = 'false';
     selectView('desktop', action === 'minimize' ? app : null);
@@ -141,7 +142,7 @@
 
   function openApp(app) {
     if (view !== app) {
-      dismissOverlays();
+      dismissOverlays({keepFullscreen: shell.dataset.minimized === app});
       if (view !== 'desktop') notify(view, false, 'minimize');
       selectView(app);
       if (app === 'engrus' && !mounted && window.YardEngRus) {
@@ -179,7 +180,9 @@
     setDJMode('compact');
   }
 
-  restoreButton.addEventListener('click', () => {
+  restoreButton.addEventListener('click', event => {
+    // A mobile browser can send the tap's final click to the newly visible button.
+    if (touchRevealedRestore && event.detail > 0) return;
     if (shell.dataset.minimized) openApp(shell.dataset.minimized);
   });
   document.addEventListener('click', event => {
@@ -189,7 +192,11 @@
     else if (button.dataset.launch) openApp(button.dataset.launch);
     else hideApp(button.dataset.app, button.dataset.windowAction);
   });
-  document.addEventListener('pointerdown', () => { keyboard = false; wake(); }, {capture: true, passive: true});
+  document.addEventListener('pointerdown', event => {
+    touchRevealedRestore = event.pointerType === 'touch' && !restoreButton.hidden && shell.dataset.idle === 'true';
+    keyboard = false;
+    wake();
+  }, {capture: true, passive: true});
   for (const type of ['pointermove', 'touchstart', 'wheel']) {
     document.addEventListener(type, wake, {capture: true, passive: true});
   }

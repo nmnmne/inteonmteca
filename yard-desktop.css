@@ -26,7 +26,7 @@
 }
 #studio .yard-layout-action[hidden], #yard-dj-compact[hidden] { display: none !important; }
 #yard-dj-compact { position: fixed; inset: 0; z-index: 35; pointer-events: none; }
-#yard-dj-compact :is(.compact-titlebar,.compact-display) { pointer-events: auto; }
+#yard-dj-compact .compact-display { pointer-events: auto; }
 .yard-window-actions .yard-win-action:hover, #studio .yard-window-actions .yard-win-action:hover { background: #51484a; }
 .yard-window-actions [data-window-action=close]:hover, #studio .yard-window-actions [data-window-action=close]:hover { background: #904b43; }
 .yard-win-action:focus-visible, .yard-app-dock button:focus-visible, .yard-source:focus-visible {
@@ -58,6 +58,7 @@ body.room-console-home[data-yard-window=dj][data-dj-mode=compact]::after { conte
   background: linear-gradient(178deg,#728697dd 0%,#516676e8 48%,#263744ed 50%,#374c5bea 100%);
   box-shadow: inset 0 0 0 1px #eff9ff36, inset 0 -2px 3px #101f2940, 0 2px 7px #0c162747;
   font: 550 13px/1.1 "Segoe UI",system-ui,sans-serif; text-shadow: 0 1px 2px #14202b; letter-spacing: normal;
+  transition: opacity .2s ease;
   touch-action: manipulation;
 }
 .yard-restore:is(:hover,:focus-visible) { border-color: #e6f8ff; background-color: #7297b0; }
@@ -124,8 +125,7 @@ body:is([data-yard-window=desktop],[data-yard-window=engrus]) #yard-map-sources 
   box-shadow: inset 0 0 0 3px #2b202534;
 }
 
-#yard-desktop-shell[data-idle=true] .yard-system-panel,
-#yard-desktop-shell[data-idle=true] .yard-app-dock { opacity: 0; pointer-events: none; }
+#yard-desktop-shell[data-idle=true] :is(.yard-restore,.yard-system-panel,.yard-app-dock) { opacity: 0; pointer-events: none; }
 #yard-desktop-shell[data-idle=true] .yard-system-panel { translate: 0 -100%; }
 #yard-desktop-shell[data-idle=true] .yard-app-dock { translate: calc(-100% - 12px) 0; }
 
@@ -181,5 +181,5 @@ body:is([data-yard-window=desktop],[data-yard-window=engrus]) #yard-map-sources 
   #studio .console-nav .import-btn { padding-inline: 4px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .yard-system-panel, .yard-app-dock { transition: none; }
+  .yard-restore, .yard-system-panel, .yard-app-dock { transition: none; }
 }

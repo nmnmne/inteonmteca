@@ -96,7 +96,6 @@ OBSERVE = """async () => {
     const lifted=new T.Vector3().setFromMatrixPosition(body.matrixWorld).y-visit.y;
     const rendered=originalVisible && overlay.hasAttribute('data-in-courtyard')
       && !overlay.checkVisibility({opacityProperty:true,visibilityProperty:true});
-    const top=document.querySelector('.compact-titlebar').getBoundingClientRect().bottom/innerHeight;
     const bottom=document.querySelector('.compact-display').getBoundingClientRect().top/innerHeight;
     const oldNow=Object.getOwnPropertyDescriptor(performance,'now'), fixed=performance.now();
     try {
@@ -106,7 +105,7 @@ OBSERVE = """async () => {
             withoutNeighbours=pixels(true,false), again=pixels(true,true);
       function changed(bare) {
         let count=0;
-        for(let y=Math.ceil(height*(1-bottom));y<height*(1-top);y++) for(let x=0;x<width;x++) {
+        for(let y=Math.ceil(height*(1-bottom));y<height;y++) for(let x=0;x<width;x++) {
           const i=4*(y*width+x);
           for(let c=0;c<3;c++) if(Math.abs(together[i+c]-again[i+c])<2 && Math.abs(together[i+c]-bare[i+c])>8) {
             count++;break;

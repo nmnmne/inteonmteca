@@ -112,6 +112,22 @@ with separate tags. `script.js` has top-level declarations and stays bare.
 ## Pointer effects
 
 On devices with a mouse, `pointer-life.js` and `pointer-life.css` draw an inertial ink spot.
-Its direction changes in 45° steps every half second. While visible, it displays a newly
-generated eight-digit code each second. The low graphics tiers keep a smaller spot.
+It drifts in a slow current and occasionally leans towards the moving pointer. Drag damps
+each impulse. While visible, it displays a newly generated eight-digit code each second.
+The low graphics tiers keep a smaller spot.
 Touch uses the existing tap response, and reduced motion turns off the moving ink.
+
+## Courtyard wall inscriptions
+
+To save the current handwriting in slot 0, run this in the browser console with the live courtyard open.
+The snapshot contains the mixed fragments and their ordering key. Keep both to recover the two lines
+later, in lowercase with simplified spacing and punctuation removed.
+
+```js
+const {readWallInscription} = await import('/yard/wall-inscriptions.js');
+const snapshot = readWallInscription(0);
+const {separateWallPhrase} = await import('/yard/wall-ink-codec.js');
+if (snapshot) console.log(separateWallPhrase(snapshot.chunks, snapshot.key));
+```
+
+Copy the result of `JSON.stringify(snapshot)` to keep that sample after leaving the page.
