@@ -1,7 +1,6 @@
 """Render the local weather field and verify reduced-motion poster selection."""
 import os
 from datetime import datetime, timezone
-from courtyard_phase import fixed_courtyard_phase
 from playwright.sync_api import sync_playwright
 
 BASE = os.environ.get('INTEON_BASE_URL', 'http://127.0.0.1:8080').rstrip('/')
@@ -53,9 +52,9 @@ def particles(browser):
 
 def posters(browser):
     for mobile in [False, True]:
-        page = browser.new_page(viewport={'width': 390 if mobile else 1120, 'height': 800}, reduced_motion='reduce')
-        start = datetime(2026, 9, 22, 0, 2, 23, tzinfo=timezone.utc)
-        fixed_courtyard_phase(page)
+        page = browser.new_page(viewport={'width': 390 if mobile else 1120, 'height': 800}, reduced_motion='reduce', timezone_id='UTC')
+        # Start at 07:26 on the courtyard clock, near the equinox sunrise.
+        start = datetime(2026, 9, 22, 7, 46, tzinfo=timezone.utc)
         page.clock.install(time=start)
         page.goto(BASE + '/#studio', wait_until='domcontentloaded')
         for phase, elapsed in [('dawn',0),('day',300),('dusk',583),('night',900),('dawn',1200)]:

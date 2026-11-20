@@ -1,31 +1,74 @@
 const radians = Math.PI / 180;
-const dayMs = 86400000;
-const courtyardDayMs = 20 * 60000;
-const phaseKey = 'inteon.courtyard.phase-ms';
-// Matches data/site-layout.json. Also available before the 3D layout has loaded.
+const minuteMs = 60000;
+const dayMs = 24 * 60 * minuteMs;
+const firstLap = 20 * minuteMs;
+const secondLap = 10 * minuteMs;
+const thirdLap = 5 * minuteMs;
+const repeatMs = secondLap + thirdLap + firstLap;
+const visitKey = 'inteon.courtyard.visit-clock-v2';
+// The courtyard in Oral uses UTC+5. Its civil clock follows the visitor's
+// wall clock at entry, while the sun still uses the courtyard's coordinates.
+const courtyardUtcOffsetMinutes = 5 * 60;
 export const COURTYARD_ORIGIN = Object.freeze({lat:51.230186, lon:51.439256});
 
-function readPhase() {
+function timeOfDay(ms) {
+  return ((ms % dayMs) + dayMs) % dayMs;
+}
+
+export function createVisitClock(startEpochMs) {
+  const offset = new Date(startEpochMs).getTimezoneOffset();
+  const syncOffset = new Date(startEpochMs + firstLap).getTimezoneOffset();
+  return {
+    startEpochMs,
+    startTimeMs:timeOfDay(startEpochMs - offset * minuteMs - firstLap),
+    // Gain forty civil minutes across the first rotation. If the device's
+    // time zone changes its UTC offset during that lap, meet the new clock.
+    firstAdvanceMs:dayMs + 2 * firstLap + (offset - syncOffset) * minuteMs,
+  };
+}
+
+function readVisit() {
   try {
-    const stored = window.sessionStorage.getItem(phaseKey);
-    if (stored !== null && /^\d+$/.test(stored) && Number(stored)<courtyardDayMs) return Number(stored);
-  } catch { /* The document keeps its own phase if storage is unavailable. */ }
+    const visit = JSON.parse(window.sessionStorage.getItem(visitKey));
+    if (visit && Number.isSafeInteger(visit.startEpochMs) &&
+        Number.isInteger(visit.startTimeMs) && visit.startTimeMs >= 0 && visit.startTimeMs < dayMs &&
+        Number.isInteger(visit.firstAdvanceMs) && visit.firstAdvanceMs > 0 && visit.firstAdvanceMs < 3 * dayMs) return visit;
+  } catch { /* A document can run the clock without storage. */ }
   return null;
 }
 
-let visitPhase = 0;
+let visitClock;
 if (typeof window !== 'undefined') {
   const navigation = window.performance?.getEntriesByType?.('navigation')[0]?.type;
   const internal = window.document.referrer.startsWith(window.location.origin+'/');
   const newTab = window.opener && window.history.length===1;
   const continuing = navigation==='back_forward' || (navigation!=='reload' && internal && !newTab);
-  visitPhase = (continuing ? readPhase() : null) ?? Math.floor(Math.random()*courtyardDayMs);
-  try { window.sessionStorage.setItem(phaseKey,String(visitPhase)); } catch { /* Keep this document running. */ }
+  visitClock = (continuing ? readVisit() : null) ?? createVisitClock(Date.now());
+  try { window.sessionStorage.setItem(visitKey,JSON.stringify(visitClock)); } catch { /* Keep the local anchor. */ }
   window.addEventListener('pageshow',event => {
-    // A later page may have started a fresh day. Restore it before the poster's
-    // pageshow listener samples the sky for the first visible frame.
-    if (event.persisted) visitPhase = readPhase() ?? visitPhase;
+    if (event.persisted) visitClock = readVisit() ?? visitClock;
   }, {capture:true});
+} else {
+  visitClock = createVisitClock(Date.now());
+}
+
+export function courtyardClockTime(epochMs, visit=visitClock) {
+  const elapsed = Math.max(0, epochMs - visit.startEpochMs);
+  if (elapsed < firstLap) {
+    return timeOfDay(visit.startTimeMs + visit.firstAdvanceMs * (elapsed / firstLap));
+  }
+  // Once synchronized, whole rotations return to the same civil time.
+  // Absolute elapsed time also accounts for time spent in a background tab.
+  let within = (elapsed - firstLap) % repeatMs;
+  let lap = secondLap;
+  if (within >= secondLap + thirdLap) {
+    within -= secondLap + thirdLap;
+    lap = firstLap;
+  } else if (within >= secondLap) {
+    within -= secondLap;
+    lap = thirdLap;
+  }
+  return timeOfDay(visit.startTimeMs + visit.firstAdvanceMs + dayMs * (within / lap));
 }
 
 function smooth(value, low, high) {
@@ -37,16 +80,17 @@ function smooth(value, low, high) {
 // courtyard's clock even when the listener is in a different time zone.
 // https://gml.noaa.gov/grad/solcalc/solareqns.PDF
 export function sunForLocation({lat, lon}, epochMs) {
-  return solarPosition(lat, lon, epochMs, dayMs);
+  return solarPosition(lat, lon, epochMs, timeOfDay(epochMs) / minuteMs);
 }
 
-// The whole visit shares one accelerated rotation. Declination still follows
-// the real seasonal calendar in Uralsk, including across virtual midnights.
-export function courtyardSunForLocation({lat, lon}, epochMs, phaseMs = visitPhase) {
-  return solarPosition(lat, lon, epochMs, courtyardDayMs, phaseMs);
+// Declination follows the actual season. Only the clock used for the angular
+// position of the sun, shadows and poster runs on the accelerated schedule.
+export function courtyardSunForLocation({lat, lon}, epochMs, visit=visitClock) {
+  const utcMinutes = courtyardClockTime(epochMs, visit) / minuteMs - courtyardUtcOffsetMinutes;
+  return solarPosition(lat, lon, epochMs, utcMinutes);
 }
 
-function solarPosition(lat, lon, epochMs, rotationMs, phaseMs = 0) {
+function solarPosition(lat, lon, epochMs, utcMinutes) {
   const year = new Date(epochMs).getUTCFullYear();
   const start = Date.UTC(year, 0, 1);
   const yearDays = (Date.UTC(year + 1, 0, 1) - start) / dayMs;
@@ -56,9 +100,6 @@ function solarPosition(lat, lon, epochMs, rotationMs, phaseMs = 0) {
   const declination = .006918 - .399912*Math.cos(gamma) + .070257*Math.sin(gamma)
     - .006758*Math.cos(2*gamma) + .000907*Math.sin(2*gamma)
     - .002697*Math.cos(3*gamma) + .00148*Math.sin(3*gamma);
-  const rotated = epochMs + phaseMs;
-  const intoRotation = rotated - Math.floor(rotated / rotationMs) * rotationMs;
-  const utcMinutes = intoRotation * 1440 / rotationMs;
   const hourAngle = ((utcMinutes + correction + 4 * lon) / 4 - 180) * radians;
   const latitude = lat * radians;
   const meridian = Math.cos(declination) * Math.cos(hourAngle);

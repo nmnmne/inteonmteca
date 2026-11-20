@@ -1,9 +1,12 @@
-def fixed_courtyard_phase(page):
-    """Use the unshifted sun in render fixtures that specify exact solar hours."""
-    def serve_clock(route):
-        response = route.fetch()
-        # Scope deterministic randomness to the solar module so birds and weather
-        # still run with their own normal randomness.
-        module = "const Math = Object.create(globalThis.Math); Math.random = () => 0;\n"
-        route.fulfill(response=response, body=module + response.text())
-    page.route("**/yard/solar-clock.js*", serve_clock)
+import json
+
+
+def fixed_courtyard_phase(page, civil_time):
+    """Start a render fixture at a chosen civil time using the real visit clock."""
+    # A fresh visit begins twenty minutes behind the device. A local timestamp
+    # keeps the same visible courtyard hour across the browser's time zones.
+    page.add_init_script(f"""(() => {{
+        const start = Date.parse({json.dumps(civil_time)}) + 20 * 60_000;
+        const origin = performance.now();
+        Date.now = () => Math.floor(start + performance.now() - origin);
+    }})();""")

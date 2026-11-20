@@ -41,9 +41,7 @@ def sample(browser, day):
     page = browser.new_page(viewport={"width": 1200, "height": 780})
     page.route("**/yard/auto-walk.js*", expose_walker)
     page.route("**/yard/wall-wordmark.js*", expose_mural_clock)
-    stamp = "2026-06-21T00:08:00Z" if day else "2026-11-20T00:21:00Z"
-    fixed_courtyard_phase(page)
-    page.add_init_script(f"Date.now = () => Date.parse('{stamp}') + performance.now()")
+    fixed_courtyard_phase(page, "2026-06-21T14:36:00" if day else "2026-11-20T06:12:00")
     page.goto(BASE, wait_until="domcontentloaded")
     page.wait_for_selector('body[data-yard-backdrop="live"]', timeout=60000)
     page.locator('[data-window-action=minimize][data-app=dj]:visible').first.click()

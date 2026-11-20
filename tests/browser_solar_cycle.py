@@ -1,14 +1,17 @@
-"""Follow a full 20-minute day in the public courtyard renderer with a controlled wall clock."""
+"""Render the 20-minute rotation and follow its transition to the next ten-minute day."""
 import os
 from datetime import datetime, timezone
 
-from courtyard_phase import fixed_courtyard_phase
 from playwright.sync_api import sync_playwright
 
 from browser_ambient_route import expose_walker
 
 BASE = os.environ.get("INTEON_BASE_URL", "http://127.0.0.1:8080").rstrip("/")
-MIDNIGHT = int(datetime(2026, 3, 20, tzinfo=timezone.utc).timestamp() * 1000)
+# In a UTC browser this visit opens at 04:20 civil time. After its initial
+# synchronization and the 10- and 5-minute laps, the 20-minute lap starts at
+# 05:00 in Oral, equivalent to midnight UTC for the solar calculation.
+ENTRY = int(datetime(2026, 3, 20, 4, 40, tzinfo=timezone.utc).timestamp() * 1000)
+MIDNIGHT = ENTRY + 35 * 60_000
 SOLAR_HOUR = 50_000  # One simulated hour in real milliseconds.
 
 
@@ -90,7 +93,7 @@ def capture(page, real_epoch_ms):
 
 def exercise(browser, mobile):
     viewport = {"width":390, "height":844} if mobile else {"width":1100, "height":740}
-    page = browser.new_page(viewport=viewport, is_mobile=mobile, has_touch=mobile)
+    page = browser.new_page(viewport=viewport, is_mobile=mobile, has_touch=mobile, timezone_id="UTC")
     errors, shadow_downloads = [], []
     page.on("pageerror", lambda error: errors.append(error.stack))
     page.on("console", lambda msg: errors.append(msg.text) if "Shader Error" in msg.text else None)
@@ -102,8 +105,7 @@ def exercise(browser, mobile):
     evening_at = noon_at + 6 * SOLAR_HOUR
     night_at = noon_at + 12 * SOLAR_HOUR
     morning_at = MIDNIGHT + 4 * SOLAR_HOUR
-    fixed_courtyard_phase(page)
-    page.add_init_script(f"window.qaTime={morning_at}; Date.now = () => window.qaTime;")
+    page.add_init_script(f"window.qaTime={ENTRY}; Date.now = () => window.qaTime;")
     page.goto(BASE + "/#studio", wait_until="domcontentloaded")
     page.wait_for_selector('body[data-yard-backdrop="live"]', timeout=90000)
     observe(page)
@@ -140,8 +142,9 @@ def exercise(browser, mobile):
     night = capture(page, night_at)
     assert night["night"] == 1 and night["intensity"] == 0 and night["updates"] == dusk["updates"], night
     assert 2 < night["brightness"] < noon["brightness"]*.7, (noon, night)
-    next_dawn = capture(page, noon_at + 18 * SOLAR_HOUR)
-    next_noon = capture(page, noon_at + 24 * SOLAR_HOUR)
+    next_lap = MIDNIGHT + 20 * 60_000
+    next_dawn = capture(page, next_lap + (dawn_at - MIDNIGHT) // 2)
+    next_noon = capture(page, next_lap + (noon_at - MIDNIGHT) // 2)
     for original, next_day in ((dawn, next_dawn), (noon, next_noon)):
         assert abs(original["elevation"] - next_day["elevation"]) < .03, (original, next_day)
         assert abs(original["x"] - next_day["x"]) < .001, (original, next_day)

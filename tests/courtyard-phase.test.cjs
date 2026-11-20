@@ -4,78 +4,134 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const clock = fs.readFileSync(path.join(__dirname,'../yard/solar-clock.js'),'utf8').replace(/^export /gm,'');
-const redirect = fs.readFileSync(path.join(__dirname,'../yard/index.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
-const site = 'https://inteonmteca.online', day = 20*60000, epoch = Date.UTC(2026,2,20);
+const clock = fs.readFileSync(path.join(__dirname, '../yard/solar-clock.js'), 'utf8').replace(/^export /gm, '');
+const redirect = fs.readFileSync(path.join(__dirname, '../yard/index.html'), 'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
+const site = 'https://inteonmteca.online';
+const minute = 60000, day = 1440 * minute;
+const wrap = time => ((time % day) + day) % day;
+
+function localTime(epoch) {
+  const d = new Date(epoch);
+  return ((d.getHours() * 60 + d.getMinutes()) * 60 + d.getSeconds()) * 1000 + d.getMilliseconds();
+}
 
 function tabStorage() {
   const data = new Map();
   return {
-    getItem:key=>data.get(key) ?? null,
-    setItem:(key,value)=>data.set(key,value),
-    removeItem:key=>data.delete(key),
+    getItem: key => data.get(key) ?? null,
+    setItem: (key, value) => data.set(key, value),
+    removeItem: key => data.delete(key),
   };
 }
 
-function open(storage, {random=.2,type='navigate',from='',newTab=false,isRedirect=false}={}) {
+function open(storage, at, {type='navigate', from='', newTab=false, isRedirect=false} = {}) {
   const window = new EventTarget();
-  Object.assign(window,{location:{origin:site,protocol:'https:',replace(){}},document:{referrer:from},
-    performance:{getEntriesByType:()=>[{type}]},sessionStorage:storage,opener:newTab ? {} : null,history:{length:newTab ? 1 : 2}});
-  const math = Object.create(Math);
-  let draws=0;
-  math.random=()=>{draws++; return random;};
-  const scope=vm.createContext({window,location:window.location,document:window.document,
-    performance:window.performance,sessionStorage:storage,Math:math});
-  if (isRedirect) {vm.runInContext(redirect,scope); return;}
-  vm.runInContext(clock,scope);
-  const sample=(at,offset)=>Array.from(scope.courtyardSunForLocation({lat:51,lon:51},at,offset).direction);
-  return {sample, draws:()=>draws, restore() {
-    window.dispatchEvent(Object.assign(new Event('pageshow'),{persisted:true}));
+  class ClockDate extends Date {
+    constructor(...args) { super(...(args.length ? args : [at])); }
+    static now() { return at; }
+  }
+  Object.assign(window, {location:{origin:site, protocol:'https:', replace() {}}, document:{referrer:from},
+    performance:{getEntriesByType:() => [{type}]}, sessionStorage:storage, opener:newTab ? {} : null, history:{length:newTab ? 1 : 2}});
+  const scope = vm.createContext({window, location:window.location, document:window.document,
+    performance:window.performance, sessionStorage:storage, Date:ClockDate});
+  if (isRedirect) { vm.runInContext(redirect, scope); return; }
+  vm.runInContext(clock, scope);
+  return {time:epoch => scope.courtyardClockTime(epoch), restore() {
+    window.dispatchEvent(Object.assign(new Event('pageshow'), {persisted:true}));
   }};
 }
 
-test('random visits cover all 24 hours and repeat after every twenty real minutes',()=>{
-  for(let hour=0;hour<24;hour++) {
-    const visit=open(tabStorage(),{random:hour/24});
-    assert.equal(visit.draws(),1);
-    assert.deepEqual(visit.sample(epoch),visit.sample(epoch,Math.floor(hour/24*day)));
-    for(let cycles=1;cycles<=3;cycles++) {
-      const distance=Math.hypot(...visit.sample(epoch+cycles*day).map((x,i)=>x-visit.sample(epoch)[i]));
-      assert.ok(distance<.001);
+test('entry uses local wall time minus twenty minutes, including fractional time zones and midnight', () => {
+  const oldZone = process.env.TZ;
+  try {
+    for (const zone of ['Asia/Kathmandu', 'America/St_Johns', 'Europe/Moscow']) {
+      process.env.TZ = zone;
+      for (const hour of [0, 11, 23]) {
+        const start = new Date(2026, 2, 20, hour, hour === 23 ? 55 : 5, 37, 123).getTime();
+        const page = open(tabStorage(), start);
+        assert.equal(page.time(start), wrap(localTime(start) - 20 * minute));
+        assert.equal(page.time(start + 10 * minute), wrap(localTime(start) + day / 2));
+        assert.equal(page.time(start + 20 * minute), localTime(start + 20 * minute));
+      }
     }
+  } finally {
+    if (oldZone === undefined) delete process.env.TZ; else process.env.TZ = oldZone;
   }
 });
 
-test('reloads and direct or external entrances start a fresh day; internal and restored documents share it',()=>{
-  const storage=tabStorage(), home=open(storage);
-  const album=open(storage,{from:site+'/',random:.42});
-  assert.equal(album.draws(),0);
-  assert.deepEqual(album.sample(epoch+day/4),home.sample(epoch+day/4));
-  const refreshed=open(storage,{type:'reload',from:site+'/',random:.66});
-  assert.equal(refreshed.draws(),1);
-  assert.notDeepEqual(refreshed.sample(epoch),home.sample(epoch));
+test('each full turn after the first lasts ten, five, then twenty minutes and repeats during tab suspension', () => {
+  const start = Date.UTC(2026, 6, 7, 9, 12, 13, 14);
+  const page = open(tabStorage(), start);
+  const sync = localTime(start + 20 * minute);
+  let boundary = start + 20 * minute;
+  for (const duration of [10, 5, 20, 10, 5, 20]) {
+    assert.equal(page.time(boundary), sync);
+    for (const fraction of [.25, .5, .75]) {
+      assert.equal(page.time(boundary + fraction * duration * minute), wrap(sync + fraction * day));
+    }
+    boundary += duration * minute;
+    const before = page.time(boundary - 1);
+    assert.ok(Math.abs(wrap(page.time(boundary) - before) - day / (duration * minute)) < .001);
+  }
+  assert.equal(page.time(boundary + (35 * 200 + 2.5) * minute), wrap(sync + day / 4));
+});
+
+test('the first rendezvous follows the local hour when daylight saving changes', () => {
+  const oldZone = process.env.TZ;
+  process.env.TZ = 'Europe/Berlin';
+  try {
+    for (const start of [Date.parse('2026-03-29T00:50Z'), Date.parse('2026-10-25T00:50Z')]) {
+      const page = open(tabStorage(), start);
+      assert.equal(page.time(start), wrap(localTime(start) - 20 * minute));
+      assert.equal(page.time(start + 20 * minute), localTime(start + 20 * minute));
+      // The actual change of offset occurs at minute ten. The simulated sun must keep moving forwards.
+      const change = start + 10 * minute;
+      const advance = wrap(page.time(change + 1) - page.time(change - 1));
+      assert.ok(advance > 0 && advance < 200);
+    }
+  } finally {
+    if (oldZone === undefined) delete process.env.TZ; else process.env.TZ = oldZone;
+  }
+});
+
+test('navigation and history retain the visit; refreshes and independent visits restart from the device clock', () => {
+  const storage = tabStorage();
+  const start = Date.UTC(2026, 2, 20);
+  const later = start + 4 * minute;
+  const home = open(storage, start);
+  const progressed = home.time(later);
+  for (const opts of [{from:site+'/'}, {type:'back_forward'}]) {
+    assert.equal(open(storage, later, opts).time(later), progressed);
+  }
+  for (const opts of [{type:'reload', from:site+'/'}, {}, {from:'https://example.org/'}, {from:site+'/', newTab:true}]) {
+    const independentStorage = tabStorage();
+    open(independentStorage, start);
+    assert.equal(open(independentStorage, later, opts).time(later), wrap(localTime(later) - 20 * minute));
+  }
+  const refreshed = open(storage, later, {type:'reload', from:site+'/'});
   home.restore();
-  assert.deepEqual(home.sample(epoch+day/3),refreshed.sample(epoch+day/3));
-  assert.equal(open(storage,{type:'back_forward'}).draws(),0);
-  for(const opts of [{from:''},{from:'https://example.org/'},{from:site+'/',newTab:true}]) {
-    assert.equal(open(storage,opts).draws(),1);
+  assert.equal(home.time(later + minute), refreshed.time(later + minute));
+});
+
+test('the yard redirect preserves an internal visit and clears the stored anchor on direct entry', () => {
+  const storage = tabStorage();
+  const start = Date.UTC(2026, 2, 20), later = start + 4 * minute;
+  const previous = open(storage, start);
+  open(storage, later, {isRedirect:true, from:site+'/listening-room.html'});
+  assert.equal(open(storage, later, {from:site+'/yard/'}).time(later), previous.time(later));
+  open(storage, later, {isRedirect:true});
+  assert.equal(open(storage, later, {from:site+'/yard/'}).time(later), wrap(localTime(later) - 20 * minute));
+});
+
+test('unavailable or corrupt storage falls back to a fresh continuous local visit', () => {
+  const fail = () => { throw Error('blocked'); };
+  const broken = tabStorage();
+  broken.setItem('inteon.courtyard.visit-clock-v2', '{"invalid":true}');
+  const start = Date.UTC(2026, 2, 20);
+  for (const storage of [broken, {getItem:fail, setItem:fail}]) {
+    const page = open(storage, start, {from:site+'/'});
+    assert.equal(page.time(start), wrap(localTime(start) - 20 * minute));
+    page.restore();
+    assert.equal(page.time(start + 20 * minute), localTime(start + 20 * minute));
   }
-});
-
-test('the yard redirect carries an internal visit and discards a stale phase on a fresh entrance',()=>{
-  const storage=tabStorage(), previous=open(storage);
-  open(storage,{isRedirect:true,from:site+'/listening-room.html'});
-  const internal=open(storage,{from:site+'/yard/'});
-  assert.equal(internal.draws(),0);
-  assert.deepEqual(internal.sample(epoch),previous.sample(epoch));
-  open(storage,{isRedirect:true});
-  assert.equal(open(storage,{from:site+'/yard/index.html',random:.48}).draws(),1);
-});
-
-test('blocked storage leaves one uninterrupted clock within the document',()=>{
-  const fail=()=>{throw Error('blocked');}, storage={getItem:fail,setItem:fail};
-  const page=open(storage,{from:site+'/',random:.8});
-  assert.equal(page.draws(),1);
-  page.restore();
-  assert.deepEqual(page.sample(epoch+day),page.sample(epoch+day,.8*day));
 });

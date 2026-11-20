@@ -9,8 +9,9 @@
     // The landing page sees this redirect as an internal link, even on a fresh visit.
     try {
       const navigation = performance.getEntriesByType('navigation')[0]?.type;
-      if (navigation === 'reload' || (navigation !== 'back_forward' && !document.referrer.startsWith(location.origin + '/'))) {
-        sessionStorage.removeItem('inteon.courtyard.phase-ms');
+      const newTab = window.opener && window.history.length === 1;
+      if (navigation === 'reload' || (navigation !== 'back_forward' && (newTab || !document.referrer.startsWith(location.origin + '/')))) {
+        sessionStorage.removeItem('inteon.courtyard.visit-clock-v2');
       }
     } catch {}
     location.replace(location.protocol === 'file:' ? '../index.html' : '../');

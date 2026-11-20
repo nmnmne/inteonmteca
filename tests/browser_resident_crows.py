@@ -141,8 +141,7 @@ def check(browser, mobile):
                             is_mobile=mobile, has_touch=mobile)
     page.route("**/yard/auto-walk.js*", observe_simulation)
     page.route("**/yard/crow-flock.js*", observe_simulation)
-    fixed_courtyard_phase(page)
-    page.add_init_script("Date.now=()=>Date.parse('2026-06-21T00:08:00Z')+performance.now()")
+    fixed_courtyard_phase(page, "2026-06-21T14:36:00")
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     page.on("console", lambda msg: errors.append(msg.text) if "Shader Error" in msg.text else None)
