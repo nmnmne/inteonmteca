@@ -1,4 +1,4 @@
-"""Rasterize the courtyard's source lyrics with the original marker strokes."""
+"""Rasterize the three lossy readings of the courtyard's lyrics in marker ink."""
 import base64
 import functools
 import io
@@ -13,9 +13,11 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 PAINTER = r"""async () => {
 const {lyricSheets} = await import('/yard/wall-lyrics.js');
-const {inkGroups,wallFragments} = await import('/yard/wall-ink-codec.js');
+const {inkGroups, inkPasses, inkAtlasColumns:columns, inkCellWidth:cellW, inkCellHeight:cellH,
+  wallTranslation, wallFragments} = await import('/yard/wall-ink-codec.js');
 const lyrics = [...new Set(lyricSheets.flatMap(sheet=>sheet.lines))];
-const columns=16, rows=Math.ceil(lyrics.length/columns), cellW=128, cellH=28;
+const tiles = Array.from({length:inkPasses}, (_,pass) => lyrics.map(line => wallTranslation(line,pass))).flat();
+const rows = Math.ceil(tiles.length/columns);
 // A single-line marker alphabet. The two strokes of a letter can cross,
 // overshoot and double back without leaving a typeset outline.
 const letters = {
@@ -56,6 +58,18 @@ const letters = {
 };
 
 const compactLetters = {
+  ȝ:'M-.6 5.9 Q2.8 .8 5.3 3.2 Q6.6 4.6 2 6.5 Q8.7 3.7 6.5 8.1 Q4.3 12.6 .6 12.9 L1.4 10.5 M4 1.2 l2.8 -2.1',
+  ʊ:'M-.7 4.3 L2 2.8 Q-1.3 10.2 2.7 9.2 Q6.7 8.6 7.5 3.2 L5.2 3.9 M5.5 6.8 l2.9 -.8',
+  ø:'M6.4 3 Q2.1 1.8 .6 6.3 Q-.5 10.3 3.6 8.7 Q7.7 6.1 6.4 3 M-.7 11.4 L8.3 -.7',
+  ƞ:'M-.6 8.3 L2.2 3.7 1.2 8.5 Q6.4 .6 6.5 4.8 L5.2 12.6 8.3 10.6 M-.2 4.3 l2.3 -2',
+  ŋ:'M-1 9 L2.5 3.2 1.2 8.4 Q5.8 .5 6.6 4.4 L5.7 10.5 Q5.3 14.3 2.7 12.4 L6.9 8.6',
+  þ:'M-.4 8.7 Q3.7 2.7 3.4 -1.5 L.6 12.6 M1.6 5.8 Q7.4 .9 7.7 4.8 Q6.5 8.7 1.1 7.7 L8.3 9.3',
+  λ:'M.3 1.2 Q2.3 -1.1 3.5 3.2 L5.1 8.9 8.5 6.3 M3.5 4.4 L-.6 9.9',
+  ƛ:'M.5 -.6 L2.8 1.5 4.9 9 8.4 7.2 M3.8 3.9 L-.5 10.2 M1.7 7.3 L7.1 4.5',
+  ꝛ:'M-.8 5.7 L2.4 3.6 2 2.5 Q8.8 2.9 5.7 5.3 L1.9 8.8 7.6 7 M5.2 10.7 l2.4 -1.6',
+  ʃ:'M7.7 -.7 Q4.3 -1.9 3.2 2.7 L1.7 10.8 Q.9 14 -1 12 L3.7 9.1 M.4 6.5 L7.5 3.6',
+  ʒ:'M-.2 5.1 L3 2.7 6.4 3.2 2.7 6.6 Q8.2 4.2 6.2 8.4 L2.3 12.8 .5 11.1 7.8 6.1',
+  ɣ:'M-.6 3.5 Q1.3 1.4 2.3 5.2 L4.8 11.5 Q4.6 14 2.6 11.7 Q1.8 8.8 7.5 2.4 L8.3 3.1',
   а:'M6.3 3.8 Q.8 1.4 .4 5.6 Q0 9.3 3 8.4 Q5.6 7.5 6.3 3.4 L5.9 8.5 7.8 7.8',
   б:'M7 .2 Q5.1 1.5 2.9 1.3 Q.8 1.4 .5 4.5 L.4 6 Q4.4 2.4 6.3 5 Q7.7 8.1 4 8.8 Q.7 9.2 .4 6',
   е:'M.5 6.4 Q6.1 5.4 6.3 3.6 Q4 .9 1.6 3.2 Q-1.5 8.2 2.8 8.7 Q5.2 9.1 7.2 7.1',
@@ -196,10 +210,10 @@ function rasterizeLyrics() {
     }
     return best;
   }
-  // Keep the pen inside each group: the GPU can weave the original letters
+  // Keep the pen inside each group: the GPU can weave the translated letters
   // from two tiles at runtime without cutting a character in half.
   const groupW = cellW/inkGroups;
-  lyrics.flatMap(wallFragments).forEach((text,index) => {
+  tiles.flatMap(wallFragments).forEach((text,index) => {
     if (!text.trim()) return;
     const n = Math.floor(index/inkGroups);
     const x=n%columns*cellW+(index%inkGroups)*groupW, y=Math.floor(n/columns)*cellH, areaW=124;

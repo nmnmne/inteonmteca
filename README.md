@@ -120,8 +120,9 @@ Touch uses the existing tap response, and reduced motion turns off the moving in
 ## Courtyard wall inscriptions
 
 To save the current handwriting in slot 0, run this in the browser console with the live courtyard open.
-The snapshot contains the mixed fragments and their ordering key. Keep both to recover the two lines
-later, in lowercase with simplified spacing and punctuation removed.
+The snapshot holds the painted fragments (`inkChunks`), their stage of mistranslation (`pass`),
+and an approximate transcription (`chunks`). Its ordering key separates the two lyric fragments.
+The transcription loses punctuation, case, some inner vowels and repeated letters.
 
 ```js
 const {readWallInscription} = await import('/yard/wall-inscriptions.js');

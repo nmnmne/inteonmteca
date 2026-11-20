@@ -479,9 +479,6 @@
     "yard/sun-penumbra.js": "d1c88bec2ba1f268f8a209324940823081c1717ce255b936a581c5fca6fd2bd7",
     "yard/tower-reference.js": "5fc1b34372632019bb354af974c030eed44bceef812be2c5340dd925d0c44ae6",
     "yard/walk-lighting.js": "8c9e134c0869d875ab7ad8773c7f513c8eefbe1de85ddcc2d0e7f6849629a695",
-    "yard/wall-inscriptions.js": "c2e65cf54633ce5e1c7064a811f46517802c301dee92242314dfb6bad77c7ec4",
-    "yard/wall-lyrics.js": "42e91d9cdb5457846f3b04419c32d93f0e21bb6b045c9ca4645e7128490bbb90",
-    "yard/wall-wordmark.js": "c8c6f1d0357e300d2a732e52a11d030cd313d62bc5d4b34600653f0aad1739f3",
     "yard/yard-guide.js": "e9de48eeb7ea282c6cc680d38fdc3c28b9fef21692b44179348a4c2b187ebb0c",
     "yard/data/site-layout.json": "2dc3c9b02117fac5c31bf1fbb27a1c83ed1bbc3ed3524bfe267a965da3540692",
     "tools/bake_yard_shadows.js": "7d0b9ecd507b1272f6f27ef3b59c4d8ac2330778f7e8e924ea09bad709641adc"

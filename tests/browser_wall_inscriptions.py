@@ -53,27 +53,61 @@ def check(browser, mobile=False):
           return renderer.domElement.toDataURL().split(',')[1];
         }""")
         (path / "close-inscriptions.png").write_bytes(base64.b64decode(close_photo))
+        if not mobile:
+            wall_photo = page.evaluate("""() => {
+              const {T,renderer,scene,logo}=wallFrame, camera=new T.PerspectiveCamera(
+                59,renderer.domElement.width/renderer.domElement.height,.05,510);
+              camera.position.copy(logo.localToWorld(new T.Vector3(-3.8,3.8,13.8)));
+              camera.lookAt(logo.localToWorld(new T.Vector3(-.9,4.0,0)));
+              renderer.render(scene,camera);
+              return renderer.domElement.toDataURL().split(',')[1];
+            }""")
+            (path / "graffiti.png").write_bytes(base64.b64decode(wall_photo))
     report = page.evaluate(r"""async () => {
       const {createWallInscriptions,readWallInscription} = await import('/yard/wall-inscriptions.js');
-      const {mixWallPhrase,separateWallPhrase,wallFragments} = await import('/yard/wall-ink-codec.js');
+      const {mixWallPhrase,separateWallPhrase,wallFragments,wallTranslation,wallEcho,
+        inkGroups,inkPasses,inkAtlasColumns:cols,inkCellWidth:width,inkCellHeight:height} =
+          await import('/yard/wall-ink-codec.js');
       const {lyricSheets} = await import('/yard/wall-lyrics.js');
       const {T,renderer,scene,camera,logo} = wallFrame;
       const ink = logo.getObjectByName('wall-marker-inscriptions');
+      if (ink.userData.bakedShadowCaster !== false || logo.userData.bakedShadowCaster !== false)
+        throw Error('Flat paint must stay out of the baked building geometry');
       const atlas = ink.material.map;
       const attr = ink.geometry.getAttribute('position');
-      const slots = attr.count / 4, heights = [];
-      let inOpeningView=0;
+      const ids = ink.geometry.getAttribute('inscription'), slotVertices=[];
+      const slots = ink.userData.inscriptionCount, heights = [];
+      for (let v=0; v<attr.count; v++) {
+        const slot=ids.getX(v);
+        if (slot>=0) (slotVertices[slot]??=[]).push(v);
+      }
+      const ranges = Array.from({length:14},()=>new Set());
+      let inOpeningView=0, curved=0;
       for (let s=0; s<slots; s++) {
-        const pts = Array.from({length:4}, (_,k)=>new T.Vector3().fromBufferAttribute(attr,s*4+k));
-        heights.push(pts[0].distanceTo(pts[3]));
-        const p=pts[0].clone().lerp(pts[2],.5).applyMatrix4(ink.matrixWorld).project(camera);
+        const pts = slotVertices[s].map(v=>new T.Vector3().fromBufferAttribute(attr,v));
+        heights.push(pts[0].distanceTo(pts[1]));
+        const spine=[];
+        for (let k=0;k<pts.length;k+=2) spine.push(pts[k].clone().lerp(pts[k+1],.5));
+        const chord=new T.Line3(spine[0],spine.at(-1)), tmp=new T.Vector3();
+        if (spine.some(p=>chord.closestPointToPoint(p,true,tmp).distanceTo(p)>.012)) curved++;
+        const center=spine[Math.floor(spine.length/2)];
+        const p=center.clone().applyMatrix4(ink.matrixWorld).project(camera);
         if (Math.max(Math.abs(p.x),Math.abs(p.y),Math.abs(p.z))<1) inOpeningView++;
         const bounds = new T.Box3().setFromPoints(pts);
+        for (const point of spine) {
+          const row=Math.floor(point.y+1.9);
+          if (ranges[row]) ranges[row].add(Math.floor(point.x+7.56));
+        }
         if (bounds.min.x <= -7.56 || bounds.max.x >= 5.6 || bounds.min.y <= -1.9 ||
-            (bounds.min.x < 4.1 && bounds.max.x > -4.1 && bounds.min.y < .825 && bounds.max.y > -.825))
-          throw Error('Ink crosses a wall edge or the centre lettering: '+s);
-        if (bounds.min.x < -6.739 && bounds.max.x > -7.289 && bounds.min.y < 3.05 && bounds.max.y > 2.35)
-          throw Error('Ink crosses the house number plate: '+s);
+            bounds.max.y > 14) throw Error('Ink crosses a wall edge: '+s);
+      }
+      // Check the actual triangles so a curved ribbon can wrap around a corner.
+      const mask=(x1,y1,x2,y2)=>new T.Box3(new T.Vector3(x1,y1,-1),new T.Vector3(x2,y2,1));
+      const keepClear=[mask(-4.1,-.825,4.1,.825),mask(-7.289,2.35,-6.739,3.05)];
+      const triangle=new T.Triangle(), index=ink.geometry.index;
+      for(let i=0;i<index.count;i+=3) {
+        [triangle.a,triangle.b,triangle.c].forEach((v,k)=>v.fromBufferAttribute(attr,index.getX(i+k)));
+        if(keepClear.some(box=>box.intersectsTriangle(triangle))) throw Error('Ink covers the logo or number plate');
       }
       const im = atlas.image, probe = document.createElement('canvas');
       probe.width=im.width; probe.height=im.height;
@@ -94,32 +128,44 @@ def check(browser, mobile=False):
         const [a,b]=separateWallPhrase(chunks,key);
         if (a!=='abcdefgh' || b!=='12345678') throw Error('Cannot reverse key '+key);
       }
-      for (let i=0; i<repertoire.length; i++) {
-        wallFragments(repertoire[i]).forEach((fragment,group)=>{
+      const rows=Math.ceil(repertoire.length*inkPasses/cols);
+      if(im.width!==cols*width || im.height!==rows*height || Math.max(im.width,im.height)>2048)
+        throw Error('Unexpected atlas size');
+      for (let i=0; i<repertoire.length; i++) for (let pass=0;pass<inkPasses;pass++) {
+        const translation=wallTranslation(repertoire[i],pass), tile=i+pass*repertoire.length;
+        if(!/[ȝʊøƞŋþλƛꝛʃʒɣ]/u.test(translation) || pass && translation===wallTranslation(repertoire[i],pass-1))
+          throw Error('Clean or unchanged translation '+i+'/'+pass);
+        wallFragments(translation).forEach((fragment,group)=>{
           if (!fragment.trim()) return;
-          const startX=(i%16)*128+group*16, startY=Math.floor(i/16)*28;
+          const startX=(tile%cols)*width+group*width/inkGroups, startY=Math.floor(tile/cols)*height;
           let count=0;
-          for (let y=startY;y<startY+28;y++) for (let x=startX;x<startX+16;x++)
+          for (let y=startY;y<startY+height;y++) for (let x=startX;x<startX+width/inkGroups;x++)
             if (texels[(y*im.width+x)*4]>64) count++;
-          if (!count) throw Error('Missing handwritten group '+i+'/'+group);
+          if (!count) throw Error('Missing handwritten group '+i+'/'+group+'/'+pass);
         });
       }
       const normalized=repertoire.map(line=>line.normalize('NFC').toLowerCase()
         .replace(/[^\p{L}\p{N}\s]/gu,'').replace(/\s+/gu,' ').trim());
       const pairs=ink.geometry.getAttribute('lyricPair');
+      const echoes=repertoire.map(wallEcho), passesSeen=new Set();
+      if (echoes.filter((s,i)=>s!==normalized[i]).length < repertoire.length*.8)
+        throw Error('Recovered echoes retain too much source detail');
       function snapshot(mesh, validate=false) {
         const attr=mesh.geometry.getAttribute('lyricPair');
         return Array.from({length:slots},(_,i)=>{
-          const v=i*4, a=attr.getX(v), b=attr.getY(v), key=attr.getZ(v);
+          const vertices=slotVertices[i], v=vertices[0], a=attr.getX(v), b=attr.getY(v), key=attr.getZ(v);
           if (validate) {
             const visible=mesh.userData.readInscription(i);
             const [first,second]=separateWallPhrase(visible.chunks,visible.key);
+            const [paintA,paintB]=separateWallPhrase(visible.inkChunks,visible.key);
+            passesSeen.add(visible.pass);
             if (a===b || visible.key!==key || visible.chunks.length!==16 ||
-                first!==normalized[a] || second!==normalized[b])
-              throw Error('Inscription did not decode to both selected lyric lines at '+i);
-            for (let k=1;k<4;k++)
-              if (a!==attr.getX(v+k) || b!==attr.getY(v+k) || key!==attr.getZ(v+k))
-                throw Error('Conflicting inscription across its two triangles');
+                first!==echoes[a] || second!==echoes[b] ||
+                paintA!==wallTranslation(repertoire[a],visible.pass) || paintB!==wallTranslation(repertoire[b],visible.pass))
+              throw Error('Paint or recovered echoes do not match both sources at '+i);
+            for (const n of vertices)
+              if (a!==attr.getX(n) || b!==attr.getY(n) || key!==attr.getZ(n))
+                throw Error('Conflicting sources across a curved inscription');
           }
           return (a*repertoire.length+b)*256+key;
         });
@@ -163,7 +209,8 @@ def check(browser, mobile=False):
             if (current[i]===previous[i]) continue;
             if (ticks[i]>=0) periods.add(tick-ticks[i]);
             ticks[i]=tick;
-            used.add(pairs.getX(i*4));used.add(pairs.getY(i*4));
+            const v=slotVertices[i][0];
+            used.add(pairs.getX(v));used.add(pairs.getY(v));
           }
           previous=current;
         }
@@ -181,16 +228,19 @@ def check(browser, mobile=False):
             frozenState.every((v,i)=>v===initial[i])) throw Error('Invalid reduced-motion selection');
         // Give each source fragment a unique ink strength. Read the actual GPU
         // output back in screen order to verify that the pen draws the codec's mix.
-        const stamp=new T.PlaneGeometry(2,2), strengths=new Uint8Array(128*41);
-        for (let k=0;k<8;k++) for (let row=0;row<41;row++) {
-          strengths[row*128+k]=130+15*k;
-          strengths[row*128+8+k]=28+12*k;
+        const stamp=new T.PlaneGeometry(2,2), strengths=new Uint8Array(cols*inkGroups*rows);
+        function strength(pass,source,group) { return 35+pass*27+source*85+group*8; }
+        for(let pass=0;pass<inkPasses;pass++) for(let source=0;source<2;source++) {
+          const tile=pass*repertoire.length+source;
+          const start=((rows-1-Math.floor(tile/cols))*cols+tile%cols)*inkGroups;
+          for(let k=0;k<inkGroups;k++) strengths[start+k]=strength(pass,source,k);
         }
-        const markers=new T.DataTexture(strengths,128,41,T.RedFormat);
+        const markers=new T.DataTexture(strengths,cols*inkGroups,rows,T.RedFormat);
         markers.needsUpdate=true;
         const pair=new T.Float32BufferAttribute(new Float32Array(12),3);
         stamp.setAttribute('lyricPair',pair);
-        stamp.setAttribute('inscription',new T.Float32BufferAttribute(new Float32Array(4),1));
+        const slotId=new T.Float32BufferAttribute(new Float32Array(4),1);
+        stamp.setAttribute('inscription',slotId);
         stamp.setAttribute('color',new T.Float32BufferAttribute(new Float32Array(12).fill(1),3));
         const swatch=new T.Scene(), front=new T.OrthographicCamera(-1,1,1,-1,.1,5);
         front.position.z=1;
@@ -199,22 +249,32 @@ def check(browser, mobile=False):
         sample.onBeforeRender=(r,s,c)=>frozen.onBeforeRender(r,s,c);
         swatch.add(sample);
         const strip=new Uint8Array(768*4);
-        for (const key of [0x69,0x96]) {
-          for (let v=0;v<4;v++) pair.setXYZ(v,0,1,key);
-          pair.needsUpdate=true;
-          renderer.render(swatch,front);
-          renderer.readRenderTargetPixels(target,0,240,768,1,strip);
-          for (let i=0;i<16;i++) {
-            const group=i>>1, second=(i & 1)^((key>>group) & 1);
-            const alpha=.81*.30*strengths[group+(second?8:0)];
-            if (Math.abs(strip[(i*48+24)*4+3]-alpha)>1.6)
-              throw Error('GPU drew the wrong source fragment at strip '+i+' for key '+key);
+        const smooth=(lo,hi,x)=>{const t=Math.max(0,Math.min(1,(x-lo)/(hi-lo)));return t*t*(3-2*t);};
+        const tested=new Set();
+        for (let id=0; id<slots && tested.size<inkPasses; id++) {
+          const period=8+(id*5)%8, phase=((id*13)%period)/period, pass=Math.floor(phase*inkPasses);
+          if(tested.has(pass)) continue;
+          tested.add(pass); slotId.array.fill(id); slotId.needsUpdate=true;
+          const opacity=.81*(.43+.57*smooth(0,.16,phase)*(1-smooth(.82,1,phase)));
+          for (const key of [0x69,0x96]) {
+            for (let v=0;v<4;v++) pair.setXYZ(v,0,1,key);
+            pair.needsUpdate=true;
+            renderer.render(swatch,front);
+            renderer.readRenderTargetPixels(target,0,240,768,1,strip);
+            for (let i=0;i<16;i++) {
+              const group=i>>1, second=(i & 1)^((key>>group) & 1);
+              const alpha=opacity*strength(pass,second,group);
+              if (Math.abs(strip[(i*48+24)*4+3]-alpha)>1.6)
+                throw Error('GPU drew the wrong source fragment at strip '+i+' for key '+key);
+            }
           }
         }
+        if(tested.size!==inkPasses || passesSeen.size!==inkPasses) throw Error('Missing translation stage');
         markers.dispose();stamp.dispose();
         spare.dispose();frozen.geometry.dispose();frozen.material.dispose();
         heights.sort((a,b)=>a-b);
         return {slots,inOpeningView,heightM:heights[Math.floor(slots/2)], maxHeightM:heights.at(-1),
+                curved, rowWidths:ranges.map(row=>row.size), expectedTriangles:index.count/3,
                 calls,triangles,
                 tracks:titles.length,lines:repertoire.length,moving,switched,still,
                 stableAtlas:atlas.version===revision, seenLines:used.size, switchedAtThree,
@@ -225,9 +285,12 @@ def check(browser, mobile=False):
       }
     }""")
     page.close()
-    assert report["slots"] > 222 and report["inOpeningView"] >= (35 if mobile else 80), report
-    assert .35 < report["heightM"] < .48 and report["maxHeightM"] > .55, report
-    assert report["calls"] == 1 and report["triangles"] == 2*report["slots"], report
+    assert report["slots"] > 250 and report["inOpeningView"] >= (35 if mobile else 80), report
+    assert .10 < report["heightM"] < .35 and report["maxHeightM"] > report["heightM"]*1.4, report
+    assert report["curved"] > report["slots"]*.40, report
+    widths = [width for width in report["rowWidths"] if width]
+    assert max(widths)-min(widths) >= 7 and min(widths[-3:]) <= 4, report
+    assert report["calls"] == 1 and report["triangles"] == report["expectedTriangles"], report
     assert report["moving"] > 50 and report["switched"] > 280, report
     assert 0 < report["switchedAtThree"] < report["slots"], report
     assert report["periods"] == list(range(8, 16)) and report["seenLines"] > 570, report

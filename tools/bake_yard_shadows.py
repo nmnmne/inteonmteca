@@ -57,6 +57,10 @@ def main():
             sources = [*sorted((ROOT/'yard').glob('*.js')),ROOT/'yard/data/site-layout.json',Path(__file__).with_suffix('.js')]
             # Hash the same source text on LF and CRLF Git checkouts.
             excluded = {'main.js', 'wall-player.js', 'boundary-music.js', 'quality.js', 'input-controller.js', 'navigation.js'}
+            # The wall artwork is transparent paint. Both meshes explicitly opt
+            # out of the depth pass; the building behind them casts the shadow.
+            excluded.update({'wall-wordmark.js', 'wall-logo-effects.js', 'wall-inscriptions.js',
+                             'wall-graffiti.js', 'wall-ink-codec.js', 'wall-lyrics.js'})
             manifest['sourceHashes'] = {
                 path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_text(encoding='utf-8').encode('utf-8')).hexdigest()
                 for path in sources if path.name not in excluded
