@@ -16,6 +16,7 @@
   function create(engine, library, {onDeckChange, onStatus}) {
     const auto = new Set();
     const played = new Set();
+    const nextPaused = new Map();
     let mix = null, timer = null, period = 0, sequence = 0, retryAfter = 0;
     let directLoad = false;
 
@@ -28,6 +29,7 @@
     }
 
     function setAuto(id, enabled) {
+      if (enabled !== auto.has(id)) nextPaused.delete(id);
       if (enabled) auto.add(id);
       else {
         auto.delete(id);
@@ -100,6 +102,7 @@
 
     function cancel() {
       ++sequence;
+      nextPaused.clear();
       const interrupted = Boolean(mix);
       directLoad = false;
       close(false);
@@ -308,9 +311,10 @@
       else engine.batch(() => applyTail(job, (elapsed - handoffMs) / postMs));
     }
 
-    function pick(current) {
+    function pick(current, attempted) {
       played.add(current);
-      const others = library.list().filter(track => track.id !== current);
+      const others = library.list().filter(track => track.id !== current && !attempted?.has(track.id));
+      if (!others.length) return;
       let choices = others.filter(track => !played.has(track.id));
       if (!choices.length) {
         played.clear();
@@ -337,12 +341,35 @@
       }
     }
 
-    function ended(id) {
+    async function ended(id, loadVersion) {
+      const deck = engine.snapshot()[id];
+      if (!deck?.ended || !deck.track || deck.loadVersion !== loadVersion || deck.loopBeats) return;
       if (mix?.stage === 'post' && mix.to === id) close(false);
-      if (mix || directLoad || !auto.has(id)) return;
-      const state = engine.snapshot()[id];
-      const key = pick(state.track?.id) || state.track?.id;
-      if (key) void choose(id, key, true, true);
+      if (mix || directLoad || nextPaused.has(id)) return;
+      if (auto.has(id)) {
+        const key = pick(deck.track.id) || deck.track.id;
+        return choose(id, key, true, true);
+      }
+
+      // A standby load owns only this deck. A playing second deck keeps its transport.
+      const attempted = new Set();
+      nextPaused.set(id, attempted);
+      const isCurrent = () => {
+        const current = engine.snapshot()[id];
+        return nextPaused.get(id) === attempted && current.loadVersion === loadVersion && current.ended;
+      };
+      try {
+        while (isCurrent()) {
+          const key = pick(deck.track.id, attempted);
+          if (!key) break;
+          attempted.add(key);
+          try {
+            if (await library.load(id, key, isCurrent)) return;
+          } catch { /* Try another entry if a stored import cannot be opened. */ }
+        }
+      } finally {
+        if (nextPaused.get(id) === attempted) nextPaused.delete(id);
+      }
     }
 
     return {choose, setAuto, isAuto: id => auto.has(id), cancel, manual: cancel, ended, sync};

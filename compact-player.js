@@ -73,6 +73,7 @@
   const mixStatus = find('.compact-mix-status');
   const sideButtons = [...root.querySelectorAll('[data-compact-side]')];
   const requests = { A: 0, B: 0 };
+  const pausedSkips = new Map();
   let skipTarget = null;
   let side = 'A', importSide = 'A';
   const active = () => document.body.dataset.yardWindow === 'dj' && document.body.dataset.djMode === 'compact';
@@ -204,11 +205,15 @@
     if (state.playing && key === state.track?.id) return;
     const target = skipTarget = {id, key, loading: true};
     const isCurrent = () => request === requests[id];
-    const loaded = state.playing ? await mix.choose(id, key) : await library.load(id, key, isCurrent);
-    target.loading = false;
-    if (skipTarget === target && (!state.playing || !loaded)) skipTarget = null;
-    if (!loaded || !isCurrent()) return;
-    update();
+    if (!state.playing) pausedSkips.set(id, request);
+    try {
+      const loaded = state.playing ? await mix.choose(id, key) : await library.load(id, key, isCurrent);
+      target.loading = false;
+      if (skipTarget === target && (!state.playing || !loaded)) skipTarget = null;
+      if (loaded && isCurrent()) update();
+    } finally {
+      if (pausedSkips.get(id) === request) pausedSkips.delete(id);
+    }
   }
   function importTo(id, files) {
     if (!files.length) return;
@@ -237,7 +242,9 @@
     mix.setAuto(side, !mix.isAuto(side));
     auto.setAttribute('aria-pressed', String(mix.isAuto(side)));
   };
-  window.addEventListener('dj-ended', ({detail: {id}}) => mix.ended(id));
+  window.addEventListener('dj-ended', ({detail: {id, loadVersion}}) => {
+    if (document.body.dataset.djMode === 'compact' && !pausedSkips.has(id)) void mix.ended(id, loadVersion);
+  });
   play.onclick = () => toggle(side);
   wave.addEventListener('pointerdown', event => {
     if (event.button === 0 && event.target.matches('canvas.dd-wave')) mix.manual(side);

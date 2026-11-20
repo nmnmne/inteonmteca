@@ -342,7 +342,7 @@
         move(deck, deck.loopStart);
         play(deck);
       } else if (audio.ended && deck.track) {
-        signal('dj-ended', { id });
+        signal('dj-ended', { id, loadVersion: deck.loadVersion });
       }
       updateLoopTimer();
       change();
@@ -844,7 +844,7 @@
       track: deck.track, loadVersion: deck.loadVersion, playing: deck.scratch ? deck.scratch.resume : !deck.audio.paused && !deck.audio.ended,
       audioRunning: context?.state === 'running' && !deck.audio.paused && !deck.audio.seeking
         && !deck.audio.ended && deck.audio.readyState >= 3,
-      audioFailed: Boolean(deck.audio.error),
+      ended: deck.audio.ended, audioFailed: Boolean(deck.audio.error),
       scratching: Boolean(deck.scratch), scratchStatus: deck.vinyl?.status || 'unavailable',
       time: position(deck), duration: duration(deck), bpm: effectiveBPM(deck),
       tempo: deck.tempo, bend: deck.bend, baseBPM: deck.baseBPM, keyLock: deck.keyLock,

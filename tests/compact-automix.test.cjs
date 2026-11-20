@@ -14,7 +14,7 @@ const tracks = [
 
 function makeDeck(track, playing = false) {
   return {
-    track, playing, audioRunning: playing, audioFailed: false, loadVersion: 1, time: playing ? 36 : 0,
+    track, playing, ended: false, audioRunning: playing, audioFailed: false, loadVersion: 1, time: playing ? 36 : 0,
     bpm: track?.bpm || 0, baseBPM: track?.bpm || 0, duration: track?.duration || 0,
     tempo: 0, bend: 0, channel: 0.8, eq: { low: 0, mid: 0, high: 0 }, filter: 0, echo: 0,
     loopBeats: 0, loopStart: null, loopEnd: null, cue: 0, keyLock: true,
@@ -22,7 +22,7 @@ function makeDeck(track, playing = false) {
   };
 }
 
-function studio({ playing = true, beforeLoad, prepareDeck, random = 0.75 } = {}) {
+function studio({ playing = true, beforeLoad, prepareDeck, random = 0.75, available = tracks } = {}) {
   const state = { A: makeDeck(tracks[0], playing), B: makeDeck(null), cross: 0, sharpCross: false };
   const statuses = [], loads = [], switched = [], loops = [], starts = [], equalizer = [], scratch = [];
   let now = 0;
@@ -52,7 +52,7 @@ function studio({ playing = true, beforeLoad, prepareDeck, random = 0.75 } = {})
     toggle(id) {
       const deck = state[id];
       deck.playing = deck.audioRunning = !deck.playing;
-      if (deck.playing) starts.push({ id, bpm: deck.bpm });
+      if (deck.playing) { deck.ended = false; starts.push({ id, bpm: deck.bpm }); }
     },
     sync(id) {
       const target = state[id === 'A' ? 'B' : 'A'].bpm;
@@ -77,10 +77,10 @@ function studio({ playing = true, beforeLoad, prepareDeck, random = 0.75 } = {})
     endScratch(id) { state[id].scratching = false; },
   };
   const library = {
-    list: () => tracks,
+    list: () => available,
     async load(id, key, isCurrent = () => true) {
       loads.push([id, key]);
-      if (beforeLoad && !await beforeLoad()) return false;
+      if (beforeLoad && !await beforeLoad(id, key)) return false;
       if (!isCurrent()) return false;
       const track = tracks.find(item => item.id === key);
       if (!track) return false;
@@ -309,4 +309,80 @@ test('a delayed selection cannot leave an ending track in an indefinite protecti
   release('selected');
   assert.equal(await pending,false);
   assert.equal(state.B.playing,false);
+});
+
+function finishDeck(deck) {
+  deck.playing = deck.audioRunning = false;
+  deck.ended = true;
+  deck.time = deck.duration;
+  return deck.loadVersion;
+}
+
+test('natural end with Auto off cues a different track at zero on that deck without touching the other', async () => {
+  for (const id of ['A', 'B']) {
+    const {mix, loads, state, starts, switched} = studio({random: 0});
+    state.B = makeDeck(tracks[0], true);
+    const other = id === 'A' ? 'B' : 'A';
+    const neighbor = structuredClone(state[other]);
+    const endedVersion = finishDeck(state[id]);
+    await mix.ended(id, endedVersion);
+    await mix.ended(id, endedVersion);
+    assert.deepEqual(loads, [[id, 'selected']]);
+    assert.equal(state[id].time, 0);
+    assert.equal(state[id].playing, false);
+    assert.deepEqual(state[other], neighbor);
+    assert.deepEqual(starts, []);
+    assert.deepEqual(switched, []);
+  }
+});
+
+test('an ordinary pause, a loop, an obsolete end event and a single-track library never queue a replacement', async () => {
+  const {mix, loads, state} = studio({playing: false});
+  await mix.ended('A', state.A.loadVersion);
+  const version = finishDeck(state.A);
+  await mix.ended('A', version - 1);
+  state.A.loopBeats = 4;
+  await mix.ended('A', version);
+  assert.deepEqual(loads, []);
+  const only = studio({available: [tracks[0]]});
+  await only.mix.ended('A', finishDeck(only.state.A));
+  assert.deepEqual(only.loads, []);
+  assert.equal(only.state.A.time, only.state.A.duration);
+});
+
+test('slow standby loading yields to manual selection, replay and Auto switches', async () => {
+  for (const action of ['choose', 'replay', 'auto']) {
+    let release;
+    const {mix, state, loads, starts} = studio({random: 0, beforeLoad: (id, key) =>
+      key === 'selected' ? new Promise(resolve => {release = resolve;}) : true});
+    const version = finishDeck(state.A);
+    const waiting = mix.ended('A', version);
+    await mix.ended('A', version);
+    if (action === 'choose') await mix.choose('A', 'third');
+    if (action === 'replay') {
+      mix.manual('A');
+      Object.assign(state.A, {playing: true, audioRunning: true, ended: false, time: 0});
+    }
+    if (action === 'auto') {
+      mix.setAuto('A', true);
+      mix.setAuto('A', false);
+    }
+    release(true);
+    await waiting;
+    assert.equal(state.A.track.id, action === 'choose' ? 'third' : 'original');
+    assert.deepEqual(loads.filter(([, key]) => key === 'selected'), [['A', 'selected']]);
+    assert.deepEqual(starts, []);
+  }
+});
+
+test('an inaccessible import is skipped and an Auto end fallback still starts a playable replacement', async () => {
+  const {mix, state, loads, starts} = studio({random: 0, beforeLoad: (id, key) => key !== 'selected'});
+  await mix.ended('A', finishDeck(state.A));
+  assert.deepEqual(loads, [['A', 'selected'], ['A', 'third']]);
+  assert.deepEqual(starts, []);
+  mix.setAuto('A', true);
+  await mix.ended('A', finishDeck(state.A));
+  assert.equal(state.A.track.id, 'original');
+  assert.equal(state.A.playing, true);
+  assert.deepEqual(starts, [{id: 'A', bpm: 120}]);
 });
