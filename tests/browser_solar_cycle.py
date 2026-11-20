@@ -1,4 +1,4 @@
-"""Render the 20-minute rotation and follow its transition to the next ten-minute day."""
+"""Render the ten-minute rotation and follow its transition to the next five-minute day."""
 import os
 from datetime import datetime, timezone
 
@@ -7,12 +7,12 @@ from playwright.sync_api import sync_playwright
 from browser_ambient_route import expose_walker
 
 BASE = os.environ.get("INTEON_BASE_URL", "http://127.0.0.1:8080").rstrip("/")
-# In a UTC browser this visit opens at 04:20 civil time. After its initial
-# synchronization and the 10- and 5-minute laps, the 20-minute lap starts at
+# In a UTC browser this visit opens at 04:30 civil time. After its initial
+# synchronization and the 5- and 2.5-minute laps, the 10-minute lap starts at
 # 05:00 in Oral, equivalent to midnight UTC for the solar calculation.
-ENTRY = int(datetime(2026, 3, 20, 4, 40, tzinfo=timezone.utc).timestamp() * 1000)
-MIDNIGHT = ENTRY + 35 * 60_000
-SOLAR_HOUR = 50_000  # One simulated hour in real milliseconds.
+ENTRY = int(datetime(2026, 3, 20, 4, 50, tzinfo=timezone.utc).timestamp() * 1000)
+MIDNIGHT = ENTRY + 17 * 60_000 + 30_000
+SOLAR_HOUR = 25_000  # One simulated hour in real milliseconds.
 
 
 def observe(page):
@@ -142,7 +142,7 @@ def exercise(browser, mobile):
     night = capture(page, night_at)
     assert night["night"] == 1 and night["intensity"] == 0 and night["updates"] == dusk["updates"], night
     assert 2 < night["brightness"] < noon["brightness"]*.7, (noon, night)
-    next_lap = MIDNIGHT + 20 * 60_000
+    next_lap = MIDNIGHT + 10 * 60_000
     next_dawn = capture(page, next_lap + (dawn_at - MIDNIGHT) // 2)
     next_noon = capture(page, next_lap + (noon_at - MIDNIGHT) // 2)
     for original, next_day in ((dawn, next_dawn), (noon, next_noon)):
@@ -157,7 +157,7 @@ def exercise(browser, mobile):
     returned = capture(page, noon_at)
     assert returned["elevation"] == noon["elevation"] and returned["levels"] > 3, returned
     assert not errors and not shadow_downloads, (errors, shadow_downloads)
-    print("phone" if mobile else "desktop", "elevations at 5-minute intervals",
+    print("phone" if mobile else "desktop", "elevations through two rotations",
           [round(row["elevation"], 3) for row in (dawn,noon,dusk,night,next_dawn,next_noon)],
           "visible noon shadow", f"{footprint:.1%}", "map", noon["map"],
           "depth passes in 2 seconds", depth_passes, flush=True)

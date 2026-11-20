@@ -57,7 +57,7 @@ def posters(browser):
         start = datetime(2026, 9, 22, 7, 46, tzinfo=timezone.utc)
         page.clock.install(time=start)
         page.goto(BASE + '/#studio', wait_until='domcontentloaded')
-        for phase, elapsed in [('dawn',0),('night',300),('dusk',610),('day',900),('dawn',1200)]:
+        for phase, elapsed in [('dawn',0),('night',150),('dusk',303),('day',450),('dawn',600)]:
             # Let the site's own visible-tab timer update the still image.
             delta = round(start.timestamp()*1000 + elapsed*1000 - page.evaluate("Date.now()"))
             if delta > 0:

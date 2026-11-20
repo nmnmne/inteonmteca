@@ -34,7 +34,7 @@ const layout = require('../yard/data/site-layout.json');
   for (const date of ['2026-03-20', '2026-06-21', '2026-12-21', '2028-02-29']) {
     const visitStart = Date.parse(date + 'T05:00:00Z');
     const visit = createVisitClock(visitStart);
-    for (const elapsed of [0, 10, 19.5, 20, 22.5, 25, 29, 30, 32, 35, 45, 55, 35 * 1000 + 20]) {
+    for (const elapsed of [0, 5, 9.75, 10, 11.25, 12.5, 14.5, 15, 16, 17.5, 22.5, 27.5, 17.5 * 1000 + 10]) {
       const epoch = visitStart + elapsed * minuteMs;
       const fast = courtyardSunForLocation(layout.origin, epoch, visit);
       const simulatedUtc = (courtyardClockTime(epoch, visit) - oralOffset + dayMs) % dayMs;
@@ -44,11 +44,11 @@ const layout = require('../yard/data/site-layout.json');
       const real = sunForLocation(layout.origin, epoch + delta);
       assert.ok(distance(fast, real) < .005, date + ' after ' + elapsed + ' real minutes');
     }
-    for (const elapsed of [20, 30, 35, 55, 65]) {
+    for (const elapsed of [10, 15, 17.5, 27.5, 32.5]) {
       const boundary = visitStart + elapsed * minuteMs;
       const before = courtyardSunForLocation(layout.origin, boundary - 1, visit);
       const after = courtyardSunForLocation(layout.origin, boundary + 1, visit);
-      assert.ok(distance(before, after) < 2 * Math.PI * 2 / (5 * minuteMs) + 1e-8);
+      assert.ok(distance(before, after) < 2 * Math.PI * 2 / (2.5 * minuteMs) + 1e-8);
     }
   }
   console.log('PASS solar azimuth, seasonal elevation, polar-axis orientation, twilight and continuous leap day');

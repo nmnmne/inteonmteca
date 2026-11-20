@@ -1,9 +1,11 @@
 const radians = Math.PI / 180;
 const minuteMs = 60000;
 const dayMs = 24 * 60 * minuteMs;
-const firstLap = 20 * minuteMs;
-const secondLap = 10 * minuteMs;
-const thirdLap = 5 * minuteMs;
+const entryLag = 20 * minuteMs;
+const firstLap = 10 * minuteMs;
+const secondLap = 5 * minuteMs;
+const thirdLap = 2.5 * minuteMs;
+const effectSecondMs = 72000; // One shader second represents 72 simulated seconds.
 const repeatMs = secondLap + thirdLap + firstLap;
 const visitKey = 'inteon.courtyard.visit-clock-v2';
 // The courtyard in Oral uses UTC+5. Its civil clock follows the visitor's
@@ -20,10 +22,11 @@ export function createVisitClock(startEpochMs) {
   const syncOffset = new Date(startEpochMs + firstLap).getTimezoneOffset();
   return {
     startEpochMs,
-    startTimeMs:timeOfDay(startEpochMs - offset * minuteMs - firstLap),
+    firstLapMs:firstLap,
+    startTimeMs:timeOfDay(startEpochMs - offset * minuteMs - entryLag),
     // Travel backward to the device's civil time at the end of the first lap,
     // including any daylight-saving transition between entry and that instant.
-    firstAdvanceMs:-dayMs + 2 * firstLap + (offset - syncOffset) * minuteMs,
+    firstAdvanceMs:-dayMs + entryLag + firstLap + (offset - syncOffset) * minuteMs,
   };
 }
 
@@ -32,9 +35,14 @@ function readVisit() {
     const visit = JSON.parse(window.sessionStorage.getItem(visitKey));
     if (visit && Number.isSafeInteger(visit.startEpochMs) &&
         Number.isInteger(visit.startTimeMs) && visit.startTimeMs >= 0 && visit.startTimeMs < dayMs &&
-        Number.isInteger(visit.firstAdvanceMs)) {
-      // Open tabs may still carry the previous forward rotation under this key.
-      if (visit.firstAdvanceMs > 0) visit.firstAdvanceMs -= 2 * dayMs;
+        Number.isInteger(visit.firstAdvanceMs) && Math.abs(visit.firstAdvanceMs) < 3 * dayMs) {
+      // Older visits used a twenty-minute first lap. Preserve the original
+      // entrance, calculating the time-zone offset for its new rendezvous.
+      if (visit.firstLapMs !== firstLap) {
+        const updated = createVisitClock(visit.startEpochMs);
+        visit.firstAdvanceMs = updated.firstAdvanceMs;
+        visit.firstLapMs = firstLap;
+      }
       if (visit.firstAdvanceMs < 0 && visit.firstAdvanceMs > -3 * dayMs) return visit;
     }
   } catch { /* A document can run the clock without storage. */ }
@@ -83,10 +91,10 @@ export function courtyardClockTime(epochMs, visit=visitClock) {
   return timeOfDay(courtyardTimeline(epochMs, visit));
 }
 
-// Shaders use seconds at the normal 20-minute rotation speed. Keep full laps
-// in this phase so ripples, clouds and rain never jump when midnight passes.
+// Keep the scale of the weather effects independent of lap length. Elapsed whole
+// laps stay in the phase so rain and ripples accelerate smoothly across midnight.
 export function courtyardEffectSeconds(epochMs, visit=visitClock) {
-  return courtyardTimeline(epochMs, visit) / (dayMs / firstLap * 1000);
+  return courtyardTimeline(epochMs, visit) / effectSecondMs;
 }
 
 function smooth(value, low, high) {
