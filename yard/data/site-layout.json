@@ -1613,7 +1613,7 @@
       "id": "house-14",
       "osm": "14",
       "role": "music-wall",
-      "roof": "unknown-flat-gray",
+      "roof": "flat",
       "floors": 9,
       "heightM": 25.2,
       "heightStatus": "osm-9-floors-times-2.8-estimated",
@@ -1665,7 +1665,8 @@
       ],
       "facadeMaterialId": "house14-brick-light",
       "plinthMaterialId": "house14-plinth",
-      "roofMaterialId": "unknown-flat-gray",
+      "roofMaterialId": "bitumen-felt",
+      "roofParapetM": { "width": 0.4, "height": 0.4 },
       "source": "osm-plan-svg",
       "confidence": "photo-facade",
       "facadeProject": {

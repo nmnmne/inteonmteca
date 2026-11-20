@@ -63,6 +63,7 @@ export function createYardMaterials() {
   const windowNight = { value: 0 };
   const windowMaterial = createWindowMaterial(environment, interiors, windowNight);
   const balconyMaterial = createBalconyMaterial();
+  let roofing;
 
   return {
     windowNight,
@@ -92,6 +93,20 @@ export function createYardMaterials() {
     },
     asphalt(width, height) {
       return surface('asphalt', width / 4.04, height / 4.04);
+    },
+    roofs() {
+      if (!roofing) {
+        // Metre UVs keep the same strip width on the tower and the smaller roofs.
+        roofing = {
+          felt: surface('roof-felt', 1 / 8, 1 / 3.76, 0xb5b4b3),
+          flat: surface('roof-felt', 1 / 8, 1 / 3.76, 0xf4f5f3),
+          metal: surface('roof-zinc', 1 / 2.04, 1 / 2.76, 0xd1d5d2),
+          red: surface('roof-zinc', 1 / 2.04, 1 / 2.76, 0xe68265),
+          parapet: surface('roof-coping', 1 / 3.2, 1 / .8),
+        };
+        for (const material of Object.values(roofing)) material.side = THREE.DoubleSide;
+      }
+      return roofing;
     },
     utility(width, height) {
       return tiled(utility, width, height, 2.4, 2.8);

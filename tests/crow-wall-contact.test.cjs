@@ -34,6 +34,26 @@ test('a notch inside a house bounding box is still outdoors, even near its reent
   near(wall.distanceToHouse(0,2,4,6),-.98);
 });
 
+test('the ten-centimetre crow effect follows the top and both sides of the nine-storey parapet', async () => {
+  const {createCrowWallContact} = await import('../yard/crow-wall-contact.js');
+  const {roofParapet} = await import('../yard/roof-geometry.js');
+  const index = layout.buildings.findIndex(b=>b.id==='house-14');
+  const rim = roofParapet(layout.buildings[index]), wall = createCrowWallContact(layout);
+  const [a,b] = rim.outer, dx=b[0]-a[0], dz=b[1]-a[1], length=Math.hypot(dx,dz);
+  const side = Math.sign(dx*(rim.inner[0][1]-a[1])-dz*(rim.inner[0][0]-a[0]));
+  function sample(inward, height, limit) {
+    const x=(a[0]+b[0])/2-inward*side*dz/length;
+    const z=(a[1]+b[1])/2+inward*side*dx/length;
+    return wall.distanceToHouse(index,x,rim.baseY+height,z,limit);
+  }
+  near(sample(.20,.50,.101),.10);
+  near(sample(-.10,.30),.10);
+  near(sample(.50,.30),.10);
+  near(sample(.20,.35),-.05);
+  near(sample(2,.25),.25);
+  near(sample(.46,.48),.10);
+});
+
 test('the current courtyard sends adjacent houses to the shader and culls open sky and deep interiors', async () => {
   const {createCrowWallContact} = await import('../yard/crow-wall-contact.js');
   const wall = createCrowWallContact(layout);

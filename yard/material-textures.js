@@ -20,7 +20,11 @@ export function createSurfaceLibrary() {
   const images = new Map();
   const tiles = new Map();
   const finishes = new Map();
-  const relief = { brick: .012, plaster: .007, concrete: .014, asphalt: .018, soil: .031, bark: .025, paint: .005 };
+  const relief = {
+    brick: .012, plaster: .007, concrete: .014, asphalt: .018, soil: .031, bark: .025, paint: .005,
+    'roof-felt': .018, 'roof-zinc': .042, 'roof-coping': .019,
+  };
+  const metalness = { paint: .13, 'roof-zinc': .28, 'roof-coping': .34 };
   return function surface(name, repeatX = 1, repeatY = 1, color = 0xffffff) {
     const tileKey = `${name}/${repeatX}/${repeatY}`;
     if (!tiles.has(tileKey)) {
@@ -56,7 +60,7 @@ export function createSurfaceLibrary() {
       const {map, detail} = tiles.get(tileKey);
       finishes.set(key, new THREE.MeshStandardMaterial({
         color, map, bumpMap: detail, bumpScale: relief[name], roughnessMap: detail,
-        roughness: name === 'paint' ? .77 : 1, metalness: name === 'paint' ? .13 : 0,
+        roughness: name === 'paint' ? .77 : 1, metalness: metalness[name] || 0,
       }));
     }
     return finishes.get(key);

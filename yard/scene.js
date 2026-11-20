@@ -6,6 +6,7 @@ import { addFiveStoreyReference } from './five-storey-reference.js?v=lawn-pipe-c
 import { addHouseRelief } from "./house14-relief.js?v=refinement-20261009-2";
 import { addTowerReference } from './tower-reference.js?v=20261009-2';
 import { facadeNormal } from "./facade-frame.js";
+import { addRoof, createRoofPerches } from "./roof-geometry.js";
 import { createYardMaterials } from "./materials.js";
 import { facadeSpec, openingsForFacade } from "./models.js?v=refinement-20261009-2";
 import { addHruDetails } from "./hru-details.js";
@@ -13,16 +14,11 @@ import { addRoadDetails } from "./road-details.js";
 import { addCourtyardTrees, addLandscaping } from "./landscaping.js";
 import { addCourtyardClouds } from "./clouds.js";
 import { addCourtyardFurniture } from './courtyard-furniture.js';
+import { createRoofPigeons } from './roof-pigeons.js';
 import { addCourtyardWeather } from "./courtyard-weather.js";
 import { addReferenceUtilities, addUtilityStructures } from "./site-structures.js";
 import { addGasPipes, addSiteEntrances } from "./site-details.js?v=five-storey-20261006-2";
 import { fixedSunForLayout } from "./baked-lighting.js";
-
-const ROOF_COLOR = {
-  red: 0xa34a3a,
-  metal: 0xd5d8dc,
-  "unknown-flat-gray": 0x8d9298,
-};
 
 function outwardNormal(a, b) {
   const dx = b[0] - a[0];
@@ -154,72 +150,6 @@ function addOpeningMeshes(scene, materials, list) {
   scene.add(balconyMesh);
   scene.add(balconyRail);
   scene.add(balconyPost);
-}
-
-function roofingMaterial(materials, color) {
-  // Mineral granules catch the light up close; staggered laps of the rolled
-  // roofing remain legible from the crow's height. The tile covers 12 × 4 m.
-  const roof = materials.asphalt(1, 1).clone();
-  roof.color.set(color);
-  roof.roughness = .94;
-  roof.bumpScale *= .35;
-  roof.side = THREE.DoubleSide;
-  const sheet = document.createElement('canvas');
-  sheet.width = 512; sheet.height = 256;
-  const ink = sheet.getContext('2d');
-  ink.fillStyle = '#fff'; ink.fillRect(0, 0, sheet.width, sheet.height);
-  for (let row = 0; row < 4; row++) {
-    const y = row * 64;
-    ink.fillStyle = ['#e9e9e9','#fafafa','#eee','#f5f5f5'][row];
-    ink.fillRect(0, y, 512, 64);
-    ink.fillStyle = '#898989';
-    ink.fillRect(0, y, 512, 2);
-    ink.fillRect([36,194,326,438][row], y, 2, 64);
-  }
-  const seams = new THREE.CanvasTexture(sheet);
-  seams.wrapS = seams.wrapT = THREE.RepeatWrapping;
-  seams.repeat.set(1/12, 1/4);
-  roof.aoMap = seams;
-  roof.aoMapIntensity = .85;
-  return roof;
-}
-
-function addRoof(scene, footprint, y, material, pitched = false) {
-  if (pitched && footprint.length === 4) {
-    const [a, b, c, d] = footprint;
-    const ridgeA = [(a[0] + d[0]) / 2, y + 0.9, (a[1] + d[1]) / 2];
-    const ridgeB = [(b[0] + c[0]) / 2, y + 0.9, (b[1] + c[1]) / 2];
-    const vertices = new Float32Array([
-      a[0], y, a[1], b[0], y, b[1], c[0], y, c[1], d[0], y, d[1],
-      ...ridgeA, ...ridgeB,
-    ]);
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
-    geometry.setAttribute("uv", new THREE.Float32BufferAttribute(
-      Array.from({length: vertices.length / 3}, (_, i) => [vertices[i*3], -vertices[i*3+2]]).flat(), 2));
-    geometry.setIndex([0, 1, 5, 0, 5, 4, 3, 4, 5, 3, 5, 2, 0, 4, 3, 1, 2, 5]);
-    geometry.computeVertexNormals();
-    scene.add(new THREE.Mesh(geometry, material));
-    return;
-  }
-  const shape = new THREE.Shape();
-  shape.moveTo(footprint[0][0], -footprint[0][1]);
-  for (let index = 1; index < footprint.length; index += 1) shape.lineTo(footprint[index][0], -footprint[index][1]);
-  const geometry = new THREE.ShapeGeometry(shape);
-  const uv = geometry.attributes.uv;
-  const edge = footprint.reduce((best, a, i) => {
-    const b = footprint[(i+1) % footprint.length], dx = b[0]-a[0], dz = b[1]-a[1];
-    const length = Math.hypot(dx,dz);
-    return length > best.length ? {x:dx/length, z:dz/length, length} : best;
-  }, {x:1, z:0, length:0});
-  for (let i = 0; i < uv.count; i++) {
-    const x = uv.getX(i), z = -uv.getY(i);
-    uv.setXY(i, x*edge.x + z*edge.z, z*edge.x - x*edge.z);
-  }
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.rotation.x = -Math.PI / 2;
-  mesh.position.y = y;
-  scene.add(mesh);
 }
 
 function edgeFrame(a, b) {
@@ -393,7 +323,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
   addCourtyardClouds(scene);
   const materials = createYardMaterials();
   scene.userData.windowNight = materials.windowNight;
-  const roofs = new Map();
+  const roofs = materials.roofs();
   const solids = [];
 
   const outside = new THREE.Mesh(new THREE.PlaneGeometry(1200, 1200), materials.soil(1200, 1200));
@@ -456,9 +386,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
       if (building.id === music.buildingId && onSegment) mesh.name = "music-wall";
       if (!isMusic && building.id !== 'tower-34' && !building.facadeProject?.referenceStyle && !building.facadeProject?.reliefSections?.some(section => section.edgeIndex === index)) collectOpenings(openings, a, b, building, index);
     }
-    const roofColor = ROOF_COLOR[building.roof] || 0x8d9298;
-    if (!roofs.has(roofColor)) roofs.set(roofColor, roofingMaterial(materials, roofColor));
-    addRoof(scene, ring, building.heightM + 0.05, roofs.get(roofColor), building.roof === "red");
+    addRoof(scene, building, roofs);
     pendingDetails.push({ building, add() {
       if (progressive) {
         const textured = materials.facade(facadeId);
@@ -525,6 +453,8 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
   scene.add(sun);
 
   batchStaticDecoration(scene, solids);
+  const roofPigeons = createRoofPigeons(createRoofPerches(layout));
+  scene.add(roofPigeons.group);
   edgeEffect.attachBuildings();
 
   const loadNextDetail = (position = origin) => {
@@ -535,7 +465,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
     edgeEffect.attachBuildings();
     return pendingDetails.length > 0;
   };
-  return { scene, solids, logo, edgeEffect, loadNextDetail };
+  return { scene, solids, logo, edgeEffect, loadNextDetail, roofPigeons };
 }
 
 export function drawScheme(canvas, layout) {

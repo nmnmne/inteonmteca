@@ -63,6 +63,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     crowModels?.dispose();
     showCourtyardResident(false);
     residentModel?.dispose();
+    yard?.roofPigeons.dispose();
     if (yard) releaseScene(yard.scene);
     if (renderer) {
       renderer.dispose();
@@ -131,6 +132,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
           camera.updateProjectionMatrix();
         }
         solar.update(Date.now(), camera);
+        if (yard.roofPigeons.group.visible) yard.roofPigeons.update(reducedMotion.matches ? 0 : dt, camera);
         crowModels.update(flock.birds, dt, yard.scene.userData.virtuality, yard.scene.userData.solarLighting.daylight);
         if (residentModel) {
           const show = flock.visit?.amount > 0 && yard.scene.userData.virtuality < .5

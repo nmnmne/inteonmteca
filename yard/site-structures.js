@@ -1,45 +1,6 @@
 import * as THREE from "./vendor/three.module.js";
 
-function roofGeometry(footprint) {
-  const shape = new THREE.Shape();
-  footprint.forEach(([x, z], index) => {
-    if (index === 0) shape.moveTo(x, -z);
-    else shape.lineTo(x, -z);
-  });
-  shape.closePath();
-  return new THREE.ShapeGeometry(shape).rotateX(-Math.PI / 2);
-}
-
-function addGableRoof(group, footprint, baseY, rise, material) {
-  const [a, b, c, d] = footprint;
-  const ab = Math.hypot(b[0] - a[0], b[1] - a[1]);
-  const ad = Math.hypot(d[0] - a[0], d[1] - a[1]);
-  const eaves = ab >= ad ? [[a, b], [d, c]] : [[a, d], [b, c]];
-  const ridgeA = [
-    (eaves[0][0][0] + eaves[1][0][0]) / 2,
-    baseY + rise,
-    (eaves[0][0][1] + eaves[1][0][1]) / 2,
-  ];
-  const ridgeB = [
-    (eaves[0][1][0] + eaves[1][1][0]) / 2,
-    baseY + rise,
-    (eaves[0][1][1] + eaves[1][1][1]) / 2,
-  ];
-  const vertices = new Float32Array([
-    eaves[0][0][0], baseY, eaves[0][0][1],
-    eaves[0][1][0], baseY, eaves[0][1][1],
-    eaves[1][0][0], baseY, eaves[1][0][1],
-    eaves[1][1][0], baseY, eaves[1][1][1],
-    ...ridgeA,
-    ...ridgeB,
-  ]);
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
-  geometry.setIndex([0, 1, 5, 0, 5, 4, 2, 4, 5, 2, 5, 3]);
-  geometry.computeVertexNormals();
-  const roof = new THREE.Mesh(geometry, material);
-  group.add(roof);
-}
+import { addRoof } from "./roof-geometry.js";
 
 function addKioskPipes(group, footprint, wallHeight) {
   let best = null;
@@ -100,15 +61,7 @@ export function addUtilityStructures(scene, materials, structures = []) {
       group.add(wall);
     });
 
-    if (structure.footprint.length === 4) {
-      const roofMaterial = materials.paintedMetal(0x8a8d88);
-      roofMaterial.side = THREE.DoubleSide;
-      addGableRoof(group, structure.footprint, height, 0.85, roofMaterial);
-    } else {
-      const roof = new THREE.Mesh(roofGeometry(structure.footprint), materials.paintedMetal(0x8a8d88));
-      roof.position.y = height + 0.08;
-      group.add(roof);
-    }
+    addRoof(group, structure, materials.roofs());
     addKioskPipes(group, structure.footprint, height);
     group.name = structure.id;
     scene.add(group);

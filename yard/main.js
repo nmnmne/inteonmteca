@@ -48,7 +48,7 @@ if (location.protocol === "file:") {
     : params.has("photo") && layout.photoView
       ? layout.photoView
       : resumed || layout.spawn;
-  const { scene, solids, logo, edgeEffect, loadNextDetail } = createYardScene(layout, lighting, { progressive: true, origin: start });
+  const { scene, solids, logo, edgeEffect, loadNextDetail, roofPigeons } = createYardScene(layout, lighting, { progressive: true, origin: start });
   // Network/module loading must not consume the lighting hold before entrance.
   window.yardWalkClock.enteredAt = Date.now();
   const lightingTransition = createLightingTransition(scene, layout, lighting, window.yardWalkClock);
@@ -75,9 +75,10 @@ if (location.protocol === "file:") {
   const raycaster = new THREE.Raycaster();
   const coarsePointer = matchMedia("(pointer: coarse)").matches;
   if (coarsePointer) input.setMode("walking");
-  function renderScene() {
+  function renderScene(roostDelta = 0) {
     const level = Number(document.documentElement.dataset.graphicsLevel) || (coarsePointer ? 3 : 5);
     scene.userData.updateLandscapingDetail?.(camera.position, level);
+    if (roofPigeons.group.visible) roofPigeons.update(roostDelta, camera);
     renderer.render(scene, camera);
   }
   let nearWall = false;
@@ -85,6 +86,7 @@ if (location.protocol === "file:") {
   let last = performance.now();
   let frameHandle = null;
   let lastMapDraw = 0;
+  let nextRoostCheck = 0, roostVisible = false, lastRoostDraw = null;
   let appliedLook = { yaw: 0, pitch: 0 };
   const syncLook = (next) => {
     if (returnPose) return;
@@ -275,7 +277,13 @@ if (location.protocol === "file:") {
     }
     const animateDecal = !reducedMotion.matches && camera.position.distanceToSquared(logo.position) < 35 ** 2 &&
       screenLogo.copy(logo.position).project(camera).lengthSq() < 2;
-    const effectFrame = (edgeEffect?.needsAnimation || animateDecal) ? Math.floor(now / 85) : 0;
+    if (now >= nextRoostCheck) {
+      roostVisible = roofPigeons.group.visible && roofPigeons.hasVisibleRoost(camera);
+      nextRoostCheck = now + 450;
+    }
+    const animateRoost = roostVisible && roofPigeons.group.visible && !reducedMotion.matches;
+    if (!animateRoost) lastRoostDraw = null;
+    const effectFrame = (edgeEffect?.needsAnimation || animateDecal || animateRoost) ? Math.floor(now / 85) : 0;
     const dirty = shouldRender(body, canvas.width, canvas.height, `${renderRevision}:${effectFrame}:${Boolean(logo.userData.inkReady)}`);
     const ratio = quality.sample(now, dirty && !returnPose);
     if (ratio !== null) {
@@ -285,7 +293,9 @@ if (location.protocol === "file:") {
     if (!returnPose && !document.hidden && !renderer.getContext().isContextLost() && dirty) {
       updateWater(now / 1000);
       if (scene.userData.grassWind) scene.userData.grassWind.value = now / 1000;
-      renderScene();
+      const roostDelta = animateRoost && lastRoostDraw !== null ? Math.min(.15, (now-lastRoostDraw)/1000) : 0;
+      lastRoostDraw = animateRoost ? now : null;
+      renderScene(roostDelta);
       document.documentElement.dataset.yardReady = "true";
       if (firstFrame) {
         firstFrame = false;
@@ -346,6 +356,7 @@ if (location.protocol === "file:") {
     cancelAnimationFrame(frameHandle);
     frameHandle = null;
     lightingTransition.dispose();
+    roofPigeons.dispose();
     const resources = new Set();
     scene.traverse(mesh => {
       if (mesh.geometry) resources.add(mesh.geometry);

@@ -190,6 +190,7 @@ void poseCrow(inout vec3 p, inout vec3 n){
 function addWallContactShader(shader, wallContact, clock) {
   shader.uniforms.crowEdges = {value:wallContact.edges};
   shader.uniforms.crowHouses = {value:wallContact.buildings};
+  shader.uniforms.crowParapets = {value:wallContact.parapets};
   shader.uniforms.crowContactTime = clock;
   const varyings = `flat varying vec2 crowHouseIds;
     varying vec3 crowWorld;
@@ -204,17 +205,15 @@ function addWallContactShader(shader, wallContact, clock) {
   shader.fragmentShader = varyings+`
     uniform vec4 crowEdges[${wallContact.edges.length / 4}];
     uniform vec4 crowHouses[${wallContact.buildings.length / 4}];
+    uniform vec2 crowParapets[${wallContact.parapets.length / 2}];
     uniform float crowContactTime;
     // Signed distance to the extruded footprint, including re-entrant corners and roof edges.
-    float distanceToHouse(float candidate) {
-      if (candidate == -2.) return -2.;
-      if (candidate < 0.) return 2.;
-      vec4 house = crowHouses[int(candidate)];
+    float ringDistance(vec2 range) {
       bool inside = false;
       float nearestSq = 1e12;
       for (int i=0; i<${wallContact.maxEdges}; i++) {
-        if (i >= int(house.y)) break;
-        vec4 edge = crowEdges[int(house.x)+i];
+        if (i >= int(range.y)) break;
+        vec4 edge = crowEdges[int(range.x)+i];
         vec2 ab = edge.zw-edge.xy, ap = crowWorld.xz-edge.xy;
         vec2 offset = ap-ab*clamp(dot(ap,ab)/max(dot(ab,ab),1e-10),0.,1.);
         nearestSq = min(nearestSq, dot(offset,offset));
@@ -222,8 +221,24 @@ function addWallContactShader(shader, wallContact, clock) {
           if ((ap.x*ab.y - ap.y*ab.x)*sign(ab.y) < 0.) inside = !inside;
         }
       }
-      vec2 d = vec2((inside ? -1. : 1.)*sqrt(nearestSq), max(house.z-crowWorld.y,crowWorld.y-house.w));
+      return (inside ? -1. : 1.)*sqrt(nearestSq);
+    }
+    float extrusionDistance(vec2 d) {
       return length(max(d,0.)) + min(max(d.x,d.y),0.);
+    }
+    float distanceToHouse(float candidate) {
+      if (candidate == -2.) return -2.;
+      if (candidate < 0.) return 2.;
+      vec4 house = crowHouses[int(candidate)];
+      vec2 rim = crowParapets[int(candidate)];
+      float horizontal = ringDistance(house.xy);
+      float fromFloor = house.z-crowWorld.y, fromDeck = crowWorld.y-house.w;
+      float d = extrusionDistance(vec2(horizontal,max(fromFloor,fromDeck)));
+      if (rim.y>0. && (fromDeck>0. || fromDeck>max(horizontal,fromFloor))) {
+        float inner = ringDistance(vec2(rim.x,house.y));
+        d = min(d,extrusionDistance(vec2(max(horizontal,-inner),max(fromFloor,crowWorld.y-rim.y))));
+      }
+      return d;
     }
     vec3 holographicFeathers(vec3 physical) {
       if (all(equal(crowHouseIds,vec2(-1.)))) return physical;
