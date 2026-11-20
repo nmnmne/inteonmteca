@@ -23,8 +23,20 @@ if (-not $aws) {
 }
 
 function Invoke-Aws {
-  & $aws @args | Out-Host
-  $exitCode = $LASTEXITCODE
+  if ($IsLinux -and $aws.CommandType -eq 'Application') {
+    # Keep S3 include/exclude patterns literal when PowerShell runs on Linux.
+    $start = [System.Diagnostics.ProcessStartInfo]::new($aws.Source)
+    $start.UseShellExecute = $false
+    foreach ($argument in $args) { $start.ArgumentList.Add([string]$argument) }
+    $process = [System.Diagnostics.Process]::Start($start)
+    try {
+      $process.WaitForExit()
+      $exitCode = $process.ExitCode
+    } finally { $process.Dispose() }
+  } else {
+    & $aws @args | Out-Host
+    $exitCode = $LASTEXITCODE
+  }
   if ($exitCode -ne 0) {
     throw "AWS CLI failed with exit code $exitCode. Release stopped; entry files may not have been published."
   }
