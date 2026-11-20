@@ -1,12 +1,17 @@
 (() => {
   'use strict';
 
+  const preMs = 10_000, blendMs = 20_000, postMs = 10_000;
+  const handoffMs = preMs + blendMs;
+
   const opposite = id => id === 'A' ? 'B' : 'A';
   const clamp = value => Math.max(0, Math.min(1, value));
   const ramp = (value, start, end) => {
     const t = clamp((value - start) / (end - start));
     return t * t * (3 - 2 * t);
   };
+
+  const towards = (value, target, amount) => value + (target - value) * amount;
 
   function create(engine, library, {onDeckChange, onStatus}) {
     const auto = new Set();
@@ -26,7 +31,7 @@
       if (enabled) auto.add(id);
       else {
         auto.delete(id);
-        if (mix?.automatic && mix.from === id) cancel();
+        if (mix?.automatic && (mix.stage === 'post' ? mix.to : mix.from) === id) cancel();
       }
       schedule();
     }
@@ -42,9 +47,28 @@
     function close(completed, message = '') {
       const job = mix;
       if (!job) return;
-      mix = null;
       const {from, to, source, incoming} = job;
       const state = engine.snapshot();
+      if (job.stage === 'post') {
+        mix = null;
+        if (state[to].loadVersion === incoming.loadVersion) engine.batch(() => {
+          engine.setFilter(to, incoming.filter);
+          engine.setEcho(to, incoming.echo);
+          if (state[to].tempo !== incoming.tempo) engine.setTempo(to, incoming.tempo);
+          if (job.holdTailLoop) engine.setLoop(to, 0);
+        });
+        onStatus(message);
+        schedule();
+        return;
+      }
+      if (completed) {
+        job.stage = 'post';
+        const deck = state[to];
+        const rate = (1 + Math.max(deck.tempo, incoming.tempo) / 100) * (1 + deck.bend / 100);
+        // Keep a short auto track audible until it can stage its successor.
+        job.holdTailLoop = auto.has(from) && deck.duration > 0
+          && (deck.duration - deck.time) / rate <= postMs / 1000 + 1;
+      } else mix = null;
       engine.batch(() => {
         if (state[from].loadVersion === source.loadVersion) {
           if (job.scratch && state[from].scratching) engine.endScratch(from);
@@ -54,9 +78,12 @@
         }
         if (incoming && state[to].loadVersion === incoming.loadVersion) {
           if (!completed && state[to].playing) engine.toggle(to);
-          engine.setLoop(to, 0);
-          restoreTone(to, incoming);
+          if (!job.holdTailLoop) engine.setLoop(to, 0);
           if (completed) engine.setChannel(to, source.channel);
+          else {
+            restoreTone(to, incoming);
+            if (state[to].tempo !== incoming.tempo) engine.setTempo(to, incoming.tempo);
+          }
         }
         if (incoming) {
           engine.setCrossCurve(job.sharpCross);
@@ -67,7 +94,7 @@
         if (auto.delete(from)) auto.add(to);
         onDeckChange(to);
       }
-      onStatus(message);
+      onStatus(completed ? 'Эффекты после перехода' : message);
       schedule();
     }
 
@@ -90,6 +117,19 @@
         if (engine.setLoop(id, beats, bpm)) return beats;
       }
       return 0;
+    }
+
+    function loopSource(job) {
+      if (!job.beats) job.beats = setUsableLoop(job.from, 8, job.bpm);
+    }
+
+    function guardEnding(job, deck, untilBlend) {
+      if (job.beats || !deck.duration) return;
+      const rate = (1 + deck.tempo / 100) * (1 + deck.bend / 100);
+      const remaining = (deck.duration - deck.time) / rate;
+      // The pre-effect normally plays over the uninterrupted original. Hold
+      // only its last two seconds if the incoming decoder or prelude needs longer.
+      if (remaining <= Math.min(2, untilBlend / 1000 + .35)) loopSource(job);
     }
 
     async function choose(id, selection, automatic = false, resume = false) {
@@ -121,9 +161,10 @@
       }
       const bpm = source.bpm || 120;
       const job = {from, to, source, automatic, bpm, cross: state.cross, sharpCross: state.sharpCross,
-        stage: 'load', incoming: null, scratch: false, loopStep: 0, elapsed: 0};
+        stage: 'load', incoming: null, scratch: false, loopStep: 0,
+        requestedAt:performance.now(), beats:source.loopBeats};
       mix = job;
-      job.beats = setUsableLoop(from, source.loopBeats || 8, bpm);
+      guardEnding(job, source, preMs);
       schedule();
       onStatus('Подготовка трека');
       try {
@@ -154,7 +195,7 @@
           engine.toggle(to);
         });
         job.stage = 'ready';
-        job.last = job.waitSince = performance.now();
+        job.waitSince = performance.now();
         return true;
       } catch {
         fail(job);
@@ -162,19 +203,36 @@
       }
     }
 
+    function applyLead(job, progress) {
+      const amount = ramp(progress, 0, 1);
+      engine.setFilter(job.from, towards(job.source.filter, 1, .14 * amount));
+      engine.setEcho(job.from, towards(job.source.echo, 1, .16 * amount));
+    }
+
+    function applyTail(job, progress) {
+      const remaining = 1 - ramp(progress, 0, 1);
+      if (job.syncedTempo !== job.incoming.tempo) {
+        engine.setTempo(job.to, towards(job.incoming.tempo, job.syncedTempo, remaining));
+      }
+      engine.setFilter(job.to, towards(job.incoming.filter, 1, .12 * remaining));
+      engine.setEcho(job.to, towards(job.incoming.echo, 1, .19 * remaining));
+    }
+
     function applyFade(job, p, time) {
       const {from, to, source, incoming} = job;
       engine.setCross((from === 'A' ? 1 : -1) * (2 * ramp(p, 0, 1) - 1));
-      engine.setEQ(to, 'low', -24 * (1 - ramp(p, .38, .72)));
-      engine.setEQ(from, 'low', source.eq.low + (-24 - source.eq.low) * ramp(p, .22, .57));
-      engine.setEQ(to, 'mid', -7 * (1 - ramp(p, 0, .6)));
-      engine.setEQ(from, 'mid', source.eq.mid + (-9 - source.eq.mid) * ramp(p, .48, 1));
-      engine.setFilter(to, incoming.filter - .30 * (1 - ramp(p, 0, .65)));
-      engine.setFilter(from, source.filter + (.52 - source.filter) * ramp(p, .38, .97));
-      engine.setEcho(from, source.echo + (.34 - source.echo) * ramp(p, .53, .9));
+      engine.setEQ(to, 'low', towards(-24, incoming.eq.low, ramp(p, .38, .72)));
+      engine.setEQ(from, 'low', towards(source.eq.low, -24, ramp(p, .22, .57)));
+      engine.setEQ(to, 'mid', towards(-7, incoming.eq.mid, ramp(p, 0, .6)));
+      engine.setEQ(from, 'mid', towards(source.eq.mid, -9, ramp(p, .48, 1)));
+      engine.setFilter(to, towards(-.30, incoming.filter, ramp(p, 0, .65))
+        + (1 - incoming.filter) * .12 * ramp(p, .65, 1));
+      engine.setEcho(to, towards(incoming.echo, 1, .19 * ramp(p, .65, 1)));
+      engine.setFilter(from, towards(towards(source.filter, 1, .14), .52, ramp(p, .38, .97)));
+      engine.setEcho(from, towards(towards(source.echo, 1, .16), .34, ramp(p, .53, .9)));
       const step = p >= .84 ? 3 : p >= .66 ? 2 : p >= .44 ? 1 : 0;
       if (!job.scratch && step > job.loopStep && job.beats) {
-        engine.setLoop(from, Math.max(.5, job.beats / (2 ** step)), job.bpm);
+        engine.setLoop(from, Math.max(Math.min(.5, job.beats), job.beats / (2 ** step)), job.bpm);
         job.loopStep = step;
       }
       // One short baby scratch on the outgoing beat. The incoming deck carries the rhythm.
@@ -201,31 +259,53 @@
 
     function advance(job, state, time) {
       const source = state[job.from], incoming = state[job.to];
-      if (!source.playing || source.loadVersion !== job.source.loadVersion) { close(false); return; }
+      // After handoff the old deck is free and may already have a different track.
+      if (job.stage !== 'post' && (!source.playing || source.loadVersion !== job.source.loadVersion)) {
+        close(false); return;
+      }
+      if (job.stage === 'load' || job.stage === 'ready' || job.stage === 'pre') {
+        const untilBlend = job.startedAt === undefined ? preMs : Math.max(0, preMs - (time - job.startedAt));
+        guardEnding(job, source, untilBlend);
+      }
       if (!job.incoming) {
-        if (job.loadStarted !== undefined && time - job.loadStarted > 20000) fail(job);
+        if (job.loadStarted === undefined ? time - job.requestedAt > 120000 : time - job.loadStarted > 20000) fail(job);
         return;
       }
       if (incoming.loadVersion !== job.incoming.loadVersion || incoming.audioFailed) { fail(job); return; }
-      const dt = Math.max(0, time - job.last);
-      job.last = time;
-      if (!incoming.audioRunning) {
-        // A stalled incoming stream cannot carry the programme late in a blend.
-        if (time - job.waitSince > (job.elapsed > 0 ? 900 : 12000)) fail(job);
+      if (job.stage !== 'post') {
+        if (!incoming.audioRunning) {
+          // A stalled incoming stream cannot carry the programme late in a blend.
+          if (time - job.waitSince > (job.stage === 'fade' ? 900 : 12000)) fail(job);
+          return;
+        }
+        job.waitSince = time;
+        if (job.stage === 'ready') {
+          if (source.baseBPM && incoming.baseBPM) engine.sync(job.to);
+          job.syncedTempo = engine.snapshot()[job.to].tempo;
+          job.startedAt = time;
+          job.stage = 'pre';
+          onStatus('Эффекты перед переходом');
+        }
+      }
+      // Phase boundaries all use the same monotonic clock, independent of the
+      // beat grid, callback jitter and the device's render frame rate.
+      const elapsed = time - job.startedAt;
+      if (elapsed < preMs) {
+        engine.batch(() => applyLead(job, elapsed / preMs));
         return;
       }
-      job.waitSince = time;
-      if (job.stage === 'ready') {
-        // Correct the phase once the incoming decoder is running, still behind a closed fader.
-        if (source.baseBPM && incoming.baseBPM) engine.sync(job.to);
+      if (job.stage === 'pre') {
+        loopSource(job);
         job.stage = 'fade';
         onStatus('Сведение ' + job.from + ' → ' + job.to);
-        return;
       }
-      job.elapsed += dt;
-      const progress = clamp(job.elapsed * job.bpm / (60000 * 16));
-      engine.batch(() => applyFade(job, progress, time));
-      if (progress === 1) close(true);
+      if (job.stage === 'fade') {
+        engine.batch(() => applyFade(job, clamp((elapsed - preMs) / blendMs), time));
+        if (elapsed < handoffMs) return;
+        close(true);
+      }
+      if (elapsed >= handoffMs + postMs || !incoming.playing) close(false);
+      else engine.batch(() => applyTail(job, (elapsed - handoffMs) / postMs));
     }
 
     function pick(current) {
@@ -251,13 +331,14 @@
         if (!deck.playing || deck.loopBeats || deck.scratching || state[opposite(id)].playing || !deck.duration) continue;
         const rate = (1 + deck.tempo / 100) * (1 + deck.bend / 100);
         const remaining = (deck.duration - deck.time) / rate;
-        if (remaining > Math.max(8, 24 * 60 / (deck.bpm || 120))) continue;
+        if (remaining > Math.min(handoffMs / 1000, deck.duration / rate / 2)) continue;
         const key = pick(deck.track.id);
         if (key) { void choose(id, key, true); return; }
       }
     }
 
     function ended(id) {
+      if (mix?.stage === 'post' && mix.to === id) close(false);
       if (mix || directLoad || !auto.has(id)) return;
       const state = engine.snapshot()[id];
       const key = pick(state.track?.id) || state.track?.id;

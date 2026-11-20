@@ -22,9 +22,9 @@ function makeDeck(track, playing = false) {
   };
 }
 
-function studio({ playing = true, beforeLoad, random = 0.75 } = {}) {
+function studio({ playing = true, beforeLoad, prepareDeck, random = 0.75 } = {}) {
   const state = { A: makeDeck(tracks[0], playing), B: makeDeck(null), cross: 0, sharpCross: false };
-  const loads = [], switched = [], loops = [], starts = [], equalizer = [], scratch = [];
+  const statuses = [], loads = [], switched = [], loops = [], starts = [], equalizer = [], scratch = [];
   let now = 0;
   const timers = new Map();
   let nextTimer = 0;
@@ -54,7 +54,14 @@ function studio({ playing = true, beforeLoad, random = 0.75 } = {}) {
       deck.playing = deck.audioRunning = !deck.playing;
       if (deck.playing) starts.push({ id, bpm: deck.bpm });
     },
-    sync(id) { state[id].bpm = state[id === 'A' ? 'B' : 'A'].bpm; },
+    sync(id) {
+      const target = state[id === 'A' ? 'B' : 'A'].bpm;
+      this.setTempo(id, (target / state[id].baseBPM - 1) * 100);
+    },
+    setTempo(id, value) {
+      state[id].tempo = value;
+      state[id].bpm = state[id].baseBPM * (1 + value / 100);
+    },
     seek(id, seconds) { state[id].time = seconds; },
     setEQ(id, band, value) {
       state[id].eq[band] = value;
@@ -79,12 +86,13 @@ function studio({ playing = true, beforeLoad, random = 0.75 } = {}) {
       if (!track) return false;
       const version = state[id].loadVersion + 1;
       state[id] = makeDeck(track);
+      prepareDeck?.(state[id]);
       state[id].loadVersion = version;
       return true;
     },
   };
   const mix = window.DJCompactMix.create(engine, library, {
-    onStatus() {}, onDeckChange(id) { switched.push(id); },
+    onStatus(message) { statuses.push([message, now]); }, onDeckChange(id) { switched.push(id); },
   });
   async function advance(milliseconds) {
     for (let elapsed = 0; elapsed < milliseconds; elapsed += 50) {
@@ -106,7 +114,7 @@ function studio({ playing = true, beforeLoad, random = 0.75 } = {}) {
       await settle();
     }
   }
-  return { state, mix, loads, switched, loops, starts, equalizer, scratch, advance };
+  return { statuses, state, mix, loads, switched, loops, starts, equalizer, scratch, advance };
 }
 
 test('paused selection loads the requested deck and stays paused', async () => {
@@ -173,14 +181,14 @@ test('near the end Auto stages a random different track once and follows the han
   assert.deepEqual(loads, []);
   mix.setAuto('A', true);
   for (let i = 0; i < 4; i++) mix.sync();
-  await advance(30000);
+  await advance(40500);
   assert.deepEqual(loads, [['B', 'third']]);
   assert.equal(state.B.playing, true);
   assert.equal(mix.isAuto('B'), true);
   assert.equal(mix.isAuto('A'), false);
   assert.equal(state.cross, 0.62);
   state.B.time = state.B.duration - 2;
-  await advance(25000);
+  await advance(40500);
   assert.deepEqual(loads, [['B', 'third'], ['A', 'selected']]);
   assert.deepEqual(switched, ['B', 'A']);
   assert.equal(state.A.playing, true);
@@ -211,7 +219,7 @@ test('Auto spends every track in the round before playing a repeat', async () =>
   for (let i = 0; i < 5; i++) {
     state[current].time = state[current].duration - 3;
     mix.sync();
-    await advance(16000);
+    await advance(40500);
     current = current === 'A' ? 'B' : 'A';
   }
   const played = ['original', ...loads.map(([,id]) => id)];
@@ -219,4 +227,86 @@ test('Auto spends every track in the round before playing a repeat', async () =>
   assert.deepEqual(new Set(played.slice(0, 3)), expected);
   assert.deepEqual(new Set(played.slice(3, 6)), expected);
   assert.notEqual(played[2], played[3]);
+});
+
+test('lead, looped blend and tail last 10/20/10 seconds across tempos; the new track returns to native BPM', async () => {
+  for (const bpm of [86, 160]) {
+    const {state, mix, advance, statuses} = studio();
+    Object.assign(state.A, {baseBPM:bpm, bpm});
+    await mix.choose('A', 'selected');
+    await advance(5000);
+    assert.equal(state.cross,-1);
+    assert.equal(state.A.bpm,bpm);
+    assert.equal(state.A.loopBeats,0);
+    assert.ok(state.A.time >= 40.9, 'outgoing track plays its original passage during the pre-effect');
+    assert.ok(state.A.filter > 0 && state.A.echo > 0);
+    await advance(15000);
+    assert.ok(Math.abs(state.cross) < .04);
+    assert.ok(state.A.playing && state.B.playing && state.A.loopBeats && state.B.loopBeats);
+    assert.equal(state.B.bpm,bpm);
+    await advance(10500);
+    assert.ok(!state.A.playing && state.B.playing && !state.B.loopBeats);
+    const initialEcho=state.B.echo;
+    assert.ok(initialEcho > .18);
+    await advance(4600);
+    assert.ok(Math.abs(state.B.bpm - (bpm + tracks[1].bpm) / 2) < 1);
+    assert.ok(state.B.echo < initialEcho && state.B.echo > .05);
+    await advance(5100);
+    assert.equal(state.B.bpm,tracks[1].bpm);
+    assert.deepEqual([state.B.filter,state.B.echo,state.B.eq.low,state.B.eq.mid,state.B.tempo],[0,0,0,0,0]);
+    const stages=statuses.slice(-4);
+    assert.deepEqual(stages.map(s=>s[0]),['Эффекты перед переходом','Сведение A → B','Эффекты после перехода','']);
+    for (const [i,ms] of [10000,20000,10000].entries()) {
+      assert.ok(Math.abs(stages[i+1][1]-stages[i][1]-ms) <= 100, `stage ${i} duration at ${bpm} BPM`);
+    }
+    await advance(5000);
+    assert.deepEqual([state.B.bpm,state.B.filter,state.B.echo],[tracks[1].bpm,0,0]);
+  }
+});
+
+test('cancelling an effect stage restores its decks and keeps the committed handoff', async () => {
+  for (const at of [5000,20000,35000]) {
+    const {mix,state,advance,switched} = studio({prepareDeck(deck) {
+      Object.assign(deck,{tempo:5,bpm:deck.baseBPM*1.05,filter:-.18,echo:.05});
+      Object.assign(deck.eq,{low:2,mid:-3});
+    }});
+    Object.assign(state.A,{tempo:3,bpm:state.A.baseBPM*1.03,filter:.21,echo:.12});
+    await mix.choose('A','selected');
+    await advance(at);
+    assert.ok(mix.cancel());
+    const transferred = at > 30000;
+    assert.equal(state.A.playing,!transferred);
+    assert.equal(state.B.playing,transferred);
+    assert.deepEqual(switched,transferred ? ['B'] : []);
+    assert.deepEqual([state.A.tempo,state.A.filter,state.A.echo,state.A.loopBeats],[3,.21,.12,0]);
+    assert.deepEqual([state.B.tempo,state.B.filter,state.B.echo,state.B.loopBeats],[5,-.18,.05,0]);
+    assert.deepEqual([state.B.eq.low,state.B.eq.mid],[2,-3]);
+  }
+});
+
+test('a new selection in the tail uses the native tempo of the current track', async () => {
+  const {mix,state,advance} = studio();
+  await mix.choose('A','selected');
+  await advance(33500);
+  assert.notEqual(state.B.tempo,0);
+  await mix.choose('B','third');
+  await advance(500);
+  assert.equal(state.B.track.id,'selected');
+  assert.equal(state.B.tempo,0);
+  assert.equal(state.A.bpm,state.B.baseBPM);
+});
+
+test('a delayed selection cannot leave an ending track in an indefinite protection loop', async () => {
+  const {mix,state,advance} = studio();
+  state.A.time = state.A.duration - 4;
+  let release;
+  const pending = mix.choose('A',() => new Promise(resolve => {release=resolve;}));
+  assert.equal(state.A.loopBeats,0);
+  await advance(2500);
+  assert.ok(state.A.loopBeats && state.A.playing);
+  await advance(118000);
+  assert.equal(state.A.loopBeats,0);
+  release('selected');
+  assert.equal(await pending,false);
+  assert.equal(state.B.playing,false);
 });

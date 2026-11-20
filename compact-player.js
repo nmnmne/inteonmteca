@@ -73,6 +73,7 @@
   const mixStatus = find('.compact-mix-status');
   const sideButtons = [...root.querySelectorAll('[data-compact-side]')];
   const requests = { A: 0, B: 0 };
+  let skipTarget = null;
   let side = 'A', importSide = 'A';
   const active = () => document.body.dataset.yardWindow === 'dj' && document.body.dataset.djMode === 'compact';
 
@@ -171,6 +172,7 @@
     for (const id of sides) if (scopes[id].parentNode === wave) positions[id].after(scopes[id]);
   }
   function activate(id) {
+    skipTarget = null;
     if (picker.matches(':popover-open')) picker.hidePopover();
     returnScope();
     side = id;
@@ -182,6 +184,7 @@
     update();
   }
   function choose(id, key) {
+    skipTarget = null;
     ++requests[id];
     if (picker.matches(':popover-open')) picker.hidePopover();
     return mix.choose(id, key);
@@ -190,15 +193,21 @@
     const id = side;
     const entries = library.list(id);
     if (!entries.length) return;
-    mix.manual(id);
+    const previous = skipTarget;
+    const interrupted = mix.manual(id);
     const state = engine.snapshot()[id];
-    const index = entries.findIndex(t => t.id === state.track?.id);
+    const cursor = previous?.id === id && (previous.loading || interrupted) ? previous.key : state.track?.id;
+    const index = entries.findIndex(t => t.id === cursor);
     const next = index < 0 ? (step > 0 ? 0 : entries.length - 1) : (index + step + entries.length) % entries.length;
     const key = entries[next].id, request = ++requests[id];
+    skipTarget = null;
+    if (state.playing && key === state.track?.id) return;
+    const target = skipTarget = {id, key, loading: true};
     const isCurrent = () => request === requests[id];
-    if (!await library.load(id, key, isCurrent) || !isCurrent()) return;
-    const loaded = engine.snapshot()[id];
-    if (state.playing && !loaded.playing && loaded.track?.id === key) engine.toggle(id);
+    const loaded = state.playing ? await mix.choose(id, key) : await library.load(id, key, isCurrent);
+    target.loading = false;
+    if (skipTarget === target && (!state.playing || !loaded)) skipTarget = null;
+    if (!loaded || !isCurrent()) return;
     update();
   }
   function importTo(id, files) {
@@ -206,6 +215,7 @@
     return choose(id, async () => (await library.importFiles(id, files))?.id);
   }
   function toggle(id) {
+    skipTarget = null;
     ++requests[id];
     const wasPlaying = engine.snapshot()[id].playing;
     if (mix.manual(id) && wasPlaying) {
@@ -214,6 +224,7 @@
     } else engine.toggle(id);
   }
   function stopMix() {
+    skipTarget = null;
     for (const id of sides) {
       ++requests[id];
       mix.setAuto(id, false);

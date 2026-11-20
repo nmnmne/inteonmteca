@@ -65,9 +65,23 @@ def check(browser, url, width, height, touch):
     page.keyboard.up("m")
     page.wait_for_function("!DJEngine.visuals.paused && DJEngine.snapshot().meters.left > .001")
     compact.locator(".compact-next").click()
-    page.wait_for_function("id => DJEngine.snapshot().B.track.id===id && DJEngine.snapshot().B.playing", arg=ids[1])
+    staged = """([source,target]) => { const {A,B} = DJEngine.snapshot();
+        return B.playing && B.track?.id === source && A.playing && A.track?.id === target; }"""
+    page.wait_for_function(staged, arg=[ids[0], ids[1]])
+    compact.locator(".compact-next").click()
+    page.wait_for_function(staged, arg=[ids[0], ids[2]])
     compact.locator(".compact-previous").click()
-    page.wait_for_function("id => DJEngine.snapshot().B.track.id===id && DJEngine.snapshot().B.playing", arg=ids[0])
+    page.wait_for_function(staged, arg=[ids[0], ids[1]])
+    compact.locator(".compact-previous").click()
+    page.wait_for_function("""id => { const {A,B} = DJEngine.snapshot();
+        return B.playing && B.track?.id === id && !B.loopBeats && !A.playing; }""", arg=ids[0])
+
+    compact.get_by_role("button", name="Дека A", exact=True).click()
+    compact.locator(".compact-next").click()
+    page.wait_for_function("""([source,target]) => { const {A,B} = DJEngine.snapshot();
+        return B.playing && B.track?.id === source && !A.playing && A.track?.id === target; }""",
+        arg=[ids[0], ids[2]])
+    compact.get_by_role("button", name="Дека B", exact=True).click()
     waveform.press("p")
     page.wait_for_function("!DJEngine.snapshot().B.playing")
     compact.locator(".compact-sound").click()
@@ -92,7 +106,7 @@ def check(browser, url, width, height, touch):
                 cdp.send("Input.dispatchDragEvent", {"type": event, "x": box["x"] + box["width"]/2,
                          "y": box["y"] + box["height"]/2, "data": drag})
             page.wait_for_function("DJEngine.snapshot().B.track?.title==='TestImport'")
-            assert page.evaluate("DJEngine.snapshot().A.track.id") == opening_a
+            assert page.evaluate("DJEngine.snapshot().A.track.id") == ids[2]
             track.click()
             assert options.get_by_role("option").filter(has_text="TestImport").count() == 1
     print(f"{width} × {height}, {clear:.0f}px clear above the player", flush=True)
