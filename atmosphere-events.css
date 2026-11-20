@@ -61,6 +61,10 @@ body.is-interlude .active-player { background: transparent; border-color: transp
 body.is-interlude .active-player > :not(.transport), body.is-interlude .transport > :not(.transport-seek-field) { opacity: 0; pointer-events: none; transition: opacity 2.5s; }
 body.spatial-room.is-interlude .track-list .track-item { opacity: 0 !important; pointer-events: none; transition: opacity 2.5s; }
 body.spatial-room.is-interlude.scene-peek .track-list .track-item.scene-peek-track { opacity:1 !important; pointer-events:auto; transition:opacity 1.2s ease var(--return-delay,0ms); }
+body.is-interlude.scene-peek .dd-browse-row.scene-peek-track .dd-browse-title {
+  text-shadow: 0 0 5px var(--dd-accent), 0 1px 2px #071018;
+  transition: text-shadow .8s ease var(--return-delay,0ms);
+}
 body.spatial-room.is-interlude:is(.scene-void,.scene-energy) .track-list .track-item { opacity:0 !important; pointer-events:none; }
 body.spatial-room.is-interlude .playlist-shell { z-index:5; }
 body.spatial-room.is-interlude .text-wave-char { color:inherit !important; }

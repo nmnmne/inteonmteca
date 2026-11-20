@@ -37,8 +37,11 @@ def check_controller_layout(page):
         for side in (["a"] if tabs.is_visible() else ["a", "b"]):
             wheel = page.locator(f"#deck-{side} .dd-wheel-mount").bounding_box()
             assert wheel["width"] >= 75 and abs(wheel["width"] - wheel["height"]) < 1, (width, wheel)
-            wave = page.locator(f"#deck-{side} .dd-wave").bounding_box()
-            assert wave["height"] >= 22, (width, height, wave)
+            screen = page.locator(f"#deck-{side} .dd-screen")
+            wave = screen.locator(".dd-wave").bounding_box()
+            assert wave["height"] >= 22 and wave["width"] >= 95, (width, height, wave)
+            options = screen.get_by_role("listbox").bounding_box()
+            assert options and options["height"] >= 24 and options["width"] >= 94, (width, options)
             page.locator(f"#deck-{side} .dd-play").click(trial=True)
         page.locator("#mobile-cross" if tabs.is_visible() else "#cross").click(trial=True)
     if page.evaluate("document.fullscreenEnabled"):
@@ -83,18 +86,29 @@ def scratch_catalogue(page):
     page.locator("#curve-cross").click()
 
 
+def choose_collection(deck, value):
+    deck.locator(".dd-browse-options").click()
+    filtering = deck.locator(".dd-browse-filter")
+    filtering.select_option(value)
+    if filtering.is_visible():
+        filtering.press("Escape")
+
+
 def check_deck_browser(page):
     a = page.locator("#deck-a")
     b = page.locator("#deck-b")
-    a_toggle = a.locator(".dd-browse-toggle")
-    b_toggle = b.locator(".dd-browse-toggle")
+    a_list = a.get_by_role("listbox")
+    b_list = b.get_by_role("listbox")
     selected_title = "[role=option][aria-selected=true] .dd-browse-title"
     original_a, original_b = page.evaluate("[DJEngine.snapshot().A.track.title, DJEngine.snapshot().B.track.title]")
     assert (original_a, original_b) == ("Echoes Resurface", "High Stage Of Reality")
-    page.locator("a[data-view=library]").click()
-    page.locator("#search").fill("no-match-in-the-catalogue")
-    assert page.locator("#track-list tr").count() == 0
-    page.locator("a[data-view=studio]").click()
+    assert a_list.is_visible() and b_list.is_visible()
+    assert a.locator(".dd-wave").is_visible() and b.locator(".dd-wave").is_visible()
+    search = a.locator(".dd-browse-search")
+    search.fill("no-match-in-the-catalogue")
+    assert a_list.get_by_role("option").count() == 0 and a.locator(".dd-browse-load").is_disabled()
+    assert b_list.get_by_role("option").count() > 2
+    search.fill("")
     a.locator(".dd-zoom").click()
     wave = a.locator(".dd-wave")
     size = wave.bounding_box()
@@ -116,20 +130,24 @@ def check_deck_browser(page):
     }""")
     b.locator(".dd-play").click()
     page.wait_for_function("DJEngine.snapshot().B.time > .1")
-    b_toggle.click()
     assert b.locator(selected_title).inner_text() == original_b
-    a_toggle.click()
-    a_list = a.get_by_role("listbox")
-    assert a_list.evaluate("el => document.activeElement === el")
+    a_list.focus()
     titles = a_list.locator(".dd-browse-title").all_text_contents()
     assert len(titles) >= 3 and a.locator(selected_title).inner_text() == original_a
-    b_filter = b.locator(".dd-browse-filter")
-    b_filter.press("ArrowDown")
-    assert b_filter.input_value() == "starred"
+    choose_collection(b, "starred")
     assert b.get_by_role("listbox").get_by_role("option").count() == 0
     assert b.locator(".dd-browse-load").is_disabled()
     assert a.locator(".dd-browse-filter").input_value() == "all"
-    b_filter.select_option("all")
+    choose_collection(b, "all")
+    b.locator(".dd-browse-options").click()
+    sorting = b.locator(".dd-browse-sort")
+    for order in ("bpm", "-bpm"):
+        sorting.select_option(order)
+        tempos = [float(value) for value in b_list.locator(".dd-browse-bpm").all_text_contents() if value != "—"]
+        assert len(tempos) >= 2 and tempos == sorted(tempos, reverse=order.startswith("-"))
+    sorting.select_option("")
+    sorting.press("Escape")
+    assert a_list.locator(".dd-browse-title").all_text_contents() == titles
     a_list.focus()
     for direction, index in (("Home", 0), ("ArrowDown", 1), ("ArrowDown", 2), ("ArrowUp", 1), ("Home", 0)):
         page.keyboard.press(direction)
@@ -140,8 +158,7 @@ def check_deck_browser(page):
     assert a.locator("[role=option][aria-current=true] .dd-browse-title").inner_text() == original_a
     assert b.locator(selected_title).inner_text() == original_b
     page.keyboard.press("Enter")
-    a_list.wait_for(state="hidden")
-    assert a_toggle.evaluate("el => document.activeElement === el")
+    assert a_list.is_visible()
     page.wait_for_function("""expected => {
         const {A, B, cross, master} = DJEngine.snapshot();
         return A.track.title === expected && !A.playing && !A.scratching && A.time === 0
@@ -153,18 +170,24 @@ def check_deck_browser(page):
     assert a.locator(".dd-pitch-range").input_value() == "8"
     assert a.locator("[data-jog=scratch]").get_attribute("aria-pressed") == "true"
     assert a.locator(".dd-zoom span").inner_text() == "1×"
-    b.get_by_role("listbox").focus()
+    b_list.focus()
     page.keyboard.press("Escape")
-    assert b_toggle.evaluate("el => document.activeElement === el")
+    assert b_list.is_visible()
     assert page.evaluate("DJEngine.snapshot().B.playing && DJEngine.snapshot().B.track.title") == original_b
     b.locator(".dd-zoom").click()
     b.locator(".dd-loop-plus").click()
-    b_toggle.click()
-    page.keyboard.press("Enter")
-    b.get_by_role("listbox").wait_for(state="hidden")
+    b_list.press("Enter")
+    assert b_list.is_visible()
     page.wait_for_function("!DJEngine.snapshot().B.playing && DJEngine.snapshot().B.eq.high === 0 && DJEngine.snapshot().B.time === 0")
     assert b.locator(".dd-zoom span").inner_text() == "1×"
     assert b.locator(".dd-loop-value").text_content() == "4"
+    a.locator(".dd-browse-search").fill("Deadsouls")
+    transfer = a_list.get_by_role("option")
+    title = transfer.locator(".dd-browse-title").inner_text()
+    transfer.drag_to(b.locator(".dd-jog"))
+    page.wait_for_function("title => DJEngine.snapshot().B.track.title === title", arg=title)
+    assert b_list.locator('[aria-current=true] .dd-browse-title').inner_text() == title
+    assert page.evaluate("DJEngine.snapshot().A.track.title") == titles[0]
 
 
 def check_touch_browser(browser, url):
@@ -172,7 +195,7 @@ def check_touch_browser(browser, url):
     page.goto(url, wait_until="domcontentloaded")
     page.locator(".controller-tabs [data-panel=b]").tap()
     b = page.locator("#deck-b")
-    b.locator(".dd-browse-toggle").tap()
+    assert b.get_by_role("listbox").is_visible() and b.locator(".dd-wave").is_visible()
     options = b.get_by_role("listbox").get_by_role("option")
     options.first.tap()
     b.locator(".dd-browse-down").tap()
@@ -182,7 +205,7 @@ def check_touch_browser(browser, url):
     assert page.evaluate("DJEngine.snapshot().B.track.title") != selected
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
     b.locator(".dd-browse-load").tap()
-    b.get_by_role("listbox").wait_for(state="hidden")
+    assert b.get_by_role("listbox").is_visible()
     assert page.evaluate("DJEngine.snapshot().B.track.title") == selected
     page.set_viewport_size({"width": 667, "height": 375})
     assert b.locator(".dd-wave").bounding_box()["height"] >= 22
@@ -193,10 +216,24 @@ def exercise(browser, url):
     page = browser.new_page(viewport={"width": 1440, "height": 900}, accept_downloads=True)
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
-    page.goto(url, wait_until="domcontentloaded")
-    page.wait_for_selector("#track-list tr", state="attached")
+    page.goto(url.rstrip("/") + "/#library", wait_until="domcontentloaded")
+    page.wait_for_function("location.hash === '#studio'")
+    a = page.locator("#deck-a")
+    b = page.locator("#deck-b")
+    a_rows = a.get_by_role("listbox").get_by_role("option")
+    b_rows = b.get_by_role("listbox").get_by_role("option")
+    a_rows.first.wait_for()
     count = page.evaluate("INTEONMTECA_PLAYLIST.length")
-    assert page.locator("#track-list tr").count() == count
+    assert a_rows.count() == b_rows.count() == count
+    assert page.locator('#collection, [href="#library"]').count() == 0
+    assert page.locator("#performance").is_visible()
+    page.locator("#masters").click()
+    assert page.locator("#master-track option").count() == count
+    for ext in ("flac", "wv"):
+        master = page.locator(f'#master-files a[download$=".{ext}"]')
+        assert master.is_visible()
+        assert page.request.head(master.evaluate("a => a.href")).ok
+    page.locator("#dialog-close").click()
     scratch_catalogue(page)
 
     # Start real catalogue FLACs, then record the mixed master through the visible controls.
@@ -220,34 +257,28 @@ def exercise(browser, url):
     page.locator("#deck-b .dd-zoom").click()
     page.locator("#deck-b .dd-loop-minus").click()
     page.evaluate("DJEngine.setFilter('B',-.6)")
-    page.locator("a[data-view=library]").click()
-    assert not page.locator("#performance").is_visible()
-    page.locator("#track-list .fav-button").first.click()
-    page.locator("button[data-crate=starred]").click()
-    assert page.locator("#track-list tr").count() == 1
-    page.locator("button[data-crate=all]").click()
-    page.locator("#search").fill("Echoes Resurface")
-    assert page.locator("#track-list tr").count() == 1
-    page.locator("#track-list button[data-action=B]").click()
+    a.locator(".dd-browse-star").click()
+    choose_collection(b, "starred")
+    assert b_rows.count() == 1 and a_rows.count() == count
+    choose_collection(b, "all")
+    b.locator(".dd-browse-search").fill("Echoes Resurface")
+    assert b_rows.count() == 1
+    b_rows.dblclick()
     assert page.evaluate("DJEngine.snapshot().B.track.title === 'Echoes Resurface' && DJEngine.snapshot().B.filter === 0")
     assert page.evaluate("DJEngine.snapshot().B.hotCues[0]") == saved_pad
-    page.locator("a[data-view=studio]").click()
     assert page.locator("#deck-b .dd-loop-value").text_content() == "4"
     assert page.locator("#deck-b .dd-zoom span").inner_text() == "1×"
-    page.locator("a[data-view=library]").click()
-
-    # A refresh drops in-memory object URLs. The library must lazily restore the saved audio.
-    page.locator("#import-files").set_input_files(import_fixture())
-    page.wait_for_function("document.querySelector('#track-list .remove-track') !== null")
+    # Reloading drops in-memory object URLs. Both displays can still load the saved audio.
+    with page.expect_file_chooser() as chooser:
+        page.locator("#import").click()
+    chooser.value.set_files(import_fixture())
+    a_rows.filter(has_text="Imported Track").wait_for(state="attached")
     page.reload(wait_until="domcontentloaded")
-    page.wait_for_function(f"document.querySelectorAll('#track-list tr').length === {count + 1}")
-    page.locator("[data-crate=imports]").click()
-    row = page.locator("#track-list tr")
-    assert row.count() == 1 and "Imported Track" in row.inner_text()
-    page.locator("a[data-view=studio]").click()
-    a = page.locator("#deck-a")
-    a.locator(".dd-browse-toggle").click()
-    a.locator(".dd-browse-filter").select_option("imports")
+    a_rows.filter(has_text="Imported Track").wait_for(state="attached")
+    assert a_rows.count() == b_rows.count() == count + 1
+    choose_collection(b, "starred")
+    assert b_rows.count() == 1 and "Echoes Resurface" in b_rows.inner_text()
+    choose_collection(a, "imports")
     assert a.get_by_role("listbox").get_by_role("option").count() == 1
     assert a.locator("[aria-selected=true] .dd-browse-title").inner_text() == "Imported Track"
     a.locator(".dd-browse-load").click()
@@ -255,14 +286,11 @@ def exercise(browser, url):
     page.locator("#deck-a .dd-play").click()
     page.wait_for_function("DJEngine.snapshot().A.time > .1")
     page.locator("#deck-a .dd-play").click()
-    page.locator("a[data-view=library]").click()
-    page.locator("#track-list .remove-track").click()
+    a.locator(".dd-browse-remove").click()
     page.locator("#remove-confirm").click()
-    page.wait_for_function("document.querySelectorAll('#track-list tr').length === 0")
+    a_rows.wait_for(state="detached")
     assert page.evaluate("DJEngine.snapshot().A.track.title") == "Imported Track"
     assert page.evaluate("DJStorage.list().then(rows => rows.length)") == 0
-    page.locator("a[data-view=studio]").click()
-    page.locator("#deck-a .dd-browse-toggle").click()
     assert a.locator(".dd-browse-filter").input_value() == "imports"
     assert page.locator("#deck-a [role=option]").count() == 0
     assert page.locator("#deck-a .dd-browse-load").is_disabled()
@@ -273,7 +301,6 @@ def exercise(browser, url):
     assert page.locator("dialog[open]").count() == 2
     page.keyboard.press("Escape")
     page.keyboard.press("Escape")
-    page.locator("a[data-view=studio]").click()
     for width in (320, 390, 768, 1024, 1440):
         page.set_viewport_size({"width": width, "height": 844})
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), width
@@ -295,4 +322,4 @@ if __name__ == "__main__":
         browsing.close()
         check_touch_browser(browser, url)
         browser.close()
-    print("Studio playback, recording, library persistence, MIDI dialog, deck browsing and responsive layout passed.")
+    print("Playback, recording, imports, downloads, independent deck playlists, MIDI and responsive layout passed.")

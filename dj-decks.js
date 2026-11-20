@@ -12,7 +12,10 @@
     tempo: 'Вращайте диск, чтобы изменить постоянный темп. Можно использовать стрелки.'
   };
   const glyphs = {
-    browse: '<path d="M8 6h12M8 12h12M8 18h12M3 6h1M3 12h1M3 18h1"/>',
+    load: '<path d="M20 5v7H5m6-6-6 6 6 6"/>',
+    settings: '<path d="M3 6h8m4 0h6M3 12h2m4 0h12M3 18h12m4 0h2"/><circle cx="13" cy="6" r="2"/><circle cx="7" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
+    star: '<path d="m12 3 2.8 5.8 6.4.9-4.6 4.5 1.1 6.4-5.7-3-5.7 3 1.1-6.4-4.6-4.5 6.4-.9z"/>',
+    trash: '<path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7"/>',
     up: '<path d="m6 14 6-6 6 6"/>',
     down: '<path d="m6 10 6 6 6-6"/>',
     lock: '<rect x="5.5" y="10" width="13" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
@@ -57,7 +60,6 @@
       <header class="dd-head">
         <div class="dd-heading"><span class="dd-ident">${id}</span><span class="dd-deck-state">Свободна</span></div>
         <div class="dd-head-controls">
-          <button type="button" class="dd-chip dd-browse-toggle" aria-controls="dd-browser-${id}" aria-expanded="false" aria-label="Выбрать трек для деки ${id}" hidden>${icon('browse', 15)}<span>Треки</span></button>
           <button type="button" class="dd-chip dd-lock" title="Сохранять тональность при изменении темпа" aria-pressed="true">${icon('lock', 12)}<span>Key lock</span></button>
         </div>
       </header>
@@ -74,16 +76,27 @@
             <span class="dd-beats" role="img" aria-label="Сетка долей недоступна"><i></i><i></i><i></i><i></i></span>
           </div>
         </div>
-        <div class="dd-browser" id="dd-browser-${id}" hidden>
-          <div class="dd-browser-head"><strong>Фонотека</strong><select class="dd-browse-filter" aria-label="Подборка треков для деки ${id}"><option value="all">Все треки</option><option value="starred">Избранное</option><option value="imports">Импорт</option></select><span class="dd-browse-count"></span></div>
+        <section class="dd-browser" id="dd-browser-${id}" aria-label="Плейлист деки ${id}">
+          <div class="dd-browser-head">
+            <input type="search" class="dd-browse-search" placeholder="Поиск треков" aria-label="Поиск по плейлисту деки ${id}" autocomplete="off">
+            <span class="dd-browse-count"></span>
+            <button type="button" class="dd-browse-options" popovertarget="dd-options-${id}" aria-label="Подборка и сортировка деки ${id}" title="Подборка и сортировка">${icon('settings',15)}</button>
+          </div>
+          <div id="dd-options-${id}" class="dd-browser-options" popover>
+            <label>Подборка<select class="dd-browse-filter"><option value="all">Все треки</option><option value="starred">Избранное</option><option value="imports">Импорт</option></select></label>
+            <label>Порядок<select class="dd-browse-sort"><option value="">Порядок плейлиста</option>${[['title','Название'],['artist','Артист'],['bpm','BPM'],['key','Тональность'],['duration','Длительность']].map(([key,label]) => `<option value="${key}">${label} ↑</option><option value="-${key}">${label} ↓</option>`).join('')}</select></label>
+            <button type="button" popovertarget="dd-options-${id}" popovertargetaction="hide">Готово</button>
+          </div>
           <div class="dd-browse-list" role="listbox" tabindex="0" aria-label="Треки для деки ${id}"></div>
           <p class="dd-browse-empty" hidden>В этой подборке нет треков.</p>
           <div class="dd-browse-controls">
             <button type="button" class="dd-browse-up" aria-label="Предыдущий трек в списке деки ${id}">${icon('up', 18)}</button>
             <button type="button" class="dd-browse-down" aria-label="Следующий трек в списке деки ${id}">${icon('down', 18)}</button>
-            <button type="button" class="dd-browse-load" aria-label="Загрузить выбранный трек в деку ${id}">Загрузить</button>
+            <button type="button" class="dd-browse-star" aria-pressed="false" title="Избранное">${icon('star',15)}</button>
+            <button type="button" class="dd-browse-remove" aria-label="Удалить выбранный импорт" title="Удалить выбранный импорт" hidden>${icon('trash',15)}</button>
+            <button type="button" class="dd-browse-load" aria-label="Загрузить выбранный трек в деку ${id}" title="Загрузить в деку ${id}">${icon('load',15)}<span>Загрузить</span></button>
           </div>
-        </div>
+        </section>
       </div>
       <div class="dd-hardware">
         <div class="dd-transport">

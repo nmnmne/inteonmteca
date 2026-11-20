@@ -89,16 +89,6 @@
 .dd-lock { text-transform: uppercase; letter-spacing: .4px; }
 .dd-lock[aria-pressed="true"] svg { color: var(--dd-accent); }
 .dd-head-controls .dd-chip { min-height: 32px; padding-inline: 9px; }
-.dd-head-controls .dd-browse-toggle {
-  order: 1; gap: 8px; padding-inline: 13px;
-  color: #f1f5f4; background: linear-gradient(#354247,#242e33);
-  border-color: #647279 #3a454a #10181b;
-  box-shadow: inset 0 1px 0 #f0f5f419, 0 2px 1px #04090aa6;
-  font: 650 14px/1 var(--sans, sans-serif) !important;
-}
-.dd-browse-toggle svg { color: var(--dd-accent); }
-.dd-browse-toggle[aria-expanded=true] { border-color: var(--dd-accent); }
-
 .dd-screen {
   min-width: 0; min-height: 0; margin: 5px clamp(6px,1.5cqw,20px) 0; overflow: hidden;
   border: 2px solid; border-color: #12191c #353f43 #596365 #222c30; border-radius: 7px;
@@ -108,41 +98,58 @@
   justify-content: space-between; gap: 12px; padding: 8px 14px; min-height: 60px;
   background: linear-gradient(110deg,rgba(var(--dd-channels),.12),transparent 65%), #131c23;
 }
-.dd-browser { display: grid; grid-template-rows: auto minmax(0,1fr) auto; height: clamp(218px,32dvh,425px); }
-.dd-browser-head, .dd-browse-controls {
-  display: flex; align-items: center; justify-content: space-between; gap: 6px;
-  padding: 6px 10px; background: #19242b;
+.dd-screen {
+  display: grid; grid-template-columns: minmax(0,.92fr) minmax(0,1.08fr);
+  grid-template-areas: "track playlist" "scope playlist"; grid-template-rows: auto 1fr;
 }
+.dd-track { grid-area: track; }
+.dd-scope { grid-area: scope; min-width: 0; overflow: hidden; }
+.dd-browser {
+  grid-area: playlist; display: grid; grid-template-rows: auto minmax(0,1fr) auto;
+  min-width: 0; min-height: 139px; border-left: 1px solid #566367;
+}
+.dd-browser-head, .dd-browse-controls { display: flex; align-items: center; gap: 3px; padding: 3px 5px; }
 .dd-browser-head { border-bottom: 1px solid #364449; }
-.dd-browser-head strong { color: #eef4f3; font: 650 clamp(16px,3cqw,26px)/1.25 var(--sans, sans-serif); }
-.dd-browser-head .dd-browse-filter { margin-left: auto; max-width: 45%; min-height: 30px; padding: 2px 5px; border: 1px solid #44545b; border-radius: 3px; background: #1f2c34; color: #dce8e8; font: 13px var(--sans,sans-serif); }
-.dd-browse-count, .dd-browse-bpm, .dd-browse-loaded { font: 12px/1.2 var(--dd-mono); font-variant-numeric: tabular-nums; }
-.dd-browse-count { color: var(--dd-accent); }
-.dd-browse-list { grid-area: 2/1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #53646b #10171b; }
+.dd-browser-head .dd-browse-search {
+  flex: 1; width: 0; min-width: 0; padding: 3px 5px; border: 0; border-radius: 3px;
+  background: #0310185c; color: #edf6f2; font: 13px/1.2 var(--sans,sans-serif);
+}
+.dd-browse-search::placeholder { color: #c8d6d5; opacity: 1; }
+.dd-browse-count, .dd-browse-bpm, .dd-browse-number { font: 11px/1.1 var(--dd-mono); font-variant-numeric: tabular-nums; }
+.dd-browse-count { color: #cbdbd8; white-space: nowrap; }
+.dd-browse-list { grid-area: 2 / 1; height: 0; min-height: 100%; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #839693 #17232b; }
 .dd-browse-list:focus-visible { outline: 1px solid var(--dd-accent); outline-offset: -1px; }
 .dd-browse-row {
-  display: grid; grid-template-columns: minmax(0,1fr) auto 21px; align-items: center;
-  gap: 8px; min-height: 43px; padding: 4px 10px; border-bottom: 1px solid #233038;
-  color: #eef3f2; cursor: pointer; touch-action: pan-y;
+  display: grid; grid-template-columns: 20px minmax(0,1fr) auto; align-items: center; gap: 4px;
+  min-height: 26px; padding: 2px 6px 2px 4px; border-bottom: 1px solid #344149;
+  color: #e8eeef; cursor: pointer; touch-action: pan-y;
 }
-.dd-browse-copy { display: grid; min-width: 0; gap: 2px; }
-.dd-browse-title, .dd-browse-artist { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dd-browse-title { font: 650 clamp(15px,2.8cqw,23px)/1.12 var(--sans, sans-serif); }
-.dd-browse-artist { color: #afbfc3; font: 12px/1.15 var(--sans, sans-serif); }
-.dd-browse-bpm { color: #becacc; }
-.dd-browse-loaded { justify-self: center; padding: 1px 3px; color: var(--dd-accent); border: 1px solid currentColor; border-radius: 3px; }
-.dd-browse-row[aria-selected=true] {
-  background: linear-gradient(90deg,rgba(var(--dd-channels),.22),rgba(var(--dd-channels),.1)); box-shadow: inset 3px 0 var(--dd-accent);
-}
+.dd-browse-number { display: grid; place-items: center; color: #c3cdcf; }
+.dd-browse-number img { width: 17px; height: 17px; border-radius: 2px; object-fit: cover; }
+.dd-browse-row[aria-current=true] .dd-browse-number { color: var(--dd-accent); border: 1px solid currentColor; border-radius: 2px; }
+.dd-browse-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 clamp(12px,2.35cqw,20px)/1.3 var(--sans, sans-serif); }
+.dd-browse-bpm { color: #c4d4d6; }
+.dd-browse-row[aria-selected=true] { background: rgba(var(--dd-channels),.18); box-shadow: inset 2px 0 var(--dd-accent); }
 .dd-browse-row[aria-selected=true] .dd-browse-title { color: var(--dd-accent); }
-.dd-browse-empty { grid-area: 2/1; place-self: center; color: #bdc9cb; text-align: center; pointer-events: none; }
-.dd-browse-controls { grid-row: 3; justify-content: flex-start; border-top: 1px solid #364449; }
-.dd-browse-controls button {
-  display: grid; place-items: center; min-width: 48px; min-height: 38px; border: 1px solid #4b5a62; border-radius: 4px;
-  background: linear-gradient(#334047,#263139); color: #eef5f4; font: 650 14px/1 var(--sans,sans-serif);
+.dd-browse-empty { grid-area: 2 / 1; place-self: center; margin: 3px; color: #d5dfdd; font-size: 12px; text-align: center; pointer-events: none; }
+.dd-browse-controls { grid-row: 3; border-top: 1px solid #435058; }
+.dd-browse-controls button, .dd-browse-options {
+  display: grid; place-items: center; min-width: 28px; height: 27px; padding: 0 3px;
+  border: 1px solid #90a3a16e; border-radius: 3px;
+  background: linear-gradient(#52636691,#142329b0); color: #eef5f4; font: 650 12px/1 var(--sans,sans-serif);
 }
-.dd-browse-controls .dd-browse-load { margin-left: auto; padding: 0 16px; background: var(--dd-accent); color: #101b20; border-color: transparent; }
-@media (hover: hover) { .dd-browse-row:hover { background-color: #202e34; } }
+.dd-browse-controls .dd-browse-load { margin-left: auto; padding-inline: 6px; color: var(--dd-accent); }
+.dd-browse-star[aria-pressed=true], .dd-browse-options[data-filtered=true] { color: var(--dd-accent); border-color: currentColor; }
+.dd-browse-star[aria-pressed=true] svg { fill: currentColor; }
+.dd-browser-options {
+  position: fixed; inset: 0; margin: auto; width: min(264px,90vw); height: max-content; padding: 14px;
+  border: 1px solid #829791; border-radius: 6px; background: #182629; color: #eef5f1; font: 14px/1.3 var(--sans,sans-serif);
+}
+.dd-browser-options:popover-open { display: grid; gap: 12px; }
+.dd-browser-options label { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 8px; }
+.dd-browser-options select, .dd-browser-options button { min-height: 32px; min-width: 0; color: inherit; background: #243738; border: 1px solid #66807b; border-radius: 3px; }
+.dd-browser-options::backdrop { background: #10202032; }
+@media (hover: hover) { .dd-browse-row:hover { background-color: #46545b80; } }
 .dd-hardware {
   display: grid;
   grid-template-columns: clamp(48px,11.5cqw,122px) minmax(0,1fr) clamp(62px,13.5cqw,155px);
@@ -544,10 +551,6 @@
   .dd-chip, .dd-zoom { height:clamp(25px,1.2vw,43px); font-size:clamp(12px,.55vw,20px) !important; }
   .dd-head, .dd-track, .dd-pads { padding-inline:1.9cqw; }
   .dd-overview { min-height: 1.2vw; }
-  .dd-browser-head, .dd-browse-controls, .dd-browse-row { padding: .35vw .55vw; }
-  .dd-browse-controls button, .dd-browser-head .dd-browse-filter { min-height: 1.6vw; font-size: .58vw; }
-  .dd-browse-count, .dd-browse-bpm, .dd-browse-artist { font-size: .5vw; }
-  .dd-browse-row { min-height: 2vw; }
   .dd-pad-label, .dd-bpm-unit { font-size:clamp(11px,.49vw,19px); }
   .dd-pitch .dd-rail { width:67%; }
   .dd-rail input { inset-inline-start:25%; width:56%; background-size:clamp(7px,.32vw,12px) 100%; }
@@ -587,8 +590,6 @@
   .dd-wave-controls { min-height:22px; flex:none; }
   .dd-zoom { min-height: 20px; }
   .dd-overview .dd-seek { height: 20px; }
-  .dd-browsing { min-height: 285px; }
-  .dd-browser { height: 100%; }
   .dd-browse-row { min-height: 34px; }
   .dd-browser-head, .dd-browse-controls { padding-block: 2px; }
   .dd-browse-controls button { min-height: 34px; }
@@ -600,4 +601,80 @@
   .dd-transport .dd-btn:is(.dd-play,.dd-cue) { height: 38px; }
   .dd-pads { grid-area:pads; min-height:38px; padding:3px 8px; }
   .dd-pad { min-height:31px; }
+}
+
+/* The waveform and its playlist share the same deck display at every size. */
+@container (min-width: 402px) {
+  .dd-track { padding-inline: 8px; gap: 5px; }
+  .dd-track-text h2 { font-size: clamp(16px,3.3cqw,30px); }
+  .dd-bpm { font-size: clamp(19px,4.2cqw,46px); }
+  .dd-artist { font-size: clamp(11px,2.1cqw,18px); }
+  .dd-scope .dd-wave-controls { padding-inline: 5px; font-size: clamp(10px,1.85cqw,18px); }
+  .dd-wave-tools { gap: 4px; }
+}
+.room-console .console-nav .import-btn { display: inline-flex; align-items: center; gap: 4px; min-height: 31px; padding: 0 8px; white-space: nowrap; }
+@media(max-width: 560px) {
+  .room-console .console-nav .import-btn { min-height: 32px; padding: 0 5px; font-size: 12px; }
+  .room-console .console-nav .import-btn i { display: none; }
+}
+/* On small decks keep the transport and playlist alongside one another. */
+.dj-deck .dd-track {
+  display: grid; grid-template-columns: minmax(0,1fr) auto;
+  grid-template-areas: "title title" "artist bpm"; row-gap: 2px; column-gap: 4px; align-content: center;
+}
+.dd-track-text { display: contents; }
+.dd-track-text h2 {
+  grid-area: title; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  white-space: normal; overflow-wrap: anywhere; margin: 0;
+}
+.dd-artist-line { grid-area: artist; }
+.dd-bpm-box { grid-area: bpm; flex-direction: row; align-items: baseline; gap: 3px; }
+.dd-bpm { font-size: clamp(16px,3.7cqw,38px); }
+.dd-browse-copy { min-width: 0; display: grid; }
+.dd-browse-artist { display: none; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 11px/1.1 var(--sans,sans-serif); }
+.dd-browse-row[aria-selected=true] .dd-browse-artist { display: block; }
+.dd-browse-controls .dd-browse-load svg { display: none; }
+@container (max-width: 401px) {
+  .dd-screen { grid-template-columns: minmax(0,.81fr) minmax(0,1.19fr); grid-template-areas: "track track" "scope playlist"; grid-template-rows: auto minmax(118px,auto); }
+  .dd-track { padding: 3px 8px; min-height: 39px; }
+  .dd-track-text h2 { font-size: 17px; }
+  .dd-bpm { font-size: 17px; }
+  .dd-browser { height: 171px; min-height: 0; border-left: 1px solid #657278; }
+  .dd-browse-row { min-height: 30px; }
+  .dd-scope { display: flex; min-height: 0; flex-direction: column; }
+  .dd-wave { flex: 1; height: auto; min-height: 24px; }
+  .dd-wave-controls { flex-wrap: wrap; min-width: 0; overflow: hidden; padding: 3px 4px; min-height: 22px; font-size: 10px; }
+  .dd-wave-tools { gap: 2px; }
+  .dd-zoom { padding: 0 2px; min-width: 0; min-height: 22px; font-size: 10px !important; }
+  .dd-overview { padding-inline: 4px; gap: 3px; }
+  .dd-browse-controls, .dd-browser-head { padding: 2px 3px; gap: 2px; }
+  .dd-browse-controls button, .dd-browse-options { min-width: 26px; min-height: 30px; height: 30px; }
+  .dd-browse-count { font-size: 9px; }
+  .dd-browse-controls:has(.dd-browse-remove:not([hidden])) .dd-browse-load span { display: none; }
+  .dd-browse-controls:has(.dd-browse-remove:not([hidden])) .dd-browse-load svg { display: block; }
+}
+@media (max-width:1000px) and (max-height:620px) and (orientation:landscape) {
+  .dd-screen { display: grid; grid-template-columns: minmax(0,.78fr) minmax(0,1.22fr); grid-template-areas: "track track" "scope playlist"; grid-template-rows: auto minmax(118px,1fr); min-height: 171px; }
+  .dd-track { padding-block: 2px; min-height: 40px; }
+  .dd-browser { height: 167px; min-height: 0; border-left: 1px solid #657278; }
+  .dd-browse-row { min-height: 30px; }
+  .dd-browse-title { font-size: 12px; }
+  .dd-track .dd-bpm { font-size: 17px; }
+  .dd-track-text h2 { font-size: 16px; }
+  .dd-transport { align-self: start; }
+  .dd-transport .dd-play { order: -1; }
+  .dd-browse-controls, .dd-browser-head { padding: 2px 3px; gap: 2px; }
+  .dd-browse-controls button, .dd-browse-options { min-width: 26px; min-height: 30px; height: 30px; }
+  .dd-browse-count { font-size: 9px; }
+  .dd-browse-controls:has(.dd-browse-remove:not([hidden])) .dd-browse-load span { display: none; }
+  .dd-browse-controls:has(.dd-browse-remove:not([hidden])) .dd-browse-load svg { display: block; }
+  .dd-scope { display: flex; min-height: 0; flex-direction: column; }
+  .dd-wave { flex: 1; height: auto; min-height: 24px; }
+  .dd-wave-controls { flex-wrap: wrap; min-width: 0; overflow: hidden; padding: 3px 4px; font-size: 10px; }
+  .dd-wave-tools { gap: 2px; }
+  .dd-zoom { min-width: 0; }
+}
+@media(max-width: 700px) and (orientation:portrait) {
+  .dd-transport { align-self: start; }
+  .dd-transport .dd-play { order: -1; }
 }

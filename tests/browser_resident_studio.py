@@ -148,8 +148,11 @@ def check_panel_change(browser, base):
 
     tabs.locator('[data-panel=a]').tap()
     assert_clear("#deck-a :is(.dd-screen, .dd-jog, button, select, input)")
-    page.locator('a[data-view=library]').tap()
-    assert_clear("#collection")
+    tabs.locator('[data-panel=b]').tap()
+    deck = page.locator('#deck-b')
+    deck.locator('.dd-browse-search').fill('High Stage')
+    assert_clear("#deck-b .dd-screen")
+    assert deck.get_by_role("listbox").get_by_role("option").count() == 1
     page.close()
 
 

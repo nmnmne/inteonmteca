@@ -108,11 +108,13 @@
     + '.catalog-heading, .playlist-shell, #active-player, .text, #auth-hint, #theme-hint, #chat-hint, #street-link, .street-return, '
     + '.chat-compose, .chat-stream:not(:empty), #theme-panel, #auth-panel, .theme-options, .visit-counter, .development-animation-menu, .development-debug-toggle';
   const deckObstacles = '.dd-head, .dd-screen, .dd-wheel-mount, .dd-transport button, .dd-pitch, .dd-wheel-modes, .dd-loop-group, .dd-pads';
-  const studioObstacles = ', '+deckObstacles+', .room-toolbar > *, .console-nav a, .console-tools button, .monitor-status, .page-title h2, '
+  const studioObstacles = ', '+deckObstacles+', .room-toolbar > *, .room-console-top button, .monitor-status, .page-title h2, '
     + '.controller-tabs button, .quick-cross, #mixer .panel-head, #mixer .channel-strip, #mixer .cross-section, '
-    + '#collection, .status-bar > *, #room-chat, dialog[open], [popover]:popover-open, #notice.visible, [data-resident-obstacle]';
+    + '.status-bar > *, #room-chat, dialog[open], [popover]:popover-open, #notice.visible, [data-resident-obstacle]';
   const obstacleSelector = sharedObstacles + (studio ? studioObstacles : '');
   const visible = el => el.checkVisibility({checkVisibilityCSS:true, checkOpacity:true});
+  const firstVisible = selector => [...document.querySelectorAll(selector)].find(visible);
+  const playlistTarget = '#studio .dd-browse-list, .playlist-shell';
   const distance = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
   const safe = p => p.x >= bounds.left && p.x <= bounds.right && p.y >= bounds.top && p.y <= bounds.bottom
     && !obstacles.some(r => p.x > r.left && p.x < r.right && p.y > r.top && p.y < r.bottom);
@@ -317,13 +319,13 @@
   const contemplate = () => {
     if (compact.matches || innerHeight < 541 || blocked || reduced.matches || journey) return false;
     const glance = selector => {
-      const target = document.querySelector(selector);
+      const target = firstVisible(selector);
       if (!target) return;
       const rect = target.getBoundingClientRect();
       look({x:rect.left + rect.width * .35, y:rect.top + rect.height * .5});
     };
     pose("watching");
-    glance("#studio #collection, .playlist-shell");
+    glance(playlistTarget);
     later(() => {
       if (blocked || journey || resident.dataset.state !== "watching" || performance.now() < reactionUntil) return;
       glance("#studio #mixer, #active-player");
@@ -463,8 +465,8 @@
   };
   const explore = () => {
     refreshObstacles();
-    const selectors=['#studio #collection, .playlist-shell','.logo-wrap','.listening-intro h1','.chat-compose','#studio .dd-play, .transport-play','#studio #cross, #track-progress'];
-    const interest=document.querySelector(selectors[Math.floor(Math.random()*selectors.length)]);
+    const selectors=[playlistTarget,'.logo-wrap','.listening-intro h1','.chat-compose','#studio .dd-play, .transport-play','#studio #cross, #track-progress'];
+    const interest=firstVisible(selectors[Math.floor(Math.random()*selectors.length)]);
     const target=interest?.closest('#active-player') || interest;
     if (!target) return false;
     const r=target.getBoundingClientRect(),here=center();
@@ -541,7 +543,7 @@
   };
   const obstacleObserver = new ResizeObserver(invalidateSpace);
   document.querySelectorAll('#studio.room-console, .playlist-shell, #active-player, .listening-intro, #logo-wrap, #chat-panel, #auth-panel, #theme-panel, '
-    + '.room-toolbar, .console-nav, .console-tools, .deck-bank, #mixer, #mixer .panel-head, #mixer .channel-strip, [data-resident-stop], #collection, '+deckObstacles)
+    + '.room-toolbar, .room-console-top, .console-tools, .deck-bank, #mixer, #mixer .panel-head, #mixer .channel-strip, [data-resident-stop], '+deckObstacles)
     .forEach(el => obstacleObserver.observe(el));
   if (studio) {
     const panelChanges = new MutationObserver(invalidateSpace);

@@ -4,9 +4,7 @@
   const $$ = (selector) => Array.from(document.querySelectorAll(selector));
   const engine = window.DJEngine;
   const icons = {
-    decks:
-      '<rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="7.5" cy="12" r="2.4"/><circle cx="16.5" cy="12" r="2.4"/><path d="M11.8 8v8"/>',
-    library: '<path d="M4 4v16m4-15v15m3-15 3 15m2-14 4 13"/>',
+    download: '<path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/>',
     door: '<path d="M4 21h16M6 20V4l10-1v17M16 5h3v15M12 12h.2"/>',
     keyboard:
       '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M5.5 9h.4m3.6 0h.4m3.6 0h.4m3.6 0h.4M5.5 12h.4m3.6 0h.4m3.6 0h.4m3.6 0h.4M8 15h8"/>',
@@ -17,17 +15,10 @@
       '<path d="M5 3v8m0 5v5M12 3v3m0 5v10m7-18v10m0 5v3"/><path d="M2 12h6v3H2zm7-5h6v3H9zm7 7h6v3h-6z"/>',
     volume: '<path d="M3 9h4l5-4v14l-5-4H3zM15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>',
     crossfade: '<path d="M2 6h3c5 0 9 12 14 12h3M2 18h3c2.5 0 4-2 5.5-4M14 9c1.5-2 3-3 5-3h3"/>',
-    search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
     close: '<path d="m6 6 12 12M18 6 6 18"/>',
-    star: '<path d="m12 3 2.7 5.9 6.4.8-4.7 4.6 1.2 6.4-5.6-3.1-5.6 3.1 1.2-6.4L3 9.7l6.3-.8z"/>',
-    folder: '<path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
-    discs:
-      '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M6.5 11A6 6 0 0 1 11 6.5M17.5 13a6 6 0 0 1-4.5 4.5"/>',
     phones:
       '<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="12" width="4" height="8" rx="2"/><rect x="17" y="12" width="4" height="8" rx="2"/>',
-    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 6.5V12l3.6 2"/>',
-    trash: '<path d="M3 6h18M9 6V3h6v3M6 6l1 14h10l1-14M10 10v6m4-6v6"/>',
   };
   const icon = (name, size = 17) =>
     '<svg aria-hidden="true" viewBox="0 0 24 24" width="' +
@@ -78,7 +69,8 @@
   const loadRequests = { A: 0, B: 0 };
   const retiredURLs = new Set();
   const mixerDisplays = [];
-  const deckBrowsers = [];
+  const deckBrowsers = new Map();
+  let focusedDeck = 'A';
   const knobSpecs = [
     { name: 'low', label: 'LOW', min: -24, max: 12, unit: 'dB', desc: 'Низкие частоты' },
     { name: 'mid', label: 'MID', min: -24, max: 12, unit: 'dB', desc: 'Средние частоты' },
@@ -93,10 +85,7 @@
     },
     { name: 'echo', label: 'ECHO', min: 0, max: 100, unit: '%', desc: 'Посыл на эхо' },
   ];
-  let crate = 'all',
-    sortKey = '',
-    sortDir = 1,
-    tableStamp,
+  let loadedTracks,
     toastTimer,
     paintTimer,
     lastRecording = false;
@@ -111,132 +100,13 @@
   function inCrate(track, choice) {
     return (choice !== 'starred' || favorites.has(track.id)) && (choice !== 'imports' || track.imported);
   }
-  function visibleTracks() {
-    const query = $('#search').value.trim().toLocaleLowerCase();
-    const rows = tracks.filter(
-      (t) =>
-        inCrate(t, crate) &&
-        (!query || (t.title + ' ' + t.artist).toLocaleLowerCase().includes(query)),
-    );
-    if (sortKey)
-      rows.sort((a, b) => {
-        const av = a[sortKey],
-          bv = b[sortKey];
-        if (av == null || bv == null) return Number(av == null) - Number(bv == null);
-        return (
-          sortDir *
-          (typeof av === 'number' && typeof bv === 'number'
-            ? av - bv
-            : collator.compare(String(av), String(bv)))
-        );
-      });
-    return rows;
+  function refreshPlaylists(snapshot = engine.snapshot()) {
+    for (const browser of deckBrowsers.values()) browser.refresh(snapshot);
+    loadedTracks = channels.map(id => snapshot[id].track?.id).join('|');
   }
-  function drawTable(s = engine.snapshot()) {
-    const rows = visibleTracks();
-    deckBrowsers.forEach(refresh => refresh(s));
-    const count = {
-      all: tracks.length,
-      starred: tracks.filter((t) => favorites.has(t.id)).length,
-      imports: tracks.filter((t) => t.imported).length,
-    };
-    $('#track-count').textContent = String(rows.length);
-    $$('[data-crate]').forEach((btn) => {
-      btn.setAttribute('aria-pressed', String(btn.dataset.crate === crate));
-      btn.querySelector('.crate-total').textContent = count[btn.dataset.crate];
-    });
-    $$('[data-sort]').forEach((b) =>
-      b.parentElement.setAttribute(
-        'aria-sort',
-        b.dataset.sort === sortKey ? (sortDir === 1 ? 'ascending' : 'descending') : 'none',
-      ),
-    );
-    const focus = document.activeElement;
-    const focusRow = focus?.closest('#track-list tr');
-    const focusData = focusRow ? { index: focusRow.dataset.index, action: focus.dataset.action } : null;
-    $('#track-list').innerHTML = rows
-      .map((t, n) => {
-        const idx = tracks.indexOf(t),
-          a = t.id === s.A.track?.id,
-          b = t.id === s.B.track?.id;
-        const badge = (id) => '<span class="on-deck ' + id.toLowerCase() + '-color">' + id + '</span>';
-        const load = (id) =>
-          '<button class="load-key tone-' +
-          id.toLowerCase() +
-          ((id === 'A' ? a : b) ? ' active' : '') +
-          '" style="--ch:var(--' +
-          id.toLowerCase() +
-          ')" data-action="' +
-          id +
-          '" title="Загрузить в деку ' +
-          id +
-          '" aria-label="' +
-          esc(t.title) +
-          ' — загрузить в деку ' +
-          id +
-          '">' +
-          id +
-          '</button>';
-        const art = t.cover
-          ? '<img class="thumb" loading="lazy" alt="" src="' + esc(t.cover) + '">'
-          : '<span class="vinyl-thumb" aria-hidden="true"></span>';
-        const removeButton = t.imported
-          ? '<button class="remove-track" data-action="remove" aria-label="Удалить из фонотеки — ' +
-            esc(t.title) +
-            '" title="Удалить из фонотеки">' +
-            icon('trash', 13) +
-            '</button>'
-          : '';
-        return (
-          '<tr draggable="true" data-index="' +
-          idx +
-          '" class="' +
-          (a ? 'loaded-a' : b ? 'loaded-b' : '') +
-          '"><td class="index-cell">' +
-          (a || b ? (a ? badge('A') : '') + (b ? badge('B') : '') : String(n + 1).padStart(2, '0')) +
-          '</td><td><div class="track-name">' +
-          art +
-          '<strong title="' +
-          esc(t.title) +
-          '">' +
-          esc(t.title) +
-          '</strong>' +
-          removeButton +
-          '</div></td><td class="artist-cell">' +
-          esc(t.artist || '—') +
-          '</td><td class="numeric">' +
-          (t.bpm ? Number(t.bpm.toFixed(1)) : '—') +
-          '</td><td class="numeric key-cell">' +
-          esc(t.key || '—') +
-          '</td><td class="numeric">' +
-          fmt(t.duration) +
-          '</td><td class="load-cell">' +
-          load('A') +
-          load('B') +
-          '</td><td class="fav-cell"><button class="fav-button" data-action="star" aria-pressed="' +
-          favorites.has(t.id) +
-          '" aria-label="Избранное — ' +
-          esc(t.title) +
-          '">' +
-          icon('star', 14) +
-          '</button></td></tr>'
-        );
-      })
-      .join('');
-    if (focusData)
-      $(
-        '#track-list tr[data-index="' + focusData.index + '"] [data-action="' + focusData.action + '"]',
-      )?.focus({ preventScroll: true });
-    const empty = $('#empty-state');
-    empty.hidden = rows.length > 0;
-    empty.textContent = $('#search').value.trim()
-      ? 'По этому запросу треков нет.'
-      : crate === 'starred'
-        ? 'Отметьте трек звёздочкой, чтобы добавить его сюда.'
-        : crate === 'imports'
-          ? 'Импортируйте аудиофайл с устройства.'
-          : 'Фонотека пуста.';
-    tableStamp = channels.map((id) => s[id].track?.id).join('|');
+  function activeBrowser() {
+    const visible = channels.filter(id => $('#deck-' + id.toLowerCase()).offsetWidth);
+    return deckBrowsers.get(visible.length === 1 ? visible[0] : focusedDeck);
   }
   async function loadDeck(id, track) {
     if (!track) return false;
@@ -271,18 +141,35 @@
   }
   function mountDeckBrowser(root, id) {
     const find = selector => root.querySelector(selector);
-    const panel = find('.dd-browser'), toggle = find('.dd-browse-toggle');
+    const panel = find('.dd-browser'), search = find('.dd-browse-search');
     const list = find('.dd-browse-list'), count = find('.dd-browse-count'), filter = find('.dd-browse-filter');
+    const sort = find('.dd-browse-sort'), options = find('.dd-browse-options');
     const up = find('.dd-browse-up'), down = find('.dd-browse-down'), load = find('.dd-browse-load');
-    let rows = [], selected = -1, viewVersion = 0;
+    const star = find('.dd-browse-star'), remove = find('.dd-browse-remove');
+    let rows = [], selected = -1, lastLoaded;
 
+    function revealSelection() {
+      const option = list.children[selected];
+      if (!option || !list.clientHeight) return;
+      const bounds = list.getBoundingClientRect(), row = option.getBoundingClientRect();
+      if (row.top < bounds.top) list.scrollTop += row.top - bounds.top;
+      else if (row.bottom > bounds.bottom) {
+        let first = option;
+        while (first.previousElementSibling && row.bottom - first.previousElementSibling.getBoundingClientRect().top <= list.clientHeight + .5)
+          first = first.previousElementSibling;
+        list.scrollTop += first.getBoundingClientRect().top - bounds.top;
+      }
+    }
     function select(index) {
       list.children[selected]?.setAttribute('aria-selected', 'false');
       selected = Math.min(rows.length - 1, Math.max(0, index));
-      const option = list.children[selected];
+      const option = list.children[selected], track = rows[selected];
       up.disabled = selected <= 0;
       down.disabled = selected >= rows.length - 1;
-      load.disabled = !option;
+      load.disabled = star.disabled = !track;
+      remove.hidden = !track?.imported;
+      star.setAttribute('aria-pressed', String(Boolean(track && favorites.has(track.id))));
+      star.setAttribute('aria-label', track ? 'Избранное — ' + track.title : 'Избранное');
       count.textContent = (selected + 1) + ' / ' + rows.length;
       if (!option) {
         list.removeAttribute('aria-activedescendant');
@@ -290,97 +177,104 @@
       }
       option.setAttribute('aria-selected', 'true');
       list.setAttribute('aria-activedescendant', option.id);
-      const bounds = list.getBoundingClientRect(), row = option.getBoundingClientRect();
-      if (row.top < bounds.top) list.scrollTop += row.top - bounds.top;
-      else if (row.bottom > bounds.bottom) list.scrollTop += row.bottom - bounds.bottom;
+      revealSelection();
     }
-
     function refresh(snapshot) {
-      if (panel.hidden) return;
       const loaded = snapshot[id].track?.id;
-      const wanted = rows[selected]?.id ?? loaded;
-      rows = tracks.filter(track => inCrate(track, filter.value));
+      const wanted = loaded !== lastLoaded ? loaded : rows[selected]?.id ?? loaded;
+      lastLoaded = loaded;
+      const query = search.value.trim().toLocaleLowerCase();
+      rows = tracks.filter(track => inCrate(track, filter.value)
+        && (!query || (track.title + ' ' + track.artist).toLocaleLowerCase().includes(query)));
+      if (sort.value) {
+        const desc = sort.value.startsWith('-');
+        const key = desc ? sort.value.slice(1) : sort.value;
+        rows.sort((a, b) => {
+          if (a[key] == null || b[key] == null) return Number(a[key] == null) - Number(b[key] == null);
+          const order = typeof a[key] === 'number' && typeof b[key] === 'number'
+            ? a[key] - b[key] : collator.compare(String(a[key]), String(b[key]));
+          return desc ? -order : order;
+        });
+      }
       list.innerHTML = rows.map((track, index) => {
-        const current = track.id === loaded;
-        const bpm = Number(track.bpm);
-        return `<div role="option" class="dd-browse-row" id="dd-option-${id}-${index}" data-index="${index}" aria-selected="false"${current ? ' aria-current="true"' : ''}>
-          <span class="dd-browse-copy"><strong class="dd-browse-title">${esc(track.title)}</strong><small class="dd-browse-artist">${esc(track.artist)}</small></span>
-          <span class="dd-browse-bpm">${bpm > 0 ? Number(bpm.toFixed(1)) + ' BPM' : '—'}</span>
-          ${current ? '<span class="dd-browse-loaded" aria-label="Загружен в деку ' + id + '">' + id + '</span>' : ''}
+        const current = track.id === loaded, bpm = Number(track.bpm);
+        const marker = current ? id : track.cover ? `<img src="${esc(track.cover)}" alt="" loading="lazy">` : String(index + 1).padStart(2, '0');
+        return `<div role="option" class="dd-browse-row" id="dd-option-${id}-${index}" data-index="${index}" draggable="true" aria-label="${esc(track.title)} — ${esc(track.artist || '—')}" aria-selected="false"${current ? ' aria-current="true"' : ''}>
+          <span class="dd-browse-number" aria-hidden="true">${marker}</span>
+          <span class="dd-browse-copy" title="${esc(track.artist)} — ${esc(track.title)}"><strong class="dd-browse-title">${esc(track.title)}</strong><small class="dd-browse-artist">${esc(track.artist || '—')}</small></span>
+          <span class="dd-browse-bpm" title="BPM">${bpm > 0 ? Number(bpm.toFixed(1)) : '—'}</span>
         </div>`;
       }).join('');
-      find('.dd-browse-empty').hidden = rows.length > 0;
+      const empty = find('.dd-browse-empty');
+      empty.hidden = Boolean(rows.length);
+      empty.textContent = query ? 'Треки не найдены' : 'В этой подборке нет треков';
+      options.setAttribute('data-filtered', String(filter.value !== 'all' || Boolean(sort.value)));
       const wantedIndex = rows.findIndex(track => track.id === wanted);
       select(wantedIndex >= 0 ? wantedIndex : selected);
     }
 
-    function show(open) {
-      viewVersion++;
-      panel.hidden = !open;
-      find('.dd-track').hidden = open;
-      find('.dd-scope').hidden = open;
-      root.classList.toggle('dd-browsing', open);
-      toggle.setAttribute('aria-expanded', String(open));
-      toggle.setAttribute('aria-label', (open ? 'Вернуться к экрану деки ' : 'Выбрать трек для деки ') + id);
-      toggle.querySelector('span').textContent = open ? 'Назад' : 'Треки';
-      if (open) {
-        rows = [];
-        selected = -1;
-        refresh(engine.snapshot());
-        list.focus({preventScroll: true});
-      }
+    function loadSelected() {
+      if (rows[selected]) void loadDeck(id, rows[selected]);
     }
-
-    function close(focusToggle = true) {
-      show(false);
-      if (focusToggle) toggle.focus({preventScroll: true});
+    function rowIndex(event) {
+      const row = event.target.closest('[role="option"]');
+      return row ? Number(row.dataset.index) : -1;
     }
-
-    async function loadSelected() {
-      const track = rows[selected], version = viewVersion;
-      if (!track) return;
-      const ok = await loadDeck(id, track);
-      if (ok && version === viewVersion && rows[selected] === track)
-        close(panel.contains(document.activeElement));
-    }
-
-    toggle.hidden = false;
-    toggle.onclick = () => panel.hidden ? show(true) : close();
-    filter.onchange = () => {
-      selected = -1;
-      refresh(engine.snapshot());
-    };
+    root.addEventListener('focusin', () => { focusedDeck = id; });
+    root.addEventListener('pointerdown', () => { focusedDeck = id; });
+    const refilter = () => { selected = -1; refresh(engine.snapshot()); };
+    search.oninput = filter.onchange = refilter;
+    sort.onchange = () => refresh(engine.snapshot());
     up.onclick = () => select(selected - 1);
     down.onclick = () => select(selected + 1);
     load.onclick = loadSelected;
+    star.onclick = () => {
+      const track = rows[selected];
+      if (!track) return;
+      if (favorites.has(track.id)) favorites.delete(track.id);
+      else favorites.add(track.id);
+      save('favorites', [...favorites]);
+      refreshPlaylists();
+    };
+    remove.onclick = () => { if (rows[selected]?.imported) confirmRemoval(rows[selected]); };
     list.onclick = event => {
-      const row = event.target.closest('[role="option"]');
-      if (row) {
-        select(Number(row.dataset.index));
-        list.focus({preventScroll: true});
+      const index = rowIndex(event);
+      if (index >= 0) {
+        select(index);
+        list.focus({preventScroll:true});
       }
     };
+    list.ondblclick = event => { if (rowIndex(event) >= 0) loadSelected(); };
+    list.ondragstart = event => {
+      const track = rows[rowIndex(event)];
+      if (!track) return;
+      event.dataTransfer.setData('application/x-inteon-track', track.id);
+      event.dataTransfer.effectAllowed = 'copy';
+    };
     panel.onkeydown = event => {
-      if (event.target === filter || event.ctrlKey || event.metaKey || event.altKey) return;
+      if ((event.target !== list && event.target !== search) || event.ctrlKey || event.metaKey || event.altKey) return;
       switch (event.key) {
         case 'ArrowUp': select(selected - 1); break;
         case 'ArrowDown': select(selected + 1); break;
-        case 'Home': select(0); break;
-        case 'End': select(rows.length - 1); break;
-        case 'Escape': close(); break;
-        case 'Enter':
-          if (event.target !== list) return;
-          if (!event.repeat) void loadSelected();
-          break;
+        case 'Home': if (event.target === search) return; select(0); break;
+        case 'End': if (event.target === search) return; select(rows.length - 1); break;
+        case 'Enter': if (!event.repeat) loadSelected(); break;
         default: return;
       }
       event.preventDefault();
     };
-    deckBrowsers.push(refresh);
+    deckBrowsers.set(id, {
+      id, refresh, revealSelection,
+      showImports() { filter.value = 'imports'; search.value = ''; refilter(); },
+      focusSearch() {
+        if (!root.offsetWidth) $(`.controller-tabs [data-panel="${id.toLowerCase()}"]`)?.click();
+        search.focus();
+      },
+    });
   }
   function confirmRemoval(track) {
     openDialog(
-      'Удалить трек из фонотеки?',
+      'Удалить импортированный трек?',
       '<p class="hint">' +
         esc(track.title) +
         '</p><div class="dialog-actions"><button class="action-button" id="remove-cancel">Отмена</button><button class="action-button" id="remove-confirm">Удалить</button></div>',
@@ -400,20 +294,14 @@
         if (channels.some((side) => state[side].track?.src === track.src)) retiredURLs.add(track.src);
         else URL.revokeObjectURL(track.src);
       }
-      drawTable();
+      favorites.delete(track.id);
+      save('favorites', [...favorites]);
+      refreshPlaylists();
       $('#dialog').close();
     };
   }
-  function useView() {
-    const library = location.hash === '#library';
-    document.body.classList.toggle('library-only', library);
-    $('#performance').hidden = library;
-    $$('[data-view]').forEach((a) => {
-      if (a.dataset.view === (library ? 'library' : 'studio')) a.setAttribute('aria-current', 'page');
-      else a.removeAttribute('aria-current');
-    });
-    window.scrollTo(0, 0);
-    schedulePaint();
+  function resolveLegacyView() {
+    if (location.hash === '#library') history.replaceState(history.state, '', '#studio');
   }
   function mountChannel(id) {
     const panel = $('#channel-' + id.toLowerCase());
@@ -558,8 +446,8 @@
     paintTimer = 0;
     const s = engine.snapshot();
     mixerDisplays.forEach((update) => update(s));
-    if (!$('#performance').hidden) channels.forEach((id) => window.DJDecks.render(id, s[id]));
-    if (channels.map((id) => s[id].track?.id).join('|') !== tableStamp) drawTable(s);
+    channels.forEach((id) => window.DJDecks.render(id, s[id]));
+    if (channels.map((id) => s[id].track?.id).join('|') !== loadedTracks) refreshPlaylists(s);
     channels.forEach((id) =>
       $('#channel-' + id.toLowerCase() + ' .monitor-btn').setAttribute('aria-pressed', String(s[id].monitor)),
     );
@@ -787,7 +675,7 @@
       save('grids', gridEdits);
       for (const side of channels)
         if (engine.snapshot()[side].track?.id === track.id) engine.setBPM(side, value);
-      drawTable();
+      refreshPlaylists();
       schedulePaint();
       notice('Сетка Deck ' + id + ' сохранена');
     };
@@ -802,7 +690,7 @@
     };
   }
   let importing = false;
-  async function importFiles(files) {
+  async function importFiles(files, browser) {
     if (importing || !files.length) return;
     importing = true;
     const button = $('#import');
@@ -840,9 +728,8 @@
     button.disabled = false;
     button.innerHTML = icon('plus', 14) + 'Импорт';
     if (added || duplicates) {
-      crate = 'imports';
-      $('#search').value = '';
-      drawTable();
+      browser.showImports();
+      refreshPlaylists();
     }
     if (problems.length)
       openDialog(
@@ -852,7 +739,7 @@
           '</p>' +
           problems.map((m) => '<p class="import-note">' + esc(m) + '</p>').join(''),
       );
-    else notice(added ? 'Добавлено треков: ' + added : 'Эти треки уже в фонотеке');
+    else notice(added ? 'Добавлено треков: ' + added : 'Эти треки уже в плейлисте');
   }
   for (const id of channels) {
     const host = $('#deck-' + id.toLowerCase());
@@ -860,12 +747,17 @@
     mountDeckBrowser(deck, id);
     mountChannel(id);
     host.addEventListener('dragover', (e) => {
-      if (e.dataTransfer.types.includes('application/x-inteon-track')) {
+      if (e.dataTransfer.types.includes('application/x-inteon-track') || e.dataTransfer.types.includes('Files')) {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
       }
     });
     host.addEventListener('drop', (e) => {
+      if (e.dataTransfer.files.length) {
+        e.preventDefault();
+        void importFiles(Array.from(e.dataTransfer.files), deckBrowsers.get(id));
+        return;
+      }
       const key = e.dataTransfer.getData('application/x-inteon-track');
       if (key) {
         e.preventDefault();
@@ -883,7 +775,7 @@
   window.addEventListener('dj-change', schedulePaint);
   window.addEventListener('dj-error', (e) => notice(e.detail.message));
   window.addEventListener('dj-recorded', (e) => notice('Микс сохранён · ' + e.detail.filename));
-  window.addEventListener('hashchange', useView);
+  window.addEventListener('hashchange', resolveLegacyView);
   document.addEventListener('visibilitychange', schedulePaint);
   $('#record').onclick = () => engine.toggleRecording();
   $('#master').oninput = (e) => engine.setMaster(e.target.value / 100);
@@ -894,6 +786,11 @@
       $('.deck-bank').dataset.panel = tab.dataset.panel;
       for (const other of $$('.controller-tabs button')) {
         other.setAttribute('aria-pressed', String(other === tab));
+      }
+      const browser = deckBrowsers.get(tab.dataset.panel.toUpperCase());
+      if (browser) {
+        focusedDeck = browser.id;
+        browser.revealSelection();
       }
       schedulePaint();
     };
@@ -932,63 +829,14 @@
         e.target.close();
     }
   });
-  $('#search').oninput = () => drawTable();
-  $$('[data-crate]').forEach(
-    (b) =>
-      (b.onclick = () => {
-        crate = b.dataset.crate;
-        drawTable();
-      }),
-  );
-  $$('[data-sort]').forEach(
-    (b) =>
-      (b.onclick = () => {
-        sortDir = sortKey === b.dataset.sort ? -sortDir : 1;
-        sortKey = b.dataset.sort;
-        drawTable();
-      }),
-  );
-  $('#track-list').addEventListener('click', (e) => {
-    const button = e.target.closest('[data-action]');
-    if (!button) return;
-    const track = tracks[Number(button.closest('tr').dataset.index)];
-    if (button.dataset.action === 'star') {
-      if (favorites.has(track.id)) favorites.delete(track.id);
-      else favorites.add(track.id);
-      save('favorites', [...favorites]);
-      drawTable();
-    } else if (button.dataset.action === 'remove') confirmRemoval(track);
-    else loadDeck(button.dataset.action, track);
-  });
-  $('#track-list').addEventListener('dragstart', (e) => {
-    const row = e.target.closest('tr[data-index]');
-    if (!row) return;
-    e.dataTransfer.setData('application/x-inteon-track', tracks[Number(row.dataset.index)].id);
-    e.dataTransfer.effectAllowed = 'copy';
-  });
-  $('#import').onclick = () => $('#import-files').click();
-  $('#masters').onclick = () => openMasters(engine.snapshot().A.track);
-  $('#import-files').onchange = (e) => {
-    importFiles(Array.from(e.target.files));
-    e.target.value = '';
+  let importBrowser;
+  $('#import').onclick = () => { importBrowser = activeBrowser(); $('#import-files').click(); };
+  $('#masters').onclick = () => openMasters(engine.snapshot()[activeBrowser().id].track);
+  $('#import-files').onchange = event => {
+    void importFiles(Array.from(event.target.files), importBrowser || activeBrowser());
+    event.target.value = '';
+    importBrowser = null;
   };
-  const lib = $('#collection');
-  lib.addEventListener('dragover', (e) => {
-    if (e.dataTransfer.types.includes('Files')) {
-      e.preventDefault();
-      lib.classList.add('dragover');
-    }
-  });
-  lib.addEventListener('dragleave', (e) => {
-    if (!lib.contains(e.relatedTarget)) lib.classList.remove('dragover');
-  });
-  lib.addEventListener('drop', (e) => {
-    lib.classList.remove('dragover');
-    if (e.dataTransfer.files.length) {
-      e.preventDefault();
-      importFiles(Array.from(e.dataTransfer.files));
-    }
-  });
   document.addEventListener('keydown', (e) => {
     if (
       e.repeat ||
@@ -1015,7 +863,7 @@
     else if (code === 'KeyZ' || code === 'KeyM') engine.setCut(code === 'KeyZ' ? 'A' : 'B', true);
     else if (code === 'KeyF' && document.fullscreenEnabled) toggleFullscreen();
     else if (code === 'Slash' && e.shiftKey) openKeys();
-    else if (code === 'Slash') $('#search').focus();
+    else if (code === 'Slash') activeBrowser().focusSearch();
     else return;
     e.preventDefault();
   });
@@ -1037,14 +885,14 @@
   const openingB = preferredB || tracks.find(track => track !== openingA);
   if (openingA) engine.load('A', openingA);
   if (openingB) engine.load('B', openingB);
-  useView();
-  drawTable();
+  resolveLegacyView();
+  refreshPlaylists();
   schedulePaint();
   window.DJStorage.list().then((saved) => {
     for (const track of saved) {
       if (!tracks.some((t) => t.id === track.id))
         tracks.push(Object.assign(track, { stored: true }, gridEdits[track.id]));
     }
-    if (saved.length) drawTable();
+    if (saved.length) refreshPlaylists();
   });
 })();

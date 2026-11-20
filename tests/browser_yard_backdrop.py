@@ -140,10 +140,10 @@ def exercise(browser, route, mobile=False, fallback=False):
         control.focus()
         page.keyboard.press("ArrowRight")
         page.wait_for_function("DJEngine.snapshot().cross > 0")
-        library = page.get_by_role("link", name="Фонотека")
-        (library.tap if mobile else library.click)()
-        page.locator("#search").fill("Deadsouls")
-        assert page.locator("#track-list tr").count() == 1
+        deck = page.locator("#deck-a")
+        deck.locator(".dd-browse-search").fill("Deadsouls")
+        assert deck.get_by_role("listbox").get_by_role("option").count() == 1
+        assert deck.locator(".dd-wave").is_visible() and page.url == current_url
     else:
         page.locator("#theme-hint").click()
         page.locator("#theme-panel").wait_for()

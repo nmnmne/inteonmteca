@@ -21,7 +21,7 @@
     window.inteonPixelEnergy?.stop();
     body.dataset.interludePhase = 'idle';
     curtain?.remove(); digits?.remove(); curtain = digits = null;
-    document.querySelectorAll('.track-item').forEach(el => { el.style.removeProperty('--return-delay'); el.classList.remove('scene-peek-track'); });
+    document.querySelectorAll('.scene-peek-track').forEach(el => { el.style.removeProperty('--return-delay'); el.classList.remove('scene-peek-track'); });
     window.dispatchEvent(new Event('inteon-interlude'));
     window.inteonHomeEffects?.release('interlude');
   };
@@ -49,12 +49,20 @@
     body.classList.add('is-interlude'); body.dataset.interludePhase = 'dark';
     window.dispatchEvent(new Event('inteon-interlude'));
     sceneLater(() => {
-      const list = document.querySelector('#studio #track-list') || document.querySelector('.track-list');
-      const bounds = (list?.closest('.table-pane') || list)?.getBoundingClientRect();
-      const visible = [...(list?.children || [])].filter(el => { const r=el.getBoundingClientRect(); return r.height > 0 && r.top >= bounds.top-.5 && r.top < bounds.bottom; });
-      visible.forEach((el, i) => { el.classList.add('scene-peek-track'); el.style.setProperty('--return-delay', `${i * 1000}ms`); });
+      let rowCount = 0;
+      for (const list of document.querySelectorAll('#studio .dd-browse-list, .playlist-shell .track-list')) {
+        const bounds = (list.closest('.playlist-shell') || list).getBoundingClientRect();
+        let row = 0;
+        for (const el of list.children) {
+          const r = el.getBoundingClientRect();
+          if (!r.height || r.bottom <= Math.max(0, bounds.top) || r.top >= Math.min(innerHeight, bounds.bottom)) continue;
+          el.classList.add('scene-peek-track');
+          el.style.setProperty('--return-delay', `${row++ * 1000}ms`);
+        }
+        rowCount = Math.max(rowCount, row);
+      }
       body.classList.add('scene-peek'); body.dataset.interludePhase = 'tracks';
-      const rebuiltAt=visible.length*1000+500;
+      const rebuiltAt=rowCount*1000+500;
       sceneLater(() => { body.classList.add('scene-heading'); body.dataset.interludePhase='heading'; },rebuiltAt);
       sceneLater(() => { body.classList.remove('scene-heading','scene-peek');body.classList.add('scene-void');body.dataset.interludePhase='void'; },rebuiltAt+1500);
       sceneLater(() => {

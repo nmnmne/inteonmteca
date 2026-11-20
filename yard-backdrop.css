@@ -32,13 +32,15 @@ body.spatial-room[data-yard-backdrop] { isolation: isolate; }
   border-radius: inherit;
   background: center / cover url("yard/assets/spawn-desktop.jpg");
   transform: scaleY(-1);
-  opacity: .36;
-  /* The bevel catches a second view. The broad central pane transmits
-     the original scene so windows and rooflines keep a single outline. */
+  opacity: .48;
+  /* The beveled perimeter reflects the sky. The flat pane stays clear. */
   mask-image:
-    linear-gradient(90deg, #000 0%, #0004 2%, transparent 5% 95%, #0005 98%, #000),
-    linear-gradient(115deg, transparent 15%, #0004 21%, #0001 25%, transparent 25.5%),
-    linear-gradient(0deg, #000 0%, transparent 3% 96%, #0009);
+    linear-gradient(90deg,#000, #0005 3px, transparent 9px calc(100% - 9px), #0005 calc(100% - 3px), #000),
+    linear-gradient(0deg,#000b, transparent 8px calc(100% - 5px), #0009);
+}
+.room-console .jog-refraction {
+  pointer-events: none; position: absolute; inset: 0; border-radius: 50%; width: 100%; height: 100%;
+  mask-image: radial-gradient(closest-side,transparent 69%,#0002 76%,#000c 87%,#0009 91%,transparent 96%);
 }
 @media (max-width: 680px) and (orientation: portrait) {
   .room-console > .console-reflection { background-image: url("yard/assets/spawn-mobile.jpg"); }

@@ -40,12 +40,12 @@
   <link rel="icon" href="assets/logo-inteonmteca.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="stylesheet" href="dj-studio.css?v=1">
-  <link rel="stylesheet" href="dj-decks.css?v=4">
+  <link rel="stylesheet" href="dj-decks.css?v=glass-decks-1">
   <link rel="stylesheet" href="styles.css?v=text-only-20261029">
   <link rel="stylesheet" href="home-player.css?v=frosted-20261005-1">
   <link rel="stylesheet" href="text-waves.css?v=fps-20261026">
   <link rel="stylesheet" href="room-finish.css?v=cosmic-room-20261026">
-  <link rel="stylesheet" href="atmosphere-events.css?v=cotton-clouds-20261119">
+  <link rel="stylesheet" href="atmosphere-events.css?v=glass-decks-1">
   <link rel="stylesheet" href="room-composition.css?v=ambient-eight-four-20261031">
   <link rel="stylesheet" href="charged-material.css?v=cosmic-room-20261026">
   <link rel="stylesheet" href="room-grid.css?v=20261005-2">
@@ -59,11 +59,11 @@
   <link rel="stylesheet" href="responsive-ui.css?v=inset-panels-20261031">
   <link rel="stylesheet" href="pointer-life.css?v=pointer-life-20261103">
   <link rel="stylesheet" href="sound-controls.css?v=1">
-  <link rel="stylesheet" href="yard-backdrop.css?v=5">
+  <link rel="stylesheet" href="yard-backdrop.css?v=glass-decks-1">
   <script defer src="sound-filter.js?v=1"></script>
   <script defer src="sound-controls.js?v=2"></script>
-  <link rel="stylesheet" href="room-console.css?v=7">
-  <script defer src="yard-backdrop.js?v=5"></script>
+  <link rel="stylesheet" href="room-console.css?v=glass-decks-1">
+  <script defer src="yard-backdrop.js?v=glass-decks-1"></script>
 </head>
 <body class="perception-interface listening-room spatial-room room-console-home">
   <div class="perception-field" aria-hidden="true"></div>
@@ -174,10 +174,11 @@
           <div class="release-content player-dock">
             <section id="studio" class="room-console" aria-label="DJ-пульт">
               <div class="room-console-top">
-                <nav class="console-nav" aria-label="Разделы пульта">
-                  <a href="#studio" data-view="studio" aria-current="page"><i data-i="decks"></i>Пульт</a>
-                  <a href="#library" data-view="library"><i data-i="library"></i>Фонотека</a>
-                </nav>
+                <div class="console-nav" role="group" aria-label="Аудиофайлы">
+                  <button type="button" id="import" class="import-btn" title="Импорт аудиофайлов"><i data-i="plus"></i>Импорт</button>
+                  <button type="button" id="masters" class="import-btn" title="Скачать обработанный FLAC или 7.1.4 WavPack"><i data-i="download"></i>Мастеры</button>
+                  <input id="import-files" type="file" accept="audio/*,.flac,.aiff,.wav,.mp3,.m4a,.ogg,.opus" multiple hidden>
+                </div>
                 <div class="console-tools"><button type="button" class="rec" id="record"><span class="record-dot"></span><span id="record-text">Запись микса</span></button><button type="button" class="icon-btn" id="keys-open" aria-label="Горячие клавиши" title="Горячие клавиши (?)"><i data-i="keyboard"></i></button></div>
               </div>
               <div class="workspace">
@@ -209,12 +210,6 @@
                   </section>
                   <div id="deck-b"></div></div>
                 </div>
-                <section class="library panel" id="collection" aria-labelledby="lib-heading">
-                  <header class="panel-head lib-head"><div class="section-heading"><i data-i="library"></i><h2 id="lib-heading">Фонотека</h2><span id="track-count" class="count-tag">0</span></div><div class="lib-actions"><label class="search"><i data-i="search"></i><input id="search" type="search" placeholder="Поиск треков" autocomplete="off" aria-label="Поиск по названию или артисту"><kbd>/</kbd></label><button type="button" id="masters" class="import-btn" title="Скачать обработанный FLAC или 7.1.4 WavPack"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></svg>Мастеры</button><button type="button" id="import" class="import-btn"><i data-i="plus"></i>Импорт</button><input id="import-files" type="file" accept="audio/*,.flac,.aiff,.wav,.mp3,.m4a,.ogg,.opus" multiple hidden></div></header>
-                  <div class="browser-body"><aside class="crate-nav" aria-label="Коллекции"><span class="side-label">КОЛЛЕКЦИЯ</span><button data-crate="all" aria-pressed="true"><i data-i="discs"></i>Все треки<span class="crate-total"></span></button><button data-crate="starred" aria-pressed="false"><i data-i="star"></i>Избранное<span class="crate-total"></span></button><button data-crate="imports" aria-pressed="false"><i data-i="folder"></i>Импорт<span class="crate-total"></span></button></aside>
-                    <div class="table-pane"><table><thead><tr><th class="col-index" scope="col">#</th><th class="col-title" scope="col"><button data-sort="title">Трек</button></th><th class="col-artist" scope="col"><button data-sort="artist">Артист</button></th><th class="col-bpm" scope="col"><button data-sort="bpm">BPM</button></th><th class="col-key" scope="col"><button data-sort="key">Тон.</button></th><th class="col-time" scope="col"><button data-sort="duration" aria-label="Сортировать по длительности"><i data-i="clock"></i></button></th><th class="col-load" scope="col">В деку</th><th class="col-fav" scope="col"><i data-i="star"></i></th></tr></thead><tbody id="track-list"></tbody></table><p hidden class="empty-state" id="empty-state"></p></div>
-                  </div>
-                </section>
                 <footer class="status-bar">
                   <span><b class="status-led"></b><span id="audio-status">Студия готова</span></span>
                   <button type="button" id="keys-footer"><i data-i="keyboard"></i>Горячие клавиши</button>
@@ -319,12 +314,12 @@
   <script defer src="dj-analysis.js?v=1"></script>
   <script defer src="dj-scratch.js?v=1"></script>
   <script defer src="dj-engine.js?v=2"></script>
-  <script defer src="dj-decks.js?v=4"></script>
+  <script defer src="dj-decks.js?v=glass-decks-1"></script>
   <script defer src="dj-import-loudness.js?v=1"></script>
   <script defer src="dj-import.js?v=1"></script>
   <script defer src="dj-storage.js?v=1"></script>
   <script defer src="dj-midi.js?v=2"></script>
-  <script defer src="dj-studio.js?v=2"></script>
+  <script defer src="dj-studio.js?v=glass-decks-1"></script>
   <script defer src="street-return.js?v=spawn-reset-20261029"></script>
   <script defer src="playback-link.js?v=walk-minute-20261010"></script>
   <script defer src="media-session.js?v=text-only-20261029"></script>
@@ -338,12 +333,12 @@
   <script defer src="logo-materials.js?v=cosmic-room-20261026"></script>
   <script data-development-only defer src="development-debug.js?v=server-only-20261029"></script>
   <script defer src="mobile-sections.js?v=now-playing-20261103"></script>
-  <script defer src="room-resident.js?v=studio-paths-2"></script>
+  <script defer src="room-resident.js?v=glass-decks-1"></script>
   <script defer src="logo-storm.js?v=state-duty-20261026"></script>
   <script defer src="text-waves.js?v=smooth-cadence-20261103"></script>
   <script defer src="room-finish.js?v=compact-window-20261026"></script>
   <script defer src="energy-field.js?v=cosmic-room-20261026"></script>
-  <script defer src="atmosphere-events.js?v=cotton-clouds-20261119"></script>
+  <script defer src="atmosphere-events.js?v=glass-decks-1"></script>
   <script defer src="mobile-logo-effects.js?v=state-duty-20261026"></script>
   <script defer src="logo-ripples.js?v=adaptive-20261026"></script>
   <script defer src="pointer-life.js?v=pointer-life-20261103"></script>

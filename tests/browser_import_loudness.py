@@ -33,7 +33,7 @@ def reference(path):
 
 def run(page, path):
     page.locator("#import-files").set_input_files(str(path))
-    page.wait_for_function("document.querySelector('#import:not(:disabled)') && document.querySelector('#track-list .remove-track')", timeout=30000)
+    page.locator("#deck-a .dd-browse-list").get_by_text(path.stem, exact=True).wait_for(state="attached")
     page.wait_for_function("title => DJStorage.list().then(rows => rows.some(t => t.title === title))", arg=path.stem)
     return page.evaluate("title => DJStorage.list().then(rows => rows.find(t => t.title === title))", path.stem)
 
@@ -50,7 +50,10 @@ def check_streaming_fallback(page, folder):
     assert n['mode']=='adaptive' and n['integrated'] is None, n
     if page.locator('#dialog').is_visible():
         page.locator('#dialog-close').click()
-    page.locator('#track-list tr').filter(has_text=record['title']).locator('[data-action=A]').click()
+    deck = page.locator('#deck-a')
+    deck.locator('.dd-browse-search').fill(record['title'])
+    deck.locator('.dd-browse-load').click()
+    page.wait_for_function("title => DJEngine.snapshot().A.track?.title === title", arg=record['title'])
     page.locator('#deck-a .dd-play').click()
     page.wait_for_function("DJEngine.snapshot().A.time>3 && DJEngine.snapshot().A.time<6 && DJEngine.snapshot().A.level>.075")
     page.wait_for_function("""() => {
@@ -60,7 +63,8 @@ def check_streaming_fallback(page, folder):
     page.locator('#deck-a .dd-play').click()
     # Switching inputs clears the adaptive gain envelope. The deck meter
     # follows the new static trim and the existing channel fader.
-    page.get_by_role('button', name='Mono — загрузить в деку A').click()
+    deck.locator('.dd-browse-search').fill('Mono')
+    deck.locator('.dd-browse-load').click()
     page.wait_for_function("DJEngine.snapshot().A.track?.title==='Mono'")
     page.locator('#deck-a .dd-play').click()
     page.wait_for_function("DJEngine.snapshot().A.time>.5")
