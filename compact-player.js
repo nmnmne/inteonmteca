@@ -75,6 +75,51 @@
   let side = 'A', importSide = 'A';
   const active = () => document.body.dataset.yardWindow === 'dj' && document.body.dataset.djMode === 'compact';
 
+  const fadeDuration = 4 * 60 * 1000;
+  const settings = document.getElementById('dialog');
+  let fadeEnd = 0, fadeTimer = 0, openPanel = null;
+
+  function drawFade() {
+    clearTimeout(fadeTimer);
+    if (!active() || openPanel || document.hidden) return;
+    const remaining = Math.max(0, fadeEnd - performance.now());
+    display.style.opacity = String(remaining / fadeDuration);
+    root.toggleAttribute('data-faded', remaining === 0);
+    // Each step is smaller than one level of 8-bit alpha. No frame loop is needed.
+    if (remaining) fadeTimer = setTimeout(drawFade, Math.min(750, remaining));
+  }
+  function wakeDisplay() {
+    clearTimeout(fadeTimer);
+    fadeEnd = performance.now() + fadeDuration;
+    display.style.opacity = '1';
+    root.removeAttribute('data-faded');
+    if (active() && !openPanel && !document.hidden) fadeTimer = setTimeout(drawFade, 750);
+  }
+  function holdFor(panel, opened) {
+    if (opened && active()) openPanel = panel;
+    else if (openPanel === panel) openPanel = null;
+    else return;
+    wakeDisplay();
+  }
+  function handlePress(event) {
+    const expired = !openPanel && performance.now() >= fadeEnd;
+    if (expired && (event.type === 'pointerdown' || event.detail > 0)) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      // Keep the transparent surface over the buttons until this tap's click.
+      if (event.type === 'pointerdown') { drawFade(); return; }
+    }
+    wakeDisplay();
+  }
+  root.addEventListener('pointerdown', handlePress, true);
+  root.addEventListener('click', handlePress, true);
+  for (const type of ['focusin', 'keydown', 'drop']) root.addEventListener(type, wakeDisplay, true);
+  for (const panel of [picker, document.getElementById('yard-map-sources')]) {
+    panel?.addEventListener('toggle', () => holdFor(panel, panel.matches(':popover-open')));
+  }
+  settings?.addEventListener('close', () => holdFor(settings, false));
+  document.addEventListener('visibilitychange', drawFade);
+
   const mix = window.DJCompactMix.create(engine, library, {
     onDeckChange: activate,
     onStatus(text) { mixStatus.textContent = text; }
@@ -166,7 +211,10 @@
   }, true);
   find('.compact-previous').onclick = () => adjacent(-1);
   find('.compact-next').onclick = () => adjacent(1);
-  find('.compact-sound').onclick = () => library.openSettings();
+  find('.compact-sound').onclick = () => {
+    library.openSettings();
+    if (settings?.open) holdFor(settings, true);
+  };
   const fullscreen = find('.compact-fullscreen');
   function updateFullscreen() {
     const expanded = Boolean(document.fullscreenElement);
@@ -206,6 +254,7 @@
   fileInput.onchange = () => { void importTo(importSide, [...fileInput.files]); fileInput.value = ''; };
   display.ondragover = picker.ondragover = event => {
     if (!Array.from(event.dataTransfer.types).some(type => ['Files','application/x-inteon-track'].includes(type))) return;
+    if (!display.dataset.dragging) wakeDisplay();
     event.preventDefault();
     event.dataTransfer.dropEffect = 'copy';
     display.dataset.dragging = 'true';
@@ -222,6 +271,7 @@
     else void choose(side, track);
   };
   window.addEventListener('yard-dj-mode', () => {
+    wakeDisplay();
     if (active()) activate(library.activeDeck);
     else {
       stopMix();
@@ -230,6 +280,7 @@
   });
   window.addEventListener('yard-app-visibility', ({detail}) => {
     if (detail.app !== 'dj') return;
+    wakeDisplay();
     if (detail.action === 'close') stopMix();
     if (detail.visible && active()) activate(library.activeDeck);
   });

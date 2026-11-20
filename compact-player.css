@@ -20,6 +20,14 @@
   display: grid; grid-template: "decks song transport" auto "wave wave wave" auto "utilities utilities utilities" auto / auto minmax(0,1fr) auto;
   align-items: center; gap: 4px 14px; padding: 8px 12px 5px; border-radius: 16px;
 }
+.yard-dj-compact[data-faded] .compact-display::after {
+  content: ""; position: absolute; inset: 0; z-index: 10; cursor: pointer;
+}
+.yard-dj-compact[data-faded]::after {
+  content: ""; position: fixed; z-index: 36; left: 50%; bottom: max(16px,env(safe-area-inset-bottom));
+  width: 32px; height: 3px; translate: -50% 0; border-radius: 3px;
+  background: #e3ded78c; box-shadow: 0 1px 3px #14131880; pointer-events: none;
+}
 .compact-utilities { grid-area: utilities; display: flex; align-items: center; gap: 4px; }
 .compact-brand { width: 77px; height: 21px; object-fit: contain; }
 .compact-utilities time { margin: 0 auto 0 8px; color: #ded9d2; font: 11px/1 var(--dd-mono); }
