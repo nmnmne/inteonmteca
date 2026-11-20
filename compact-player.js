@@ -43,6 +43,7 @@
       <div class="compact-transport">
         <button type="button" class="compact-previous" aria-label="Предыдущий трек">${icon('previous')}</button>
         <button type="button" class="compact-play" aria-label="Воспроизвести">${icon('play')}</button>
+        <button type="button" class="compact-auto" aria-label="Автовоспроизведение" title="Автоматически включать следующий трек" aria-pressed="false">Авто</button>
         <button type="button" class="compact-next" aria-label="Следующий трек">${icon('next')}</button>
       </div>
       <div class="compact-wave"></div>
@@ -67,6 +68,8 @@
   const select = find('.compact-track'), title = find('.compact-song'), artist = find('.compact-artist');
   const picker = find('#compact-picker'), librarySlot = find('.compact-library');
   const play = find('.compact-play'), fileInput = find('.compact-import');
+  const auto = find('.compact-auto');
+  const autoDecks = new Set();
   const sideButtons = [...root.querySelectorAll('[data-compact-side]')];
   const requests = { A: 0, B: 0 };
   let side = 'A', importSide = 'A';
@@ -95,26 +98,28 @@
     if (picker.matches(':popover-open')) picker.hidePopover();
     returnScope();
     side = id;
+    auto.setAttribute('aria-pressed', String(autoDecks.has(id)));
     root.dataset.side = id;
     sideButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.compactSide === id)));
     document.querySelector('.controller-tabs [data-panel="' + id.toLowerCase() + '"]').click();
     wave.append(scopes[id]);
     update();
   }
-  async function load(id, key) {
+  async function load(id, key, autoAdvance = false) {
     const request = ++requests[id];
     const wasPlaying = engine.snapshot()[id].playing;
     if (!await library.load(id, key) || request !== requests[id]) return;
     const loaded = engine.snapshot()[id];
-    if (wasPlaying && !loaded.playing && loaded.track?.id === key) engine.toggle(id);
+    const shouldPlay = autoAdvance ? autoDecks.has(id) : wasPlaying;
+    if (shouldPlay && !loaded.playing && loaded.track?.id === key) engine.toggle(id);
     update();
   }
-  function adjacent(step) {
+  function adjacent(step, id = side, autoAdvance = false) {
     const entries = library.list();
     if (!entries.length) return;
-    const index = entries.findIndex(t => t.id === engine.snapshot()[side].track?.id);
+    const index = entries.findIndex(t => t.id === engine.snapshot()[id].track?.id);
     const next = index < 0 ? 0 : (index + step + entries.length) % entries.length;
-    void load(side, entries[next].id);
+    void load(id, entries[next].id, autoAdvance);
   }
   async function importTo(id, files) {
     if (!files.length) return;
@@ -123,6 +128,14 @@
     if (first && requests[id] === request && engine.snapshot()[id].loadVersion === version) await load(id, first.id);
   }
   sideButtons.forEach(button => button.onclick = () => activate(button.dataset.compactSide));
+  auto.onclick = () => {
+    if (autoDecks.has(side)) autoDecks.delete(side);
+    else autoDecks.add(side);
+    auto.setAttribute('aria-pressed', String(autoDecks.has(side)));
+  };
+  window.addEventListener('dj-ended', ({detail: {id}}) => {
+    if (autoDecks.has(id)) adjacent(1, id, true);
+  });
   play.onclick = () => { ++requests[side]; engine.toggle(side); };
   find('.compact-previous').onclick = () => adjacent(-1);
   find('.compact-next').onclick = () => adjacent(1);
@@ -183,11 +196,17 @@
   };
   window.addEventListener('yard-dj-mode', () => {
     if (active()) activate(library.activeDeck);
-    else returnScope();
+    else {
+      autoDecks.clear();
+      returnScope();
+    }
   });
   window.addEventListener('yard-app-visibility', ({detail}) => {
     if (detail.app !== 'dj') return;
-    if (detail.action === 'close') { ++requests.A; ++requests.B; }
+    if (detail.action === 'close') {
+      autoDecks.clear();
+      ++requests.A; ++requests.B;
+    }
     if (detail.visible && active()) activate(library.activeDeck);
   });
   window.addEventListener('dj-load', ({detail}) => {

@@ -406,6 +406,8 @@
       if (deck.loopBeats && audio.ended) {
         move(deck, deck.loopStart);
         play(deck);
+      } else if (audio.ended && deck.track) {
+        signal('dj-ended', { id });
       }
       updateLoopTimer();
       change();
