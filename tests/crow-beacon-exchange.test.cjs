@@ -41,7 +41,7 @@ test('the real walk shows one pair by day and night and yields the scene to the 
   const openingView = ambientOpeningView(layout,.46);
   let seed=17, enabled=true;
   const random = () => ((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
-  const flock = createCrowFlock(layout,openingView,{random,allowKeyStory:()=>true,allowBeacons:()=>enabled});
+  const flock = createCrowFlock(layout,openingView,{random,residentVisits:true,allowKeyStory:()=>true,allowBeacons:()=>enabled});
   const walk = createAutoWalk(layout,{openingView,random,flock});
   const models = createCrowModels(null,flock.allBirds.length-1);
   let first=false, reply=false, storyLight=false;
@@ -76,4 +76,41 @@ test('the real walk shows one pair by day and night and yields the scene to the 
     enabled=false;
     for(let i=0; i<600; i++) {walk.update(.1); assert.equal(flock.beacons,null);}
   } finally { models.dispose(); }
+});
+
+test('both ankles stay in frame through all three glints and replies on the ordinary walk',async () => {
+  const {PerspectiveCamera,Vector3} = await import('../yard/vendor/three.module.js');
+  const {createCrowFlock} = await import('../yard/crow-flock.js');
+  const {createAutoWalk,ambientOpeningView} = await import('../yard/auto-walk.js');
+  for (const aspect of [390/844,1200/800]) {
+    const openingView=ambientOpeningView(layout,aspect);
+    let seed=17;
+    const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
+    const flock=createCrowFlock(layout,openingView,{random,residentVisits:true,allowKeyStory:()=>true});
+    const walk=createAutoWalk(layout,{openingView,random,flock});
+    const camera=new PerspectiveCamera(64,aspect,.1,510), ankle=new Vector3();
+    const glints={sender:0,recipient:0}, lit={sender:false,recipient:false};
+    let first=null;
+    for(let i=0; i<3000; i++) {
+      const pose=walk.update(.04), exchange=flock.beacons;
+      if (first && exchange!==first) break;
+      if (!exchange) continue;
+      first=exchange;
+      camera.position.set(pose.x,pose.y,pose.z);
+      camera.rotation.set(pose.pitch,-pose.yaw,pose.roll,'YXZ');
+      camera.fov=pose.fov;
+      camera.updateProjectionMatrix();
+      camera.updateMatrixWorld();
+      for(const role of ['sender','recipient']) {
+        const bird=flock.birds[exchange[role].id];
+        ankle.set(bird.x,bird.y-.145,bird.z).project(camera);
+        assert.ok(Math.abs(ankle.x)<.95 && Math.abs(ankle.y)<.95 && ankle.z<1,
+          `bird ${bird.id} at ${ankle.x}, ${ankle.y} near a frame edge at aspect ${aspect}`);
+        const on=exchange[role].pulse>.25;
+        if (on && !lit[role]) glints[role]++;
+        lit[role]=on;
+      }
+    }
+    assert.deepEqual(glints,{sender:3,recipient:3});
+  }
 });

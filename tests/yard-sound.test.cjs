@@ -120,7 +120,9 @@ test('wind swells from lulls and only the wind feeds the echo and reverb returns
   const air=scene.sources.find(node=>node.loop);
   const wind=air.outputs.find(node=>node.type==='bandpass');
   const rain=air.outputs.find(node=>node.type==='highpass');
-  const windGain=wind.outputs.find(node=>node.kind==='gain');
+  const lowCut=wind.outputs.find(node=>node.type==='highpass');
+  assert.ok(lowCut && lowCut.frequency.value>=300, 'all wind and its reflections lose the low end');
+  const windGain=lowCut.outputs.find(node=>node.kind==='gain');
   const master=nodes.find(node=>node.kind==='gain' && node.outputs.includes(destination));
   assert.ok(windGain && master && rain);
   const delays=nodes.filter(node=>node.kind==='delay');

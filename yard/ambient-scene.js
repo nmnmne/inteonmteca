@@ -89,6 +89,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     renderer.setDrawingBufferSize(width, height, ratio);
     optics?.reset();
     camera.aspect = width / height;
+    walk.pose.aspect = camera.aspect;
     camera.updateProjectionMatrix();
   }
 

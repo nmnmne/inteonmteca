@@ -18,7 +18,7 @@ export function ambientOpeningView(layout, aspect = 1.6) {
   // Keep the wordmark in front of the crow. Wide views leave the lane on
   // its left; a portrait lens opens a little wider for the same two subjects.
   const yaw = atWall + (0.045 + 0.145 * wide) * angleBetween(atWall, alongPath);
-  return { ...layout.spawn, yaw, pitch: -0.085, fov: 80 - 16 * wide };
+  return { ...layout.spawn, yaw, pitch: -0.085, fov: 80 - 16 * wide, aspect };
 }
 
 // Even the L-shaped block and the tower have an interior point on this scanline.

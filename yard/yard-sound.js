@@ -65,10 +65,14 @@ function makeAmbience(context) {
   air.loop = true;
   const wind = context.createBiquadFilter(), rain = context.createBiquadFilter();
   wind.type = 'bandpass'; wind.Q.value = .85;
+  const windLowCut = context.createBiquadFilter();
+  windLowCut.type = 'highpass';
+  windLowCut.frequency.value = 390;
+  windLowCut.Q.value = Math.SQRT1_2;
   rain.type = 'highpass'; rain.frequency.value = 2350;
   const windGain = context.createGain(), rainGain = context.createGain();
   windGain.gain.value = rainGain.gain.value = 0;
-  air.connect(wind).connect(windGain).connect(bus);
+  air.connect(wind).connect(windLowCut).connect(windGain).connect(bus);
   air.connect(rain).connect(rainGain).connect(bus);
   addWindReflections(context, windGain, bus);
   air.start();

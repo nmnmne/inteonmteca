@@ -7,12 +7,23 @@ export function createCrowBeaconExchange(birds, clearGround, occupied) {
   const eligible = bird => bird.airborne < .14 && bird.y < .35 && !occupied.has(bird.id);
   const distance = (a,b) => Math.hypot(b.x-a.x,b.z-a.z);
 
-  function choose() {
-    const sin = Math.sin(leader.yaw), cos = Math.cos(leader.yaw);
+  // Project the ankle into the walker's YXZ camera, including its bank in turns.
+  // Leave room for the bird to step and the short beam to span a few pixels.
+  function visible(bird,view,margin) {
+    const dx=bird.x-view.x, dy=bird.y-.145-view.y, dz=bird.z-view.z;
+    const sy=Math.sin(view.yaw), cy=Math.cos(view.yaw);
+    const sp=Math.sin(view.pitch || 0), cp=Math.cos(view.pitch || 0);
+    const sr=Math.sin(view.roll || 0), cr=Math.cos(view.roll || 0);
+    const side=dx*cy+dz*sy, ahead=dx*sy-dz*cy;
+    const up=dy*cp-ahead*sp, depth=dy*sp+ahead*cp;
+    const height=depth*Math.tan((view.fov ?? 64)*Math.PI/360);
+    return depth>1 && depth<15 && Math.abs(side*cr+up*sr)<height*(view.aspect ?? 1.6)*margin
+      && Math.abs(up*cr-side*sr)<height*margin;
+  }
+
+  function choose(view) {
     const nearby = birds.slice(1).filter(bird => {
-      if (!eligible(bird) || bird.speed > .8) return false;
-      const dx = bird.x-leader.x, dz = bird.z-leader.z, ahead = dx*sin-dz*cos;
-      return ahead > 1 && ahead < 15 && Math.abs(dx*cos+dz*sin) < ahead*.55;
+      return eligible(bird) && bird.speed<=.8 && visible(bird,view,.82);
     });
     let best = Infinity, pair = null;
     for (let i=0; i<nearby.length; i++) {
@@ -33,7 +44,7 @@ export function createCrowBeaconExchange(birds, clearGround, occupied) {
     return pair;
   }
 
-  function update(time, enabled) {
+  function update(time, enabled, view=leader) {
     if (!enabled || leader.y > 3.5) {
       exchange = null;
       nextAt = Math.max(nextAt,time+2);
@@ -42,7 +53,7 @@ export function createCrowBeaconExchange(birds, clearGround, occupied) {
     if (!exchange) {
       if (time < nextAt) return;
       nextAt = time + 1.5;
-      const pair = choose();
+      const pair = choose(view);
       if (!pair) return;
       [sender,recipient] = pair;
       began = time;
@@ -50,6 +61,11 @@ export function createCrowBeaconExchange(birds, clearGround, occupied) {
       exchange = {sender:{id:sender.id}, recipient:{id:recipient.id}, code};
     }
     const age = time-began;
+    if (!visible(sender,view,.93) || !visible(recipient,view,.93)) {
+      exchange = null;
+      nextAt = time+1.5;
+      return;
+    }
     if (age >= replyAt+CROW_BEACON_DURATION || !eligible(sender) || !eligible(recipient) || distance(sender,recipient)>7) {
       exchange = null;
       nextAt = time + 20 + (episode * 7) % 18;

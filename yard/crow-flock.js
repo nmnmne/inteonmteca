@@ -383,7 +383,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
       if (b.inParty) assembled++;
     }
     state.partySize = assembled;
-    beacons.update(time, allowBeacons() && (!keyStory || keyStory.state.phase==='idle'));
+    beacons.update(time, allowBeacons() && (!keyStory || keyStory.state.phase==='idle'), pose);
     if (gathering && disputes.state.phase === 'idle') rollCall.update(dt, pose, state.targetSize);
     if (gathering && assembled === state.targetSize && state.phase !== 'ready'
         && rollCall.state.phase === 'done' && Math.abs(angleDelta(leader.yaw, heading)) < .22) {
