@@ -1,7 +1,6 @@
 import * as THREE from './vendor/three.module.js';
 
-// The cocoon and its assemblage point are one transparent draw. Two curved
-// surfaces of filaments give the sphere depth without a volume texture.
+// Shade the glass shell and its enclosed point together on a camera-facing disk.
 export function createResidentOrb() {
   const shape = new THREE.PlaneGeometry(1.55,1.55);
   const time = {value:0}, strength = {value:0};
@@ -18,46 +17,32 @@ export function createResidentOrb() {
     fragmentShader:`
       varying vec2 disk;
       uniform float time, strength;
-      float silk(float phase) {
-        float aa = max(fwidth(phase),.012);
-        float line = abs(fract(phase+.5)-.5);
-        return (1.-smoothstep(.026,.040+aa*.55,line)) / (1.+aa*2.8);
-      }
-      float filaments(vec3 p, float t) {
-        float bend = .16*sin(p.y*2.9+p.z*2.1+t*.19)
-                   + .07*sin(3.2*p.z-p.y*1.7-t*.14);
-        float first = (p.x+.32*p.z+bend)*13.+p.y*(1.5+p.x);
-        float crosswise = (p.x-.50*p.z-.11*sin(p.y*3.9+t*.15))*10.2-p.y*2.2;
-        return silk(first)*(.67+.25*sin(first*1.9+p.y*.8))
-             + silk(crosswise)*(.27+.10*cos(crosswise*2.1-p.y));
-      }
       void main(){
         float radius = length(disk);
-        if(radius>=1.40) discard;
-        float z = sqrt(max(0.,1.-radius*radius));
-        float aa = max(fwidth(radius),.007);
-        float inside = 1.-smoothstep(1.-aa,1.+aa,radius);
-        vec3 n = vec3(disk,z);
-        float rotation = .29*sin(time*.17);
-        mat2 turn = mat2(cos(rotation),sin(rotation),-sin(rotation),cos(rotation));
-        vec3 back = vec3(disk,-z);
-        n.xz = turn*n.xz; back.xz = turn*back.xz;
-        float thread = filaments(n,time)+filaments(back,time)*.37;
-        vec2 focus = vec2(.46,.31);
-        float d = length(disk-focus);
-        // A handful of the filaments actually pass through the brighter spot.
-        // Curve their approach and let them disperse across the far shell.
-        vec2 strand = disk-focus;
-        float fan = abs(sin(6.*atan(strand.y,strand.x+.00001)+1.5*d));
-        float converging = (1.-smoothstep(.025,.025+clamp(fwidth(fan),.003,.32),fan))
-                         * exp(-d*3.)*inside;
-        float point = exp(-d*d/.0022);
-        float rim = exp(-abs(radius-.97)*19.);
-        float halo = exp(-abs(radius-1.)*9.)*(1.-smoothstep(1.14,1.40,radius));
-        float light = inside*(.075 + .70*thread + .25*rim + .24*exp(-d*d/.035) + .85*point) + .45*converging;
-        vec3 color = mix(vec3(.89,.43,.095),vec3(1.,.86,.50),clamp(thread*.85+rim*.45,0.,1.));
-        color = mix(color,vec3(1.,.98,.85),point);
-        gl_FragColor = vec4(color,strength*clamp(light+.18*halo,0.,1.));
+        float aa = max(fwidth(radius), .005);
+        if (radius > 1.12) discard;
+        float shell = 1. - smoothstep(1. - aa, 1. + aa, radius);
+        vec3 normal = vec3(disk, sqrt(max(0., 1. - radius * radius)));
+        float edge = pow(1. - normal.z, 2.);
+        float drift = .08 * sin(time * .21);
+        vec3 lightDir = normalize(vec3(-.48 + drift, .74, .54));
+        float softbox = pow(max(dot(normal, lightDir), 0.), 5.);
+
+        // A curved reflection wraps from the shaded face into the lit edge.
+        float sweep = dot(normal, normalize(vec3(-.34, .84, .42 + drift))) + .04;
+        float ribbon = exp(-sweep * sweep / .018) * (.36 + .64 * normal.z);
+        float lip = (1. - smoothstep(.008, .027 + fwidth(sweep), abs(sweep - .08)))
+                  * smoothstep(-.45, .85, normal.x);
+        vec2 offset = disk - vec2(.38 + drift, .27);
+        float point = exp(-dot(offset, offset) / .0038);
+
+        vec3 glass = mix(vec3(.023, .040, .058), vec3(.24, .34, .36), softbox);
+        glass = mix(glass, vec3(.23, .26, .32), ribbon * .70);
+        glass = mix(glass, vec3(.38, .45, .46), edge * (.56 + .38 * softbox) + .28 * lip);
+        glass = mix(glass, vec3(.54, .49, .40), point * .84);
+        float opacity = .59 + .19 * softbox + .14 * edge + .12 * point;
+        float halo = .05 * (1. - smoothstep(1., 1.12, radius));
+        gl_FragColor = vec4(glass, strength * mix(halo, opacity, shell));
         #include <colorspace_fragment>
       }`,
   });

@@ -69,15 +69,21 @@ def check(browser, mobile):
         };
         const on=render(); orb.visible=false;
         const off=render();
-        let lit=0, amber=0;
+        let lit=0, cool=0, peakGain=0;
         for(let j=Math.max(0,y-75); j<Math.min(h,y+75); j++) for(let i=Math.max(0,x-75);i<Math.min(w,x+75);i++){
           const p=(j*w+i)*4;
-          if(on[p]>off[p]+15) { lit++; if(on[p]>on[p+2]+12) amber++; }
+          const gain=Math.max(on[p]-off[p],on[p+1]-off[p+1],on[p+2]-off[p+2]);
+          peakGain=Math.max(peakGain,gain);
+          if(gain>15) {
+            lit++;
+            if(on[p+2]>on[p] && on[p+1]>on[p]) cool++;
+          }
         }
-        return {lit,amber};
+        return {lit,cool,peakGain};
       } finally {orb.visible=true; renderer.setRenderTarget(previous); rt.dispose();}
     }""")
-    assert pixels["lit"] > 60 and pixels["amber"] > 50, pixels
+    assert pixels["lit"] > 60 and pixels["cool"] > pixels["lit"] * .7, pixels
+    assert pixels["peakGain"] < 145, pixels
     if folder := os.environ.get("INTEON_ORB_SHOTS"):
         path = Path(folder)
         path.mkdir(parents=True, exist_ok=True)
