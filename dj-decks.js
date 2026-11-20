@@ -7,20 +7,21 @@
   const revolution = 1.8; // Seconds of track per turn at 33⅓ RPM.
   const fullTurn = 2 * Math.PI;
   const jogHints = {
-    scratch: 'Ведите винил вперёд и назад для скретча. За ребристый обод можно подогнать скорость. Стрелки двигают винил с клавиатуры.',
+    scratch: 'Вращайте верхнюю площадку джога для скретча. За ребристый обод можно подогнать скорость. Стрелки двигают джог с клавиатуры.',
     bend: 'Вращайте диск по часовой стрелке для ускорения, против — для замедления. Можно использовать стрелки.',
     tempo: 'Вращайте диск, чтобы изменить постоянный темп. Можно использовать стрелки.'
   };
   const glyphs = {
+    browse: '<path d="M8 6h12M8 12h12M8 18h12M3 6h1M3 12h1M3 18h1"/>',
+    up: '<path d="m6 14 6-6 6 6"/>',
+    down: '<path d="m6 10 6 6 6-6"/>',
     lock: '<rect x="5.5" y="10" width="13" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
     play: '<path d="M7 4.5 20 12 7 19.5z" fill="currentColor" stroke="none"/>',
     pause: '<path d="M6 5h4v14H6zm8 0h4v14h-4z" fill="currentColor" stroke="none"/>',
     sync: '<path d="M4 8h15m-3-3 3 3-3 3M20 16H5m3 3-3-3 3-3"/>',
     loop: '<path d="M6 7h12l-3-3m3 3-3 3M18 17H6l3 3m-3-3 3-3M20 11v2m-16 0v-2"/>',
-    chevron: '<path d="m7 10 5 5 5-5"/>',
     tempo: '<path d="M4 7h16M4 17h16"/><path d="M9 4v6m7 4v6" stroke-width="3"/>',
     zoom: '<circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/>',
-    grooves: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.3"/><path d="M6.3 11a6 6 0 0 1 4.8-4.7M17.6 13a6 6 0 0 1-4.6 4.6"/>',
     pads: '<rect x="3.5" y="3.5" width="6" height="6" rx="1"/><rect x="14.5" y="3.5" width="6" height="6" rx="1"/><rect x="3.5" y="14.5" width="6" height="6" rx="1"/><rect x="14.5" y="14.5" width="6" height="6" rx="1"/>'
   };
 
@@ -54,33 +55,51 @@
     root.setAttribute('aria-label', 'Deck ' + id);
     root.innerHTML = `
       <header class="dd-head">
-        <div class="dd-heading"><span class="dd-ident">${id}</span><span>DECK ${id}</span></div>
+        <div class="dd-heading"><span class="dd-ident">${id}</span><span class="dd-deck-state">Свободна</span></div>
         <div class="dd-head-controls">
+          <button type="button" class="dd-chip dd-browse-toggle" aria-controls="dd-browser-${id}" aria-expanded="false" aria-label="Выбрать трек для деки ${id}" hidden>${icon('browse', 15)}<span>Треки</span></button>
           <button type="button" class="dd-chip dd-lock" title="Сохранять тональность при изменении темпа" aria-pressed="true">${icon('lock', 12)}<span>Key lock</span></button>
         </div>
       </header>
-      <div class="dd-track">
-        <div class="dd-track-text"><h2>Дека свободна</h2><div class="dd-artist-line"><span class="dd-artist">Загрузите трек</span><span class="dd-key" hidden></span></div></div>
-        <div class="dd-bpm-box"><span class="dd-bpm">—</span><span class="dd-bpm-unit">BPM</span></div>
-      </div>
-      <div class="dd-scope">
-        <div class="dd-wave-controls"><span class="dd-current">00:00</span><div class="dd-wave-tools"><span class="dd-remaining">−00:00</span><button type="button" class="dd-zoom" title="Изменить масштаб волны" aria-label="Масштаб волны 1×">${icon('zoom',12)}<span>1×</span></button></div></div>
-        <canvas class="dd-wave" tabindex="0" role="slider" aria-label="Позиция на волне деки ${id}" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"></canvas>
+      <div class="dd-screen">
+        <div class="dd-track">
+          <div class="dd-track-text"><h2>Дека свободна</h2><div class="dd-artist-line"><span class="dd-artist">Загрузите трек</span><span class="dd-key" hidden></span></div></div>
+          <div class="dd-bpm-box"><span class="dd-bpm">—</span><span class="dd-bpm-unit">BPM</span></div>
+        </div>
+        <div class="dd-scope">
+          <div class="dd-wave-controls"><span class="dd-current">00:00</span><div class="dd-wave-tools"><span class="dd-remaining">−00:00</span><button type="button" class="dd-zoom" title="Изменить масштаб волны" aria-label="Масштаб волны 1×">${icon('zoom',12)}<span>1×</span></button></div></div>
+          <canvas class="dd-wave" tabindex="0" role="slider" aria-label="Позиция на волне деки ${id}" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"></canvas>
+          <div class="dd-overview">
+            <input class="dd-seek" type="range" min="0" max="1000" value="0" aria-label="Позиция во всём треке деки ${id}" disabled>
+            <span class="dd-beats" role="img" aria-label="Сетка долей недоступна"><i></i><i></i><i></i><i></i></span>
+          </div>
+        </div>
+        <div class="dd-browser" id="dd-browser-${id}" hidden>
+          <div class="dd-browser-head"><strong>Фонотека</strong><select class="dd-browse-filter" aria-label="Подборка треков для деки ${id}"><option value="all">Все треки</option><option value="starred">Избранное</option><option value="imports">Импорт</option></select><span class="dd-browse-count"></span></div>
+          <div class="dd-browse-list" role="listbox" tabindex="0" aria-label="Треки для деки ${id}"></div>
+          <p class="dd-browse-empty" hidden>В этой подборке нет треков.</p>
+          <div class="dd-browse-controls">
+            <button type="button" class="dd-browse-up" aria-label="Предыдущий трек в списке деки ${id}">${icon('up', 18)}</button>
+            <button type="button" class="dd-browse-down" aria-label="Следующий трек в списке деки ${id}">${icon('down', 18)}</button>
+            <button type="button" class="dd-browse-load" aria-label="Загрузить выбранный трек в деку ${id}">Загрузить</button>
+          </div>
+        </div>
       </div>
       <div class="dd-hardware">
+        <div class="dd-transport">
+          <button type="button" class="dd-btn dd-sync" title="Совместить темп и долю со второй декой">${icon('sync',13)}<span>Sync</span></button>
+          <button type="button" class="dd-btn dd-cue" title="Поставить точку на паузе или вернуться к ней при воспроизведении">Cue</button>
+          <button type="button" class="dd-btn dd-play" title="Воспроизвести деку ${id}" aria-label="Воспроизвести деку ${id}">${icon('play',20)}</button>
+        </div>
         <div class="dd-wheel-column">
           <div class="dd-wheel-mount">
             <div class="dd-jog" tabindex="0" role="slider" aria-label="Скретч на деке ${id}" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" title="${jogHints.scratch}">
-              <div class="dd-platter"><div class="dd-vinyl"><span class="dd-art">${icon('grooves', 22)}<img alt="" draggable="false" hidden></span></div><i class="dd-strobe"></i></div>
+              <div class="dd-jog-face" aria-hidden="true"></div>
+              <div class="dd-platter" aria-hidden="true"><i class="dd-position-light"></i></div>
+              <div class="dd-jog-display" aria-hidden="true"><span class="dd-jog-channel">${id}</span><strong class="dd-jog-readout">00:00</strong><span class="dd-jog-mode">Скретч</span></div>
             </div>
-            <div class="dd-scrub" tabindex="0" role="slider" aria-label="Перемотка пластинки деки ${id}" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" title="Тяните этикетку для перемотки. Shift — точнее, стрелки — по одной доле." hidden></div>
-            <div class="dd-arm-base" aria-hidden="true"><div class="dd-tonearm"><i class="dd-headshell"></i></div></div>
+            <div class="dd-scrub" tabindex="0" role="slider" aria-label="Перемотка джогом деки ${id}" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" title="Тяните центр джога для перемотки. Shift — точнее, стрелки — по одной доле." hidden></div>
             <span class="dd-scratch-status" role="status" hidden>Загрузка звука…</span>
-          </div>
-          <div class="dd-wheel-modes" role="group" aria-label="Режим диска деки ${id}">
-            <button type="button" data-jog="scratch" aria-pressed="true" title="${jogHints.scratch}">Скретч</button>
-            <button type="button" data-jog="bend" aria-pressed="false" title="Подгонять скорость, пока удерживаете диск">Подгонка</button>
-            <button type="button" data-jog="tempo" aria-pressed="false" title="Изменять постоянный темп вращением диска">Темп</button>
           </div>
         </div>
         <div class="dd-pitch">
@@ -91,15 +110,19 @@
           <div class="dd-tempo-steps"><button type="button" data-rate="-0.1" title="Замедлить на 0,1%">−</button><button type="button" data-rate="reset" title="Исходный темп" aria-label="Сбросить темп">0</button><button type="button" data-rate="0.1" title="Ускорить на 0,1%">+</button></div>
         </div>
       </div>
-      <div class="dd-transport">
-        <div class="dd-transport-group">
-          <button type="button" class="dd-btn dd-cue" title="Поставить точку на паузе или вернуться к ней при воспроизведении">Cue</button>
-          <button type="button" class="dd-btn dd-play" title="Воспроизвести деку ${id}" aria-label="Воспроизвести деку ${id}">${icon('play',20)}</button>
-          <button type="button" class="dd-btn dd-sync" title="Совместить темп и долю со второй декой">${icon('sync',13)}<span>Sync</span></button>
+      <div class="dd-wheel-settings">
+        <div class="dd-wheel-modes" role="group" aria-label="Режим джога деки ${id}">
+          <button type="button" data-jog="scratch" aria-pressed="true" title="${jogHints.scratch}">Скретч</button>
+          <button type="button" data-jog="bend" aria-pressed="false" title="Подгонять скорость, пока удерживаете джог">Подгонка</button>
+          <button type="button" data-jog="tempo" aria-pressed="false" title="Изменять темп вращением джога">Темп</button>
         </div>
         <div class="dd-loop-group">
-          <button type="button" class="dd-btn dd-loop" aria-pressed="false" title="Включить или выключить петлю">${icon('loop',16)}<span>Loop</span></button>
-          <label class="dd-loop-select"><select aria-label="Длина петли в долях на деке ${id}">${loopLengths.map(n => '<option value="' + n + '"' + (n === 4 ? ' selected' : '') + '>' + n + '</option>').join('')}</select>${icon('chevron',12)}</label>
+          <button type="button" class="dd-btn dd-loop" aria-label="Петля на деке ${id}" aria-pressed="false" title="Включить или выключить петлю">${icon('loop',16)}<span>Loop</span></button>
+          <div class="dd-loop-length" role="group" aria-label="Длина петли в долях на деке ${id}">
+            <button type="button" class="dd-loop-minus" data-loop-step="-1" aria-label="Укоротить петлю на деке ${id}" disabled>−</button>
+            <output class="dd-loop-value" aria-label="Количество долей">4</output>
+            <button type="button" class="dd-loop-plus" data-loop-step="1" aria-label="Удлинить петлю на деке ${id}" disabled>+</button>
+          </div>
         </div>
       </div>
       <div class="dd-pads"><span class="dd-pad-label">${icon('pads',13)}Hot cues</span>
@@ -108,13 +131,17 @@
     container.replaceChildren(root);
     const find = selector => root.querySelector(selector);
     const refs = {
-      art: find('.dd-art img'), jog: find('.dd-jog'), platter: find('.dd-platter'), arm: find('.dd-tonearm'), vinyl: find('.dd-vinyl'), title: find('h2'), artist: find('.dd-artist'), key: find('.dd-key'),
+      deckState: find('.dd-deck-state'),
+      jog: find('.dd-jog'), platter: find('.dd-platter'), jogFace: find('.dd-jog-face'), jogReadout: find('.dd-jog-readout'), jogMode: find('.dd-jog-mode'),
+      title: find('h2'), artist: find('.dd-artist'), key: find('.dd-key'),
       bpm: find('.dd-bpm'), time: find('.dd-current'), remaining: find('.dd-remaining'),
+      seek: find('.dd-seek'), beats: find('.dd-beats'),
       wave: find('canvas'), zoom: find('.dd-zoom'), lock: find('.dd-lock'), scrub: find('.dd-scrub'), scratchStatus: find('.dd-scratch-status'),
       range: find('.dd-pitch-range'), steps: find('.dd-tempo-steps'), modes: find('.dd-wheel-modes'),
-      rate: find('input[type="range"]'), rateText: find('.dd-pitch-value'),
+      rate: find('.dd-rail input'), rateText: find('.dd-pitch-value'),
       play: find('.dd-play'), cue: find('.dd-cue'), sync: find('.dd-sync'), loop: find('.dd-loop'),
-      length: find('.dd-loop-select select'), pads: Array.from(root.querySelectorAll('[data-pad]'))
+      loopValue: find('.dd-loop-value'), loopMinus: find('.dd-loop-minus'), loopPlus: find('.dd-loop-plus'),
+      pads: Array.from(root.querySelectorAll('[data-pad]'))
     };
     const deck = {
       id, root, refs, state: {}, mode: 'scratch', spin: 0, zoom: 1, lastTrack: undefined, lastPlaying: false, renderKey: '',
@@ -147,18 +174,28 @@
     refs.play.addEventListener('click', () => engine().toggle(id));
     refs.cue.addEventListener('click', () => engine().cue(id));
     refs.sync.addEventListener('click', () => engine().sync(id));
-    refs.loop.addEventListener('click', () => engine().loop(id, currentState().loopBeats ? 0 : Number(refs.length.value)));
-    refs.length.addEventListener('change', () => {
-      if (currentState().loopBeats) engine().loop(id, Number(refs.length.value));
-    });
-    refs.zoom.addEventListener('click', () => {
-      deck.zoom = zoomLevels[(zoomLevels.indexOf(deck.zoom) + 1) % zoomLevels.length];
+    refs.loop.addEventListener('click', () => engine().loop(id, currentState().loopBeats ? 0 : Number(refs.loopValue.value)));
+    for (const button of [refs.loopMinus, refs.loopPlus]) {
+      button.addEventListener('click', () => {
+        const active = currentState().loopBeats;
+        const length = active || Number(refs.loopValue.value);
+        const next = button === refs.loopPlus
+          ? loopLengths.find(beats => beats > length)
+          : loopLengths.findLast(beats => beats < length);
+        if (next === undefined) return;
+        if (active) engine().loop(id, next);
+        showLoopLength(refs, active ? currentState().loopBeats : next, available());
+      });
+    }
+    function setZoom(zoom) {
+      deck.zoom = zoom;
       write(refs.zoom.querySelector('span'), deck.zoom + '×');
       refs.zoom.setAttribute('aria-label', 'Масштаб волны ' + deck.zoom + '×');
+    }
+    refs.zoom.addEventListener('click', () => {
+      setZoom(zoomLevels[(zoomLevels.indexOf(deck.zoom) + 1) % zoomLevels.length]);
       draw(deck, true);
     });
-    refs.art.addEventListener('error', () => { refs.art.hidden = true; });
-    refs.art.addEventListener('load', () => { refs.art.hidden = false; });
     let gesture = null;
     let keyFrame = 0;
     function releaseWheel() {
@@ -169,7 +206,7 @@
       if (active.pointer != null && active.control.hasPointerCapture(active.pointer))
         active.control.releasePointerCapture(active.pointer);
       root.classList.remove('dd-dragging', 'dd-scratching');
-      if (currentState().track !== active.track) return;
+      if (currentState().loadVersion !== active.loadVersion) return;
       if (active.mode === 'scratch') engine().endScratch(id);
       if (active.mode === 'bend') engine().setBend(id, 0);
     }
@@ -181,17 +218,30 @@
       root.classList.toggle('dd-scratching', input.mode === 'scratch');
       return true;
     }
-    refs.modes.addEventListener('click', event => {
-      const chosen = event.target.closest('[data-jog]')?.dataset.jog;
-      if (!chosen || deck.mode === chosen) return;
+    function setJogMode(chosen) {
       releaseWheel();
       deck.mode = chosen;
       Array.from(refs.modes.children).forEach(button => pressed(button, button.dataset.jog === chosen));
       refs.jog.setAttribute('aria-label', ({ scratch: 'Скретч на деке ', bend: 'Подгонка скорости диском деки ', tempo: 'Темп диском деки ' })[chosen] + id);
       refs.jog.title = jogHints[chosen];
       refs.scrub.hidden = chosen === 'scratch';
+    }
+    refs.modes.addEventListener('click', event => {
+      const chosen = event.target.closest('[data-jog]')?.dataset.jog;
+      if (!chosen || deck.mode === chosen) return;
+      setJogMode(chosen);
       render(id, currentState());
     });
+    deck.resetControls = () => {
+      clearTimeout(deck.timer);
+      if (deck.wavePointer != null && refs.wave.hasPointerCapture(deck.wavePointer))
+        refs.wave.releasePointerCapture(deck.wavePointer);
+      delete deck.dragStart;
+      deck.spin = 0;
+      useRange(8);
+      setJogMode('scratch');
+      setZoom(1);
+    };
     function wheelStep(g, point) {
       const x = point.clientX - g.cx, y = point.clientY - g.cy;
       const dx = x - g.x, dy = y - g.y;
@@ -228,11 +278,10 @@
         const radius = bounds.width / 2;
         const x = event.clientX - cx, y = event.clientY - cy;
         let mode = control === refs.scrub ? 'scrub' : deck.mode;
-        // The visible black vinyl and the ribbed sidewall have distinct jobs.
-        const vinylRadius = radius * refs.vinyl.offsetWidth / refs.jog.offsetWidth;
-        if (mode === 'scratch' && Math.hypot(x, y) > vinylRadius) mode = 'bend';
+        const touchRadius = radius * refs.jogFace.offsetWidth / refs.jog.offsetWidth;
+        if (mode === 'scratch' && Math.hypot(x, y) > touchRadius) mode = 'bend';
         control.focus({ preventScroll: true });
-        const input = { control, track: currentState().track, pointer: event.pointerId, mode,
+        const input = { control, loadVersion: currentState().loadVersion, pointer: event.pointerId, mode,
           cx, cy, x, y, radius, axis: mode === 'scrub' ? 'x' : '', total: 0 };
         if (!grab(input)) return;
         control.setPointerCapture(event.pointerId);
@@ -241,7 +290,7 @@
         const g = gesture;
         if (!g || event.pointerId !== g.pointer || g.control !== control) return;
         const state = currentState();
-        if (state.track !== g.track || (g.mode === 'scratch' && !state.scratching)) { releaseWheel(); return; }
+        if (state.loadVersion !== g.loadVersion || (g.mode === 'scratch' && !state.scratching)) { releaseWheel(); return; }
         let step = 0;
         for (const point of event.getCoalescedEvents?.() || []) step += wheelStep(g, point);
         step += wheelStep(g, event);
@@ -285,7 +334,7 @@
         engine().setTempo(id, bound(currentState().tempo + direction * (event.shiftKey ? 0.01 : 0.1), -limit, limit));
         return;
       }
-      if (!gesture && !grab({ key: event.key, track: currentState().track, mode: deck.mode, last: performance.now() })) return;
+      if (!gesture && !grab({ key: event.key, loadVersion: currentState().loadVersion, mode: deck.mode, last: performance.now() })) return;
       gesture.key = event.key;
       gesture.speed = direction * (event.shiftKey ? .25 : 1.5);
       if (deck.mode === 'bend') engine().setBend(id, direction * (event.shiftKey ? .25 : 2));
@@ -296,7 +345,7 @@
         keyFrame = requestAnimationFrame(function moveKey(now) {
           if (!gesture?.key || gesture.mode !== 'scratch') return;
           const state = currentState();
-          if (state.track !== gesture.track || !state.scratching) { releaseWheel(); return; }
+          if (state.loadVersion !== gesture.loadVersion || !state.scratching) { releaseWheel(); return; }
           engine().moveScratch(id, gesture.speed * bound(now - gesture.last, 0, 50) / 1000);
           gesture.last = now;
           render(id, currentState());
@@ -352,6 +401,7 @@
     refs.wave.addEventListener('pointerdown', event => {
       if (event.button !== 0 || !available()) return;
       refs.wave.setPointerCapture(event.pointerId);
+      deck.wavePointer = event.pointerId;
       // Keep the viewport stable while scrubbing a zoomed waveform.
       deck.dragStart = deck.from;
       seekAt(event);
@@ -359,7 +409,10 @@
     refs.wave.addEventListener('pointermove', event => {
       if (refs.wave.hasPointerCapture(event.pointerId)) seekAt(event);
     });
-    refs.wave.addEventListener('lostpointercapture', () => { delete deck.dragStart; });
+    refs.wave.addEventListener('lostpointercapture', () => {
+      delete deck.wavePointer;
+      delete deck.dragStart;
+    });
     const keyboardSeek = event => {
       if (!available()) return;
       const current = currentState();
@@ -373,6 +426,11 @@
       }
     };
     refs.wave.addEventListener('keydown', keyboardSeek);
+    refs.seek.addEventListener('keydown', keyboardSeek);
+    refs.seek.addEventListener('input', () => {
+      const state = currentState();
+      engine().seek(id, refs.seek.valueAsNumber / Number(refs.seek.max) * state.duration);
+    });
     refs.scrub.addEventListener('keydown', keyboardSeek);
     refs.jog.addEventListener('keydown', event => {
       if (deck.mode === 'scratch' && ['Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) keyboardSeek(event);
@@ -393,6 +451,12 @@
     };
     render(id, {});
     return root;
+  }
+
+  function showLoopLength(refs, beats, loaded) {
+    if (Number(refs.loopValue.value) !== beats) refs.loopValue.value = String(beats);
+    refs.loopMinus.disabled = !loaded || beats <= loopLengths[0];
+    refs.loopPlus.disabled = !loaded || beats >= loopLengths[loopLengths.length - 1];
   }
 
   function baseTempo(state) {
@@ -419,7 +483,8 @@
     deck.from = from;
     const playX = span ? (time - from) / span * width : 0;
     const bpm = baseTempo(state);
-    const key = [Math.round(from / (span || 1) * width), Math.round(playX * scale), Math.round(bpm * 100), state.loopBeats, state.loopStart, state.cue, state.hotCues?.join(','), state.track?.peaks?.length].join('|');
+    const offset = Number(state.track?.offset) || 0;
+    const key = [Math.round(from / (span || 1) * width), Math.round(playX * scale), Math.round(bpm * 100), offset, state.loopBeats, state.loopStart, state.cue, state.hotCues?.join(','), state.track?.peaks?.length].join('|');
     if (!force && key === deck.renderKey) return;
     deck.renderKey = key;
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
@@ -438,7 +503,6 @@
       let step = beat;
       let beatsPerLine = 1;
       while (step * width / span < 23) { step *= 2; beatsPerLine *= 2; }
-      const offset = Number(state.track?.offset) || 0;
       const first = Math.ceil((from - offset) / step);
       for (let i = first; (i * step + offset - from) < span; i++) {
         const x = Math.round((i * step + offset - from) / span * width);
@@ -523,30 +587,24 @@
     const { refs } = deck;
     deck.state = state;
     const track = state.track;
-    const trackChanged = deck.lastTrack !== track;
+    const trackChanged = deck.lastTrack !== track || deck.loadVersion !== state.loadVersion;
     if (trackChanged) {
       deck.lastTrack = track;
-      deck.releaseWheel?.();
-      deck.spin = 0;
+      deck.loadVersion = state.loadVersion;
+      deck.resetControls();
       write(refs.title, track?.title || 'Дека свободна');
       refs.title.title = track?.title || '';
       write(refs.artist, track?.artist || (track ? '—' : 'Загрузите трек'));
       write(refs.key, track?.key || '');
       refs.key.hidden = !track?.key;
-      if (track?.cover) {
-        refs.art.hidden = true;
-        refs.art.src = track.cover;
-      } else {
-        refs.art.removeAttribute('src');
-        refs.art.hidden = true;
-      }
     }
     if (!state.scratching && deck.root.classList.contains('dd-scratching')) deck.releaseWheel();
     const loaded = Boolean(track);
+    write(refs.deckState, state.scratching ? 'Скретч' : state.playing ? 'Играет' : loaded ? 'Пауза' : 'Свободна');
     refs.scratchStatus.hidden = !(state.scratching && state.scratchStatus === 'loading');
     if (deck.loaded !== loaded) {
       deck.loaded = loaded;
-      for (const control of [refs.play, refs.cue, refs.sync, refs.loop, refs.length, refs.zoom, refs.rate, refs.range, refs.lock, ...refs.steps.children, ...refs.modes.children, ...refs.pads]) control.disabled = !loaded;
+      for (const control of [refs.play, refs.cue, refs.sync, refs.loop, refs.zoom, refs.rate, refs.range, refs.lock, ...refs.steps.children, ...refs.modes.children, ...refs.pads]) control.disabled = !loaded;
       refs.wave.setAttribute('aria-disabled', String(!loaded));
       refs.jog.setAttribute('aria-disabled', String(!loaded));
       refs.scrub.setAttribute('aria-disabled', String(!loaded));
@@ -560,12 +618,21 @@
     }
     const duration = Number(state.duration || track?.duration) || 0;
     const time = Number(state.time) || 0;
-    // The stylus travels from the lead-in to the inner groove, including seeks and scratches.
     const progress = duration > 0 ? Math.max(0, Math.min(1, time / duration)) : 0;
-    const armAngle = loaded ? 6 + Math.round(progress * 260) / 10 : -6;
-    if (deck.armAngle !== armAngle) {
-      deck.armAngle = armAngle;
-      refs.arm.style.transform = 'rotate(' + armAngle + 'deg)';
+    const seekPosition = Math.round(progress * Number(refs.seek.max));
+    if (deck.seekPosition !== seekPosition) {
+      deck.seekPosition = seekPosition;
+      refs.seek.value = seekPosition;
+      refs.seek.style.setProperty('--progress', (progress * 100).toFixed(1) + '%');
+    }
+    // The grid is indexed in source time. Playback speed is already reflected in time.
+    const baseBPM = baseTempo(state);
+    const gridBeat = Math.floor((time - (Number(track?.offset) || 0)) * baseBPM / 60 + 1e-9);
+    const phase = loaded && baseBPM > 0 ? ((gridBeat % 4) + 4) % 4 : -1;
+    if (deck.phase !== phase) {
+      deck.phase = phase;
+      Array.from(refs.beats.children).forEach((light, i) => light.classList.toggle('is-current', i === phase));
+      refs.beats.setAttribute('aria-label', phase < 0 ? 'Сетка долей недоступна' : 'Доля ' + (phase + 1) + ' из 4');
     }
     const scratchMode = deck.mode === 'scratch';
     const jogLimit = scratchMode ? Math.ceil(duration) : deck.mode === 'bend' ? 12 : Number(refs.range.value);
@@ -573,6 +640,8 @@
     const jogText = scratchMode ? clock(time) + '.' + Math.floor(time * 10) % 10 : percent(jogValue);
     if (deck.jogReadout !== jogText || deck.jogLimit !== jogLimit || deck.jogMode !== deck.mode) {
       deck.jogReadout = jogText; deck.jogLimit = jogLimit; deck.jogMode = deck.mode;
+      write(refs.jogReadout, loaded ? (scratchMode ? clock(time) : jogText) : '—');
+      write(refs.jogMode, { scratch: 'Скретч', bend: 'Подгонка', tempo: 'Темп' }[deck.mode]);
       refs.jog.setAttribute('aria-valuemin', scratchMode ? 0 : -jogLimit);
       refs.jog.setAttribute('aria-valuemax', jogLimit);
       refs.jog.setAttribute('aria-valuenow', jogValue.toFixed(2));
@@ -599,6 +668,8 @@
     if (deck.a11yTime !== second || deck.a11yDuration !== duration) {
       deck.a11yTime = second;
       deck.a11yDuration = duration;
+      refs.seek.disabled = !loaded || !(duration > 0);
+      refs.seek.setAttribute('aria-valuetext', clock(time) + ' / ' + clock(duration));
       for (const control of [refs.wave, refs.scrub]) {
         control.setAttribute('aria-valuenow', String(second));
         control.setAttribute('aria-valuemax', String(Math.ceil(duration)));
@@ -606,7 +677,10 @@
       }
     }
     pressed(refs.loop, state.loopBeats > 0);
-    if (state.loopBeats > 0 && Number(refs.length.value) !== state.loopBeats) refs.length.value = state.loopBeats;
+    if (trackChanged || deck.lastLoop !== state.loopBeats) {
+      deck.lastLoop = state.loopBeats;
+      showLoopLength(refs, state.loopBeats || (trackChanged ? 4 : Number(refs.loopValue.value)), loaded);
+    }
     refs.pads.forEach((button, i) => {
       const at = state.hotCues?.[i];
       if (deck.padValues && deck.padValues[i] === at) return;

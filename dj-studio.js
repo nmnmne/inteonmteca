@@ -78,6 +78,7 @@
   const loadRequests = { A: 0, B: 0 };
   const retiredURLs = new Set();
   const mixerDisplays = [];
+  const deckBrowsers = [];
   const knobSpecs = [
     { name: 'low', label: 'LOW', min: -24, max: 12, unit: 'dB', desc: 'Низкие частоты' },
     { name: 'mid', label: 'MID', min: -24, max: 12, unit: 'dB', desc: 'Средние частоты' },
@@ -107,12 +108,14 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove('visible'), 3600);
   }
+  function inCrate(track, choice) {
+    return (choice !== 'starred' || favorites.has(track.id)) && (choice !== 'imports' || track.imported);
+  }
   function visibleTracks() {
     const query = $('#search').value.trim().toLocaleLowerCase();
     const rows = tracks.filter(
       (t) =>
-        (crate !== 'starred' || favorites.has(t.id)) &&
-        (crate !== 'imports' || t.imported) &&
+        inCrate(t, crate) &&
         (!query || (t.title + ' ' + t.artist).toLocaleLowerCase().includes(query)),
     );
     if (sortKey)
@@ -131,6 +134,7 @@
   }
   function drawTable(s = engine.snapshot()) {
     const rows = visibleTracks();
+    deckBrowsers.forEach(refresh => refresh(s));
     const count = {
       all: tracks.length,
       starred: tracks.filter((t) => favorites.has(t.id)).length,
@@ -235,18 +239,20 @@
     tableStamp = channels.map((id) => s[id].track?.id).join('|');
   }
   async function loadDeck(id, track) {
-    if (!track) return;
+    if (!track) return false;
     const request = ++loadRequests[id];
     if (track.imported && !track.src) {
+      const version = engine.snapshot()[id].loadVersion;
       await window.DJStorage.hydrate(track);
-      if (request !== loadRequests[id] || !tracks.includes(track)) return;
+      if (request !== loadRequests[id] || version !== engine.snapshot()[id].loadVersion || !tracks.includes(track)) return false;
       if (!track.src) {
         notice('Аудиофайл недоступен. Импортируйте его снова.');
-        return;
+        return false;
       }
     }
     engine.load(id, track);
     const state = engine.snapshot();
+    if (state[id].track !== track) return false;
     for (const url of retiredURLs) {
       if (channels.every((side) => state[side].track?.src !== url)) {
         URL.revokeObjectURL(url);
@@ -261,6 +267,116 @@
         level = ' · ' + ((measured.playbackIntegrated ?? measured.integrated) + measured.gainDb).toFixed(1) + ' LUFS';
     }
     notice(track.title + ' · Дека ' + id + level);
+    return true;
+  }
+  function mountDeckBrowser(root, id) {
+    const find = selector => root.querySelector(selector);
+    const panel = find('.dd-browser'), toggle = find('.dd-browse-toggle');
+    const list = find('.dd-browse-list'), count = find('.dd-browse-count'), filter = find('.dd-browse-filter');
+    const up = find('.dd-browse-up'), down = find('.dd-browse-down'), load = find('.dd-browse-load');
+    let rows = [], selected = -1, viewVersion = 0;
+
+    function select(index) {
+      list.children[selected]?.setAttribute('aria-selected', 'false');
+      selected = Math.min(rows.length - 1, Math.max(0, index));
+      const option = list.children[selected];
+      up.disabled = selected <= 0;
+      down.disabled = selected >= rows.length - 1;
+      load.disabled = !option;
+      count.textContent = (selected + 1) + ' / ' + rows.length;
+      if (!option) {
+        list.removeAttribute('aria-activedescendant');
+        return;
+      }
+      option.setAttribute('aria-selected', 'true');
+      list.setAttribute('aria-activedescendant', option.id);
+      const bounds = list.getBoundingClientRect(), row = option.getBoundingClientRect();
+      if (row.top < bounds.top) list.scrollTop += row.top - bounds.top;
+      else if (row.bottom > bounds.bottom) list.scrollTop += row.bottom - bounds.bottom;
+    }
+
+    function refresh(snapshot) {
+      if (panel.hidden) return;
+      const loaded = snapshot[id].track?.id;
+      const wanted = rows[selected]?.id ?? loaded;
+      rows = tracks.filter(track => inCrate(track, filter.value));
+      list.innerHTML = rows.map((track, index) => {
+        const current = track.id === loaded;
+        const bpm = Number(track.bpm);
+        return `<div role="option" class="dd-browse-row" id="dd-option-${id}-${index}" data-index="${index}" aria-selected="false"${current ? ' aria-current="true"' : ''}>
+          <span class="dd-browse-copy"><strong class="dd-browse-title">${esc(track.title)}</strong><small class="dd-browse-artist">${esc(track.artist)}</small></span>
+          <span class="dd-browse-bpm">${bpm > 0 ? Number(bpm.toFixed(1)) + ' BPM' : '—'}</span>
+          ${current ? '<span class="dd-browse-loaded" aria-label="Загружен в деку ' + id + '">' + id + '</span>' : ''}
+        </div>`;
+      }).join('');
+      find('.dd-browse-empty').hidden = rows.length > 0;
+      const wantedIndex = rows.findIndex(track => track.id === wanted);
+      select(wantedIndex >= 0 ? wantedIndex : selected);
+    }
+
+    function show(open) {
+      viewVersion++;
+      panel.hidden = !open;
+      find('.dd-track').hidden = open;
+      find('.dd-scope').hidden = open;
+      root.classList.toggle('dd-browsing', open);
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', (open ? 'Вернуться к экрану деки ' : 'Выбрать трек для деки ') + id);
+      toggle.querySelector('span').textContent = open ? 'Назад' : 'Треки';
+      if (open) {
+        rows = [];
+        selected = -1;
+        refresh(engine.snapshot());
+        list.focus({preventScroll: true});
+      }
+    }
+
+    function close(focusToggle = true) {
+      show(false);
+      if (focusToggle) toggle.focus({preventScroll: true});
+    }
+
+    async function loadSelected() {
+      const track = rows[selected], version = viewVersion;
+      if (!track) return;
+      const ok = await loadDeck(id, track);
+      if (ok && version === viewVersion && rows[selected] === track)
+        close(panel.contains(document.activeElement));
+    }
+
+    toggle.hidden = false;
+    toggle.onclick = () => panel.hidden ? show(true) : close();
+    filter.onchange = () => {
+      selected = -1;
+      refresh(engine.snapshot());
+    };
+    up.onclick = () => select(selected - 1);
+    down.onclick = () => select(selected + 1);
+    load.onclick = loadSelected;
+    list.onclick = event => {
+      const row = event.target.closest('[role="option"]');
+      if (row) {
+        select(Number(row.dataset.index));
+        list.focus({preventScroll: true});
+      }
+    };
+    panel.onkeydown = event => {
+      if (event.target === filter || event.ctrlKey || event.metaKey || event.altKey) return;
+      switch (event.key) {
+        case 'ArrowUp': select(selected - 1); break;
+        case 'ArrowDown': select(selected + 1); break;
+        case 'Home': select(0); break;
+        case 'End': select(rows.length - 1); break;
+        case 'Escape': close(); break;
+        case 'Enter':
+          if (event.target !== list) return;
+          if (!event.repeat) void loadSelected();
+          break;
+        default: return;
+      }
+      event.preventDefault();
+    };
+    deckBrowsers.push(refresh);
   }
   function confirmRemoval(track) {
     openDialog(
@@ -356,19 +472,25 @@
         if (Math.round(value) !== Number(input.value)) {
           input.value = String(Math.round(value));
           update();
+          if (document.activeElement === input) feedback();
         }
       });
       input.addEventListener('input', apply);
       let drag;
+      window.addEventListener('dj-load', ({ detail }) => {
+        if (detail.id !== id || !drag) return;
+        if (input.hasPointerCapture(drag.pointer)) input.releasePointerCapture(drag.pointer);
+        drag = null;
+      });
       input.addEventListener('pointerdown', (e) => {
         if (e.button !== 0) return;
         e.preventDefault();
         input.focus({ preventScroll: true });
         input.setPointerCapture(e.pointerId);
-        drag = { y: e.clientY, x: e.clientX, start: Number(input.value) };
+        drag = { y: e.clientY, x: e.clientX, start: Number(input.value), pointer: e.pointerId };
       });
       input.addEventListener('pointermove', (e) => {
-        if (!drag) return;
+        if (!drag || drag.pointer !== e.pointerId) return;
         input.value = String(
           Math.round(
             drag.start +
@@ -734,7 +856,8 @@
   }
   for (const id of channels) {
     const host = $('#deck-' + id.toLowerCase());
-    window.DJDecks.mount(host, id);
+    const deck = window.DJDecks.mount(host, id);
+    mountDeckBrowser(deck, id);
     mountChannel(id);
     host.addEventListener('dragover', (e) => {
       if (e.dataTransfer.types.includes('application/x-inteon-track')) {
@@ -754,6 +877,9 @@
     });
   }
   for (const side of ['left', 'right']) $('#' + side + '-meter').innerHTML = '<b></b>'.repeat(24);
+  window.addEventListener('dj-load', ({detail: {id}}) => {
+    window.DJDecks.render(id, engine.snapshot()[id]);
+  });
   window.addEventListener('dj-change', schedulePaint);
   window.addEventListener('dj-error', (e) => notice(e.detail.message));
   window.addEventListener('dj-recorded', (e) => notice('Микс сохранён · ' + e.detail.filename));
@@ -871,7 +997,7 @@
       e.altKey ||
       e.defaultPrevented ||
       document.querySelector('dialog[open], #theme-panel:not([hidden]), #auth-panel:not([hidden])') ||
-      e.target.closest('input,textarea,select,[contenteditable="true"],[popover]')
+      e.target.closest('input,textarea,select,[contenteditable="true"],[popover],.dd-browser')
     )
       return;
     const code = e.code;
@@ -906,8 +1032,11 @@
       e.returnValue = '';
     }
   });
-  if (tracks.length) engine.load('A', tracks[0]);
-  if (tracks.length > 1) engine.load('B', tracks.find((t) => t.title === 'N01Dentity') || tracks[1]);
+  const preferredB = tracks.find(track => track.title === 'High Stage Of Reality');
+  const openingA = tracks.find(track => track.title === 'Echoes Resurface') || tracks.find(track => track !== preferredB);
+  const openingB = preferredB || tracks.find(track => track !== openingA);
+  if (openingA) engine.load('A', openingA);
+  if (openingB) engine.load('B', openingB);
   useView();
   drawTable();
   schedulePaint();

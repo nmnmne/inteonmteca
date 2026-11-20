@@ -3,6 +3,7 @@
   "use strict";
   const anchor = document.querySelector(".room-presence");
   if (!anchor) return;
+  const studio = document.querySelector("#studio.room-console");
 
   // One small procedural alpha texture, reused by the existing room canvas.
   // Mobile and reduced-motion modes never request it.
@@ -70,7 +71,7 @@
   const compact = matchMedia("(max-width: 800px), (pointer: coarse)");
   const random = (a, b) => a + Math.random() * (b - a);
   const timers = new Set();
-  let journey = null, destination = null, decision = 0, stillness = 0, resizeTimer = 0;
+  let journey = null, route = [], decision = 0, stillness = 0, resizeTimer = 0;
   let reactionUntil = 0;
   let blocked = false, lastPointerWork = 0, lastEncounter = -60000;
   let cinematic = false;
@@ -78,7 +79,8 @@
   const music = window.DJEngine?.visuals || document.getElementById("album-player");
   const musicPlaying = () => music && !music.paused && !music.ended;
   let pointer = { x: -9999, y: -9999, at: 0 };
-  let obstacles = [];
+  let obstacles = [], corners = [], stops = [];
+  let halfWidth = 0, halfHeight = 0, bounds;
   const later = (fn, delay) => {
     const id = setTimeout(() => { timers.delete(id); fn(); }, delay);
     timers.add(id);
@@ -89,7 +91,7 @@
     const b = resident.getBoundingClientRect();
     return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
   };
-  const position = p => `translate3d(${(p.x - resident.offsetWidth / 2).toFixed(1)}px, ${(p.y - resident.offsetHeight / 2).toFixed(1)}px, 0)`;
+  const position = p => `translate3d(${p.x - halfWidth}px, ${p.y - halfHeight}px, 0)`;
   const home = () => {
     const r = anchor.getBoundingClientRect();
     return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
@@ -99,41 +101,97 @@
     const here = center();
     journey.cancel();
     journey = null;
-    destination = null;
+    route = [];
     resident.style.transform = position(here);
   };
+  const sharedObstacles = '.logo-wrap, .reactive-logo, .alternate-wordmark, .listening-intro h1, .listening-intro .label, .hero-intro, '
+    + '.catalog-heading, .playlist-shell, #active-player, .text, #auth-hint, #theme-hint, #chat-hint, #street-link, .street-return, '
+    + '.chat-compose, .chat-stream:not(:empty), #theme-panel, #auth-panel, .theme-options, .visit-counter, .development-animation-menu, .development-debug-toggle';
+  const deckObstacles = '.dd-head, .dd-screen, .dd-wheel-mount, .dd-transport button, .dd-pitch, .dd-wheel-modes, .dd-loop-group, .dd-pads';
+  const studioObstacles = ', '+deckObstacles+', .room-toolbar > *, .console-nav a, .console-tools button, .monitor-status, .page-title h2, '
+    + '.controller-tabs button, .quick-cross, #mixer .panel-head, #mixer .channel-strip, #mixer .cross-section, '
+    + '#collection, .status-bar > *, #room-chat, dialog[open], [popover]:popover-open, #notice.visible, [data-resident-obstacle]';
+  const obstacleSelector = sharedObstacles + (studio ? studioObstacles : '');
+  const visible = el => el.checkVisibility({checkVisibilityCSS:true, checkOpacity:true});
+  const distance = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+  const safe = p => p.x >= bounds.left && p.x <= bounds.right && p.y >= bounds.top && p.y <= bounds.bottom
+    && !obstacles.some(r => p.x > r.left && p.x < r.right && p.y > r.top && p.y < r.bottom);
   const refreshObstacles = () => {
-    obstacles = [...document.querySelectorAll(
-      '.logo-wrap, .listening-intro h1, .listening-intro .label, .hero-intro, '
-      + '.catalog-heading, .playlist-shell, #active-player, #studio.room-console, .text, '
-      + '#auth-hint, #theme-hint, #chat-hint, #street-link, .street-return, .chat-compose, .chat-stream:not(:empty), '
-      + '#theme-panel, #auth-panel, .theme-options, .visit-counter, .development-animation-menu, .development-debug-toggle'
-    )].filter(el => el.checkVisibility({checkVisibilityCSS:true, checkOpacity:true}))
-      .map(el => el.getBoundingClientRect()).filter(r => r.width && r.height && r.bottom > 0 && r.top < innerHeight);
-  };
-  const safe = p => {
-    if (document.body.classList.contains('has-mobile-visual-stage')) {
-      const heading = document.querySelector('.listening-intro h1').getBoundingClientRect();
-      const logo = document.querySelector('#logo-wrap').getBoundingClientRect();
-      if (p.x < 28 || p.x > heading.left - 25 || p.y < 88 || p.y > logo.top - 24) return false;
+    const style = getComputedStyle(resident);
+    halfWidth = parseFloat(style.width) / 2;
+    halfHeight = parseFloat(style.height) / 2;
+    const padX = halfWidth + 3, padY = halfHeight + 3;
+    bounds = {left:padX, right:innerWidth-padX, top:padY, bottom:innerHeight-padY};
+    const workspace = studio?.querySelector('.workspace');
+    const clip = workspace?.getBoundingClientRect();
+    const title = studio?.querySelector('.page-title');
+    const floatingTitle = title && getComputedStyle(title).position === 'absolute' ? title : null;
+    obstacles = [];
+    for (const el of document.querySelectorAll(obstacleSelector)) {
+      // Reserve the brand's footprint even while a logo animation crossfades.
+      if (!visible(el) && !el.matches('.logo-wrap, .reactive-logo')) continue;
+      let {left,right,top,bottom} = el.getBoundingClientRect();
+      if (workspace?.contains(el) && !floatingTitle?.contains(el)) {
+        left = Math.max(left,clip.left); right = Math.min(right,clip.right);
+        top = Math.max(top,clip.top); bottom = Math.min(bottom,clip.bottom);
+      }
+      if (right <= left || bottom <= top || bottom < 0 || top > innerHeight) continue;
+      obstacles.push({left:left-padX, right:right+padX, top:top-padY, bottom:bottom+padY});
     }
-    const padX=compact.matches ? 24 : 32, padY=compact.matches ? 27 : 34;
-    return p.x >= padX && p.x <= innerWidth-padX && p.y >= padY && p.y <= innerHeight-padY
-      && !obstacles.some(r => p.x > r.left-padX && p.x < r.right+padX
-        && p.y > r.top-padY && p.y < r.bottom+padY);
+    corners = [];
+    for (const r of obstacles) for (const x of [r.left-0.5,r.right+0.5]) for (const y of [r.top-0.5,r.bottom+0.5]) {
+      if (safe({x,y})) corners.push({x,y});
+    }
+    stops = studio ? [...studio.querySelectorAll('[data-resident-stop]')].filter(visible).map(el => {
+      const r = el.getBoundingClientRect();
+      return {x:r.left+r.width/2, y:r.top+r.height/2};
+    }).filter(p => p.y >= clip.top && p.y <= clip.bottom && safe(p)) : [];
   };
+  // Intersect the whole segment with each expanded obstacle, including narrow
+  // corners between animation frames. Travel along a free boundary is valid.
   const clearPath = (from, to) => {
-    const steps = Math.max(1, Math.ceil(Math.hypot(to.x-from.x,to.y-from.y)/8));
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      if (!safe({x:from.x+(to.x-from.x)*t,y:from.y+(to.y-from.y)*t})) return false;
+    const dx = to.x-from.x, dy = to.y-from.y;
+    return !obstacles.some(r => {
+      if (Math.max(from.x,to.x) <= r.left || Math.min(from.x,to.x) >= r.right
+        || Math.max(from.y,to.y) <= r.top || Math.min(from.y,to.y) >= r.bottom) return false;
+      const x1 = dx ? (r.left-from.x)/dx : -Infinity, x2 = dx ? (r.right-from.x)/dx : Infinity;
+      const y1 = dy ? (r.top-from.y)/dy : -Infinity, y2 = dy ? (r.bottom-from.y)/dy : Infinity;
+      return Math.max(0, Math.min(x1,x2), Math.min(y1,y2)) < Math.min(1, Math.max(x1,x2), Math.max(y1,y2));
+    });
+  };
+  // Shortest visible-corner route around the occupied rectangles. The graph
+  // is small and is only searched when a straight walk is obstructed.
+  const routeTo = (from, to) => {
+    if (!safe(from) || !safe(to) || distance(from,to) < 1) return null;
+    if (clearPath(from,to)) return [from,to];
+    const nodes = [from,to,...corners], costs = nodes.map(() => Infinity);
+    const previous = [], visited = new Set();
+    costs[0] = 0;
+    while (true) {
+      let next = -1, lowest = Infinity;
+      nodes.forEach((p,i) => {
+        if (!visited.has(i) && costs[i] < lowest) { next = i; lowest = costs[i]; }
+      });
+      if (next < 0) return null;
+      if (next === 1) {
+        const path = [];
+        for (let i = next; i !== undefined; i = previous[i]) path.unshift(nodes[i]);
+        return path;
+      }
+      visited.add(next);
+      nodes.forEach((p,i) => {
+        if (visited.has(i)) return;
+        const cost = lowest + distance(nodes[next],p);
+        if (cost < costs[i] && clearPath(nodes[next],p)) { costs[i] = cost; previous[i] = next; }
+      });
     }
-    return true;
   };
   const nearestFree = from => {
     if (safe(from)) return from;
     let best = null, distance = Infinity;
-    for (let y = 28; y < innerHeight-27; y += 8) for (let x = 24; x < innerWidth-24; x += 8) {
+    const xs = [from.x,bounds.left,bounds.right,...obstacles.flatMap(r => [r.left-.5,r.right+.5])];
+    const ys = [from.y,bounds.top,bounds.bottom,...obstacles.flatMap(r => [r.top-.5,r.bottom+.5])];
+    for (const x of xs) for (const y of ys) {
       const p = {x,y}, d = Math.hypot(x-from.x,y-from.y);
       if (d < distance && safe(p)) { best=p; distance=d; }
     }
@@ -194,30 +252,63 @@
     midnightTimer = setTimeout(armMidnight, Math.max(1, next.getTime() - now.getTime()));
   };
   restoreAnger(); showAttitude();
-  const walk = (target, arrive, duration) => {
-    const from = center();
-    if (!clearPath(from, target)) return false;
+  const animateRoute = (points, arrive, duration) => {
     stopJourney();
-    destination = target;
-    clear(decision);
-    look(target);
-    pose("walking");
-    const end = position(target);
-    journey = resident.animate([{transform:position(from)}, {transform:end}], {
-      duration: duration || Math.max(3800, Math.hypot(target.x-from.x,target.y-from.y) * 38),
-      easing: "cubic-bezier(.38,0,.3,1)",
+    let length = 0;
+    route = points.map((p,i) => {
+      if (i) length += distance(points[i-1],p);
+      return {...p, at:length};
     });
-    resident.style.transform = end;
-    journey.onfinish = () => { journey = null; destination = null; arrive(); };
+    const frames = route.map(p => ({transform:position(p), offset:p.at/length}));
+    journey = resident.animate(frames, {
+      duration:duration || Math.max(1700,length * (studio ? 22 : 38)),
+      easing:'cubic-bezier(.38,0,.3,1)',
+    });
+    resident.style.transform = frames[frames.length-1].transform;
+    journey.onfinish = () => { journey = null; route = []; arrive(); };
+  };
+  const walk = (target, arrive, duration) => {
+    const points = routeTo(center(),target);
+    if (!points) return false;
+    clear(decision);
+    look(points[1]);
+    pose("walking");
+    animateRoute(points,arrive,duration);
     return true;
+  };
+  let nextStudioStop = 0;
+  const visitStudio = () => {
+    const here = center();
+    const targets = [...stops,nearestFree(home())];
+    // Follow both recessed lanes, then return to the pocket beside the logo.
+    for (let i = 0; i < targets.length; i++) {
+      const index = (nextStudioStop+i) % targets.length, target = targets[index];
+      if (!target || distance(here,target) <= 14) continue;
+      if (walk(target, () => {
+        pose(musicPlaying() ? 'listening' : 'watching');
+        schedule(random(2600,4900));
+      })) {
+        nextStudioStop = index+1;
+        return true;
+      }
+    }
+    return false;
   };
   const wander = () => {
     const from = center();
+    const arrive = () => { pose(Math.random()<.4 ? "letter" : "thinking"); schedule(studio ? random(2000,5000) : random(9000,17000)); };
     for (let attempt = 0; attempt < 36; attempt++) {
-      const angle = random(0, Math.PI * 2), distance = random(65, 260);
+      const angle = random(0, Math.PI * 2), distance = random(studio ? 18 : 65, 260);
       const target = {x:from.x+Math.cos(angle)*distance, y:from.y+Math.sin(angle)*distance};
       if (Math.hypot(target.x-pointer.x,target.y-pointer.y) < 105) continue;
-      if (walk(target, () => { pose(Math.random()<.4 ? "letter" : "thinking"); schedule(random(9000,17000)); })) return true;
+      if (walk(target,arrive)) return true;
+    }
+    if (studio) {
+      // A narrow mobile header may leave only a short walk along one axis.
+      for (const step of [36,16]) for (const [dx,dy] of [[0,1],[1,0],[0,-1],[-1,0]]) {
+        const target = {x:from.x+dx*step,y:from.y+dy*step};
+        if (distance(target,pointer) > 40 && walk(target,arrive)) return true;
+      }
     }
     return false;
   };
@@ -246,9 +337,15 @@
     return true;
   };
   function think() {
-    if (blocked || reduced.matches || journey || performance.now()<reactionUntil) return;
+    if (blocked || resident.hidden || reduced.matches || journey || performance.now()<reactionUntil) return;
     refreshObstacles();
     const mood = Math.random();
+    if (studio) {
+      if ((mood < .65 && visitStudio()) || wander() || visitStudio()) return;
+      pose(musicPlaying() ? 'listening' : 'thinking');
+      schedule(random(2200,4200));
+      return;
+    }
     if (mood < .7 && contemplate()) return;
     if (mood < .5 && explore()) return;
     if (mood < .85 && wander()) return;
@@ -308,7 +405,11 @@
     if (!reduced.matches) {
       later(blink, random(4000,9000));
       if (startingPoint) {
-        later(() => {
+        if (studio) decision = later(() => {
+          refreshObstacles();
+          if (!visitStudio()) think();
+        }, 1200);
+        else later(() => {
           if (!journey && !contemplate()) { pose("thinking"); schedule(random(4500,10000)); }
         }, random(3000,6500));
       }
@@ -353,14 +454,12 @@
       const points=Array.from({length:25},(_,i)=>({x:origin.x+Math.cos(start+i/24*Math.PI*2)*radius,y:origin.y+Math.sin(start+i/24*Math.PI*2)*radius}));
       if (!points.every((point,i)=>safe(point)&&(!i||clearPath(points[i-1],point)))) continue;
       resident.dataset.behavior="circling";pose("curious");
-      journey=resident.animate(points.map(point=>({transform:position(point)})),{duration:2400,easing:"ease-in-out"});
-      resident.style.transform=position(here);
-      journey.onfinish=()=>{journey=null;chaseUntil=performance.now()+random(8500,12500);pursue();};
+      animateRoute(points,()=>{chaseUntil=performance.now()+random(8500,12500);pursue();},2400);
       return;
     }
     // If cornered, move into a clearing before trying the circle again.
     if (!wander()) { independent(); return; }
-    journey.onfinish=()=>{journey=null;circle();};
+    journey.onfinish=()=>{journey=null;route=[];circle();};
   };
   const explore = () => {
     refreshObstacles();
@@ -398,8 +497,8 @@
   }, {passive:true});
   window.addEventListener('pointerdown', event => {
     if (blocked || resident.hidden || cinematic) return;
-    const here=center(), now=performance.now();
-    if (Math.hypot(event.clientX-here.x,event.clientY-here.y)>34) return;
+    const box=resident.getBoundingClientRect(), now=performance.now();
+    if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) return;
     resetAngerDay();
     if (now-lastPoke<300) return;
     lastPoke = now;
@@ -418,30 +517,47 @@
   }, {passive:true});
   // Menus, heading shifts and responsive layout can invalidate a route mid-walk.
   const guardSpace = () => {
-    if (blocked || cinematic || document.hidden || compact.matches) return;
+    if (blocked || cinematic || document.hidden) return;
     refreshObstacles();
-    const here=center();
-    if (!safe(here)) {
+    const here=resident.hidden ? home() : center();
+    if (resident.hidden || !safe(here)) {
       stopJourney();
       const free=nearestFree(here);
       resident.hidden=!free;
       if (free) {resident.style.transform=position(free); schedule(1400);}
-    } else {
-      resident.hidden=false;
-      if (journey && destination && !clearPath(here,destination)) {stopJourney();schedule(500);}
+    } else if (journey) {
+      const progress = journey.effect.getComputedTiming().progress || 0;
+      const covered = progress * route[route.length-1].at;
+      const pending = [here,...route.filter(p => p.at > covered)];
+      if (!pending.every((p,i) => safe(p) && (!i || clearPath(pending[i-1],p)))) {
+        stopJourney(); schedule(200);
+      }
     }
   };
   let spaceGuard = 0;
   const invalidateSpace = () => {
-    if (spaceGuard || document.hidden || compact.matches) return;
+    if (spaceGuard || document.hidden) return;
     spaceGuard = requestAnimationFrame(() => { spaceGuard = 0; guardSpace(); });
   };
   const obstacleObserver = new ResizeObserver(invalidateSpace);
-  document.querySelectorAll('#studio.room-console, .playlist-shell, #active-player, .listening-intro, #logo-wrap, #chat-panel, #auth-panel, #theme-panel')
+  document.querySelectorAll('#studio.room-console, .playlist-shell, #active-player, .listening-intro, #logo-wrap, #chat-panel, #auth-panel, #theme-panel, '
+    + '.room-toolbar, .console-nav, .console-tools, .deck-bank, #mixer, #mixer .panel-head, #mixer .channel-strip, [data-resident-stop], #collection, '+deckObstacles)
     .forEach(el => obstacleObserver.observe(el));
+  if (studio) {
+    const panelChanges = new MutationObserver(invalidateSpace);
+    panelChanges.observe(studio.querySelector('.deck-bank'), {attributes:true, attributeFilter:['data-panel']});
+    document.querySelectorAll('dialog, #auth-panel, #theme-panel, #notice, .dd-browser').forEach(el => {
+      panelChanges.observe(el, {attributes:true, attributeFilter:['open','hidden','class']});
+    });
+    studio.querySelector('.workspace').addEventListener('scroll', invalidateSpace, {passive:true});
+    document.addEventListener('toggle', invalidateSpace, true);
+    document.addEventListener('fullscreenchange', invalidateSpace);
+  }
   ['inteon-catalog-fit', 'inteon-mobile-chat-change', 'inteon-popup-open', 'inteon-debug-change', 'resize', 'pageshow']
     .forEach(type => window.addEventListener(type, invalidateSpace, {passive: true}));
-  document.addEventListener('transitionend', invalidateSpace);
+  document.addEventListener('transitionend', event => {
+    if (!resident.contains(event.target)) invalidateSpace();
+  });
   window.addEventListener('pagehide', () => {cancelAnimationFrame(spaceGuard); spaceGuard = 0;});
   document.documentElement.addEventListener("pointerleave", () => {
     pointer={x:-9999,y:-9999,at:0}; clear(stillness);
@@ -460,8 +576,10 @@
       suspend(); cinematic = true; blocked = true;
       resident.style.opacity = '0';
     } else if (phase === 'burst') {
-      resident.hidden = false;
-      resident.style.transform = position({x, y});
+      refreshObstacles();
+      const free = nearestFree({x,y});
+      resident.hidden = !free;
+      if (free) resident.style.transform = position(free);
       resident.classList.add('is-detonating');
       resident.style.opacity = '1'; pose('watching');
     } else if (cinematic) {
@@ -470,7 +588,7 @@
     }
   });
   window.addEventListener('inteon-interlude', sync);
-  window.addEventListener("pageshow",sync);
+  window.addEventListener("pageshow",event => { if (event.persisted) sync(); });
   sync();
   // One brief comic speech per browser and local calendar day.
   const speech = document.createElement('div');

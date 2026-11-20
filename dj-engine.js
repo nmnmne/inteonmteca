@@ -51,8 +51,10 @@
   }
 
   function setParam(param, value, immediate = false) {
-    if (immediate) param.value = value;
-    else param.setTargetAtTime(value, context.currentTime, 0.012);
+    if (immediate) {
+      param.cancelScheduledValues(0);
+      param.setValueAtTime(value, context.currentTime);
+    } else param.setTargetAtTime(value, context.currentTime, 0.012);
   }
 
   function filterNode(type, frequency, q) {
@@ -77,15 +79,15 @@
     setParam(deck.nodes.highPass.frequency, highPass, immediate);
   }
 
-  function updateCross(immediate, gate = false) {
+  function updateCross(immediate, gate = false, channels = ['A', 'B']) {
     const travel = (cross + 1) / 2;
-    for (const id of ['A', 'B']) {
+    for (const id of channels) {
       const gain = decks[id].nodes?.cross.gain;
       if (!gain) continue;
       const open = id === 'A' ? 1 - travel : travel;
       // In cut mode each channel opens fully within the first 4% of fader travel.
       const level = cutChannels.has(id) ? 0 : sharpCross ? Math.min(1, open / 0.04) : Math.sin(open * Math.PI / 2);
-      if (immediate) gain.value = level;
+      if (immediate) setParam(gain, level, true);
       else gain.setTargetAtTime(level, context.currentTime, gate || sharpCross ? 0.0018 : 0.012);
     }
   }
@@ -101,6 +103,18 @@
     setParam(deck.nodes.send.gain, deck.echo * 0.65, immediate);
   }
 
+  function resetEchoLine(nodes) {
+    // A delay retains the previous track's samples even after its send reaches zero.
+    nodes.send.disconnect();
+    nodes.delay?.disconnect();
+    nodes.feedback?.disconnect();
+    nodes.delay = context.createDelay(2);
+    nodes.feedback = context.createGain();
+    nodes.feedback.gain.value = 0.32;
+    nodes.send.connect(nodes.delay).connect(nodes.channel);
+    nodes.delay.connect(nodes.feedback).connect(nodes.delay);
+  }
+
   function wireDeck(deck) {
     const source = context.createMediaElementSource(deck.audio);
     const trim = context.createGain();
@@ -111,8 +125,6 @@
     const highPass = filterNode('highpass', 15, 0.707);
     const lowPass = filterNode('lowpass', 18000, 0.707);
     const send = context.createGain();
-    const delay = context.createDelay(2);
-    const feedback = context.createGain();
     const channel = context.createGain();
     const monitor = context.createGain();
     monitor.gain.value = 0;
@@ -121,17 +133,16 @@
     source.connect(trim).connect(low).connect(mid).connect(high).connect(highPass).connect(lowPass);
     lowPass.connect(channel);
     lowPass.connect(monitor);
-    lowPass.connect(send).connect(delay).connect(channel);
-    delay.connect(feedback).connect(delay);
+    lowPass.connect(send);
     channel.connect(channelMeter.analyser).connect(crossGain).connect(output.master);
     low.gain.value = deck.eq.low;
     mid.gain.value = deck.eq.mid;
     high.gain.value = deck.eq.high;
-    feedback.gain.value = 0.32;
     channel.gain.value = deck.channel;
     const adaptive = window.DJImportLoudness?.createAdaptive(context, source, trim.gain, deck.audio);
     adaptive?.configure(deck.track);
-    deck.nodes = { source, trim, adaptive, low, mid, high, highPass, lowPass, channel, monitor, send, delay, cross: crossGain, meter: channelMeter };
+    deck.nodes = { source, trim, adaptive, low, mid, high, highPass, lowPass, channel, monitor, send, cross: crossGain, meter: channelMeter };
+    resetEchoLine(deck.nodes);
     deck.vinyl?.attach(context, source, trim, deck.audio);
     updateFilter(deck, true);
     updateEcho(deck, true);
@@ -359,14 +370,21 @@
     }
   }
 
+  function performanceDefaults() {
+    return {
+      tempo: 0, bend: 0, eq: { low: 0, mid: 0, high: 0 }, keyLock: true,
+      filter: 0, echo: 0, channel: 0.8, monitor: false
+    };
+  }
+
   function makeDeck(id) {
     const audio = new Audio();
     audio.preload = 'metadata';
     audio.crossOrigin = 'anonymous';
     const deck = {
-      id, audio, track: null, sequence: 0, pendingSeek: null, baseBPM: 0, tempo: 0, bend: 0, cue: 0,
+      id, audio, track: null, sequence: 0, loadVersion: 0, pendingSeek: null, baseBPM: 0, cue: 0,
       hotCues: Array(8).fill(null), loopBeats: 0, loopStart: null, loopEnd: null,
-      eq: { low: 0, mid: 0, high: 0 }, keyLock: true, filter: 0, echo: 0, channel: 0.8, monitor: false
+      ...performanceDefaults()
     };
     audio.addEventListener('loadedmetadata', () => {
       if (deck.pendingSeek != null) move(deck, deck.pendingSeek);
@@ -418,20 +436,29 @@
       return;
     }
     ++deck.sequence;
+    ++deck.loadVersion;
     deck.scratch = null;
     deck.vinyl?.close();
     deck.audio.pause();
     clearLoop(deck);
     deck.pendingSeek = null;
     deck.track = track;
+    Object.assign(deck, performanceDefaults());
+    applyKeyLock(deck);
     if (deck.nodes) {
-      deck.nodes.adaptive?.configure(track);
-      setParam(deck.nodes.trim.gain, importGain(track), true);
+      const nodes = deck.nodes;
+      nodes.adaptive?.configure(track);
+      setParam(nodes.trim.gain, importGain(track), true);
+      for (const band of ['low', 'mid', 'high']) setParam(nodes[band].gain, deck.eq[band], true);
+      setParam(nodes.channel.gain, deck.channel, true);
+      setParam(nodes.monitor.gain, 0, true);
+      updateFilter(deck, true);
+      resetEchoLine(nodes);
     }
+    if (cutChannels.delete(id)) updateCross(true, true, [id]);
+    if (monitorPlayer && !Object.values(decks).some(d => d.monitor)) monitorPlayer.pause();
     const bpm = Number(track.bpm);
     deck.baseBPM = Number.isFinite(bpm) ? Math.max(0, bpm) : 0;
-    deck.tempo = 0;
-    deck.bend = 0;
     deck.audio.defaultPlaybackRate = deck.audio.playbackRate = 1;
     deck.audio.src = src;
     deck.audio.load();
@@ -445,7 +472,8 @@
     });
     if (deck.nodes) deck.vinyl?.attach(context, deck.nodes.source, deck.nodes.trim, deck.audio);
     restoreCues(deck);
-    updateEcho(deck);
+    updateEcho(deck, true);
+    signal('dj-load', { id });
     change();
   }
 
@@ -638,12 +666,16 @@
     change();
   }
 
+  function applyKeyLock(deck) {
+    deck.audio.preservesPitch = deck.keyLock;
+    if ('webkitPreservesPitch' in deck.audio) deck.audio.webkitPreservesPitch = deck.keyLock;
+  }
+
   function setKeyLock(id, enabled) {
     const deck = decks[id];
     if (!deck) return;
     deck.keyLock = Boolean(enabled);
-    deck.audio.preservesPitch = deck.keyLock;
-    if ('webkitPreservesPitch' in deck.audio) deck.audio.webkitPreservesPitch = deck.keyLock;
+    applyKeyLock(deck);
     change();
   }
 
@@ -685,7 +717,7 @@
     if (!decks[id] || cutChannels.has(id) === held) return;
     if (held) cutChannels.add(id);
     else cutChannels.delete(id);
-    updateCross(false, true);
+    updateCross(false, true, [id]);
     change();
   }
 
@@ -756,6 +788,7 @@
     deck.monitor = Boolean(enabled);
     if (deck.nodes) setParam(deck.nodes.monitor.gain, deck.monitor ? 0.65 : 0);
     const player = monitorPlayer;
+    const loadVersion = deck.loadVersion;
     try {
       if (player && Object.values(decks).some(d => d.monitor)) {
         player.muted = false;
@@ -764,7 +797,7 @@
       change();
       return true;
     } catch (err) {
-      if (player === monitorPlayer && deck.monitor) {
+      if (player === monitorPlayer && loadVersion === deck.loadVersion && deck.monitor) {
         deck.monitor = false;
         deck.nodes.monitor.gain.value = 0;
         fail(id, 'Не удалось включить наушники. ' + err.message);
@@ -849,7 +882,7 @@
 
   function deckSnapshot(deck) {
     return {
-      track: deck.track, playing: deck.scratch ? deck.scratch.resume : !deck.audio.paused && !deck.audio.ended,
+      track: deck.track, loadVersion: deck.loadVersion, playing: deck.scratch ? deck.scratch.resume : !deck.audio.paused && !deck.audio.ended,
       scratching: Boolean(deck.scratch), scratchStatus: deck.vinyl?.status || 'unavailable',
       time: position(deck), duration: duration(deck), bpm: effectiveBPM(deck),
       tempo: deck.tempo, bend: deck.bend, baseBPM: deck.baseBPM, keyLock: deck.keyLock,

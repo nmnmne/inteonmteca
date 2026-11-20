@@ -88,7 +88,20 @@ def exercise(page):
     page.evaluate("engine.toggle('A')")
     page.wait_for_timeout(170)
     assert page.evaluate("!engine.snapshot().A.playing && engine.snapshot().meters.left > .06")
-    page.evaluate("() => {engine.setEcho('A',0); engine.toggle('A')}")
+
+    # Loading a record clears even the old delayed samples and scheduled fader moves.
+    # B continues playing at the closed end of the shared crossfader.
+    page.evaluate("""() => {
+      engine.setChannel('A', 0); engine.setCut('A', true); engine.setFilter('A', 1);
+      engine.setEQ('A','low',-30); engine.setKeyLock('A',false); engine.setTempo('A', 12);
+      engine.load('A', tracks[0]);
+    }""")
+    page.wait_for_timeout(180)
+    reset = page.evaluate("engine.snapshot()")
+    assert reset["meters"]["left"] < .002 and reset["B"]["playing"] and reset["cross"] == -1, reset
+    assert reset["A"]["channel"] == .8 and reset["A"]["filter"] == reset["A"]["echo"] == 0
+    assert reset["A"]["eq"]["low"] == reset["A"]["tempo"] == 0 and reset["A"]["keyLock"]
+    page.evaluate("engine.toggle('A')")
 
     # B keeps playing behind the closed crossfader. Every level below is post-master.
     page.wait_for_function("engine.snapshot().meters.left > .15")

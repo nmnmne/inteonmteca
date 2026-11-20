@@ -1,4 +1,4 @@
-"""Exercise the vinyl surface, ribbed edge, capture and simultaneous touch through the real deck UI."""
+"""Exercise the digital jog, stationary display, rim and simultaneous touches through the deck UI."""
 import base64
 import io
 import math
@@ -38,6 +38,8 @@ def check_mouse_and_keys(page, url):
     load_fixture(page, url)
     mouse = page.mouse
     x, y, r = circle(page)
+    display = page.locator("#deck-a .dd-jog-readout")
+    display_box = display.bounding_box()
     state = lambda: page.evaluate("DJEngine.snapshot().A")
 
     def go(deg, radius):
@@ -51,6 +53,7 @@ def check_mouse_and_keys(page, url):
         go(angle, .73)
     assert abs(state()["time"] - 4.45) < .012, state()["time"]
     forward = page.locator("#deck-a .dd-platter").evaluate("p => p.style.transform")
+    assert display.bounding_box() == display_box
     # Moving focus to the fader with a second hand must preserve the grip.
     page.locator("#cross").focus()
     assert state()["scratching"]
@@ -133,4 +136,4 @@ if __name__ == "__main__":
             check_touch(browser, url)
         finally:
             browser.close()
-    print("Vinyl quarter-turn in both directions, rim nudge, two-finger fader, keyboard and cancellation passed.")
+    print("Digital jog in both directions, stationary display, rim nudge, two-finger fader and keyboard passed.")

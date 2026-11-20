@@ -45,9 +45,30 @@ test('collapsed or hidden chat owns no polling timer and expansion restarts once
  vm.createContext(ctx);vm.runInContext(s.slice(start,end)+'\nthis.sync=syncChatPolling;',ctx);
  ctx.sync();assert.equal(timers.size,0);assert.equal(calls,0);ctx.chatWorkVisible=()=>true;ctx.sync();ctx.sync();assert.equal(timers.size,1);assert.equal(calls,1);ctx.chatWorkVisible=()=>false;ctx.sync();assert.equal(timers.size,0);
 });
-test('mobile resident guard does no periodic obstacle layout reads',()=>{
- const s=source('room-resident.js');const start=s.indexOf('const guardSpace =');let reads=0;
- const guard=vm.runInNewContext(s.slice(start,s.indexOf('\n  };',start)+5)+'\nguardSpace;',{blocked:false,cinematic:false,document:{hidden:false},compact:{matches:true},refreshObstacles:()=>reads++,center:()=>({}),safe:()=>true,resident:{},journey:null});guard();assert.equal(reads,0);
+test('resident batches layout changes into one frame and skips background layout',()=>{
+ const s=source('room-resident.js');
+ assert.doesNotMatch(s,/setInterval\(\s*(?:guardSpace|invalidateSpace)\b/);
+ const sourceRange=s.slice(s.indexOf('const guardSpace ='),s.indexOf('const obstacleObserver ='));
+ let reads=0;
+ const frames=[];
+ const ctx={blocked:false,cinematic:false,document:{hidden:false},compact:{matches:true},
+  refreshObstacles:()=>reads++,center:()=>({}),safe:()=>true,resident:{},journey:null,
+  requestAnimationFrame:callback=>frames.push(callback)};
+ const invalidate=vm.runInNewContext(sourceRange+'\ninvalidateSpace;',ctx);
+ assert.equal(frames.length,0);
+ invalidate();
+ invalidate();
+ assert.equal(frames.length,1);
+ assert.equal(reads,0);
+ frames.shift()();
+ assert.equal(reads,1);
+ assert.equal(frames.length,0);
+ invalidate();
+ ctx.document.hidden=true;
+ frames.shift()();
+ invalidate();
+ assert.equal(reads,1);
+ assert.equal(frames.length,0);
 });
 test('mobile dissolve clock is foreground wall time even in decorative rest',()=>{
  const s=source('logo-acid.js');const begin=s.indexOf('const motionNow =');const end=s.indexOf('const motionTimeout =',begin);

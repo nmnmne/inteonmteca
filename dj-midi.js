@@ -54,6 +54,12 @@
   const forAction = id => [...routes.values()].find(row => row.device === port?.id && row.action === id);
   const describe = row => (row.type === 'cc' ? 'CC ' : 'Нота ') + row.number + ' · канал ' + row.channel;
 
+  window.addEventListener('dj-load', ({detail}) => {
+    for (const action of pending.keys()) {
+      if (action.startsWith(detail.id + '.')) pending.delete(action);
+    }
+  });
+
   function refreshAction() {
     const row = forAction(ui.action.value);
     ui.binding.textContent = row ? 'Назначено: ' + describe(row) : 'Назначение отсутствует.';
