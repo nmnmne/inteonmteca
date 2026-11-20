@@ -572,7 +572,7 @@
       '<div class="settings-block"><button class="action-button" id="midi-open" type="button">Настроить MIDI-контроллер</button></div>',
     );
     $('#midi-open').onclick = () => window.DJMidi.open();
-    $('#dialog-body').insertAdjacentHTML('afterbegin', '<div class="settings-block"><label for="speaker-layout">Основной выход</label><div class="output-row"><select id="speaker-layout"><option value="7.1.4">Акустика 7.1.4 · 12 каналов</option><option value="stereo">Стерео</option><option value="headphones">Наушники · виртуальный 7.1.4</option></select><button type="button" class="action-button" id="apply-layout">Включить</button></div><p id="layout-status" role="status"></p><div id="speaker-test" hidden></div></div>');
+    $('#dialog-body').insertAdjacentHTML('afterbegin', '<div class="settings-block"><label for="speaker-layout">Основной выход</label><div class="output-row"><select id="speaker-layout"><option value="7.1.4">7.1.4 · по доступным динамикам</option><option value="stereo">Стерео</option><option value="headphones">Наушники · виртуальный 7.1.4</option></select><button type="button" class="action-button" id="apply-layout">Включить</button></div><p id="layout-status" role="status"></p><div id="speaker-test" hidden></div></div>');
     if (window.InteonSoundControls) {
       $('#dialog-body').prepend(window.InteonSoundControls.editor());
     }
@@ -583,14 +583,15 @@
       const state = engine.snapshot();
       let message = 'Нажмите «Включить» или запустите деку, чтобы проверить аудиовыход.';
       if (state.maxOutputChannels) {
-        if (state.outputLayout === '7.1.4') message = 'Работает акустика 7.1.4. Нажмите на колонку для проверки.';
-        else if (state.outputLayout === 'headphones') message = 'Работает виртуальный 7.1.4 в наушниках. Нажмите на канал для проверки.';
-        else {
-          message = state.maxOutputChannels === 1 ? 'Работает моно.' : 'Работает стерео.';
-          if (state.preferredLayout === '7.1.4' && state.maxOutputChannels < 12)
-            message += ' Для 7.1.4 выберите в системе выход с 12 каналами. Пульт переключится автоматически.';
-        }
-        message += ' Доступно каналов в браузере: ' + state.maxOutputChannels + '.';
+        const n = state.activeOutputChannels;
+        if (state.outputLayout === '7.1.4') {
+          message = n===12 ? '12 каналов 7.1.4 на отдельных выходах.'
+            : n===2 ? '7.1.4 сведён в стерео. Исходная стереопара остаётся спереди.'
+            : n===1 ? 'Все каналы 7.1.4 сведены в моно.' : `Все каналы 7.1.4 распределены по выходам (${n}).`;
+          message += ' Нажмите на канал для проверки.';
+        } else if (state.outputLayout === 'headphones') {
+          message = n===1 ? 'Каналы наушников сведены в моно.' : 'Работает виртуальный 7.1.4 в наушниках.';
+        } else message = n===1 ? 'Работает моно.' : 'Работает стерео.';
       }
       const status = $('#layout-status');
       if (message !== status.textContent) status.textContent = message;

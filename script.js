@@ -681,18 +681,29 @@ const attachPlaybackAnalysis = async () => {
 const getAudioNode = (audio, context = sharedAudioContext) => {
   if (!context || context.state !== "running" || !audio) return null;
   if (audioNodes.has(audio)) return audioNodes.get(audio);
+  let master, route, disconnectFilter;
   try {
-    const source = context.createMediaElementSource(audio);
+    // An element fetched without CORS may play natively but yields silence in Web Audio.
+    const url = new URL(audio.src || audio.currentSrc || document.baseURI, document.baseURI);
+    if (url.origin !== location.origin && url.protocol !== "data:" && audio.crossOrigin == null) return null;
     const analyser = context.createAnalyser();
     analyser.fftSize = 256;
     analyser.smoothingTimeConstant = .82;
-    source.connect(analyser);
-    if (window.InteonSoundFilter) window.InteonSoundFilter.connect(analyser, context.destination);
-    else analyser.connect(context.destination);
+    master = context.createGain();
+    try { route = window.DJSpatial?.createOutput?.(context, master); }
+    catch { master.disconnect(); }
+    if (!route) master.connect(context.destination);
+    if (window.InteonSoundFilter) disconnectFilter = window.InteonSoundFilter.connect(analyser, master);
+    else analyser.connect(master);
+    // Redirect the playing media element only once the entire output path is ready.
+    context.createMediaElementSource(audio).connect(analyser);
     const node = { context, analyser, data: new Uint8Array(analyser.frequencyBinCount) };
     audioNodes.set(audio, node);
     return node;
   } catch {
+    disconnectFilter?.();
+    route?.dispose();
+    master?.disconnect();
     return null;
   }
 };
@@ -2055,9 +2066,11 @@ trackVolume?.addEventListener("input", () => {
 player?.addEventListener("timeupdate", syncTransport);
 player?.addEventListener("durationchange", syncTransport);
 player?.addEventListener("play", () => {
+  if (!activeAudioNode) void attachPlaybackAnalysis();
   if (currentTrack && !immersiveState.active) enterImmersiveMode(player, currentTrack);
   else syncTransport();
 });
+if (player && !player.paused && !player.ended) void attachPlaybackAnalysis();
 player?.addEventListener("pause", () => {
   // At EOF the ended handler decides whether to advance or prepare today's track.
   if (!player.ended) applyDailyOpening();

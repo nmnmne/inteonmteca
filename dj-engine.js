@@ -26,11 +26,7 @@
   const decks = {};
   let context, output, stereoMeters, recorder, recordStart = 0, lastDownload;
   let monitorBus, monitorPlayer, monitorDevice = '', routeSequence = 0;
-  let spatialBus = null, layoutSequence = 0, outputLayout = 'stereo', preferredLayout = '7.1.4';
-  try {
-    const saved = localStorage.getItem('inteonmteca.dj.output-layout');
-    if (['stereo', '7.1.4', 'headphones'].includes(saved)) preferredLayout = saved;
-  } catch { /* Output selection still works for this visit. */ }
+  let speakerOutput, layoutRequest = 0;
   let master = 0.82, cross = 0, loopTimer;
   let sharpCross = false;
   const cutChannels = new Set();
@@ -174,7 +170,7 @@
       limiter.attack.value = 0.003;
       limiter.release.value = 0.15;
       connectPlayback(gain, limiter);
-      limiter.connect(context.destination);
+
       const split = context.createChannelSplitter(2);
       limiter.connect(split);
       stereoMeters = [meter(), meter()];
@@ -188,97 +184,22 @@
       output = { master: gain, limiter };
       Object.values(decks).forEach(wireDeck);
       updateCross(true);
-      context.addEventListener('sinkchange', refreshOutputLayout);
-      refreshOutputLayout();
+      if (window.DJSpatial?.createOutput) speakerOutput = DJSpatial.createOutput(context,limiter,change);
+      else limiter.connect(context.destination);
     }
     return context.state === 'running' ? Promise.resolve() : context.resume();
   }
 
-  function maxOutputChannels() {
-    return context?.destination.maxChannelCount || 0;
-  }
-
-  function canSpatial() {
-    return Boolean(window.DJSpatial && maxOutputChannels() >= 12);
-  }
-
-  function disconnectMasterRoute() {
-    if (spatialBus) {
-      output.limiter.disconnect(spatialBus.input);
-      spatialBus.dispose();
-      spatialBus = null;
-    } else {
-      try { output.limiter.disconnect(context.destination); } catch { /* An interrupted device change can leave the route empty. */ }
-    }
-  }
-
-  function routeStereo() {
-    disconnectMasterRoute();
-    const destination = context.destination;
-    destination.channelCount = Math.max(1, Math.min(2, maxOutputChannels()));
-    destination.channelInterpretation = 'speakers';
-    output.limiter.connect(destination);
-    outputLayout = 'stereo';
-  }
-
-  async function routeMaster(layout, report) {
-    const request = ++layoutSequence;
-    if (layout === 'stereo' || (layout === '7.1.4' && !canSpatial())) {
-      if (outputLayout !== 'stereo') routeStereo();
-      change();
-      return layout === 'stereo';
-    }
-    if (outputLayout === layout) {
-      change();
-      return true;
-    }
-    let bus;
-    try {
-      const preset = await DJSpatial.loadPreset();
-      if (request !== layoutSequence) return false;
-      const headphones = layout === 'headphones';
-      if (headphones ? maxOutputChannels() < 2 : !canSpatial()) throw new Error('Доступные аудиовыходы изменились.');
-      bus = DJSpatial.createBus(context, preset, headphones);
-      const dest = context.destination;
-      const count = headphones ? 2 : 12;
-      dest.channelCount = count;
-      dest.channelInterpretation = headphones ? 'speakers' : 'discrete';
-      if (dest.channelCount !== count) throw new Error('Аудиоустройство не приняло выбранную раскладку.');
-      disconnectMasterRoute();
-      output.limiter.connect(bus.input);
-      bus.output.connect(dest);
-      spatialBus = bus;
-      outputLayout = layout;
-    } catch (error) {
-      if (request !== layoutSequence) return false;
-      if (bus) {
-        try { output.limiter.disconnect(bus.input); } catch { /* Input not yet connected. */ }
-        bus.dispose();
-      }
-      routeStereo();
-      if (report) fail(null, 'Сохранён стереовыход. ' + error.message);
-    }
-    change();
-    return outputLayout === layout;
-  }
-
-  function refreshOutputLayout() {
-    if (!output) return;
-    const next = preferredLayout === 'headphones' && maxOutputChannels() >= 2 ? 'headphones'
-      : preferredLayout === '7.1.4' && canSpatial() ? '7.1.4' : 'stereo';
-    // Reconfigure an existing route if a headset/HDMI change reduces the available bus.
-    void routeMaster(next, false);
-  }
-
   async function setOutputLayout(layout) {
     if (!['stereo', 'headphones', '7.1.4'].includes(layout)) return false;
-    preferredLayout = layout;
-    try { localStorage.setItem('inteonmteca.dj.output-layout', layout); } catch {}
+    const request = ++layoutRequest;
     try {
-      // A user gesture opens the device even if the decks are both paused.
       await activate();
-      if (preferredLayout !== layout) return false;
-      return await routeMaster(layout, true);
+      if (request !== layoutRequest) return false;
+      if (!speakerOutput) return layout === 'stereo';
+      const active = await speakerOutput.setLayout(layout);
+      if (!active && request === layoutRequest) fail(null,'Не удалось настроить выбранную раскладку. Работает стереовыход.');
+      return active;
     } catch (error) {
       fail(null, 'Не удалось открыть аудиовыход. ' + error.message);
       return false;
@@ -288,7 +209,8 @@
   async function testOutputChannel(index) {
     try {
       await activate();
-      return Boolean(spatialBus && spatialBus.testChannel(index, master));
+      if (!speakerOutput || !await speakerOutput.refresh()) return false;
+      return speakerOutput.testChannel(index,master);
     } catch (error) {
       fail(null, 'Не удалось проверить канал. ' + error.message);
       return false;
@@ -846,7 +768,6 @@
   }
 
   navigator.mediaDevices?.addEventListener?.('devicechange', async () => {
-    refreshOutputLayout();
     const previous = monitorPlayer;
     if (!previous) return;
     previous.muted = true;
@@ -939,7 +860,11 @@
       A: deckSnapshot(decks.A), B: deckSnapshot(decks.B), master, cross, sharpCross, recording,
       recordingSeconds: recording ? (performance.now() - recordStart) / 1000 : 0,
       canRecord: supportedRecorder(), canMonitor: supportedMonitor(), monitorDevice, sampleRate: context?.sampleRate || 0,
-      outputLayout, preferredLayout, maxOutputChannels: maxOutputChannels(), canSpatial: canSpatial(),
+      outputLayout: speakerOutput?.layout || 'stereo',
+      preferredLayout: speakerOutput?.preferredLayout || window.DJSpatial?.preferredLayout?.() || '7.1.4',
+      maxOutputChannels: context?.destination.maxChannelCount || context?.destination.channelCount || 0,
+      activeOutputChannels: speakerOutput?.channelCount || context?.destination.channelCount || 0,
+      canSpatial: Boolean(context && window.DJSpatial?.createOutput),
       meters: { left: readMeter(stereoMeters?.[0]), right: readMeter(stereoMeters?.[1]) }
     };
   }

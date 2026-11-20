@@ -4,7 +4,7 @@ const {readFileSync} = require('node:fs');
 const {join} = require('node:path');
 const vm = require('node:vm');
 
-function fixture() {
+function fixture(channels = 2) {
   const document = new EventTarget(), window = new EventTarget();
   let interval = null, context, time = 0, playing = false;
   const sources = [], nodes = [];
@@ -24,7 +24,7 @@ function fixture() {
   window.setInterval = callback => { assert.equal(interval,null); interval = callback; return 1; };
   window.clearInterval = () => { interval = null; };
   window.AudioContext = class {
-    constructor() { context=this; this.state='suspended'; this.sampleRate=48000; this.destination=node('destination'); }
+    constructor() { context=this; this.state='suspended'; this.sampleRate=48000; this.destination=node('destination',{channelCount:Math.min(2,channels),maxChannelCount:channels}); }
     get currentTime() { return time; }
     async resume() { this.state='running'; }
     async suspend() { this.state='suspended'; }
@@ -56,9 +56,10 @@ function fixture() {
     sampleWeather:()=>({rain:1,snow:0,autumn:0,summer:0,spring:0}),
   });
   vm.runInContext(code,scope);
-  const yard=scope.createYardSound(()=>({x:0,z:0,yaw:0,elapsed:time,birds:[bird]}));
+  const listener={x:0,z:0,yaw:0,birds:[bird],get elapsed() { return time; }};
+  const yard=scope.createYardSound(()=>listener);
   return {
-    document, nodes, sources, master, music, bird, yard,
+    document, nodes, sources, master, music, bird, listener, yard,
     get context() { return context; },
     get interval() { return interval; },
     setPlaying(value) { playing = value; },
@@ -142,7 +143,8 @@ test('wind swells from lulls and only the wind feeds the echo and reverb returns
     const energy=(start)=>ir.subarray(start,start+block).reduce((sum,v)=>sum+v*v,0);
     assert.ok(energy(0)>energy(ir.length-block), 'reflection tail decays');
   }
-  assert.ok(windGain.outputs.includes(master), 'dry wind reaches the master as well');
+  const panner=windGain.outputs.find(n=>n.kind==='panner');
+  assert.ok(panner && panner.outputs.includes(master), 'the moving dry wind reaches the front bed');
   const effects=[...delays,reverb];
   scene.setPlaying(true);
   for (const fx of effects) {
@@ -174,5 +176,49 @@ test('wind swells from lulls and only the wind feeds the echo and reverb returns
   scene.master.value='0';
   scene.step(181);
   assert.equal(master.gain.value,0);
+  scene.yard.dispose();
+});
+
+test('the front pair keeps its speaker order on surround outputs and sums both sides on mono', async () => {
+  for (const channels of [12, 8, 2, 1]) {
+    const scene = fixture(channels);
+    await scene.start();
+    const dest = scene.context.destination;
+    const bus = scene.nodes.find(n => n.kind === 'gain' && n.outputs.includes(dest));
+    assert.equal(bus.channelCount, 2);
+    assert.equal(bus.channelCountMode, 'explicit');
+    assert.equal(dest.channelCount, channels);
+    assert.equal(dest.channelInterpretation, channels === 1 ? 'speakers' : 'discrete');
+    dest.maxChannelCount = channels === 1 ? 2 : 1;
+    scene.step(.16);
+    assert.equal(dest.channelInterpretation, dest.maxChannelCount === 1 ? 'speakers' : 'discrete');
+    assert.equal(dest.channelCount, dest.maxChannelCount);
+    scene.yard.dispose();
+  }
+});
+
+test('wind and an active crow call retain their world positions when the listener turns', async () => {
+  const scene = fixture();
+  await scene.start();
+  const windPan = scene.nodes.find(n => n.kind === 'panner');
+  scene.step(2);
+  const voiceGain = scene.sources.find(s => !s.loop).outputs[0];
+  const voicePan = voiceGain.outputs.find(n => n.kind === 'panner');
+  const originalWind = windPan.pan.value, originalBird = voicePan.pan.value;
+  const originalGain = voiceGain.gain.value;
+  scene.listener.yaw = Math.PI;
+  scene.step(2);
+  assert.ok(Math.abs(windPan.pan.value + originalWind) < 1e-8);
+  assert.ok(originalBird > .5 && Math.abs(voicePan.pan.value + originalBird) < 1e-8);
+  scene.bird.x = -25;
+  scene.step(2.16);
+  assert.ok(voicePan.pan.value > .85 && voiceGain.gain.value < originalGain);
+  scene.listener.yaw = 0;
+  const positions = [];
+  for (let i = 0; i < 150; i++) {
+    scene.step(2.32 + i * .16);
+    positions.push(windPan.pan.value);
+  }
+  assert.ok(Math.max(...positions) - Math.min(...positions) > .5);
   scene.yard.dispose();
 });

@@ -42,6 +42,10 @@ def check_player_outputs(browser, base, mobile=False):
                                  has_touch=mobile, is_mobile=mobile, reduced_motion="reduce") as context:
             context.add_init_script("""window.measureOutput = () => 0;
               window.AudioContext = class extends AudioContext {
+                createMediaElementSource(element) {
+                  if (element.id === 'album-player') window.albumOutput = this.destination;
+                  return super.createMediaElementSource(element);
+                }
                 constructor(options) {
                   super(options);
                   const output = this.createGain(), meter = this.createAnalyser(), mute = this.createGain();
@@ -74,6 +78,8 @@ def check_player_outputs(browser, base, mobile=False):
                 play = page.locator(button).nth(index)
             (play.tap if mobile else play.click)()
             page.wait_for_function("measureOutput() > .002")
+            if path == "listening-room.html":
+                page.wait_for_function("window.albumOutput?.channelInterpretation === 'discrete'")
             page.wait_for_timeout(650)
             before = page.evaluate("measureOutput()")
             trigger = page.locator('[data-sound-open]')
