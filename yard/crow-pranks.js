@@ -16,8 +16,9 @@ export function createCrowPranks(birds, clearGround, random) {
   let seed = ((birds[1].wingPhase || 0) * 1e7 + (birds[2].gaitPhase || 0) * 1e6) >>> 0;
   const draw = random || (() => (seed = (Math.imul(seed,1664525) + 1013904223) >>> 0) / 4294967296);
   let nextAt = 1 + draw()*2, since = 0, actor, partner, exit, lastActor = null;
+  let occupied;
   const eligible = (b, gathering, perches) => (!b.called || (gathering && b.inParty))
-    && b.airborne < .17 && !perches?.has(b.id);
+    && b.airborne < .17 && !perches?.has(b.id) && !occupied?.has(b.id);
   const withinSlot = (b, spot) => !b.called || Math.hypot(spot.x-b.slotX,spot.z-b.slotZ)<1.55;
 
   function clearPath(a, b) {
@@ -65,7 +66,8 @@ export function createCrowPranks(birds, clearGround, random) {
   function face(b, yaw, dt) {
     b.yaw += angleDelta(b.yaw,yaw) * Math.min(1,3.5*dt);
   }
-  function update(dt, time, flockPhase, perches) {
+  function update(dt, time, flockPhase, perches, storyTargets) {
+    occupied=storyTargets;
     const gathering=flockPhase==='gather' || flockPhase==='ready';
     if (state.phase==='idle') {
       if (time < nextAt) return;

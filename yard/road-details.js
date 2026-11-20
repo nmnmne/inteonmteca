@@ -2,13 +2,6 @@ import * as THREE from "./vendor/three.module.js";
 
 function stripGeometry(centerline, width) {
   const sides = [];
-  const distances = [0];
-  for (let index = 1; index < centerline.length; index += 1) {
-    distances.push(distances[index - 1] + Math.hypot(
-      centerline[index][0] - centerline[index - 1][0],
-      centerline[index][1] - centerline[index - 1][1],
-    ));
-  }
   for (let index = 0; index < centerline.length; index += 1) {
     const point = centerline[index];
     const previous = centerline[Math.max(0, index - 1)];
@@ -27,10 +20,11 @@ function stripGeometry(centerline, width) {
   }
   const vertices = [];
   const uvs = [];
-  for (let index = 0; index < sides.length; index += 1) {
-    for (const point of sides[index]) vertices.push(point[0], 0.022, point[1]);
-    const v = distances[index] / 6;
-    uvs.push(0, v, width / 6, v);
+  for (const pair of sides) {
+    for (const [x,z] of pair) {
+      vertices.push(x, 0.022, z);
+      uvs.push(x,-z);
+    }
   }
   const indices = [];
   for (let index = 0; index < sides.length - 1; index += 1) {
@@ -61,7 +55,7 @@ export function addRoadDetails(scene, materials, roads = []) {
   for (const road of roads) {
     if (road.render === false || road.kind !== "asphalt" || road.centerline.length < 2) continue;
     const { geometry, sides } = stripGeometry(road.centerline, road.widthM);
-    const asphalt = new THREE.Mesh(geometry, materials.asphalt(6, 6));
+    const asphalt = new THREE.Mesh(geometry, materials.asphalt());
     asphalt.name = `road-${road.id}`;
     scene.add(asphalt);
     if (road.curbEdges === "both") {

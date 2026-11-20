@@ -1,6 +1,7 @@
 import { isWalkable } from './navigation.js';
 import { createCrowVisits } from './crow-visits.js';
 import { createCrowPranks } from './crow-pranks.js';
+import { createCrowKeyStory } from './crow-key-story.js';
 
 const count = 13;
 const chest = 0.20;
@@ -12,7 +13,7 @@ const distance = (a, b) => Math.hypot(b.x - a.x, b.z - a.z);
 
 // One social simulation for the first-person bird and its twelve neighbours.
 // The ordinary birds persist when they split off. No bird is spawned at a reunion.
-export function createCrowFlock(layout, openingView, { random = Math.random, residentVisits = false } = {}) {
+export function createCrowFlock(layout, openingView, { random = Math.random, residentVisits = false, allowKeyStory } = {}) {
   const range = (a, b) => a + (b - a) * random();
   const integer = (a, b) => Math.min(b, Math.floor(range(a, b + 1)));
   const birds = [];
@@ -71,6 +72,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
 
   const visits = residentVisits ? createCrowVisits(layout, birds, clearGround, random) : null;
   const pranks = createCrowPranks(birds, clearGround);
+  const keyStory = allowKeyStory ? createCrowKeyStory(layout,birds,clearGround,allowKeyStory) : null;
 
   function shuffle(list) {
     for (let i = list.length - 1; i > 0; i--) {
@@ -297,13 +299,15 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
       if (Math.hypot(leader.x - slotsX, leader.z - slotsZ) > .85 || Math.abs(angleDelta(slotsYaw, heading)) > .19) refreshGroundSlots();
     }
     if (state.phase === 'mission' && time >= splitAt) breakFormation();
-    visits?.update(dt, time, state, heading);
-    pranks.update(dt, time, state.phase, visits?.perches);
+    if (!keyStory?.targets.size) visits?.update(dt, time, state, heading);
+    keyStory?.update(dt,time,state,visits?.holdLeader());
+    pranks.update(dt, time, state.phase, visits?.perches, keyStory?.targets);
     const sinHeading = Math.sin(heading), cosHeading = Math.cos(heading);
     let assembled = 1;
     for (let i = 1; i < count; i++) {
       const b = birds[i];
       const perch = visits?.perches.get(b.id);
+      const storyTarget = keyStory?.targets.get(b.id);
       const prankTarget = pranks.targets.get(b.id);
       if (perch) {
         if (visits.state.phase === 'sitting') {
@@ -314,6 +318,8 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
         if (b.mode === 'perch') {
           b.yaw += clamp(angleDelta(b.yaw, bearing(b, visits.state)), -1.6*dt, 1.6*dt);
         }
+      } else if (storyTarget) {
+        steer(b,storyTarget.x,chest,storyTarget.z,dt,false);
       } else if (prankTarget) {
         steer(b, prankTarget.x, chest, prankTarget.z, dt, false);
       } else if (time < b.breakUntil) {
@@ -338,13 +344,14 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     if (gathering && assembled === state.targetSize && state.phase !== 'ready') {
       state.phase = 'ready'; readySince = time; state.searchYaw = null;
     } else if (gathering && assembled < state.targetSize) state.phase = 'gather';
-    if (visits?.state.kind) state.searchYaw = bearing(leader, visits.state);
+    if (keyStory?.targets.size) state.searchYaw = bearing(leader,keyStory.state);
+    else if (visits?.state.kind) state.searchYaw = bearing(leader, visits.state);
     else if (gathering && pranks.state.actorId !== null) {
       const actor = birds[pranks.state.actorId], look = bearing(leader, actor);
       if (distance(leader, actor) < 12 && Math.abs(angleDelta(leader.yaw, look)) < 1.35) state.searchYaw = look;
     }
   }
 
-  return {birds, state, visit:visits?.state, prank:pranks.state, update,
-    canTakeOff: () => state.phase === 'ready' && !visits?.holdLeader() && time - readySince >= .7};
+  return {birds, state, visit:visits?.state, prank:pranks.state, keyStory:keyStory?.state, update,
+    canTakeOff: () => state.phase === 'ready' && !visits?.holdLeader() && !keyStory?.targets.size && time - readySince >= .7};
 }

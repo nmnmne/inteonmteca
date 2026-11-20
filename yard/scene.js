@@ -337,7 +337,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
   for (let index = 1; index < layout.walkable.length; index += 1) {
     groundShape.lineTo(layout.walkable[index][0], -layout.walkable[index][1]);
   }
-  const ground = new THREE.Mesh(new THREE.ShapeGeometry(groundShape), materials.asphalt(1, 1));
+  const ground = new THREE.Mesh(new THREE.ShapeGeometry(groundShape), materials.asphalt());
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = 0;
   scene.add(ground);
@@ -350,7 +350,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
     for (let index = 1; index < surface.polygon.length; index += 1) {
       shape.lineTo(surface.polygon[index][0], -surface.polygon[index][1]);
     }
-    const material = surface.kind === "asphalt" ? materials.asphalt(1, 1) : materials.concrete(1, 1);
+    const material = surface.kind === "asphalt" ? materials.asphalt() : materials.concrete(1, 1);
     const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), material);
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.y = 0.025;

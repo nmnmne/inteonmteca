@@ -5,6 +5,7 @@ import { ambientOpeningView, createAutoWalk } from './auto-walk.js?v=crow-flock-
 import { createCrowFlock } from './crow-flock.js';
 import { createCrowModels } from './crow-models.js';
 import { createResidentModel } from './resident-model.js';
+import { createResidentOrb } from './resident-orb.js';
 import { addPuddles } from './puddles.js';
 import { createSolarLighting } from './solar-lighting.js';
 import { createCameraOptics } from './camera-optics.js';
@@ -37,14 +38,14 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const frameMs = 1000 / 30;
   let renderer, yard, walk, flock, crowModels, camera, resizeObserver, ripplePuddles, solar, optics, graphicsLevel;
-  let residentModel, residentInYard = false;
+  let residentModel, residentOrb, residentLocation = 'room';
   let frame = 0, lastDraw = null, nextDraw = 0, nextDetail = 0, ready = false;
   let moreDetail = true;
 
-  function showCourtyardResident(shown) {
-    if (residentInYard === shown) return;
-    residentInYard = shown;
-    window.inteonRoom?.setInCourtyard?.(shown);
+  function showCourtyardResident(location) {
+    if (residentLocation === location || !window.inteonRoom?.setInCourtyard) return;
+    residentLocation = location;
+    window.inteonRoom.setInCourtyard(location !== 'room', location === 'backstage');
   }
 
   function dispose() {
@@ -61,8 +62,9 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     solar?.dispose();
     optics?.dispose();
     crowModels?.dispose();
-    showCourtyardResident(false);
+    showCourtyardResident('room');
     residentModel?.dispose();
+    residentOrb?.dispose();
     yard?.roofPigeons.dispose();
     if (yard) releaseScene(yard.scene);
     if (renderer) {
@@ -133,13 +135,16 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
         }
         solar.update(Date.now(), camera);
         if (yard.roofPigeons.group.visible) yard.roofPigeons.update(reducedMotion.matches ? 0 : dt, camera);
-        crowModels.update(flock.birds, dt, yard.scene.userData.virtuality, yard.scene.userData.solarLighting.daylight);
+        crowModels.update(flock.birds, dt, yard.scene.userData.virtuality, yard.scene.userData.solarLighting.daylight,
+          reducedMotion.matches ? null : flock.keyStory);
         if (residentModel) {
-          const show = flock.visit?.amount > 0 && yard.scene.userData.virtuality < .5
+          const virtuality = yard.scene.userData.virtuality;
+          const orb = residentOrb.update(virtuality,camera,reducedMotion.matches ? 0 : dt);
+          const show = !orb && flock.visit?.amount > 0
             && window.inteonRoom?.canVisitCourtyard?.() === true;
-          if (show) residentModel.update(flock.visit, dt, yard.scene.userData.solarLighting.daylight, yard.scene.userData.virtuality);
+          if (show) residentModel.update(flock.visit, dt, yard.scene.userData.solarLighting.daylight, virtuality);
           else residentModel.group.visible = false;
-          showCourtyardResident(residentModel.group.visible);
+          showCourtyardResident(orb ? 'backstage' : residentModel.group.visible ? 'courtyard' : 'room');
         }
         ripplePuddles(now / 1000);
         if (yard.scene.userData.grassWind) yard.scene.userData.grassWind.value = now / 1000;
@@ -178,7 +183,8 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     const aspect = canvas.clientWidth / Math.max(1, canvas.clientHeight);
     const openingView = ambientOpeningView(layout, aspect);
     const residentVisits = Boolean(document.querySelector('.room-presence'));
-    flock = createCrowFlock(layout, openingView, {residentVisits});
+    flock = createCrowFlock(layout, openingView, {residentVisits,
+      allowKeyStory:() => !reducedMotion.matches && (yard?.scene.userData.virtuality || 0)<.12});
     walk = createAutoWalk(layout, { openingView, flock });
     const lighting = solarLighting(courtyardSunForLocation(layout.origin, Date.now()));
     yard = createYardScene(layout, lighting, {
@@ -191,8 +197,8 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     yard.scene.add(crowModels.group);
     if (residentVisits) {
       residentModel = createResidentModel();
-      residentModel.group.visible = false;
-      yard.scene.add(residentModel.group);
+      residentOrb = createResidentOrb();
+      yard.scene.add(residentModel.group, residentOrb.mesh);
     }
     ripplePuddles = addPuddles(yard.scene, layout);
     canvas.addEventListener('webglcontextlost', contextLost);

@@ -18,7 +18,10 @@ const assert = require("node:assert/strict");
   scene.updateMatrixWorld(true);
   assert.ok(ray.intersectObject(mesh).length, "front-side road is actually hittable from above");
   const uv = mesh.geometry.getAttribute("uv");
-  assert.equal(uv.getY(0), 0);
-  assert.ok(Math.abs(uv.getY(4) - 20 / 6) < 0.001, "one 6-metre asphalt tile; no length-dependent repeat");
+  const positions = mesh.geometry.getAttribute("position");
+  for (let i=0; i<uv.count; i++) {
+    assert.equal(uv.getX(i), positions.getX(i));
+    assert.equal(uv.getY(i), -positions.getZ(i), "cracks follow the same world-metre coordinates across the road and courtyard");
+  }
   console.log("PASS: yard geometry / visible roads");
 })().catch((error) => { console.error(error); process.exitCode = 1; });

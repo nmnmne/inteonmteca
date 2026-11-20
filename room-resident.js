@@ -42,11 +42,12 @@
       return !cinematic && !reduced.matches && !document.hidden && performance.now() >= reactionUntil
         && !document.body.classList.contains('is-interlude');
     },
-    setInCourtyard(active) {
-      if (inCourtyard === active) return;
-      if (active && !resident.hidden && resident.getClientRects().length) returnSpot = center();
+    setInCourtyard(active, backstage = false) {
+      if (inCourtyard === active && resident.hasAttribute('data-in-backstage') === backstage) return;
+      if (active && !inCourtyard && !resident.hidden && resident.getClientRects().length) returnSpot = center();
       inCourtyard = active;
-      resident.toggleAttribute('data-in-courtyard', active);
+      resident.toggleAttribute('data-in-courtyard', active && !backstage);
+      resident.toggleAttribute('data-in-backstage', backstage);
       if (active) hide();
       sync();
     },
@@ -403,7 +404,7 @@
   };
   const sync = () => {
     armMidnight();
-    if (cinematic) return;
+    if (cinematic && !inCourtyard) return;
     const hidden = inCourtyard || document.hidden || (!compactPlayerVisible() && !anchor.getBoundingClientRect().width)
       || document.body.classList.contains('is-interlude');
     suspend(); chaseUntil=0; encounter=0; hoverArmed=true; resident.dataset.behavior="independent"; blocked = hidden; resident.hidden = hidden;
@@ -595,6 +596,7 @@
       suspend(); cinematic = true; blocked = true;
       resident.style.opacity = '0';
     } else if (phase === 'burst') {
+      if (inCourtyard) return;
       refreshObstacles();
       const free = nearestFree({x,y});
       resident.hidden = !free;

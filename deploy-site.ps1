@@ -1,3 +1,4 @@
+param([switch]$WebOnly)
 $ErrorActionPreference = "Stop"
 
 $bucket = "inteonmteca.online"
@@ -48,8 +49,14 @@ $python = Get-Command python -ErrorAction SilentlyContinue
 if (-not $python -or -not (Test-Path -LiteralPath $libraryPreparer)) {
   throw "Python and tools\prepare_dj_library.py are required to prepare the music library."
 }
-& $python.Source $libraryPreparer --root $root
-if ($LASTEXITCODE -ne 0) { throw "Music library preparation failed." }
+if ($WebOnly) {
+  $catalogOptions = if ($env:GITHUB_ACTIONS -eq 'true') { @('--live') } else { @() }
+  & $python.Source (Join-Path $root "tools/check-published-audio.py") @catalogOptions
+  if ($LASTEXITCODE -ne 0) { throw "Published audio verification failed before upload." }
+} else {
+  & $python.Source $libraryPreparer --root $root
+  if ($LASTEXITCODE -ne 0) { throw "Music library preparation failed." }
+}
 
 $syncArgs = @(
   "--exclude", "*",
@@ -149,6 +156,11 @@ $syncArgs = @(
   "--exclude", "yard/debug-pose.js",
   "--exclude", "*.html"
 )
+if ($WebOnly) {
+  $syncArgs += @("--exclude", "media/*", "--exclude", "assets/dj-audio/*", "--exclude", "assets/dj-spatial/*")
+  $liveCatalog = @("playlist.json", "playlist-data.js", "dj-loudness.js", "dj-spatial-tracks.js", "dj-analysis.js")
+  foreach ($catalogFile in $liveCatalog) { $syncArgs += @("--exclude", $catalogFile) }
+}
 $staleKeys = @(
   "development-debug.js",
   "yard/debug-pose.js",
@@ -202,8 +214,10 @@ if (Test-Path $yardIndexPath) {
 }
 
 # 1) Remove known non-public root files that may have been uploaded before.
-foreach ($key in $staleKeys) {
-  Invoke-Aws --endpoint-url $endpoint s3 rm "$bucketUrl/$key" | Out-Host
+if (-not $WebOnly) {
+  foreach ($key in $staleKeys) {
+    Invoke-Aws --endpoint-url $endpoint s3 rm "$bucketUrl/$key" | Out-Host
+  }
 }
 
 # Retain old versioned objects for cached pages and in-flight users.
@@ -214,10 +228,12 @@ Invoke-Aws --endpoint-url $endpoint s3 sync $root "$bucketUrl/" @syncArgs --cach
 
 
 # 3) Force the entry files to get the exact headers/content-types even if their contents did not change.
-Invoke-Aws --endpoint-url $endpoint s3 cp $playlistPath "$bucketUrl/playlist.json" `
-  --content-type "application/json; charset=utf-8" `
-  --cache-control $noCache `
-  --metadata-directive REPLACE | Out-Host
+if (-not $WebOnly) {
+  Invoke-Aws --endpoint-url $endpoint s3 cp $playlistPath "$bucketUrl/playlist.json" `
+    --content-type "application/json; charset=utf-8" `
+    --cache-control $noCache `
+    --metadata-directive REPLACE | Out-Host
+}
 
 
 
@@ -247,6 +263,7 @@ Invoke-Aws --endpoint-url $endpoint s3 cp $scriptPath "$bucketUrl/$versionedScri
   --metadata-directive REPLACE | Out-Host
 
 foreach ($scriptName in @("track-play.js", "street-return.js", "playback-link.js", "playlist-data.js", "room-resident.js")) {
+  if ($WebOnly -and $liveCatalog -contains $scriptName) { continue }
   $scriptFile = Join-Path $root $scriptName
   if (-not (Test-Path $scriptFile)) { continue }
   Invoke-Aws --endpoint-url $endpoint s3 cp $scriptFile "$bucketUrl/$scriptName" `
@@ -328,12 +345,14 @@ Invoke-Aws --endpoint-url $endpoint s3 cp $deployIndexPath "$bucketUrl/index.htm
   --metadata-directive REPLACE | Out-Host
 
 # Retire only track artwork after the text-only entry points are published.
-Invoke-Aws --endpoint-url $endpoint s3 rm "$bucketUrl/" --recursive --exclude "*" `
-  --include "development-debug.*.js" | Out-Host
-Invoke-Aws --endpoint-url $endpoint s3 rm "$bucketUrl/assets/track-covers/" --recursive | Out-Host
-Invoke-Aws --endpoint-url $endpoint s3 rm "$bucketUrl/" --recursive --exclude "*" `
-  --include "track-covers.js" --include "track-covers.css" `
-  --include "track-covers.*.js" --include "track-covers.*.css" | Out-Host
+if (-not $WebOnly) {
+  Invoke-Aws --endpoint-url $endpoint s3 rm "$bucketUrl/" --recursive --exclude "*" `
+    --include "development-debug.*.js" | Out-Host
+  Invoke-Aws --endpoint-url $endpoint s3 rm "$bucketUrl/assets/track-covers/" --recursive | Out-Host
+  Invoke-Aws --endpoint-url $endpoint s3 rm "$bucketUrl/" --recursive --exclude "*" `
+    --include "track-covers.js" --include "track-covers.css" `
+    --include "track-covers.*.js" --include "track-covers.*.css" | Out-Host
+}
 
 Write-Host "Done." -ForegroundColor Green
 Write-Host "Static site: https://inteonmteca.online/" -ForegroundColor Green

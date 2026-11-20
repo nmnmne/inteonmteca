@@ -1,0 +1,61 @@
+name: Опубликовать сайт
+on: workflow_dispatch
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: inteonmteca-production
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Загрузить проект
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/media/
+            !/tests/artifacts/
+      - name: Проверить проект
+        run: |
+          npm ci --no-audit --no-fund
+          node --test tests/crow-wall-contact.test.cjs tests/yard-roofs.test.cjs tests/yard-geometry.test.cjs
+      - name: Опубликовать на inteonmteca.online
+        shell: pwsh
+        env:
+          SITE_RELEASE_ACCOUNT: ${{ vars.SITE_RELEASE_ACCOUNT }}
+          TEMP: ${{ runner.temp }}
+          AWS_DEFAULT_REGION: ru-central1
+        run: ./tools/publish-from-github.ps1
+      - name: Проверить опубликованную сборку
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, os, re
+          from pathlib import Path
+          from urllib.request import urlopen
+          base = "https://inteonmteca.online/"
+          with urlopen(base + "?release=" + os.environ["GITHUB_SHA"], timeout=30) as page:
+              html = page.read().decode()
+          for ext in ("css", "js"):
+              bundle = Path("site.bundle." + ext).read_bytes()
+              name = "site.bundle." + hashlib.sha256(bundle).hexdigest()[:16] + "." + ext
+              if not re.search(r'(?:src|href)="' + re.escape(name) + '"', html):
+                  raise SystemExit("Homepage does not reference " + name)
+              with urlopen(base + name, timeout=30) as asset:
+                  import gzip
+                  body = asset.read()
+                  if asset.headers.get("Content-Encoding") == "gzip":
+                      body = gzip.decompress(body)
+                  if body != bundle:
+                      raise SystemExit("Published bundle differs: " + name)
+          print("Production homepage and both bundle hashes verified.")
+          PY

@@ -1,5 +1,6 @@
 import * as THREE from './vendor/three.module.js';
 import { CROW_WALL_CONTACT_M } from './crow-wall-contact.js';
+import { createCrowKeyDoor } from './crow-key-door.js';
 
 const count = 12; // The thirteenth bird carries the camera.
 const clamp = (n, low, high) => Math.max(low, Math.min(high, n));
@@ -325,11 +326,16 @@ export function createCrowModels(wallContact = null) {
   transform.rotation.order='YXZ';
   const spread=new Float32Array(count), amplitude=new Float32Array(count);
   let initialized=false;
-  function update(members,dt,digital=0,daylight=1) {
+  let keyDoor=null;
+  function update(members,dt,digital=0,daylight=1,story=null) {
+    if (story && story.phase!=='idle' && digital<.12 && !keyDoor) {
+      keyDoor=createCrowKeyDoor(); group.add(keyDoor.group);
+    }
+    keyDoor?.update(digital<.12 ? story : null);
     const response=initialized?1-Math.exp(-Math.max(0,dt)*9):1;
     for(let i=0;i<count;i++) {
       const bird=members[i+1];
-      const prank=bird.prankPose;
+      const prank=bird.storyPose || bird.prankPose;
       const air=clamp(bird.airborne,0,1), flight=bird.mode==='flap'||bird.mode==='glide';
       const opening=flight?1:bird.mode==='takeoff'?Math.max(.38,air):Math.max(air,prank?.wings || 0);
       const beat=bird.mode==='glide'?.075:1;
@@ -364,6 +370,7 @@ export function createCrowModels(wallContact = null) {
   }
   return {group, update, dispose(){
     group.removeFromParent();
+    keyDoor?.dispose();
     birds.dispose(); shadows.dispose();
     geometry.dispose(); shadowGeometry.dispose(); plumage.dispose(); shadowsMaterial.dispose();
   }};

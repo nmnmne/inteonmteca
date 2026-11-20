@@ -64,6 +64,7 @@ export function createYardMaterials() {
   const windowMaterial = createWindowMaterial(environment, interiors, windowNight);
   const balconyMaterial = createBalconyMaterial();
   let roofing;
+  let asphalt;
 
   return {
     windowNight,
@@ -91,8 +92,36 @@ export function createYardMaterials() {
     concrete(width, height) {
       return surface('concrete', width / 2, height / 2);
     },
-    asphalt(width, height) {
-      return surface('asphalt', width / 4.04, height / 4.04);
+    asphalt() {
+      if (!asphalt) {
+        // All pavement meshes use (x,-z) metre UVs so cracks cross road
+        // junctions and entrance paths without restarting at their edges.
+        asphalt = surface('asphalt', 1/4.04, 1/4.04);
+        const wear = new THREE.TextureLoader().load(new URL('./assets/surfaces/asphalt-wear.webp',import.meta.url).href);
+        wear.wrapS = wear.wrapT = THREE.RepeatWrapping;
+        wear.repeat.set(1/16, 1/16);
+        wear.anisotropy = 4;
+        asphalt.aoMap = wear;
+        asphalt.aoMapIntensity = .28;
+        asphalt.bumpScale = .035;
+        asphalt.onBeforeCompile = shader => {
+          // One macro sample supplies cavity depth, tar repairs and abrasion.
+          // The existing scanned aggregate keeps its independent 4.04 m scale.
+          shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+            vec3 wear = texture2D(aoMap, vAoMapUv).rgb;
+            diffuseColor.rgb *= vec3(.41,.44,.49) * (.70 + .66*wear.b)
+                              * mix(.20,1.,wear.r) * (1. - .48*wear.g);
+            float pavementHeight = .16*wear.r + .035*wear.g;`)
+            .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+              roughnessFactor = mix(roughnessFactor,.53,wear.g);`)
+            .replace('#include <normal_fragment_maps>', THREE.ShaderChunk.normal_fragment_maps.replace(
+              'dHdxy_fwd()', 'dHdxy_fwd() + vec2(dFdx(pavementHeight),dFdy(pavementHeight))'))
+            .replace('#include <aomap_fragment>', THREE.ShaderChunk.aomap_fragment.replace(
+              'texture2D( aoMap, vAoMapUv ).r','wear.r'));
+        };
+        asphalt.customProgramCacheKey = () => 'courtyard-cracked-asphalt';
+      }
+      return asphalt;
     },
     roofs() {
       if (!roofing) {

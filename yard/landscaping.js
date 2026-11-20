@@ -318,7 +318,7 @@ export function addLandscaping(scene, materials, data) {
     return mesh;
   });
   addLawnTufts(scene, lawns, data.patches);
-  const pathMaterial=materials.asphalt(1,1);
+  const pathMaterial=materials.asphalt();
   data.paths.forEach((path,i) => {
     const mesh=surface(path,path.material==='concrete' ? materials.concrete(1,1) : pathMaterial,.027);
     mesh.name=`lawn-entrance-path-${i}`;
