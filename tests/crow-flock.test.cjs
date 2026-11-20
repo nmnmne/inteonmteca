@@ -30,7 +30,7 @@ test('the thirteen persistent crows elect elders, disperse and meet their physic
   const {isWalkable} = await import('../yard/navigation.js');
   const targets = new Set(), seniorCounts = new Set();
   let sawSolo = false, sawSplit = false, sawSearch = false, sawNewElders = false;
-  for (const seed of [1, 4, 7, 10]) {
+  for (let seed = 1; seed <= 12; seed++) {
     const {walk, flock} = await createRoute(seed);
     const {state, birds} = flock;
     const roster = [...birds];
@@ -90,6 +90,94 @@ test('flock decisions and poses agree at different display frame rates', async (
   }
   assert.deepEqual(a.flock.state, b.flock.state);
   assert.deepEqual(a.flock.birds, b.flock.birds);
+});
+
+test('one wingmate leaves with the leader while another waits twenty seconds at the same perch', async () => {
+  const {walk, flock} = await createRoute(17);
+  const {state, birds} = flock;
+  for (let tick = 0; tick < 1200 && !state.missionCount; tick++) walk.update(.1);
+  assert.ok(state.missionCount === 1 && state.targetSize >= 3, 'the first mission has at least two wingmates');
+  const party = birds.slice(1).filter(b => b.inParty).sort((a,b) => a.launchAt - b.launchAt);
+  const first = party[0], last = party.at(-1);
+  const origin = {x:last.x,z:last.z};
+  let firstLift = null, lateLift = null, groundDistance = 0, approach = 0;
+  for (let tick = 1; tick <= 260; tick++) {
+    const age = tick / 10;
+    const fromLeaderX = birds[0].x - last.x, fromLeaderZ = birds[0].z - last.z;
+    const x = last.x, z = last.z;
+    walk.update(.1);
+    if (first.y > 1.1 && firstLift === null) firstLift = age;
+    if (last.y > 1.1 && lateLift === null) lateLift = age;
+    if (age < 19.8) {
+      assert.ok(last.inParty && last.y < .85, 'the late crow really stays grounded');
+      groundDistance = Math.max(groundDistance, Math.hypot(last.x-origin.x,last.z-origin.z));
+    }
+    if (age > 20 && last.inParty) {
+      const gap = Math.hypot(fromLeaderX,fromLeaderZ);
+      if (gap > 1) approach += ((last.x-x)*fromLeaderX + (last.z-z)*fromLeaderZ) / gap;
+    }
+  }
+  assert.ok(firstLift > 0 && firstLift < 4, 'the first companion climbs with the camera');
+  assert.ok(groundDistance < 2, 'the delayed bird stays by its own takeoff point');
+  assert.ok(lateLift >= 19.8 && lateLift < 23 && approach > 4, 'the late bird takes off and flies towards its flock');
+});
+
+test('a bird already in flight can peel away from the leader and continue flying on its own', async () => {
+  const {walk, flock} = await createRoute(5);
+  const {birds, state} = flock;
+  for (let tick = 0; tick < 4000; tick++) {
+    const airborneParty = birds.slice(1).filter(b => b.inParty && b.y > 2);
+    walk.update(.1);
+    const leaver = airborneParty.find(b => state.phase === 'mission' && !b.called && !b.inParty && b.breakUntil > 0);
+    if (!leaver) continue;
+    const start = {x:leaver.x,z:leaver.z};
+    const dx = leaver.x-birds[0].x, dz = leaver.z-birds[0].z;
+    for (let step = 0; step < 15; step++) {
+      walk.update(.1);
+      assert.ok(!leaver.inParty && leaver.y > .85, 'separation begins as a flight, not an instant landing');
+    }
+    assert.ok(Math.hypot(leaver.x-start.x,leaver.z-start.z) > 2);
+    assert.ok(Math.hypot(leaver.x-birds[0].x-dx,leaver.z-birds[0].z-dz) > 1.5, 'the escaping path diverges from the moving formation');
+    return;
+  }
+  assert.fail('the flock never produced an airborne breakaway');
+});
+
+test('two ground crows approach, feint and respond, then release their poses and carry on', async () => {
+  const {walk, flock} = await createRoute(7, 1.6, true);
+  const {birds, prank, visit} = flock;
+  let episode, finished = false, previousPhase = 'idle';
+  for (let frame = 0; frame < 14000; frame++) {
+    walk.update(.05);
+    if (prank.phase === 'idle') {
+      assert.ok(birds.every(b => !b.prankPose));
+      if (episode?.reacted && previousPhase === 'retreat') {
+        assert.ok(episode.dipped && episode.initialGap - episode.closest > .15, 'a real approach precedes the feint');
+        finished = true;
+        break;
+      }
+      episode = null;
+    } else {
+      const actor = birds[prank.actorId], partner = birds[prank.partnerId];
+      assert.ok(actor.id > 0 && partner.id > 0 && actor !== partner);
+      assert.ok(actor.y < .85 && partner.y < .85);
+      if (['approach','sitting'].includes(visit.phase)) {
+        assert.ok(!visit.birds.includes(actor.id) && !visit.birds.includes(partner.id));
+      }
+      const gap = Math.hypot(actor.x-partner.x,actor.z-partner.z);
+      if (!episode) {
+        assert.equal(prank.phase, 'approach');
+        episode = {initialGap:gap,closest:gap,dipped:false,reacted:false};
+      }
+      episode.closest = Math.min(episode.closest,gap);
+      if (prank.phase === 'feint') {
+        episode.dipped ||= actor.prankPose?.dip > .5;
+        episode.reacted ||= episode.dipped && partner.prankPose?.hop > .12 && partner.prankPose?.wings > .4;
+      }
+    }
+    previousPhase = prank.phase;
+  }
+  assert.ok(finished, 'a paired prank with a reaction and retreat should finish on the real route');
 });
 
 test('the resident and existing crows take turns visiting a real perch, sit, then release the flock', async () => {
@@ -166,24 +254,26 @@ test('losing a rendezvous site releases the visitor hold within five seconds', a
 });
 
 test('a flying leader can lose its entire party, then bring all twelve neighbours on another mission', async () => {
-  const {walk, flock} = await createRoute(5);
-  const {state, birds} = flock;
-  let soloMission = 0, before = null, wandering = false, recruited = false;
-  for (let i = 0; i < 2500; i++) {
-    walk.update(.2);
-    if (state.phase === 'mission' && state.partySize === 1) {
-      if (!soloMission) {
-        soloMission = state.missionCount;
-        before = birds.slice(1).map(b => ({x: b.x, z: b.z}));
+  for (let seed = 1; seed <= 12; seed++) {
+    const {walk, flock} = await createRoute(seed);
+    const {state, birds} = flock;
+    let soloMission = 0, before = null, wandering = false, recruited = false;
+    for (let i = 0; i < 3600; i++) {
+      walk.update(.2);
+      if (state.phase === 'mission' && state.partySize === 1) {
+        if (!soloMission) {
+          soloMission = state.missionCount;
+          before = birds.slice(1).map(b => ({x: b.x, z: b.z}));
+        }
+        assert.ok(birds.slice(1).every(b => !b.inParty && !b.called));
+        wandering ||= birds.slice(1).some((b, j) => Math.hypot(b.x - before[j].x, b.z - before[j].z) > .8);
       }
-      assert.ok(birds.slice(1).every(b => !b.inParty && !b.called));
-      wandering ||= birds.slice(1).some((b, j) => Math.hypot(b.x - before[j].x, b.z - before[j].z) > .8);
-    }
-    if (soloMission && state.phase === 'gather' && state.partySize > 1) recruited = true;
-    if (recruited && state.missionCount > soloMission && state.phase === 'mission' && state.partySize === 13) {
-      assert.equal(state.targetSize, 13);
-      assert.ok(wandering);
-      return;
+      if (soloMission && state.phase === 'gather' && state.partySize > 1) recruited = true;
+      if (recruited && state.missionCount > soloMission && state.phase === 'mission' && state.partySize === 13) {
+        assert.equal(state.targetSize, 13);
+        assert.ok(wandering);
+        return;
+      }
     }
   }
   assert.fail('solo flight must be followed by a new gathering and full-flock flight');

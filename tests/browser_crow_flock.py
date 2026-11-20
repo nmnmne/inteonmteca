@@ -81,6 +81,30 @@ OBSERVE = """async () => {
     }
   };
   qa.trace = {solo:false, joined:false, phases:[], landings:[], missions:[]};
+  qa.seekStaggeredFlight = () => {
+    for (let tick=0; tick<6000; tick++) {
+      const pose=qa.walk.update(.1);
+      if (qa.flock.state.phase!=='mission' || pose.y<3) continue;
+      const party=qa.flock.birds.filter(b=>b.id>0 && b.inParty);
+      const flying=party.find(b=>b.y>2), waiting=party.find(b=>b.y<.4);
+      if (flying && waiting) return [flying.id,waiting.id];
+    }
+    throw Error('No mixed ground/air departure');
+  };
+  qa.renderedHeights = ids => ids.map(id=>{
+    const matrix=new T.Matrix4();
+    qa.frame.plumage.getMatrixAt(id-1,matrix);
+    return new T.Vector3().setFromMatrixPosition(matrix).y;
+  });
+  qa.seekReaction = () => {
+    const {birds,prank}=qa.flock;
+    for (let tick=0; tick<6000; tick++) {
+      qa.walk.update(.1);
+      const partner=birds[prank.partnerId];
+      if (prank.phase==='feint' && partner.prankPose.hop>.16) return {id:partner.id,ground:partner.y};
+    }
+    throw Error('No crow responded to a feint');
+  };
   qa.advance = (wantFlight, seconds, skip = 0) => {
     const {birds,state} = qa.flock, trace=qa.trace;
     const camera = qa.frame.camera.clone(), point = new T.Vector3();
@@ -132,6 +156,7 @@ def check(browser, mobile):
     page.add_init_script(f"Date.now = () => Date.parse('{epoch}') + performance.now()")
     page.goto(BASE, wait_until="domcontentloaded")
     page.wait_for_selector('body[data-yard-backdrop="live"]', timeout=75000)
+    page.locator('#yard-dj-compact .compact-display').wait_for()
     page.evaluate(OBSERVE)
     page.wait_for_function("window.crowQA?.frame?.plumage", timeout=40000)
     first = page.evaluate("crowQA.measure()")
@@ -176,6 +201,16 @@ def check(browser, mobile):
     assert trace["solo"] and trace["joined"] and "ready" in trace["phases"], trace
     assert len(trace["landings"]) >= 2 and all(0 in item["seniors"] for item in trace["landings"]), trace
     assert trace["missions"] and all(len(m["members"]) == m["target"] for m in trace["missions"]), trace
+    departure = page.evaluate("crowQA.seekStaggeredFlight()")
+    frame = page.evaluate("crowQA.frames")
+    page.wait_for_function("n=>crowQA.frames>=n+4", arg=frame)
+    flying, waiting = page.evaluate("ids=>crowQA.renderedHeights(ids)", departure)
+    assert flying > 2 and waiting < .5, (device, departure, flying, waiting)
+    reaction = page.evaluate("crowQA.seekReaction()")
+    frame = page.evaluate("crowQA.frames")
+    page.wait_for_function("n=>crowQA.frames>=n+4", arg=frame)
+    [height] = page.evaluate("id=>crowQA.renderedHeights([id])", reaction["id"])
+    assert height - reaction["ground"] > .15, (device, reaction, height)
     page.wait_for_function("prev=>DJEngine.snapshot().A.playing && DJEngine.snapshot().A.time>prev", arg=before)
     assert not errors, errors
     print(device, "opening/flight silhouette pixels", first["ink"], best, trace, flush=True)

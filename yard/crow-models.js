@@ -149,7 +149,7 @@ const jointShader = `
 attribute float crowPart;
 attribute vec3 crowFold, crowFoldNormal;
 attribute vec3 crowMotion;
-attribute vec2 crowStride;
+attribute vec3 crowStride;
 vec2 crowRotate(vec2 v,float angle) {
   float s=sin(angle), c=cos(angle);
   return vec2(c*v.x-s*v.y,s*v.x+c*v.y);
@@ -170,6 +170,9 @@ void poseCrow(inout vec3 p, inout vec3 n){
     vec2 neck=vec2(0.,-.098);
     p.xz=neck+crowRotate(p.xz-neck,glance);
     n.xz=crowRotate(n.xz,glance);
+    vec2 hinge=vec2(.075,-.098);
+    p.yz=hinge+crowRotate(p.yz-hinge,-crowStride.z);
+    n.yz=crowRotate(n.yz,-crowStride.z);
     p.y-=.033*air;
     p.z-=.034*air;
   }else if(crowPart>2.5){
@@ -188,7 +191,7 @@ export function createCrowModels() {
   group.name='crow-flock';
   const geometry=plumageGeometry();
   const motions=new THREE.InstancedBufferAttribute(new Float32Array(3*count),3).setUsage(THREE.DynamicDrawUsage);
-  const strides=new THREE.InstancedBufferAttribute(new Float32Array(2*count),2).setUsage(THREE.DynamicDrawUsage);
+  const strides=new THREE.InstancedBufferAttribute(new Float32Array(3*count),3).setUsage(THREE.DynamicDrawUsage);
   geometry.setAttribute('crowMotion',motions);
   geometry.setAttribute('crowStride',strides);
   const lowLight={value:new THREE.Vector2()};
@@ -242,20 +245,22 @@ export function createCrowModels() {
     const response=initialized?1-Math.exp(-Math.max(0,dt)*9):1;
     for(let i=0;i<count;i++) {
       const bird=members[i+1];
+      const prank=bird.prankPose;
       const air=clamp(bird.airborne,0,1), flight=bird.mode==='flap'||bird.mode==='glide';
-      const opening=flight?1:bird.mode==='takeoff'?Math.max(.38,air):air;
+      const opening=flight?1:bird.mode==='takeoff'?Math.max(.38,air):Math.max(air,prank?.wings || 0);
       const beat=bird.mode==='glide'?.075:1;
       spread[i]+=(opening-spread[i])*response;
       amplitude[i]+=(beat-amplitude[i])*response;
       const gait=Math.sin(bird.gaitPhase)*clamp(bird.speed*2,0,1);
       const glance=.28*Math.sin(bird.gaitPhase*.22+bird.wingPhase*.09+i);
       motions.setXYZ(i,spread[i],amplitude[i],bird.wingPhase);
-      strides.setXY(i,gait,glance);
-      transform.position.set(bird.x,bird.y+Math.abs(gait)*.012*(1-air),bird.z);
+      strides.setXYZ(i,gait,glance+(prank?.glance || 0),prank?.dip || 0);
+      const height=bird.y+(prank?.hop || 0);
+      transform.position.set(bird.x,height+Math.abs(gait)*.012*(1-air),bird.z);
       transform.rotation.set(.015*Math.sin(bird.wingPhase)*air,-bird.yaw,bird.bank,'YXZ');
       transform.scale.setScalar(.97+.06*((i*7)%11)/10);
       transform.updateMatrix(); birds.setMatrixAt(i,transform.matrix);
-      const contact=clamp(1-(bird.y-.20)/1.45,0,1);
+      const contact=clamp(1-(height-.20)/1.45,0,1);
       transform.position.set(bird.x,.052,bird.z+.008);
       transform.rotation.set(0,-bird.yaw,0,'YXZ');
       transform.scale.set(.35*contact,1,.63*contact);

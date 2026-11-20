@@ -1,5 +1,6 @@
 import { isWalkable } from './navigation.js';
 import { createCrowVisits } from './crow-visits.js';
+import { createCrowPranks } from './crow-pranks.js';
 
 const count = 13;
 const chest = 0.20;
@@ -64,10 +65,12 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
       inParty: false, called: false, slot: -1, vx: airborne ? Math.sin(yaw) * 2.6 : 0,
       vz: airborne ? -Math.cos(yaw) * 2.6 : 0, vy: 0,
       roamX: destination.x, roamZ: destination.z, roamAt: range(2.8, 6), cruise: 0,
+      launchAt: 0, breakUntil: 0, breakHeight: 0,
       slotX: perch.x, slotZ: perch.z, formationSide: 0, formationForward: 0});
   }
 
   const visits = residentVisits ? createCrowVisits(layout, birds, clearGround, random) : null;
+  const pranks = createCrowPranks(birds, clearGround);
 
   function shuffle(list) {
     for (let i = list.length - 1; i > 0; i--) {
@@ -78,6 +81,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
   }
   function leave(bird, flyAway) {
     bird.called = bird.inParty = false;
+    bird.launchAt = 0;
     bird.slot = -1;
     bird.roamAt = time;
     if (flyAway) chooseForage(bird, true);
@@ -100,6 +104,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
       if (b.inParty && retaining > 0) {
         b.called = true;
         b.inParty = false;
+        b.launchAt = 0;
         b.slot = slot++;
         retaining--;
       } else if (b.called || b.inParty) leave(b, true);
@@ -107,6 +112,43 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     callAt = time + range(.85, 1.6);
     slotsX = Infinity;
     state.searchYaw = null;
+  }
+
+  function startMission() {
+    state.phase = 'mission';
+    state.missionCount++;
+    state.searchYaw = null;
+    const members = shuffle(birds.slice(1).filter(b => b.inParty));
+    for (let i = 0; i < members.length; i++) {
+      const b = members[i];
+      // The camera bird always goes first. Shuffle who answers its signal and
+      // who keeps watching from the original patch of ground for twenty seconds.
+      let delay = 0;
+      if (i === members.length - 1) delay = 20;
+      else if (i > 0) delay = 18 * (i - 1 + random()) / (members.length - 2);
+      b.launchAt = time + delay;
+    }
+    splitAt = time + range(10, 21);
+  }
+
+  function breakFormation() {
+    const flyers = birds.slice(1).filter(b => b.inParty && b.airborne > .75 && time > b.launchAt + 2);
+    if (!flyers.length) { splitAt = time + 2; return; }
+    shuffle(flyers);
+    const n = random() < .16 ? flyers.length : integer(1, Math.min(2, flyers.length));
+    for (let i = 0; i < n; i++) {
+      const b = flyers[i], side = Math.sign(b.formationSide);
+      const yaw = heading + side * range(1, 1.75), duration = range(4.5, 7.5);
+      const end = relative(b, yaw, 0, duration * clamp(b.speed + 1.5, 6.5, 10));
+      const perch = groundNear(end.x, end.z);
+      leave(b, false);
+      b.roamX = perch?.x ?? end.x;
+      b.roamZ = perch?.z ?? end.z;
+      b.breakHeight = Math.max(3, b.y + range(.5, 2.5));
+      b.breakUntil = time + duration;
+      b.roamAt = b.breakUntil + (perch ? range(5, 9) : 0);
+    }
+    splitAt = time + range(14, 28);
   }
 
   function chooseForage(b, departing = false) {
@@ -149,6 +191,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     for (let i = 1; i < count; i++) {
       const b = birds[i];
       if (b.called) { called++; continue; }
+      if (time < b.breakUntil) continue;
       const d = distance(leader, b);
       if (d < nearestDistance) { nearest = b; nearestDistance = d; }
     }
@@ -174,7 +217,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     let z = leader.z - forward * cosHeading + side * sinHeading;
     // A subordinate takes some of its timing from its own elder's actual flight.
     const elder = birds[b.elder];
-    if (b.elder && elder.inParty) {
+    if (b.elder && elder.inParty && elder.airborne > .25) {
       x += .28 * (elder.x - (leader.x + elder.formationForward * sinHeading + elder.formationSide * cosHeading));
       z += .28 * (elder.z - (leader.z - elder.formationForward * cosHeading + elder.formationSide * sinHeading));
     }
@@ -246,59 +289,62 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     leader.bank = pose.roll || 0; leader.mode = pose.mode;
     leader.airborne = clamp((leader.y - .42) / 1.8, 0, 1);
     if (pose.mode === 'walk' && previous !== 'walk') touchdown();
-    if (pose.mode === 'takeoff' && previous !== 'takeoff') {
-      state.phase = 'mission'; state.missionCount++; state.searchYaw = null;
-      splitAt = time + range(10, 21);
-    }
+    if (pose.mode === 'takeoff' && previous !== 'takeoff') startMission();
     if (pose.mode === 'land' && previous !== 'land') state.phase = 'landing';
     const gathering = state.phase === 'gather' || state.phase === 'ready';
     if (gathering) recruit();
     if (gathering || state.phase === 'landing') {
       if (Math.hypot(leader.x - slotsX, leader.z - slotsZ) > .85 || Math.abs(angleDelta(slotsYaw, heading)) > .19) refreshGroundSlots();
     }
-    if (state.phase === 'mission' && time >= splitAt) {
-      const tail = shuffle(birds.slice(1).filter(b => b.inParty));
-      const peeling = random() < .16 ? tail.length : integer(0, Math.min(3,tail.length));
-      for (let i = 0; i < peeling; i++) leave(tail[i], true);
-      splitAt = time + range(14, 28);
-    }
+    if (state.phase === 'mission' && time >= splitAt) breakFormation();
+    visits?.update(dt, time, state, heading);
+    pranks.update(dt, time, state.phase, visits?.perches);
     const sinHeading = Math.sin(heading), cosHeading = Math.cos(heading);
     let assembled = 1;
     for (let i = 1; i < count; i++) {
       const b = birds[i];
       const perch = visits?.perches.get(b.id);
+      const prankTarget = pranks.targets.get(b.id);
       if (perch) {
         if (visits.state.phase === 'sitting') {
           // A settled guest stays put. Passing neighbours still steer around it.
           b.vx = b.vz = b.vy = b.speed = b.airborne = b.bank = 0;
           b.y += (chest - b.y) * Math.min(1, dt * 5);
         } else steer(b, perch.x, chest, perch.z, dt, false);
-        if (b.called) b.inParty = b.y < .83 && Math.hypot(b.x - b.slotX, b.z - b.slotZ) < 1.75;
         if (b.mode === 'perch') {
           b.yaw += clamp(angleDelta(b.yaw, bearing(b, visits.state)), -1.6*dt, 1.6*dt);
         }
+      } else if (prankTarget) {
+        steer(b, prankTarget.x, chest, prankTarget.z, dt, false);
+      } else if (time < b.breakUntil) {
+        steer(b, b.roamX, b.breakHeight, b.roamZ, dt, false);
       } else if (!b.called) {
         if (time >= b.roamAt) chooseForage(b);
         steer(b, b.roamX, chest, b.roamZ, dt, false);
+      } else if (time < b.launchAt) {
+        steer(b, b.slotX, chest, b.slotZ, dt, false);
+        if (b.speed < .25) b.yaw += clamp(angleDelta(b.yaw, bearing(b, leader)), -1.7*dt, 1.7*dt);
       } else if (gathering || (state.phase === 'landing' && leader.y < 3.2)) {
         steer(b, b.slotX, chest, b.slotZ, dt, false);
-        if (gathering) b.inParty = b.y < .83 && Math.hypot(b.x - b.slotX, b.z - b.slotZ) < 1.75;
       } else {
         const aim = wingmanTarget(b, sinHeading, cosHeading);
-        steer(b, aim.x, aim.y, aim.z, dt, true);
+        const y = state.phase === 'mission' ? Math.max(1.9, aim.y) : aim.y;
+        steer(b, aim.x, y, aim.z, dt, true);
       }
+      if (gathering && b.called) b.inParty = b.y < .83 && Math.hypot(b.x - b.slotX, b.z - b.slotZ) < 1.75;
       if (b.inParty) assembled++;
     }
     state.partySize = assembled;
     if (gathering && assembled === state.targetSize && state.phase !== 'ready') {
       state.phase = 'ready'; readySince = time; state.searchYaw = null;
     } else if (gathering && assembled < state.targetSize) state.phase = 'gather';
-    if (visits) {
-      visits.update(dt, time, state, heading);
-      if (visits.state.kind) state.searchYaw = bearing(leader, visits.state);
+    if (visits?.state.kind) state.searchYaw = bearing(leader, visits.state);
+    else if (gathering && pranks.state.actorId !== null) {
+      const actor = birds[pranks.state.actorId], look = bearing(leader, actor);
+      if (distance(leader, actor) < 12 && Math.abs(angleDelta(leader.yaw, look)) < 1.35) state.searchYaw = look;
     }
   }
 
-  return {birds, state, visit:visits?.state, update,
+  return {birds, state, visit:visits?.state, prank:pranks.state, update,
     canTakeOff: () => state.phase === 'ready' && !visits?.holdLeader() && time - readySince >= .7};
 }
