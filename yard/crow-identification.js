@@ -42,10 +42,11 @@ export function enableCrowNames(canvas, camera, yard, flock, signal) {
     clearTimeout(timer);
     caption.hidden = !bird;
     if (!bird) return;
+    event.preventDefault(); // This courtyard tap selected a bird.
     caption.textContent = bird.personality.name;
     caption.style.left = Math.max(60, Math.min(innerWidth - 60, event.clientX)) + 'px';
     caption.style.top = Math.max(42, event.clientY - 12) + 'px';
     timer = setTimeout(() => { caption.hidden = true; }, 2300);
-  }, {signal, passive: true});
+  }, {signal});
   signal.addEventListener('abort', () => { clearTimeout(timer); caption.remove(); }, {once: true});
 }

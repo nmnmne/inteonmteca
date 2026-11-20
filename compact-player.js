@@ -55,7 +55,10 @@
         <button type="button" class="compact-fullscreen"></button>
         <div data-dj-window-tools></div>
       </div>
-      <button type="button" class="compact-recall" aria-label="Развернуть плеер"><span></span>${icon('down')}</button>
+      <div class="compact-mini">
+        <button type="button" class="compact-recall" aria-label="Развернуть плеер"><span></span>${icon('down')}</button>
+        <button type="button" class="compact-mini-fullscreen"></button>
+      </div>
       <input class="compact-import" type="file" accept="audio/*,.flac,.wav,.mp3,.m4a,.ogg,.wv" multiple hidden>
     </div>
     <div id="compact-picker" popover data-resident-obstacle aria-label="Плейлист активной деки">
@@ -80,6 +83,7 @@
 
   const ultraAfter = 10_000, hiddenAfter = ultraAfter + 20_000;
   const recall = find('.compact-recall'), recallTitle = recall.querySelector('span');
+  const mini = find('.compact-mini'), miniFullscreen = find('.compact-mini-fullscreen');
   const settings = document.getElementById('dialog');
   let lastActivity = 0, idleTimer = 0, openPanel = null, heldPointer = null;
 
@@ -92,13 +96,34 @@
     root.toggleAttribute('data-ultra', ultra);
     root.toggleAttribute('data-faded', invisible);
     display.toggleAttribute('data-resident-obstacle', !ultra);
-    recall.toggleAttribute('data-resident-obstacle', ultra && !invisible);
+    mini.toggleAttribute('data-resident-obstacle', ultra && !invisible);
     if (!held && !invisible) idleTimer = setTimeout(drawIdle, (ultra ? hiddenAfter : ultraAfter) - elapsed);
   }
   function wakeDisplay() {
     lastActivity = performance.now();
     drawIdle();
   }
+  function showUltra() {
+    lastActivity = performance.now() - ultraAfter;
+    drawIdle();
+  }
+  const isYardBackground = target => target === document.body || target === document.documentElement;
+  let yardPress = null;
+  window.addEventListener('pointerdown', event => {
+    yardPress = active() && !openPanel && event.isPrimary && event.button === 0 && isYardBackground(event.target)
+      ? {id:event.pointerId, x:event.clientX, y:event.clientY} : null;
+  }, {capture:true, passive:true});
+  window.addEventListener('pointercancel', () => { yardPress = null; }, true);
+  // Crow picking handles a hit on the document before the click reaches the window.
+  window.addEventListener('click', event => {
+    const press = yardPress;
+    yardPress = null;
+    if (!press || !active() || openPanel || heldPointer !== null || event.defaultPrevented || !event.detail ||
+        !isYardBackground(event.target) || root.hasAttribute('data-ultra')) return;
+    if ((event.pointerId > 0 && event.pointerId !== press.id) ||
+        Math.hypot(event.clientX - press.x, event.clientY - press.y) > 12) return;
+    showUltra();
+  });
   function holdFor(panel, opened) {
     if (opened && active()) openPanel = panel;
     else if (openPanel === panel) openPanel = null;
@@ -122,6 +147,7 @@
   window.addEventListener('pointerup', releasePointer, true);
   window.addEventListener('pointercancel', releasePointer, true);
   root.addEventListener('click', event => {
+    if (miniFullscreen.contains(event.target)) return;
     if (root.hasAttribute('data-ultra') || event.target.closest('.compact-recall')) {
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -129,10 +155,18 @@
     wakeDisplay();
   }, true);
   root.addEventListener('focusin', event => {
+    if (event.target === miniFullscreen || (event.target === recall && !root.hasAttribute('data-faded'))) {
+      showUltra();
+      return;
+    }
     wakeDisplay();
     if (event.target === recall) select.focus({preventScroll:true});
   });
-  for (const type of ['keydown', 'drop']) root.addEventListener(type, wakeDisplay, true);
+  root.addEventListener('keydown', event => {
+    if (mini.contains(event.target)) showUltra();
+    else wakeDisplay();
+  }, true);
+  root.addEventListener('drop', wakeDisplay, true);
   for (const type of ['pointermove', 'wheel']) root.addEventListener(type, () => {
     if (!root.hasAttribute('data-ultra')) wakeDisplay();
   }, {passive:true});
@@ -263,15 +297,24 @@
   function updateFullscreen() {
     const expanded = Boolean(document.fullscreenElement);
     const label = expanded ? 'Выйти' : document.fullscreenEnabled ? 'На весь экран' : 'Весь двор';
-    fullscreen.innerHTML = icon(expanded ? 'exitFullscreen' : 'fullscreen') + '<span>' + label + '</span>';
-    fullscreen.title = expanded ? 'Выйти из полноэкранного режима' : document.fullscreenEnabled
+    const glyph = icon(expanded ? 'exitFullscreen' : 'fullscreen');
+    const description = expanded ? 'Выйти из полноэкранного режима' : document.fullscreenEnabled
       ? 'Развернуть сайт на весь экран' : 'Развернуть двор на всю область браузера';
-    fullscreen.setAttribute('aria-label', fullscreen.title);
-    if (document.fullscreenEnabled) fullscreen.setAttribute('aria-pressed', String(expanded));
+    fullscreen.innerHTML = glyph + '<span>' + label + '</span>';
+    miniFullscreen.innerHTML = glyph;
+    for (const button of [fullscreen,miniFullscreen]) {
+      button.title = description;
+      button.setAttribute('aria-label', description);
+      if (document.fullscreenEnabled) button.setAttribute('aria-pressed', String(expanded));
+    }
   }
-  fullscreen.onclick = () => {
+  fullscreen.onclick = miniFullscreen.onclick = event => {
+    if (event.currentTarget === miniFullscreen) showUltra();
     if (document.fullscreenEnabled || document.fullscreenElement) void library.toggleFullscreen();
-    else find('[data-window-action=minimize]').click();
+    else {
+      wakeDisplay();
+      find('[data-window-action=minimize]').click();
+    }
   };
   document.addEventListener('fullscreenchange', updateFullscreen);
   updateFullscreen();

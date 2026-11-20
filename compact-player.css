@@ -119,25 +119,35 @@
 }
 
 /* The transparent layout preserves the original tap area when fully hidden. */
-.compact-display .compact-recall { display: none; }
+.compact-mini { display: none; }
 #yard-dj-compact[data-ultra] .compact-display {
   border-color: transparent; background: none; box-shadow: none; pointer-events: none;
   backdrop-filter: none; -webkit-backdrop-filter: none;
 }
-.yard-dj-compact[data-ultra] .compact-display > :not(.compact-recall) { visibility: hidden; }
-.yard-dj-compact[data-ultra] .compact-recall {
+.yard-dj-compact[data-ultra] .compact-display > :not(.compact-mini) { visibility: hidden; }
+.yard-dj-compact[data-ultra] .compact-mini {
   position: absolute; left: 50%; bottom: 0; translate: -50% 0;
-  display: flex; align-items: center; justify-content: center; gap: 9px; pointer-events: auto;
-  max-width: min(90%, 240px); height: 40px; padding: 0 14px; border-radius: 22px;
+  display: flex; align-items: stretch; pointer-events: auto; box-sizing: border-box;
+  max-width: min(94%, 280px); height: 44px; border-radius: 22px;
   color: #f6eee4; background: #25272bcf; border: 1px solid #ece6da38;
-  font: 600 13px/1.2 "Segoe UI",sans-serif;
+}
+.compact-mini .compact-recall {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  min-width: 0; height: 100%; padding: 0 9px 0 14px; border-radius: 22px 0 0 22px;
+  font: 600 13px/1.2 "Segoe UI", sans-serif;
+}
+.compact-mini .compact-mini-fullscreen {
+  flex: 0 0 44px; height: 100%; padding: 0; border-left: 1px solid #ece6da38;
+  border-radius: 0 22px 22px 0;
 }
 .compact-recall span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .compact-recall svg { flex: none; width: 13px; height: 13px; rotate: 180deg; }
-.yard-dj-compact[data-faded] .compact-recall {
+.yard-dj-compact[data-faded] .compact-mini {
   inset: 0; translate: none; width: 100%; max-width: none; height: 100%; opacity: 0;
 }
+.yard-dj-compact[data-faded] .compact-mini-fullscreen { display: none; }
+.yard-dj-compact[data-faded] .compact-recall { width: 100%; }
 @media (prefers-reduced-motion: no-preference) {
-  .yard-dj-compact[data-ultra]:not([data-faded]) .compact-recall { animation: compact-recall-in .2s ease-out; }
+  .yard-dj-compact[data-ultra]:not([data-faded]) .compact-mini { animation: compact-recall-in .2s ease-out; }
   @keyframes compact-recall-in { from { opacity: 0; } to { opacity: 1; } }
 }

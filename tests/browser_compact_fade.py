@@ -51,14 +51,27 @@ def check(browser, url, width, height, touch):
     assert_level(a, 1)
     press(a)
     b_box = b.bounding_box()
-    advance(9_000)
+    advance(500)
     assert a.is_visible() and not recall.is_visible()
     point(width / 2, height / 4)
-    advance(1_100)
     assert recall.is_visible() and not a.is_visible()
     assert_level(recall, 1)
     assert recall.bounding_box()["width"] < 245
     assert recall.locator("span").inner_text().strip()
+    mini_fullscreen = compact.locator(".compact-mini-fullscreen")
+    assert mini_fullscreen.bounding_box()["x"] >= recall.bounding_box()["x"] + recall.bounding_box()["width"] - 1
+    if page.evaluate("document.fullscreenEnabled"):
+        press(mini_fullscreen)
+        page.wait_for_function("!!document.fullscreenElement")
+        assert recall.is_visible() and not a.is_visible()
+        press(mini_fullscreen)
+        page.wait_for_function("!document.fullscreenElement")
+    advance(16_000)
+    point(width / 2, height / 4)
+    advance(3_000)
+    assert_level(recall, 1)
+    advance(1_100)
+    assert_level(recall, 0)
     press(recall)
     assert a.is_visible() and a.get_attribute("aria-pressed") == "true"
     advance(10_100)
@@ -77,6 +90,11 @@ def check(browser, url, width, height, touch):
     assert b.get_attribute("aria-pressed") == "true"
 
     picker = compact.locator("#compact-picker")
+    press(compact.locator("#compact-track-select"))
+    picker.wait_for()
+    point(width / 2, 18)
+    picker.wait_for(state="hidden")
+    assert b.is_visible() and not recall.is_visible()
     press(compact.locator("#compact-track-select"))
     picker.wait_for()
     advance(31_000)
