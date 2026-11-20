@@ -439,8 +439,8 @@
     }
   ],
   "sourceHashes": {
-    "yard/ambient-scene.js": "ddbff8e4f450c5d144d868c7b20fb0ef727261e3875697dc2a80e3d8013699bc",
-    "yard/auto-walk.js": "737454845ae3ffea842a4bbfe3c6b5bdcdb1cf007c067a8fe12f23a835e52698",
+    "yard/ambient-scene.js": "022332244993283b82b037aead10576a990844714eddc74e27e82aee5dbaf447",
+    "yard/auto-walk.js": "5d856e878c1535d6098e471330713f83ce6602e1315e51647f7ff0782d6aaccd",
     "yard/baked-lighting.js": "ef10f5f932da370dda697ab00e1f86075fa5ff4723777990dd19ec1720d10a6b",
     "yard/camera-optics.js": "5ee0eba6f728d241843651dff894cdd5d679f9b0977a0a53769894d8e1de4c7a",
     "yard/city-hologram.js": "5c562bde34ddf1fe9ea0b36bc4c03c9ebdf14254fef97e14740eedcd0981516e",
@@ -448,8 +448,10 @@
     "yard/courtyard-details.js": "141072eeddae38c735cad8a51ec1b1513133f3099699a2d72c01f8546e82f0ca",
     "yard/courtyard-furniture.js": "88a48efc506892439745b3a4ffc0d6ff7e332774e61c07add414c2f7b2798951",
     "yard/courtyard-weather.js": "098970cc3f5aab3f3eb90cffa5daa8f2dbe475a1d078139de117d22527964249",
+    "yard/crow-flock.js": "f3145ac839d025d1f5af22ed7afb723b3f0d5fb8a359756787d3148b3ef5df4f",
+    "yard/crow-models.js": "f3179634690d8a088f87792011cb72b50ae96a048e2a89523d3f806f4ab0d0f5",
     "yard/debug-pose.js": "f58b52de2f493b31e53d7c5fa63e6f29c65fd9881d96f51cef2c13d18dce805a",
-    "yard/digital-boundary.js": "208aa0845628e10e3a2abf12850bad1a620e6c325da9d3d9a88cfe7240406754",
+    "yard/digital-boundary.js": "7bb89a6d9cb3ee1666fd63cc9d60ddab3266b3c1e91dc90c5bda9b3e6b35d0a6",
     "yard/entrance-lighting.js": "76992d5d7477821d9cf2a0cb49f984cd74a3ce55656ad0f103508accdea49456",
     "yard/facade-frame.js": "00ff4cd290dd269d85e37e5e2a140ee3ae3bba347d5e56af514522eaa30c62e4",
     "yard/five-storey-reference.js": "d9db9fa5ea490acc3c168121b9cfc8a8bb738440a1fd9d29d232cba757ca477e",

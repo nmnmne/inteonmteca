@@ -1,7 +1,9 @@
 import * as THREE from './vendor/three.module.js';
 import { createYardScene } from './scene.js?v=ural-courtyard-1';
 import { solarLighting, sunForLocation } from './solar-clock.js';
-import { ambientOpeningView, createAutoWalk } from './auto-walk.js?v=crow-wall-framing-2';
+import { ambientOpeningView, createAutoWalk } from './auto-walk.js?v=crow-flock-1';
+import { createCrowFlock } from './crow-flock.js';
+import { createCrowModels } from './crow-models.js';
 import { addPuddles } from './puddles.js';
 import { createSolarLighting } from './solar-lighting.js';
 import { createCameraOptics } from './camera-optics.js';
@@ -33,7 +35,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
   const mobilePixels = [155000, 255000, 400000, 460000, 535000, 610000, 680000, 750000, 825000, 900000];
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const frameMs = 1000 / 30;
-  let renderer, yard, walk, camera, resizeObserver, ripplePuddles, solar, optics, graphicsLevel;
+  let renderer, yard, walk, flock, crowModels, camera, resizeObserver, ripplePuddles, solar, optics, graphicsLevel;
   let frame = 0, lastDraw = null, nextDraw = 0, nextDetail = 0, ready = false;
   let moreDetail = true;
 
@@ -50,12 +52,13 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     resizeObserver?.disconnect();
     solar?.dispose();
     optics?.dispose();
+    crowModels?.dispose();
     if (yard) releaseScene(yard.scene);
     if (renderer) {
       renderer.dispose();
       renderer.forceContextLoss();
     }
-    yard = renderer = walk = null;
+    yard = renderer = walk = flock = crowModels = null;
   }
 
   function fail(error) {
@@ -114,6 +117,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
         camera.rotation.set(pose.pitch, -pose.yaw, reducedMotion.matches ? 0 : pose.roll, 'YXZ');
         yard.edgeEffect.update(pose.x, pose.z, camera.position.y, now / 1000);
         solar.update(Date.now(), camera);
+        crowModels.update(flock.birds, dt, yard.scene.userData.virtuality, yard.scene.userData.solarLighting.daylight);
         ripplePuddles(now / 1000);
         if (yard.scene.userData.grassWind) yard.scene.userData.grassWind.value = now / 1000;
         yard.scene.userData.updateLandscapingDetail?.(camera.position,graphicsLevel);
@@ -149,13 +153,18 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     camera = new THREE.PerspectiveCamera(64, 1, 0.1, 510);
     const aspect = canvas.clientWidth / Math.max(1, canvas.clientHeight);
-    walk = createAutoWalk(layout, { openingView: ambientOpeningView(layout, aspect) });
+    const openingView = ambientOpeningView(layout, aspect);
+    flock = createCrowFlock(layout, openingView);
+    walk = createAutoWalk(layout, { openingView, flock });
     const lighting = solarLighting(sunForLocation(layout.origin, Date.now()));
     yard = createYardScene(layout, lighting, {
       progressive: true, origin: walk.update(0), passThroughBuildings: true,
     });
     solar = createSolarLighting(renderer, yard, layout);
     solar.update(Date.now(), camera);
+    crowModels = createCrowModels();
+    crowModels.group.userData.visibleInBackstage = true;
+    yard.scene.add(crowModels.group);
     ripplePuddles = addPuddles(yard.scene, layout);
     canvas.addEventListener('webglcontextlost', contextLost);
     resize();

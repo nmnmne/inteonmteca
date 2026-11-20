@@ -121,6 +121,8 @@ def main(posters_only):
                 const THREE = await import('/yard/vendor/three.module.js');
                 const {createYardScene} = await import('/yard/scene.js');
                 const {ambientOpeningView} = await import('/yard/auto-walk.js');
+                const {createCrowFlock} = await import('/yard/crow-flock.js');
+                const {createCrowModels} = await import('/yard/crow-models.js');
                 const {sunForLocation, solarLighting} = await import('/yard/solar-clock.js');
                 const {createSolarLighting} = await import('/yard/solar-lighting.js');
                 const layout = await (await fetch('/yard/data/site-layout.json')).json();
@@ -139,6 +141,7 @@ def main(posters_only):
                 const rig = createSolarLighting(renderer, yard, layout, {mapSize: 2048});
                 rig.refreshGeometry();
                 let ripple;
+                const crows = createCrowModels();
                 window.capturePoster = async ({width, height, isoTime}) => {
                     time = Date.parse(isoTime);
                     if (!yard.scene.getObjectByName('courtyard-puddles')) {
@@ -162,8 +165,17 @@ def main(posters_only):
                     });
                     ripple(0);
                     if (nightReady) { await nightReady; ripple(0); }
+                    // Keep the same birds and poses in all four daylight variants.
+                    // Only the opening photograph includes them; the static probes
+                    // are reflections of the permanent courtyard.
+                    let seed = 14;
+                    const random = () => ((seed = (Math.imul(seed,1664525) + 1013904223) >>> 0) / 4294967296);
+                    const flock = createCrowFlock(layout, pose, {random});
+                    crows.update(flock.birds, 0, 0, yard.scene.userData.solarLighting.daylight);
+                    yard.scene.add(crows.group);
                     renderer.setSize(width, height, false);
                     renderer.render(yard.scene, camera);
+                    crows.group.removeFromParent();
                     return renderer.domElement.toDataURL('image/jpeg', 0.90).split(',')[1];
                 };
                 window.setProbeLight = ({isoTime, size}) => {

@@ -1,6 +1,6 @@
 # inteonmteca
 
-The home page combines the original `inteonmteca` listening room, animated wordmark, themes and chat with a two-deck DJ mixer. Behind the controls, the camera follows a crow walking, taking off, gliding and landing in the courtyard of 14 Zhdanova Street, Uralsk. The wall at its starting point echoes the header's wordmark effects. Flying through a facade reveals its digital interior. At the map boundary a three-dimensional city appears, giving way to sparse, pulsing lines as the camera crosses it. Reduced motion shows a still view of the courtyard.
+The home page combines the original `inteonmteca` listening room, animated wordmark, themes and chat with a two-deck DJ mixer. The courtyard of 14 Zhdanova Street, Uralsk, has 13 crows. The camera sees through the lead bird's eyes. After landing it chooses how many companions to recruit and waits for them to gather before taking off. Other birds can peel away and forage with newly chosen elders. The wall at the starting point echoes the header's wordmark effects. Flying through a facade reveals its digital interior. At the map boundary a three-dimensional city appears, giving way to sparse, pulsing lines as the camera crosses it. Reduced motion shows a still view of the courtyard.
 
 ## Structure
 

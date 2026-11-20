@@ -129,7 +129,7 @@
       }
     };
     try {
-      const { startAmbientScene } = await import('./yard/ambient-scene.js?v=optical-decks-2');
+      const { startAmbientScene } = await import('./yard/ambient-scene.js?v=crow-flock-1');
       if (run.signal.aborted) return;
       await startAmbientScene(canvas, {
         signal: run.signal,

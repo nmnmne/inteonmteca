@@ -145,7 +145,7 @@ function section(start, corner, end) {
   };
 }
 
-export function createAutoWalk(layout, { random = Math.random, openingView = layout.spawn } = {}) {
+export function createAutoWalk(layout, { random = Math.random, openingView = layout.spawn, flock } = {}) {
   const itinerary = destinations(layout, random);
   let start = [layout.spawn.x, layout.spawn.z];
   let corner = itinerary.next().value, next = itinerary.next().value;
@@ -159,7 +159,7 @@ export function createAutoWalk(layout, { random = Math.random, openingView = lay
   let phaseTime = 0, duration = 1.45, glides = 0, firstWalk = true;
   let height = pose.y, fromHeight = height, toHeight = groundEyeM;
   let speed = 1.9, fromSpeed = speed, toSpeed = 1.04, airspeed = 0;
-  let glanceSide = 1;
+  let glanceSide = 1, gatheringPace = 1;
   const range = (a, b) => a + (b - a) * random();
 
   function changePhase(mode, seconds, targetHeight, targetSpeed) {
@@ -217,7 +217,8 @@ export function createAutoWalk(layout, { random = Math.random, openingView = lay
 
   function advance() {
     elapsed += step;
-    if (phaseTime >= duration) nextPhase();
+    const waiting = flock && pose.mode === 'walk' && !flock.canTakeOff();
+    if (phaseTime >= duration && !waiting) nextPhase();
     phaseTime = Math.min(duration, phaseTime + step);
     const progress = phaseTime / duration, blend = ease(progress);
     const mode = pose.mode;
@@ -227,7 +228,11 @@ export function createAutoWalk(layout, { random = Math.random, openingView = lay
     // Ease the pace while the crow turns its head to inspect the ground.
     const glance = mode === 'walk' ? Math.sin(Math.PI * progress) ** 6 : 0;
     const paceFactor = path.flightPace(metres);
-    const groundSpeed = speed * (1 - 0.65 * glance) * (1 - airborne * (1 - paceFactor));
+    // Walk up to the rendezvous, then brake while the last recruits approach.
+    // Release the same acceleration envelope when the group takes flight.
+    const pace = waiting ? 1 - ease(clamp((progress - .6) / .4, 0, 1)) : 1;
+    gatheringPace += clamp(pace - gatheringPace, -step * 1.25, step * .95);
+    const groundSpeed = gatheringPace * speed * (1 - 0.65 * glance) * (1 - airborne * (1 - paceFactor));
     const advanceM = groundSpeed * step;
     metres += advanceM;
     stride += advanceM * Math.PI * 2 / 0.43;
@@ -241,7 +246,10 @@ export function createAutoWalk(layout, { random = Math.random, openingView = lay
     }
     const [x, z] = path.at(metres);
     const ahead = path.at(metres + 1.8 + 4 * airborne), behind = path.at(metres - 0.6);
-    const heading = Math.atan2(ahead[0] - behind[0], behind[1] - ahead[1]) + glanceSide * 0.3 * glance;
+    let heading = Math.atan2(ahead[0] - behind[0], behind[1] - ahead[1]) + glanceSide * 0.3 * glance;
+    if (waiting && Number.isFinite(flock.state.searchYaw)) {
+      heading += clamp(angleBetween(heading, flock.state.searchYaw), -1.15, 1.15) * ease(progress);
+    }
     const turn = angleBetween(pose.yaw, heading);
     const acceleration = clamp(2.6 * turn - 2.8 * turnRate, -0.78, 0.78);
     turnRate = clamp(turnRate + acceleration * step, -0.87, 0.87);
@@ -260,6 +268,7 @@ export function createAutoWalk(layout, { random = Math.random, openingView = lay
     pose.eyeOffset = 0.017 * (1 - airborne) * Math.sin(stride) + 0.027 * airborne * stroke;
     pose.y = height + pose.eyeOffset;
     pose.fov = openingFov + (64 - openingFov) * ease(clamp((elapsed - 2) / 5, 0, 1));
+    flock?.update(step, pose);
   }
   return { pose, update(dt) {
     if (Number.isFinite(dt) && dt > 0) remainder += dt;

@@ -96,7 +96,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
   let behindCity = false, lastChildCount = 0;
   function concealStreet() {
     for (const object of scene.children) {
-      if (!object.visible || virtualObjects.has(object) || object.isLight || object.isCamera) continue;
+      if (!object.visible || virtualObjects.has(object) || object.userData.visibleInBackstage || object.isLight || object.isCamera) continue;
       concealed.add(object);
       object.visible = false;
     }
