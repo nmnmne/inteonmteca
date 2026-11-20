@@ -29,7 +29,7 @@ function longestEdge(ring) {
     length(a,ring[(i+1)%ring.length]) > length(ring[longest],ring[(longest+1)%ring.length]) ? i : longest, 0);
 }
 
-function gableProfile(building) {
+export function gableProfile(building) {
   const kiosk = building.role === 'electric-kiosk';
   if ((!kiosk && building.roof !== 'red') || building.footprint.length !== 4) return null;
   const [a,b,c,d] = building.footprint;

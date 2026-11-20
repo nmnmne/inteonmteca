@@ -53,3 +53,24 @@ test('touch and desktop render every seasonal front through one instanced draw, 
     else global.matchMedia = old;
   }
 });
+
+test('precipitation lands on the flat deck and gable, leaving the street and footprint recess open', async () => {
+  const {precipitationRoofs} = await import('../yard/roof-precipitation.js');
+  const layout = {
+    buildings:[{heightM:14, footprint:[[0,0],[8,0],[8,3],[3,3],[3,8],[0,8]]}],
+    utilityStructures:[{role:'electric-kiosk',heightM:3,footprint:[[11,0],[15,0],[15,8],[11,8]]}],
+  };
+  const {texture,scale,bounds} = precipitationRoofs(layout);
+  const {data,width,height} = texture.image;
+  const altitude = (x,z) => {
+    const i = Math.floor((x - bounds.x) * bounds.z * width);
+    const j = Math.floor((z - bounds.y) * bounds.w * height);
+    return data[j * width + i] * scale / 255;
+  };
+  assert.ok(Math.abs(altitude(1,6) - 14.05) < .06);
+  assert.equal(altitude(6,6),0);
+  assert.equal(altitude(9,2),0);
+  assert.ok(altitude(13,4) > altitude(11.2,4) + .45);
+  assert.ok(altitude(11.2,4) >= 3);
+  texture.dispose();
+});

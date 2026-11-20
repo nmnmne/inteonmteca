@@ -7,6 +7,7 @@ import { addHouseRelief } from "./house14-relief.js?v=refinement-20261009-2";
 import { addTowerReference } from './tower-reference.js?v=20261009-2';
 import { facadeNormal } from "./facade-frame.js";
 import { addRoof, createRoofPerches } from "./roof-geometry.js";
+import { addRoofWetness } from "./roof-wetness.js";
 import { createYardMaterials } from "./materials.js";
 import { facadeSpec, openingsForFacade } from "./models.js?v=refinement-20261009-2";
 import { addHruDetails } from "./hru-details.js";
@@ -359,6 +360,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
   addRoadDetails(scene, materials, layout.roads || []);
   addLandscaping(scene, materials, layout.landscaping);
   addCourtyardWeather(scene, layout, ground.material);
+  addRoofWetness(scene, roofs);
   const buildingStart = scene.children.length;
   const pendingDetails = [];
   const detailState = scene.userData.detailLoading = {

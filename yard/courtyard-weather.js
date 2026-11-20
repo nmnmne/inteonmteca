@@ -1,4 +1,5 @@
 import * as THREE from './vendor/three.module.js';
+import { precipitationRoofs } from './roof-precipitation.js';
 import { pointInRing } from './navigation.js';
 import { weatherTexture, weatherFieldShader } from './weather-field.js';
 
@@ -118,12 +119,16 @@ export function addCourtyardWeather(scene, layout, pavement) {
   geometry.setAttribute('particle',new THREE.InstancedBufferAttribute(seeds,4));
   geometry.instanceCount=count;
   if (pavement) shadePavement(pavement, scene.userData.grassWind || {value:0}, motion);
-  const uniforms={seconds:{value:0},visibility:{value:1},twilight:{value:0},weatherMap:{value:weatherTexture(THREE)}};
+  const roof = precipitationRoofs(layout);
+  const uniforms={seconds:{value:0},visibility:{value:1},twilight:{value:0},weatherMap:{value:weatherTexture(THREE)},
+    roofHeights:{value:roof.texture},roofBounds:{value:roof.bounds},roofHeightScale:{value:roof.scale}};
   const material = new THREE.ShaderMaterial({
     uniforms,transparent:true,depthWrite:false,side:THREE.DoubleSide,
     vertexShader:`
       attribute vec4 particle;
-      uniform float seconds, visibility, twilight;
+      uniform float seconds, visibility, twilight, roofHeightScale;
+      uniform sampler2D roofHeights;
+      uniform vec4 roofBounds;
       varying vec2 st;
       varying vec4 ink;
       varying float kind;
@@ -164,7 +169,8 @@ export function addCourtyardWeather(scene, layout, pavement) {
         float altitude=fract(particle.z-seconds*rate)*10.5;
         if(kind>=2.) altitude*=.61;
         if(kind==5.) altitude=.55+particle.y*1.13;
-        float y=altitude+max(0.,cameraPosition.y-4.5);
+        float roofY=texture2D(roofHeights,(xz-roofBounds.xy)*roofBounds.zw).r*roofHeightScale;
+        float y=altitude+max(roofY,cameraPosition.y-4.5)+size.y*.5;
         vec4 view=viewMatrix*vec4(xz.x,y,xz.y,1.);
         vec2 corner=position.xy*size;
         if(kind==0.) corner.x+=corner.y*.26;
@@ -188,6 +194,7 @@ export function addCourtyardWeather(scene, layout, pavement) {
         #include <colorspace_fragment>
       }`,
   });
+  material.addEventListener('dispose', () => roof.texture.dispose());
   const weather=new THREE.Mesh(geometry,material);
   weather.name='courtyard-weather-fronts';
   weather.frustumCulled=false;

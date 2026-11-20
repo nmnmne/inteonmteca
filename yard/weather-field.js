@@ -49,6 +49,23 @@ export const weatherFieldShader = `
     return texture2D(weatherMap, q);
   }`;
 
+// Moving fronts give every patch of ground a recent weather history, even
+// before it first comes into view. Reuse the precipitation atlas so nearby
+// roofs and lawns see the same rain, but keep their own drainage patterns.
+export const surfaceWeatherShader = `
+  vec2 surfaceWeatherAt(vec2 p, float seconds, vec4 climate) {
+    vec2 previous = .46 * weatherAt(p, seconds - 5.).rg
+                  + .34 * weatherAt(p, seconds - 14.).rg
+                  + .20 * weatherAt(p, seconds - 29.).rg;
+    float warm = 1. - climate.g;
+    float melt = previous.g * warm * (.20 + .32 * climate.b + .20 * climate.r);
+    float water = (.36 * climate.r + .64 * previous.r + melt)
+                * (1. - .58 * climate.g) * (1. - .28 * climate.a);
+    float snow = (.38 * climate.g + .62 * previous.g)
+               * (1. - .48 * climate.a - .32 * climate.r);
+    return clamp(vec2(water, snow), 0., 1.);
+  }`;
+
 // Sample the same RGBA field and bilinear filtering as the GPU. The implicit
 // fifth channel is autumn. Callers can supply an output object per listener.
 export function sampleWeather(x, z, seconds, out = {}) {
