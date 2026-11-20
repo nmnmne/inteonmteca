@@ -34,7 +34,7 @@ test('a backdrop walk reveals the digital yard through both facades and restores
  effect.attachBuildings();
  const proxies = scene.getObjectByName('digital-buildings');
  const getSurfaceMix = id => {
-   const shader = {uniforms:{}, fragmentShader:'#include <dithering_fragment>'};
+   const shader = {uniforms:{}, vertexShader:'#include <project_vertex>', fragmentShader:'#include <dithering_fragment>'};
    scene.getObjectByName('digital-' + id).material.onBeforeCompile(shader);
    return shader.uniforms.digitalMix;
  };
@@ -199,4 +199,71 @@ test('a flight above a roof does not trigger a facade crossing', async () => {
  assert.ok(Math.abs(scene.userData.virtuality-.5)<.001);
   effect.update(x,z,b.heightM-0.5);
   assert.equal(scene.userData.virtuality,1);
+});
+
+async function entryPulseScene() {
+  const THREE = await import('../yard/vendor/three.module.js');
+  const {createDigitalBoundary} = await import('../yard/digital-boundary.js');
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color();
+  scene.fog = new THREE.Fog(0, 90, 260);
+  const edge = createDigitalBoundary(scene, layout, {skyColor:0xabcdef, fogColor:0xeeeeee},
+    new THREE.Mesh(), [], {passThroughBuildings:true});
+  const lines = scene.getObjectByName('city-signal-backbone').children.find(child => child.isLineSegments);
+  return {edge, pulse:lines.material.uniforms.entryPulse.value};
+}
+
+test('a house entry launches one light wave at the crossing and rearms outside', async () => {
+  const {edge, pulse} = await entryPulseScene();
+  const house = layout.buildings.find(building => building.id === 'house-46-1');
+  const x = house.footprint.reduce((sum, [px]) => sum + px, 0) / house.footprint.length;
+  const z = house.footprint.reduce((sum, [,pz]) => sum + pz, 0) / house.footprint.length;
+  const roof = house.heightM;
+  edge.update(x, z, roof - 1, 0);
+  assert.equal(pulse.w, -1, 'restoring a position inside is not another entry');
+  edge.update(x, z, roof + 2, 1);
+  assert.equal(pulse.w, -1, 'leaving is silent');
+  edge.update(x, z, roof - .2, 2);
+  assert.deepEqual(pulse.toArray(), [x, roof - .2, z, 0]);
+  edge.update(x + 1, z, roof - 1, 2.5);
+  assert.ok(pulse.w > 0 && pulse.w < 1);
+  assert.deepEqual(pulse.toArray().slice(0, 3), [x, roof - .2, z], 'wave remains anchored as the camera moves');
+  edge.update(x, z, roof - 1, 5);
+  assert.equal(pulse.w, -1);
+  edge.update(x, z, roof + .10, 6);
+  edge.update(x, z, roof - .2, 7);
+  assert.equal(pulse.w, -1, 'small movements across the roof do not retrigger the wave');
+  edge.update(x, z, roof + 2, 8);
+  edge.update(x, z, roof - .3, 9);
+  assert.equal(pulse.w, 0);
+});
+
+test('backstage entry pulses once beyond the seam and honours reduced motion', async t => {
+  const previous = globalThis.matchMedia;
+  const preference = {matches:false};
+  globalThis.matchMedia = () => preference;
+  t.after(() => {
+    if (previous === undefined) delete globalThis.matchMedia;
+    else globalThis.matchMedia = previous;
+  });
+  const {edge, pulse} = await entryPulseScene();
+  const west = Math.min(...layout.walkable.map(([x]) => x));
+  const at = (outsideM, seconds) => edge.update(west - outsideM, 0, 1.35, seconds);
+  at(19, 0);
+  assert.equal(pulse.w, -1);
+  at(12, 1);
+  at(17, 2);
+  assert.equal(pulse.w, -1);
+  at(19, 3);
+  assert.deepEqual(pulse.toArray(), [west - 19, 1.35, 0, 0]);
+  at(17, 6);
+  at(19, 7);
+  assert.equal(pulse.w, -1, 'oscillating within the seam does not arm another pulse');
+  at(12, 8);
+  at(19, 9);
+  assert.equal(pulse.w, 0);
+  preference.matches = true;
+  at(12, 13);
+  at(19, 14);
+  assert.equal(pulse.w, -1, 'crossing with reduced motion produces no travelling light');
 });

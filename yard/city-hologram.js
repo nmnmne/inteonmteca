@@ -1,6 +1,7 @@
 import * as THREE from './vendor/three.module.js';
 import { buildings, streets } from './data/city-district.js';
 import { blocks, routes } from './data/oral-relief.js';
+import { entryPulseShader } from './entry-pulse.js';
 
 // A second, ground-registered survey of the blocks around the authored courtyard.
 // Street lengths and closed facade perimeters carry pulses across corners.
@@ -16,6 +17,7 @@ const vertexShader = `
   varying float vDetail;
   varying float vHeight;
   varying float vDepth;
+  varying vec3 vWorld;
   void main() {
     vec3 p = position;
     p.y = 0.18 + (p.y - 0.18) * rise;
@@ -33,6 +35,7 @@ const vertexShader = `
       p.xz = yardFrame.xy + delta * distanceScale;
     }
     vec4 view = modelViewMatrix * vec4(p, 1.0);
+    vWorld = (modelMatrix * vec4(p, 1.0)).xyz;
     vMetres = routeMetres * distanceScale;
     vPhase = featurePhase;
     vDetail = detail;
@@ -44,6 +47,8 @@ const vertexShader = `
 const common = `
   uniform float visibility, seconds, backstage, overview;
   varying float vMetres, vPhase, vDetail, vHeight, vDepth;
+  varying vec3 vWorld;
+  ${entryPulseShader}
   float rangeFade() { return 1.0 - 0.74 * smoothstep(130.0, 510.0, vDepth); }
   vec3 colour() {
     vec3 blueprint = mix(vec3(0.045, 0.56, 0.71), vec3(0.42, 0.28, 0.91), vPhase * 0.50);
@@ -56,7 +61,9 @@ const lineShader = common + `
     float tail = smoothstep(0.71, 0.96, wave) * (1.0 - smoothstep(0.96, 1.0, wave));
     float shimmer = 0.86 + 0.14 * sin(seconds * 2.3 + vPhase * 26.0 + vHeight * 0.16);
     vec3 signal = mix(colour(), vec3(0.74, 1.0, 0.91), tail);
-    float alpha = visibility * rangeFade() * (vDetail * shimmer + tail * 0.86);
+    float energy;
+    signal = applyEntryPulse(signal, vWorld, energy);
+    float alpha = visibility * rangeFade() * (vDetail * shimmer + tail * 0.86 + energy * 0.22);
     gl_FragColor = vec4(signal, min(1.0, alpha));
     #include <colorspace_fragment>
   }`;
@@ -70,7 +77,9 @@ const surfaceShader = common + `
     float threshold = fract(dot(mod(floor(gl_FragCoord.xy), 4.0), vec2(0.5625, 0.4375)));
     if (threshold > min(1.0, coverage * 1.8)) discard;
     vec3 shell = mix(vec3(0.014, 0.062, 0.094), colour(), 0.22 * band);
-    gl_FragColor = vec4(shell, coverage * (0.54 + 0.18 * band));
+    float energy;
+    shell = applyEntryPulse(shell, vWorld, energy);
+    gl_FragColor = vec4(shell, coverage * (0.54 + 0.18 * band + 0.14 * energy));
     #include <colorspace_fragment>
   }`;
 
@@ -175,7 +184,7 @@ function relayNetwork(nodes) {
   return {lines};
 }
 
-export function createCityHologram(scene, mapRing) {
+export function createCityHologram(scene, mapRing, entryPulse = {value: new THREE.Vector4(0, 0, 0, -1)}) {
   const fixed = createLayer(), extra = createLayer();
   const relays = [];
   for (const [id, height, ring] of buildings) {
@@ -209,7 +218,7 @@ export function createCityHologram(scene, mapRing) {
   const left = Math.min(...xs), north = Math.min(...zs), right = Math.max(...xs), south = Math.max(...zs);
   const yardFrame = {value:new THREE.Vector4((left+right)/2,(north+south)/2,(right-left)/2,(south-north)/2)};
   const seconds = {value: 0}, rise = {value: 0}, backstage = {value: 0};
-  const commonUniforms = {seconds,rise,backstage,yardFrame,overview:{value:0}};
+  const commonUniforms = {seconds,rise,backstage,yardFrame,entryPulse,overview:{value:0}};
   const fixedVisibility = {value: 0}, extraVisibility = {value: 0};
   drawLayer(root, fixed, {...commonUniforms,visibility:fixedVisibility}, 'city-signal-backbone');
   const district = drawLayer(root, extra, {...commonUniforms,visibility:extraVisibility}, 'city-projected-blocks');

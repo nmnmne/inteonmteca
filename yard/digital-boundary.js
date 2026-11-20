@@ -2,6 +2,8 @@ import * as THREE from './vendor/three.module.js';
 import { pointInRing, distanceToSegment } from './navigation.js';
 import { createCityHologram } from './city-hologram.js';
 import { createCrowWallContact, CROW_WALL_CONTACT_M } from './crow-wall-contact.js';
+import { entryPulseShader } from './entry-pulse.js';
+
 const smooth = (x,a,b) => THREE.MathUtils.smootherstep(x,a,b);
 const signedDistance = (x,z,ring) => {
   let nearest = Infinity;
@@ -11,24 +13,31 @@ const signedDistance = (x,z,ring) => {
   }
   return pointInRing(x,z,ring) ? -nearest : nearest;
 };
-function animateWire(material, clock) {
-  material.onBeforeCompile = shader => {
+function animateDigitalMaterial(material, clock, entryPulse, isWire) {
+  const original = material.onBeforeCompile;
+  const baseKey = material.customProgramCacheKey();
+  material.onBeforeCompile = (shader, renderer) => {
+    original.call(material, shader, renderer);
+    shader.uniforms.entryPulse = entryPulse;
     shader.uniforms.wireSeconds = clock;
     shader.vertexShader = 'varying vec3 wireWorld;\n' + shader.vertexShader.replace(
       '#include <project_vertex>',
       '#include <project_vertex>\nwireWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;'
     );
-    shader.fragmentShader = 'varying vec3 wireWorld; uniform float wireSeconds;\n' + shader.fragmentShader.replace(
+    shader.fragmentShader = 'varying vec3 wireWorld; uniform float wireSeconds;\n' + entryPulseShader + shader.fragmentShader.replace(
       '#include <color_fragment>',
       `#include <color_fragment>
+       ${isWire ? `
        float wavelength = length((wireWorld - vec3(39.0, 0.0, -2.5)) * vec3(0.93, 1.0, 1.07)) / 48.0;
        float phase = fract(wavelength - wireSeconds * 0.22);
        float packet = smoothstep(0.78, 0.95, phase) * (1.0 - smoothstep(0.95, 1.0, phase));
        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.78, 1.0, 0.96), packet * 0.92);
-       diffuseColor.a *= 0.61 + 0.39 * packet;`
+       diffuseColor.a *= 0.61 + 0.39 * packet;` : ''}
+       float entryEnergy;
+       diffuseColor.rgb = applyEntryPulse(diffuseColor.rgb, wireWorld, entryEnergy);`
     );
   };
-  material.customProgramCacheKey = () => 'city-wire-pulses-1';
+  material.customProgramCacheKey = () => `${baseKey}:entry-pulse-${isWire}`;
 }
 export function virtualAmount(layout,x,z,edge=signedDistance(x,z,layout.walkable)) {
   const config=layout.virtualBoundary, ring=config?.noticeableRing || layout.walkable;
@@ -39,7 +48,9 @@ export function virtualAmount(layout,x,z,edge=signedDistance(x,z,layout.walkable
 }
 export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{ passThroughBuildings = false } = {}) {
   const cx=39,cz=-2.5, span=700, outerDomeScale=1.65;
-  const city = createCityHologram(scene, layout.walkable);
+  const entryPulse = { value: new THREE.Vector4(0, 0, 0, -1) };
+  const city = createCityHologram(scene, layout.walkable, entryPulse);
+  let sampled = false, inBackstage = false, pulseStarted = -Infinity;
   const wallContact = passThroughBuildings ? createCrowWallContact(layout) : null;
   let facadeDistance = Infinity;
   const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
@@ -53,8 +64,8 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
     mesh.name=`digital-dome-${i+1}`;mesh.position.set(cx,0,cz);mesh.scale.set(220*scale,125*scale,240*scale);mesh.userData.bakedShadowCaster=false;scene.add(mesh);return mesh;
   });
   const low=new THREE.Group();low.name='digital-buildings';scene.add(low);
-  animateWire(grid.material, clock);
-  for (const dome of domes) animateWire(dome.material, clock);
+  animateDigitalMaterial(grid.material, clock, entryPulse, true);
+  for (const dome of domes) animateDigitalMaterial(dome.material, clock, entryPulse, true);
   const mix={value:0}, proxies=[];let detailed=[];
   const attached=new WeakSet(), clones=new Map();
   const patch=(material,uniform,inverse)=>{
@@ -75,10 +86,11 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
     const material=new THREE.MeshBasicMaterial({color:0x345e65,fog:false,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});
     const surfaceMix={value:0};
     patch(material,surfaceMix,true);
-    proxies.push({surfaceMix, crossing:0});
+    animateDigitalMaterial(material, clock, entryPulse, false);
+    proxies.push({surfaceMix, crossing:0, inside:false});
     const mesh=new THREE.Mesh(geometry,material);mesh.name=`digital-${b.id}`;mesh.userData.digitalProxy=true;mesh.userData.bakedShadowCaster=false;low.add(mesh);
     const lines=new THREE.LineSegments(new THREE.EdgesGeometry(geometry,20),new THREE.LineBasicMaterial({color:0x9ff7df,transparent:true,opacity:0,fog:false}));lines.userData.bakedShadowCaster=false;low.add(lines);
-    animateWire(lines.material, clock);
+    animateDigitalMaterial(lines.material, clock, entryPulse, true);
   }
   low.visible=false;
   const baseSky=new THREE.Color(sun.skyColor),baseFog=new THREE.Color(sun.fogColor),dark=new THREE.Color(0x07121b);
@@ -143,18 +155,33 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
       }
       behindCity = sparse;
       let amount=Math.max(borderAmount,backstage);
+      let entered = !inBackstage && sparse;
+      if (sparse) inBackstage = true;
+      else if (edge < 16) inBackstage = false;
       if (wallContact) {
         facadeDistance = Infinity;
         for (let i=0; i<proxies.length; i++) {
           const house = proxies[i];
           const distance = wallContact.distanceToHouse(i,x,y,z,.20);
+          if (!house.inside && distance <= 0) {
+            house.inside = true;
+            entered = true;
+          } else if (distance > .15) house.inside = false;
           facadeDistance = Math.min(facadeDistance,distance);
           house.crossing = 1 - smooth(distance,0,CROW_WALL_CONTACT_M);
           amount = Math.max(amount, house.crossing);
         }
       }
+      if (reducedMotion?.matches) pulseStarted = -Infinity;
+      else if (sampled && entered) {
+        entryPulse.value.set(x, y, z, 0);
+        pulseStarted = timeSeconds;
+      }
+      sampled = true;
+      const progress = (timeSeconds - pulseStarted) / 2.2;
+      entryPulse.value.w = progress >= 0 && progress < 1 ? progress : -1;
       const radius=Math.hypot((x-cx)/220,(z-cz)/240), outer=smooth(radius,.92,1.25);
-      animated = amount > .001 || reveal > .001 || outer > .001;
+      animated = entryPulse.value.w >= 0 || amount > .001 || reveal > .001 || outer > .001;
       const outsideOuterDome=radius>=outerDomeScale;
       scene.userData.virtuality=amount;scene.userData.virtualLayer=outer;
       scene.userData.cityHologram=reveal;scene.userData.cityBackstage=backstage;
