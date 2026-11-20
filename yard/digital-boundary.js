@@ -2,9 +2,22 @@ import * as THREE from './vendor/three.module.js';
 import { pointInRing, distanceToSegment } from './navigation.js';
 const smooth = (x,a,b) => THREE.MathUtils.smootherstep(x,a,b);
 const signedDistance = (x,z,ring) => {
-  const d = Math.min(...ring.map((p,i)=>{const q=ring[(i+1)%ring.length];return distanceToSegment(x,z,p[0],p[1],q[0],q[1]);}));
-  return pointInRing(x,z,ring) ? -d : d;
+  let nearest = Infinity;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[j], b = ring[i];
+    nearest = Math.min(nearest, distanceToSegment(x,z,a[0],a[1],b[0],b[1]));
+  }
+  return pointInRing(x,z,ring) ? -nearest : nearest;
 };
+// Fade within a stride of the facade so the camera can see through it before
+// its near plane clips the wall. Concave courtyards stay in their normal state.
+const facadeFadeM = 1;
+function facadeCrossing(x, z, house) {
+  const {min, max} = house.bounds;
+  if (x < min.x - facadeFadeM || x > max.x + facadeFadeM ||
+      z < min.z - facadeFadeM || z > max.z + facadeFadeM) return 0;
+  return 1 - smooth(signedDistance(x,z,house.footprint), .1, facadeFadeM);
+}
 export function virtualAmount(layout,x,z) {
   const config=layout.virtualBoundary, ring=config?.noticeableRing || layout.walkable;
   const d=signedDistance(x,z,ring), edge=signedDistance(x,z,layout.walkable);
@@ -12,7 +25,7 @@ export function virtualAmount(layout,x,z) {
   const remaining=Math.max(0,(config?.fullOutsideM || 52)-edge);
   return .4+.6*smooth(d/Math.max(.001,d+remaining),0,1);
 }
-export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials) {
+export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{ passThroughBuildings = false } = {}) {
   const cx=39,cz=-2.5, span=700, outerDomeScale=1.65;
   const grid=new THREE.GridHelper(span,100,0x80e8d3,0x408d82);grid.name='digital-ground';
   grid.position.set(cx,.055,cz);grid.material.transparent=true;grid.material.depthWrite=false;grid.material.fog=false;grid.material.opacity=0;scene.add(grid);
@@ -22,7 +35,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials) 
     mesh.name=`digital-dome-${i+1}`;mesh.position.set(cx,0,cz);mesh.scale.set(220*scale,125*scale,240*scale);mesh.userData.bakedShadowCaster=false;scene.add(mesh);return mesh;
   });
   const low=new THREE.Group();low.name='digital-buildings';scene.add(low);
-  const mix={value:0}, lowMix={value:0};let detailed=[];
+  const mix={value:0}, proxies=[];let detailed=[];
   const attached=new WeakSet(), clones=new Map();
   const patch=(material,uniform,inverse)=>{
     const original=material.onBeforeCompile;
@@ -38,7 +51,11 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials) 
   for(const b of layout.buildings){
     const shape=new THREE.Shape(b.footprint.map(p=>new THREE.Vector2(p[0],-p[1])));
     const geometry=new THREE.ExtrudeGeometry(shape,{depth:b.heightM,bevelEnabled:false,steps:1});geometry.rotateX(-Math.PI/2);
-    const material=new THREE.MeshBasicMaterial({color:0x345e65,fog:false,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});patch(material,lowMix,true);
+    const material=new THREE.MeshBasicMaterial({color:0x345e65,fog:false,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});
+    const surfaceMix={value:0};
+    patch(material,surfaceMix,true);
+    geometry.computeBoundingBox();
+    proxies.push({footprint:b.footprint, bounds:geometry.boundingBox, surfaceMix, crossing:0});
     const mesh=new THREE.Mesh(geometry,material);mesh.name=`digital-${b.id}`;mesh.userData.digitalProxy=true;mesh.userData.bakedShadowCaster=false;low.add(mesh);
     const lines=new THREE.LineSegments(new THREE.EdgesGeometry(geometry,20),new THREE.LineBasicMaterial({color:0x9ff7df,transparent:true,opacity:0,fog:false}));lines.userData.bakedShadowCaster=false;low.add(lines);
   }
@@ -57,16 +74,26 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials) 
       });
     },
     update(x,z){
-      const amount=virtualAmount(layout,x,z), radius=Math.hypot((x-cx)/220,(z-cz)/240), outer=smooth(radius,.92,1.25);
+      let amount=virtualAmount(layout,x,z);
+      if (passThroughBuildings) {
+        for (const house of proxies) {
+          house.crossing = facadeCrossing(x,z,house);
+          amount = Math.max(amount, house.crossing);
+        }
+      }
+      const radius=Math.hypot((x-cx)/220,(z-cz)/240), outer=smooth(radius,.92,1.25);
       const outsideOuterDome=radius>=outerDomeScale;
       scene.userData.virtuality=amount;scene.userData.virtualLayer=outer;
       scene.userData.outsideOuterDome=outsideOuterDome;
       // The two domes are anchored to the courtyard, never to the camera.
       outside.position.set(Math.round(x/240)*240,-.05,Math.round(z/240)*240);outside.updateMatrix();
+      mix.value=smooth(amount,.35,.85);
+      // Keep the wireframe of the house being crossed, with an open view
+      // through its surface. Other digital houses keep their solid silhouettes.
+      for (const house of proxies) house.surfaceMix.value = mix.value * (1 - house.crossing);
       const key=Math.round(amount*1000)+Math.round(outer*1000)*1001+Number(outsideOuterDome)*1002001;if(key===previous)return;previous=key;
-      mix.value=lowMix.value=smooth(amount,.35,.85);
-      detailed.forEach(m=>m.visible=mix.value<1);low.visible=lowMix.value>0;
-      low.children.forEach(m=>{if(m.isLineSegments)m.material.opacity=lowMix.value*.85;else m.material.color.set(0x345e65).lerp(new THREE.Color(0x433958),outer);});
+      detailed.forEach(m=>m.visible=mix.value<1);low.visible=mix.value>0;
+      low.children.forEach(m=>{if(m.isLineSegments)m.material.opacity=mix.value*.85;else m.material.color.set(0x345e65).lerp(new THREE.Color(0x433958),outer);});
       grid.material.opacity=outsideOuterDome?0:Math.min(.9,amount*1.8);domes[0].material.opacity=Math.min(.72,amount*1.5);domes[1].material.opacity=outer*.65;
       if(outsideOuterDome){scene.background.set(0x000000);scene.fog.color.set(0x000000);}
       else {scene.background.copy(baseSky).lerp(dark,amount);scene.fog.color.copy(baseFog).lerp(dark,amount);}

@@ -1,4 +1,4 @@
-import { createDigitalBoundary } from './digital-boundary.js?v=black-outer-dome-20261031';
+import { createDigitalBoundary } from './digital-boundary.js?v=building-crossings-1';
 import * as THREE from "./vendor/three.module.js";
 import { batchStaticDecoration } from './static-batches.js';
 import { addFiveStoreyReference } from './five-storey-reference.js?v=lawn-pipe-correction-20261031';
@@ -352,7 +352,9 @@ function distanceToBoundary(x, z, ring) {
   return nearest;
 }
 
-export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), { progressive = false, origin = layout.spawn } = {}) {
+export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
+  progressive = false, origin = layout.spawn, passThroughBuildings = false,
+} = {}) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(fixedSun.skyColor);
   scene.fog = new THREE.Fog(fixedSun.fogColor, 90, 260);
@@ -376,7 +378,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), { 
   ground.position.y = 0;
   scene.add(ground);
 
-  const edgeEffect = createDigitalBoundary(scene, layout, fixedSun, outside, [outside.material, ground.material]);
+  const edgeEffect = createDigitalBoundary(scene, layout, fixedSun, outside, [outside.material, ground.material], { passThroughBuildings });
 
   for (const surface of layout.surfaces || []) {
     const shape = new THREE.Shape();

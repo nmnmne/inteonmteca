@@ -20,6 +20,57 @@ test('domes stay anchored and digital houses retain original footprints',async()
  edge.update(layout.spawn.x,layout.spawn.z);assert.equal(scene.getObjectByName('digital-buildings').visible,false);
 });
 
+test('a backdrop walk reveals the digital yard through both facades and restores it outside', async () => {
+ const THREE = await import('../yard/vendor/three.module.js');
+ const {createDigitalBoundary, virtualAmount} = await import('../yard/digital-boundary.js');
+ const scene = new THREE.Scene();
+ const sun = {skyColor:0xabcdef, fogColor:0xeeeeee};
+ scene.background = new THREE.Color(sun.skyColor);
+ scene.fog = new THREE.Fog(sun.fogColor, 90, 260);
+ const effect = createDigitalBoundary(scene,layout,sun,new THREE.Mesh(),[],{passThroughBuildings:true});
+ const detail = new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshLambertMaterial());
+ detail.userData.digitalBuilding = true;
+ scene.add(detail);
+ effect.attachBuildings();
+ const proxies = scene.getObjectByName('digital-buildings');
+ const getSurfaceMix = id => {
+   const shader = {uniforms:{}, fragmentShader:'#include <dithering_fragment>'};
+   scene.getObjectByName('digital-' + id).material.onBeforeCompile(shader);
+   return shader.uniforms.digitalMix;
+ };
+ const current = getSurfaceMix('house-46-1'), other = getSurfaceMix('house-26');
+ const [a,b,c,d] = layout.buildings.find(house => house.id==='house-46-1').footprint;
+ const middle = (p,q) => [(p[0]+q[0])/2, (p[1]+q[1])/2];
+ const entry = middle(a,b), exit = middle(c,d);
+ const dx = exit[0]-entry[0], dz = exit[1]-entry[1], width = Math.hypot(dx,dz);
+ const walkTo = metres => {
+   effect.update(entry[0]+metres*dx/width, entry[1]+metres*dz/width);
+   return scene.userData.virtuality;
+ };
+ assert.equal(walkTo(-2),0);
+ assert.ok(walkTo(-.6)>0 && scene.userData.virtuality<1);
+ for (const metre of [0, width/2, width]) {
+   assert.equal(walkTo(metre),1);
+   assert.equal(detail.visible,false);
+   assert.equal(proxies.visible,true);
+   assert.equal(current.value,0);
+   assert.equal(other.value,1);
+   assert.ok(scene.getObjectByName('digital-ground').material.opacity>0);
+ }
+ assert.ok(walkTo(width+.6)>0 && scene.userData.virtuality<1);
+ assert.equal(walkTo(width+2),0);
+ assert.equal(proxies.visible,false);
+ assert.equal(detail.visible,true);
+ assert.equal(scene.background.getHex(),sun.skyColor);
+ // Inside the bounds of the L-shaped building, on the courtyard side.
+ effect.update(-40,50);
+ assert.equal(scene.userData.virtuality,0);
+ for (const [x,z] of [[-96,0],[-150,0],[0,200]]) {
+   effect.update(x,z);
+   assert.equal(scene.userData.virtuality,virtualAmount(layout,x,z));
+ }
+});
+
 
 test('crossing the violet dome makes sky, fog and ground black and restores them on return', async()=>{
  const THREE=await import('../yard/vendor/three.module.js');

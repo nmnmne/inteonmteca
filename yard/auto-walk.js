@@ -1,88 +1,9 @@
-// The pedestrian link joins the two published drives at the east end of House 14.
-// Keep the camera on their surveyed centrelines and round the turns like a walker.
 const distance = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
 const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 const angleBetween = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
-const smoothstep = t => t * t * (3 - 2 * t);
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 
-// The integral of a smoothstep speed ramp. Both speed and acceleration
-// reach zero at a stop, including on legs too short to reach cruising pace.
-function walkingLeg(length, pace) {
-  const acceleration = 0.34;
-  const peak = Math.min(pace, Math.sqrt(length * acceleration / 1.5));
-  if (!peak) return { duration: length ? Infinity : 0, distanceAt: () => 0 };
-  const ramp = 1.5 * peak / acceleration;
-  const duration = Math.max(2 * ramp, length / peak + ramp);
-  const rampDistance = t => peak * ramp * t ** 3 * (1 - t / 2);
-  return {
-    duration,
-    distanceAt(time) {
-      if (time >= duration) return length;
-      if (time < ramp) return rampDistance(time / ramp);
-      if (time > duration - ramp) return length - rampDistance((duration - time) / ramp);
-      return peak * (time - ramp / 2);
-    },
-  };
-}
-
-function nearestSegment(path, point) {
-  let best;
-  for (let i = 1; i < path.length; i++) {
-    const a = path[i - 1], b = path[i];
-    const dx = b[0] - a[0], dz = b[1] - a[1];
-    const t = ((point[0] - a[0]) * dx + (point[1] - a[1]) * dz) / (dx * dx + dz * dz);
-    const projection = mix(a, b, Math.max(0, Math.min(1, t)));
-    const gap = distance(point, projection);
-    if (!best || gap < best.gap) best = { next: i, point: projection, gap };
-  }
-  return best;
-}
-
-function roundedPath(vertices) {
-  const samples = [vertices[0]];
-  let length = 0;
-  const lengths = [length];
-  function add(point) {
-    const segment = distance(samples.at(-1), point);
-    if (segment < 0.0001) return;
-    length += segment;
-    samples.push(point);
-    lengths.push(length);
-  }
-  for (let i = 1; i < vertices.length - 1; i++) {
-    const a = vertices[i - 1], b = vertices[i], c = vertices[i + 1];
-    const incoming = distance(a, b), outgoing = distance(b, c);
-    if (!incoming || !outgoing) continue;
-    const radius = Math.min(3.5, incoming * 0.35, outgoing * 0.35);
-    const entry = mix(b, a, radius / incoming), exit = mix(b, c, radius / outgoing);
-    add(entry);
-    for (let step = 1; step <= 32; step++) {
-      const t = step / 32;
-      add(mix(mix(entry, b, t), mix(b, exit, t), t));
-    }
-  }
-  add(vertices.at(-1));
-  return {
-    length,
-    closestMetre(point) {
-      const nearest = nearestSegment(samples, point);
-      return lengths[nearest.next - 1] + distance(samples[nearest.next - 1], nearest.point);
-    },
-    at(metres) {
-      let low = 0, high = samples.length - 1;
-      while (high - low > 1) {
-        const middle = (low + high) >> 1;
-        if (lengths[middle] <= metres) low = middle;
-        else high = middle;
-      }
-      return mix(samples[low], samples[high], (metres - lengths[low]) / (lengths[high] - lengths[low]));
-    },
-  };
-}
-
-// Frame both the signed wall and the wet footpath in the backdrop's first
-// shot. The still photo and the live walker start at this same camera pose.
+// The still photograph and the live backdrop open on the same view.
 export function ambientOpeningView(layout) {
   const { x, z, yaw } = layout.spawn;
   const end = layout.roads.find(road => road.id === 'spawn-pedestrian-link').centerline.at(-1);
@@ -90,107 +11,161 @@ export function ambientOpeningView(layout) {
   return { ...layout.spawn, yaw: yaw + 0.62 * angleBetween(yaw, alongPath), pitch: -0.085 };
 }
 
-export function createAutoWalk(layout, { random = Math.random, openingView = layout.spawn } = {}) {
-  const road = id => layout.roads.find(item => item.id === id).centerline;
-  const footpath = road('spawn-pedestrian-link');
-  const inner = [...road('house14-courtyard-drive')].reverse();
-  const outer = [...road('zhandova-courtyard-drive')].reverse();
-  const spawn = [layout.spawn.x, layout.spawn.z];
-  const junction = outer.findIndex(point => distance(point, inner[0]) < 0.1);
-  const westTurn = nearestSegment(inner, outer[0]);
-  // Start and end the lap halfway along a straight, so position AND heading meet.
-  const seam = mix(inner[1], inner[2], 0.5);
-  const approach = roundedPath([spawn, ...footpath.slice(nearestSegment(footpath, spawn).next), inner[1], seam]);
-  const lap = roundedPath([
-    seam, ...inner.slice(2, westTurn.next), westTurn.point,
-    ...outer.slice(1, junction + 1), inner[1], seam,
-  ]);
-  // The walker visits actual features from the map. At each stop it selects
-  // another destination and follows the nearer direction around the paved loop.
-  const wall = mix(...layout.musicWall.segment, 0.5);
-  const bars = layout.playground.bars;
-  const entrances = layout.landscaping.paths.filter(path =>
-    ['house-14-entrance-2', 'house-14-entrance-4', 'house-46-2-courtyard-entrance-1'].includes(path.entranceId));
-  const sights = [
-    { point: [bars.x, bars.z], pitch: 0.045 },
-    ...entrances.map(entry => ({ point: entry.polygon[0], pitch: 0.09 })),
-  ].map(sight => ({ ...sight, metre: lap.closestMetre(sight.point) }));
-
-  const pace = clamp(layout.movement.speedMps, 0, 0.85);
-  const pose = { ...openingView, eyeOffset: 0 };
-  const recentlyVisited = [];
-  let route = approach, metre = 0, goal = Math.min(8, approach.length / 2);
-  let sight = { point: wall, pitch: 0.08 }, pauseRemaining = 4.5, direction = 1;
-  let elapsed = 0, stride = 0, turnRate = 0, remainder = 0;
-  let startMetre = 0, legTime = 0, leg = walkingLeg(goal, pace), orienting = false;
-  const wrap = value => (value % lap.length + lap.length) % lap.length;
-  const at = value => route.at(route === lap ? wrap(value) : Math.max(0, Math.min(route.length, value)));
-
-  function chooseNextStop() {
-    if (route === approach && goal !== approach.length) {
-      goal = approach.length;
-      sight = null;
-      return;
-    }
-    if (route === approach) { route = lap; metre = 0; }
-    const options = sights.filter(candidate => !recentlyVisited.includes(candidate));
-    sight = options[Math.floor(random() * options.length)];
-    recentlyVisited.push(sight);
-    if (recentlyVisited.length > Math.min(2, sights.length - 1)) recentlyVisited.shift();
-    const forward = wrap(sight.metre - metre);
-    const offset = forward <= lap.length / 2 ? forward : forward - lap.length;
-    direction = offset >= 0 ? 1 : -1;
-    goal = metre + offset;
-    pauseRemaining = 4 + random() * 3.5;
+// Even the L-shaped block and the tower have an interior point on this scanline.
+function interiorPoint(ring) {
+  const zs = ring.map(p => p[1]);
+  const z = (Math.min(...zs) + Math.max(...zs)) / 2;
+  const xs = [];
+  for (let i = 0; i < ring.length; i++) {
+    const a = ring[i], b = ring[(i + 1) % ring.length];
+    if ((a[1] > z) !== (b[1] > z)) xs.push(a[0] + (b[0] - a[0]) * (z - a[1]) / (b[1] - a[1]));
   }
+  xs.sort((a, b) => a - b);
+  let widest = 0;
+  for (let i = 2; i < xs.length; i += 2) {
+    if (xs[i + 1] - xs[i] > xs[widest + 1] - xs[widest]) widest = i;
+  }
+  return [(xs[widest] + xs[widest + 1]) / 2, z];
+}
 
+// Continue straight past the first wall after the target. Only round the turn
+// once the camera has cleared the facade; concave blocks can have several exits.
+function beyondWall(from, target, ring) {
+  const length = distance(from, target);
+  const dx = length ? (target[0] - from[0]) / length : 1;
+  const dz = length ? (target[1] - from[1]) / length : 0;
+  let exit = Infinity;
+  for (let i = 0; i < ring.length; i++) {
+    const a = ring[i], b = ring[(i + 1) % ring.length];
+    const ex = b[0] - a[0], ez = b[1] - a[1];
+    const det = dx * ez - dz * ex;
+    if (Math.abs(det) < 1e-8) continue;
+    const ax = a[0] - target[0], az = a[1] - target[1];
+    const along = (ax * ez - az * ex) / det;
+    const edge = (ax * dz - az * dx) / det;
+    if (along > 0.001 && edge >= 0 && edge <= 1) exit = Math.min(exit, along);
+  }
+  const clearance = (Number.isFinite(exit) ? exit : 0) + 12;
+  return [target[0] + dx * clearance, target[1] + dz * clearance];
+}
+
+function* destinations(layout, random) {
+  const xs = layout.walkable.map(p => p[0]), zs = layout.walkable.map(p => p[1]);
+  const west = Math.min(...xs), east = Math.max(...xs), north = Math.min(...zs), south = Math.max(...zs);
+  const outside = (layout.virtualBoundary?.fullOutsideM ?? 52) + 16;
+  const range = (min, max) => min + (max - min) * random();
+  const outsideWest = () => [west - outside, range(north, south)];
+  const houses = layout.buildings.map(b => ({ id: b.id, ring: b.footprint, point: interiorPoint(b.footprint) }));
+  const wall = mix(...layout.musicWall.segment, 0.5);
+  let from = beyondWall([layout.spawn.x, layout.spawn.z], wall,
+    houses.find(b => b.id === layout.musicWall.buildingId).ring);
+  yield wall;
+  yield from;
+  // Put a full outside-and-back crossing within the opening stretch.
+  from = [west - outside, clamp(from[1] + range(-20, 20), north, south)];
+  yield from;
+
+  let firstTour = true;
+  while (true) {
+    const stops = houses.filter(house => !firstTour || house.id !== layout.musicWall.buildingId);
+    for (let column = 0; column < 3; column++) {
+      for (let row = 0; row < 3; row++) {
+        stops.push({ point: [
+          west + (column + range(0.08, 0.92)) * (east - west) / 3,
+          north + (row + range(0.08, 0.92)) * (south - north) / 3,
+        ] });
+      }
+    }
+    stops.push({ point: [east + outside, range(north, south)] },
+      { point: [range(west, east), north - outside] }, { point: [range(west, east), south + outside] });
+    if (!firstTour) stops.push({ point: outsideWest() });
+    firstTour = false;
+    while (stops.length) {
+      // Sweep nearby destinations first. Every building, map sector and side of
+      // the perimeter gets visited before a fresh set of open-ground targets.
+      let nearest = 0;
+      for (let i = 1; i < stops.length; i++) {
+        if (distance(from, stops[i].point) < distance(from, stops[nearest].point)) nearest = i;
+      }
+      const [stop] = stops.splice(nearest, 1);
+      const end = stop.ring ? beyondWall(from, stop.point, stop.ring) : stop.point;
+      if (stop.ring && distance(from, stop.point) > 0.01) yield stop.point;
+      if (distance(from, end) > 0.01) yield end;
+      from = end;
+    }
+  }
+}
+
+// Arc-length samples of a straight, a rounded corner, and the next straight.
+// Neighbouring sections join halfway along the same line, with matching headings.
+function section(start, corner, end) {
+  const incoming = distance(start, corner), outgoing = distance(corner, end);
+  const radius = Math.min(8, incoming * 0.65, outgoing * 0.65);
+  const entry = mix(corner, start, radius / incoming), exit = mix(corner, end, radius / outgoing);
+  const points = [start, entry];
+  for (let i = 1; i <= 16; i++) {
+    const t = i / 16;
+    points.push(mix(mix(entry, corner, t), mix(corner, exit, t), t));
+  }
+  points.push(end);
+  const lengths = [0];
+  for (let i = 1; i < points.length; i++) lengths.push(lengths[i - 1] + distance(points[i - 1], points[i]));
+  return {
+    length: lengths.at(-1),
+    at(metres) {
+      if (metres <= 0) return start;
+      if (metres >= this.length) return end;
+      let lo = 0, hi = points.length - 1;
+      while (hi - lo > 1) {
+        const mid = (lo + hi) >> 1;
+        if (lengths[mid] <= metres) lo = mid; else hi = mid;
+      }
+      return mix(points[lo], points[hi], (metres - lengths[lo]) / (lengths[hi] - lengths[lo]));
+    },
+  };
+}
+
+export function createAutoWalk(layout, { random = Math.random, openingView = layout.spawn } = {}) {
+  const itinerary = destinations(layout, random);
+  let start = [layout.spawn.x, layout.spawn.z];
+  let corner = itinerary.next().value, next = itinerary.next().value;
+  let end = mix(corner, next, 0.5), path = section(start, corner, end);
+  const pose = { ...openingView, eyeOffset: 0 };
+  const pace = layout.movement.speedMps;
   const step = 1 / 60;
+  let metres = 0, elapsed = 0, travelled = 0, turnRate = 0, remainder = 0;
   function advance() {
     elapsed += step;
-    if (legTime === leg.duration && (!sight || pauseRemaining <= 0)) {
-      chooseNextStop();
-      startMetre = metre;
-      leg = walkingLeg(Math.abs(goal - startMetre), pace);
-      legTime = 0;
-      orienting = true;
+    const speed = Math.min(pace, elapsed * 0.9);
+    metres += speed * step;
+    travelled += speed * step;
+    while (metres >= path.length) {
+      metres -= path.length;
+      start = end;
+      corner = next;
+      next = itinerary.next().value;
+      end = mix(corner, next, 0.5);
+      path = section(start, corner, end);
     }
-    const previous = metre;
-    if (!orienting) legTime = Math.min(leg.duration, legTime + step);
-    metre = legTime === leg.duration ? goal : startMetre + direction * leg.distanceAt(legTime);
-    const travel = Math.abs(metre - previous);
-    const walking = pace > 0 ? clamp(travel / (step * pace), 0, 1) : 0;
-    stride += travel * (Math.PI * 2 / 1.15);
-    if (legTime === leg.duration) pauseRemaining -= step;
-    const [x, z] = at(metre);
-    const behind = at(metre - direction * 1.5), ahead = at(metre + direction * 2.5);
-    let heading = Math.atan2(ahead[0] - behind[0], behind[1] - ahead[1]);
-    let pitch = 0.022;
-    if (sight) {
-      const attention = smoothstep(clamp(1 - Math.abs(goal - metre) / 8, 0, 1));
-      const facing = Math.atan2(sight.point[0] - x, z - sight.point[1]);
-      heading += attention * angleBetween(heading, facing);
-      pitch += attention * sight.pitch;
-    }
-    heading += Math.sin(elapsed * 0.32) * (0.06 - walking * 0.04);
+    const [x, z] = path.at(metres);
+    const ahead = path.at(metres + 3), behind = path.at(metres - 1);
+    const heading = Math.atan2(ahead[0] - behind[0], behind[1] - ahead[1]);
+    const turn = angleBetween(pose.yaw, heading);
+    const acceleration = clamp(1.5 * turn - 2.3 * turnRate, -0.34, 0.34);
+    turnRate = clamp(turnRate + acceleration * step, -0.55, 0.55);
     pose.x = x;
     pose.z = z;
-    // Let the gaze lead the first step of a reversal. A damped turn keeps
-    // the angular velocity continuous when a new point of interest is chosen.
-    const turn = angleBetween(pose.yaw, heading);
-    const angularAcceleration = clamp(1.2 * turn - 2.3 * turnRate, -0.19, 0.19);
-    turnRate = clamp(turnRate + angularAcceleration * step, -0.32, 0.32);
     pose.yaw += turnRate * step;
-    if (Math.abs(turn) < 0.58) orienting = false;
-    pose.pitch += clamp((pitch - pose.pitch) * 0.7, -0.035, 0.035) * step;
-    pose.eyeOffset = 0.004 * Math.sin(stride) * walking;
+    const targetPitch = 0.018 + 0.014 * Math.sin(elapsed * 0.12);
+    pose.pitch += clamp((targetPitch - pose.pitch) * 0.7, -0.035, 0.035) * step;
+    pose.eyeOffset = 0.004 * Math.sin(travelled * Math.PI * 2 / 1.6) * Math.min(1, speed);
   }
-  function update(dt) {
+  return { pose, update(dt) {
     if (Number.isFinite(dt) && dt > 0) remainder += dt;
     while (remainder >= step - 1e-10) {
       remainder -= step;
       advance();
     }
     return pose;
-  }
-  return { pose, update };
+  } };
 }

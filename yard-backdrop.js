@@ -58,7 +58,7 @@
       document.body.dataset.yardBackdrop = 'fallback';
     };
     try {
-      const { startAmbientScene } = await import('./yard/ambient-scene.js?v=3');
+      const { startAmbientScene } = await import('./yard/ambient-scene.js?v=4');
       if (run.signal.aborted) return;
       await startAmbientScene(canvas, {
         signal: run.signal,

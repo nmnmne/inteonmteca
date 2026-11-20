@@ -1,6 +1,6 @@
 # inteonmteca
 
-The home page combines the original `inteonmteca` listening room, animated wordmark, themes and chat with a two-deck DJ mixer. A pedestrian explores the courtyard behind the controls. The background has no keyboard or pointer controls. Reduced motion shows a still view of the courtyard.
+The home page combines the original `inteonmteca` listening room, animated wordmark, themes and chat with a two-deck DJ mixer. Behind the controls, a pedestrian crosses the courtyard, passes through buildings and explores beyond the map. The view switches to the courtyard's digital graphics inside buildings and fades back to the street on exit. The background has no keyboard or pointer controls. Reduced motion shows a still view of the courtyard.
 
 ## Structure
 

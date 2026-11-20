@@ -1,7 +1,7 @@
 import * as THREE from './vendor/three.module.js';
-import { createYardScene } from './scene.js?v=ambient-walk-1';
+import { createYardScene } from './scene.js?v=ambient-crossings-1';
 import { lightingPresetForLayout } from './baked-lighting.js';
-import { ambientOpeningView, createAutoWalk } from './auto-walk.js?v=3';
+import { ambientOpeningView, createAutoWalk } from './auto-walk.js?v=4';
 import { addPuddles } from './puddles.js';
 
 const layoutURL = new URL('./data/site-layout.json?v=lawn-pipe-correction-20261031', import.meta.url);
@@ -128,7 +128,9 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     walk = createAutoWalk(layout, { openingView: ambientOpeningView(layout) });
     eyeHeight = layout.movement.eyeM;
     const lighting = lightingPresetForLayout(layout, 2);
-    yard = createYardScene(layout, lighting, { progressive: true, origin: walk.update(0) });
+    yard = createYardScene(layout, lighting, {
+      progressive: true, origin: walk.update(0), passThroughBuildings: true,
+    });
     ripplePuddles = addPuddles(yard.scene, layout);
     canvas.addEventListener('webglcontextlost', contextLost);
     resize();
