@@ -212,6 +212,7 @@ export function createCrowModels() {
   };
   const birds=new THREE.InstancedMesh(geometry,plumage,count);
   birds.name='crow-plumage';
+  birds.receiveShadow=true;
   const shadowGeometry=new THREE.PlaneGeometry(1,1);
   shadowGeometry.rotateX(-Math.PI/2);
   const shadowsMaterial=new THREE.ShaderMaterial({

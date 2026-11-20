@@ -164,7 +164,8 @@ def exercise(browser, route, mobile=False, fallback=False):
     if not fallback:
         page.wait_for_function("qaYard.shadows?.detail === 'ready'", timeout=45000)
         shadows = page.evaluate("qaYard.shadows")
-        assert shadows["mapSize"] == 1024 and shadows["receivers"] > 150 and not shadows["autoUpdate"], shadows
+        sizes = {1024} if mobile else {1024, 1536, 2048}
+        assert shadows["mapSize"] in sizes and shadows["receivers"] > 150 and not shadows["autoUpdate"], shadows
         before = page.evaluate("qaYard.matrices")
         page.wait_for_function("n => qaYard.matrices > n", arg=before)
     assert not errors and not scene_failures, (errors, scene_failures)

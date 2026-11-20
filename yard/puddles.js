@@ -7,23 +7,33 @@ export function addPuddles(scene, layout, onReady = () => {}) {
   const west = Math.min(...x), north = Math.min(...z);
   const width = Math.max(...x) - west, length = Math.max(...z) - north;
   const uniforms = {
+    ...THREE.UniformsUtils.clone(THREE.UniformsLib.lights),
     shores: { value: null }, probes: { value: null }, panorama: { value: null },
     atlasGrid: { value: new THREE.Vector2() }, seconds: { value: 0 }, daylight: { value: 1 },
     reflectionTint: { value: new THREE.Color(0xffffff) },
     nightPanorama: { value:null }, nightMix: { value:0 },
   };
   const material = new THREE.ShaderMaterial({
-    uniforms, transparent: true, depthWrite: false, visible: false,
+    uniforms, lights: true, transparent: true, depthWrite: false, visible: false,
     vertexShader: `
+      #include <common>
+      #include <shadowmap_pars_vertex>
       varying vec2 mapUV;
       varying vec3 surface;
       void main() {
         mapUV = vec2(uv.x, 1.0 - uv.y);
-        vec4 world = modelMatrix * vec4(position, 1.0);
-        surface = world.xyz;
-        gl_Position = projectionMatrix * viewMatrix * world;
+        vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+        vec3 transformedNormal = normalMatrix * normal;
+        surface = worldPosition.xyz;
+        gl_Position = projectionMatrix * viewMatrix * worldPosition;
+        #include <shadowmap_vertex>
       }`,
     fragmentShader: `
+      #include <common>
+      #include <packing>
+      #include <lights_pars_begin>
+      #include <shadowmap_pars_fragment>
+      #include <shadowmask_pars_fragment>
       uniform sampler2D shores, probes, panorama, nightPanorama;
       uniform vec2 atlasGrid;
       uniform float seconds, daylight;
@@ -69,6 +79,18 @@ export function addPuddles(scene, layout, onReady = () => {}) {
         float grazing = pow(1.0 - max(dot(toEye, normal), 0.0), 3.0);
         float reflection = 0.22 + 0.73 * grazing;
         vec3 color = mix(vec3(0.040, 0.041, 0.033)*reflectionTint, light, reflection);
+        #if defined(USE_SHADOWMAP) && NUM_DIR_LIGHTS > 0
+          // The sky stays visible in shaded water. Direct sunlight reaches the
+          // submerged asphalt and the ripple crests only through gaps in the yard.
+          if (directionalLights[0].color.r > .001) {
+            vec3 sun = inverseTransformDirection(directionalLights[0].direction, viewMatrix);
+            float bed = max(sun.y, 0.0) * (1.0 - reflection);
+            float alignment = max(dot(ray, sun), 0.0);
+            float glint = pow(alignment, 320.0) * (.06 + .94 * grazing);
+            color += getShadowMask() * directionalLights[0].color
+                   * (vec3(.047, .041, .030) * bed + .72 * glint);
+          }
+        #endif
         float wet = smoothstep(0.35, 0.65, depth);
         gl_FragColor = vec4(color, wet * (0.52 + 0.43 * grazing) * daylight);
         #include <colorspace_fragment>
@@ -78,6 +100,7 @@ export function addPuddles(scene, layout, onReady = () => {}) {
   const geometry = new THREE.PlaneGeometry(width, length).rotateX(-Math.PI / 2);
   const water = new THREE.Mesh(geometry, material);
   water.name = 'courtyard-puddles';
+  water.receiveShadow = true;
   water.position.set(west + width / 2, 0.034, north + length / 2);
   water.userData.bakedShadowCaster = false;
   water.userData.bakedShadowReceiver = false;

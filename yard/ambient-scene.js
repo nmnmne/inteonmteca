@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three.module.js';
 import { createYardScene } from './scene.js?v=ural-courtyard-1';
-import { solarLighting, sunForLocation } from './solar-clock.js';
+import { courtyardSunForLocation, solarLighting } from './solar-clock.js';
 import { ambientOpeningView, createAutoWalk } from './auto-walk.js?v=crow-flock-1';
 import { createCrowFlock } from './crow-flock.js';
 import { createCrowModels } from './crow-models.js';
@@ -76,6 +76,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     const height = Math.max(1, canvas.clientHeight);
     const mobile = compact.matches;
     const level = graphicsLevel = Math.max(1, Math.min(10, Math.round(Number(document.documentElement.dataset.graphicsLevel)) || (mobile ? 3 : 5)));
+    solar?.setQuality(level, mobile);
     // Share the existing quality meter with the mixer. Labels, hit targets and
     // waveforms keep their native resolution regardless of the 3D pixel budget.
     const budget = (mobile ? mobilePixels : desktopPixels)[level-1] * (clearView ? 1 : .37);
@@ -131,7 +132,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
           // Build only one nearby block at a time, leaving the mixer time between upgrades.
           moreDetail = yard.loadNextDetail(pose);
           nextDetail = now + 800;
-          if (!moreDetail) solar.refreshGeometry();
+          solar.refreshGeometry();
         }
       } catch (error) {
         fail(error);
@@ -156,11 +157,11 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     const openingView = ambientOpeningView(layout, aspect);
     flock = createCrowFlock(layout, openingView);
     walk = createAutoWalk(layout, { openingView, flock });
-    const lighting = solarLighting(sunForLocation(layout.origin, Date.now()));
+    const lighting = solarLighting(courtyardSunForLocation(layout.origin, Date.now()));
     yard = createYardScene(layout, lighting, {
       progressive: true, origin: walk.update(0), passThroughBuildings: true,
     });
-    solar = createSolarLighting(renderer, yard, layout);
+    solar = createSolarLighting(renderer, yard, layout, {sampleSun:courtyardSunForLocation});
     solar.update(Date.now(), camera);
     crowModels = createCrowModels();
     crowModels.group.userData.visibleInBackstage = true;

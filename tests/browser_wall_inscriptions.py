@@ -14,7 +14,8 @@ def check(browser, mobile=False):
     page.on("pageerror", lambda error: errors.append(str(error)))
     page.on("console", lambda msg: errors.append(msg.text) if "Shader Error" in msg.text else None)
     page.route("**/yard/auto-walk.js*", expose_walker)
-    stamp = "2026-06-21T18:30:00Z" if mobile else "2026-06-21T08:30:00Z"
+    # In the courtyard's 24-minute day these instants are 18:30 and 08:30 UTC.
+    stamp = "2026-06-21T00:18:30Z" if mobile else "2026-06-21T00:08:30Z"
     page.add_init_script(f"Date.now = () => Date.parse('{stamp}') + performance.now()")
     page.goto(BASE, wait_until="domcontentloaded")
     page.wait_for_selector('body[data-yard-backdrop="live"]', timeout=60000)

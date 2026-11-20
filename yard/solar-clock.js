@@ -1,5 +1,6 @@
 const radians = Math.PI / 180;
 const dayMs = 86400000;
+const courtyardDayMs = 24 * 60000;
 // Matches data/site-layout.json. Also available before the 3D layout has loaded.
 export const COURTYARD_ORIGIN = Object.freeze({lat:51.230186, lon:51.439256});
 
@@ -12,6 +13,16 @@ function smooth(value, low, high) {
 // courtyard's clock even when the listener is in a different time zone.
 // https://gml.noaa.gov/grad/solcalc/solareqns.PDF
 export function sunForLocation({lat, lon}, epochMs) {
+  return solarPosition(lat, lon, epochMs, dayMs);
+}
+
+// All visitors share the same 24-minute rotation. Only the Earth's rotation
+// speeds up: its seasonal tilt still follows the actual date in Uralsk.
+export function courtyardSunForLocation({lat, lon}, epochMs) {
+  return solarPosition(lat, lon, epochMs, courtyardDayMs);
+}
+
+function solarPosition(lat, lon, epochMs, rotationMs) {
   const year = new Date(epochMs).getUTCFullYear();
   const start = Date.UTC(year, 0, 1);
   const yearDays = (Date.UTC(year + 1, 0, 1) - start) / dayMs;
@@ -21,7 +32,8 @@ export function sunForLocation({lat, lon}, epochMs) {
   const declination = .006918 - .399912*Math.cos(gamma) + .070257*Math.sin(gamma)
     - .006758*Math.cos(2*gamma) + .000907*Math.sin(2*gamma)
     - .002697*Math.cos(3*gamma) + .00148*Math.sin(3*gamma);
-  const utcMinutes = (epochMs - Math.floor(epochMs / dayMs) * dayMs) / 60000;
+  const intoRotation = epochMs - Math.floor(epochMs / rotationMs) * rotationMs;
+  const utcMinutes = intoRotation * 1440 / rotationMs;
   const hourAngle = ((utcMinutes + correction + 4 * lon) / 4 - 180) * radians;
   const latitude = lat * radians;
   const meridian = Math.cos(declination) * Math.cos(hourAngle);

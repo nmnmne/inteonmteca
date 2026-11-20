@@ -23,7 +23,7 @@ MARGIN = """map => {
 def sample(browser, day):
     page = browser.new_page(viewport={"width": 1200, "height": 780})
     page.route("**/yard/auto-walk.js*", expose_walker)
-    stamp = "2026-06-21T08:00:00Z" if day else "2026-11-20T21:00:00Z"
+    stamp = "2026-06-21T00:08:00Z" if day else "2026-11-20T00:21:00Z"
     page.add_init_script(f"Date.now = () => Date.parse('{stamp}') + performance.now()")
     page.goto(BASE, wait_until="domcontentloaded")
     page.wait_for_selector('body[data-yard-backdrop="live"]', timeout=60000)

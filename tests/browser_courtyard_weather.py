@@ -1,5 +1,6 @@
 """Render the local weather field and verify reduced-motion poster selection."""
 import os
+from datetime import datetime, timezone
 from playwright.sync_api import sync_playwright
 
 BASE = os.environ.get('INTEON_BASE_URL', 'http://127.0.0.1:8080').rstrip('/')
@@ -52,12 +53,14 @@ def particles(browser):
 def posters(browser):
     for mobile in [False, True]:
         page = browser.new_page(viewport={'width': 390 if mobile else 1120, 'height': 800}, reduced_motion='reduce')
+        start = datetime(2026, 9, 22, 0, 2, 52, tzinfo=timezone.utc)
+        page.clock.install(time=start)
         page.goto(BASE + '/#studio', wait_until='domcontentloaded')
-        for phase, iso in [('dawn','2026-09-22T02:52Z'),('day','2026-06-21T08:30Z'),
-                           ('dusk','2026-09-22T14:32Z'),('night','2026-09-22T21:00Z')]:
-            page.evaluate("""iso => {
-                Date.now = () => Date.parse(iso); document.dispatchEvent(new Event('visibilitychange'));
-            }""", iso)
+        for phase, elapsed in [('dawn',0),('day',360),('dusk',700),('night',1080),('dawn',1440)]:
+            # Let the site's own visible-tab timer update the still image.
+            delta = round(start.timestamp()*1000 + elapsed*1000 - page.evaluate("Date.now()"))
+            if delta > 0:
+                page.clock.fast_forward(delta)
             size = 'mobile' if mobile else 'desktop'
             filename = f'spawn-{size}' + ('' if phase == 'day' else '-' + phase) + '.jpg'
             page.wait_for_function("""([phase,file]) => {

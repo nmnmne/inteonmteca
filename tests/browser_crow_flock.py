@@ -129,7 +129,7 @@ def check(browser, mobile):
     page.on("pageerror", lambda error: errors.append(str(error)))
     page.on("console", lambda msg: errors.append(msg.text) if "Shader Error" in msg.text else None)
     page.route("**/yard/auto-walk.js*", observe_walk)
-    epoch = "2026-06-21T08:00:00Z" if not mobile else "2026-11-20T21:00:00Z"
+    epoch = "2026-06-21T00:08:00Z" if not mobile else "2026-11-20T00:21:00Z"
     page.add_init_script(f"Date.now = () => Date.parse('{epoch}') + performance.now()")
     page.goto(BASE, wait_until="domcontentloaded")
     page.wait_for_selector('body[data-yard-backdrop="live"]', timeout=75000)

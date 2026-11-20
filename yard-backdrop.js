@@ -21,7 +21,7 @@
   let clock;
   function updatePoster() {
     if (document.hidden || (clock === undefined && location.protocol !== 'file:')) return;
-    const sun = clock?.sunForLocation(clock.COURTYARD_ORIGIN, Date.now());
+    const sun = clock?.courtyardSunForLocation(clock.COURTYARD_ORIGIN, Date.now());
     let phase = 'day';
     if (sun && sun.elevationDeg < -6) phase = 'night';
     else if (sun && sun.elevationDeg < 8) phase = sun.direction[0] > 0 ? 'dawn' : 'dusk';
@@ -38,7 +38,7 @@
     clearInterval(posterTimer);
     if (document.hidden) return;
     updatePoster();
-    posterTimer = setInterval(updatePoster, 180000);
+    posterTimer = setInterval(updatePoster, 3000);
   }
   window.addEventListener('pagehide', () => clearInterval(posterTimer));
   window.addEventListener('pageshow', schedulePoster);
