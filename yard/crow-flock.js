@@ -3,6 +3,8 @@ import { createCrowVisits } from './crow-visits.js';
 import { createCrowPranks } from './crow-pranks.js';
 import { createCrowKeyStory } from './crow-key-story.js';
 import { createCrowDisputes } from './crow-disputes.js';
+import { createCrowRollCall } from './crow-roll-call.js';
+import { createCrowTreePrank } from './crow-tree-prank.js';
 
 const count = 13;
 const chest = 0.20;
@@ -14,7 +16,7 @@ const distance = (a, b) => Math.hypot(b.x - a.x, b.z - a.z);
 
 // One social simulation for the first-person bird and its twelve neighbours.
 // The ordinary birds persist when they split off. No bird is spawned at a reunion.
-export function createCrowFlock(layout, openingView, { random = Math.random, residentVisits = false, allowKeyStory } = {}) {
+export function createCrowFlock(layout, openingView, { random = Math.random, residentVisits = false, allowKeyStory, crowTrees } = {}) {
   const range = (a, b) => a + (b - a) * random();
   const integer = (a, b) => Math.min(b, Math.floor(range(a, b + 1)));
   const birds = [];
@@ -76,7 +78,10 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
   const keyStory = allowKeyStory ? createCrowKeyStory(layout,birds,clearGround,allowKeyStory) : null;
   const disputes = createCrowDisputes(layout, birds, groundNear, clearGround, relative);
   const allBirds = [...birds, ...disputes.guests];
-  const occupied = {has:id => keyStory?.targets.has(id) || disputes.reserved(birds[id])};
+  const rollCall = createCrowRollCall(birds);
+  const busyForPranks = {has: id => id === rollCall.state.targetId || keyStory?.targets.has(id) || disputes.reserved(birds[id])};
+  const treePrank = createCrowTreePrank(birds, crowTrees);
+  const busyForTrees = {has: id => busyForPranks.has(id) || pranks.targets.has(id) || visits?.perches.has(id)};
 
   function shuffle(list) {
     for (let i = list.length - 1; i > 0; i--) {
@@ -93,6 +98,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     if (flyAway) chooseForage(bird, true);
   }
   function touchdown() {
+    rollCall.reset();
     state.landingCount++;
     state.phase = 'gather';
     state.targetSize = state.landingCount === 1 ? integer(3, 6) : integer(2, count);
@@ -180,9 +186,19 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     const row = Math.floor(b.slot / 2), side = b.slot % 2 === 0 ? -1 : 1;
     b.formationSide = side * (1.1 + .74 * row);
     b.formationForward = 4.5 + row * 1.25;
-    const nominal = relative(leader, heading, b.formationSide, b.formationForward);
+    // A curved line gives each face a clear sightline, even for a full party.
+    const arc = side * (.22 + .40 * row), radius = 3.85 + .08 * row;
+    const nominal = relative(leader, heading + arc, 0, radius);
+    function inView(px, pz) {
+      const dx = px - leader.x, dz = pz - leader.z;
+      const steps = Math.ceil(Math.hypot(dx, dz) / .45);
+      for (let j = 1; j < steps; j++) {
+        if (!clearGround(leader.x + dx*j/steps, leader.z + dz*j/steps)) return false;
+      }
+      return true;
+    }
     const available = (px, pz) => Math.hypot(px - leader.x, pz - leader.z) > 1.65
-      && assigned.every(other => Math.hypot(other.slotX - px, other.slotZ - pz) > .95);
+      && assigned.every(other => Math.hypot(other.slotX - px, other.slotZ - pz) > .95) && inView(px, pz);
     // If a wall fills the lead bird's view, find the group a place to the side.
     const ground = groundNear(nominal.x, nominal.z, available) || groundNear(leader.x, leader.z, available);
     if (ground) { b.slotX = ground.x; b.slotZ = ground.z; }
@@ -313,9 +329,11 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
       keyStory?.update(dt,time,state,visits?.holdLeader());
     }
     // Active visits and key scenes keep ownership of the camera and their birds.
-    disputes.update(dt, time, visits?.holdLeader() || keyStory?.targets.size);
+    const calling = rollCall.state.targetId !== null || (rollCall.state.phase === 'idle' && rollCall.state.answered.length > 0);
+    disputes.update(dt, time, visits?.holdLeader() || keyStory?.targets.size || calling);
     if (encounterWasActive && disputes.state.phase === 'idle') readySince = time;
-    pranks.update(dt, time, state.phase, visits?.perches, occupied);
+    pranks.update(dt, time, state.phase, visits?.perches, busyForPranks);
+    treePrank.update(dt, time, busyForTrees);
     const sinHeading = Math.sin(heading), cosHeading = Math.cos(heading);
     let assembled = 1;
     for (let i = 1; i < allBirds.length; i++) {
@@ -324,6 +342,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
       const storyTarget = keyStory?.targets.get(b.id);
       const prankTarget = pranks.targets.get(b.id);
       const encounterTarget = disputes.targets.get(b.id);
+      const branch = treePrank.targets.get(b.id);
       if (perch) {
         if (visits.state.phase === 'sitting') {
           // A settled guest stays put. Passing neighbours still steer around it.
@@ -343,6 +362,8 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
         steer(b, prankTarget.x, chest, prankTarget.z, dt, false);
       } else if (time < b.breakUntil) {
         steer(b, b.roamX, b.breakHeight, b.roamZ, dt, false);
+      } else if (branch) {
+        if (!branch.perched) steer(b, branch.x, branch.y, branch.z, dt, false);
       } else if (!b.called) {
         if (time >= b.roamAt) chooseForage(b);
         steer(b, b.roamX, chest, b.roamZ, dt, false);
@@ -360,19 +381,22 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
       if (b.inParty) assembled++;
     }
     state.partySize = assembled;
-    if (gathering && assembled === state.targetSize && state.phase !== 'ready') {
+    if (gathering && disputes.state.phase === 'idle') rollCall.update(dt, pose, state.targetSize);
+    if (gathering && assembled === state.targetSize && state.phase !== 'ready'
+        && rollCall.state.phase === 'done' && Math.abs(angleDelta(leader.yaw, heading)) < .22) {
       state.phase = 'ready'; readySince = time; state.searchYaw = null;
     } else if (gathering && assembled < state.targetSize) state.phase = 'gather';
     if (keyStory?.targets.size) state.searchYaw = bearing(leader,keyStory.state);
     else if (visits?.state.kind) state.searchYaw = bearing(leader, visits.state);
     else if (gathering && disputes.state.phase !== 'idle') state.searchYaw = bearing(leader, disputes.state);
+    else if (gathering && rollCall.state.phase === 'done' && state.phase !== 'ready') state.searchYaw = heading;
     else if (gathering && pranks.state.actorId !== null) {
       const actor = birds[pranks.state.actorId], look = bearing(leader, actor);
       if (distance(leader, actor) < 12 && Math.abs(angleDelta(leader.yaw, look)) < 1.35) state.searchYaw = look;
     }
   }
 
-  return {birds, allBirds, state, visit:visits?.state, prank:pranks.state, keyStory:keyStory?.state, dispute:disputes.state, update,
+  return {birds, allBirds, state, rollCall:rollCall.state, treePrank:treePrank.state, visit:visits?.state, prank:pranks.state, keyStory:keyStory?.state, dispute:disputes.state, update,
     canTakeOff: () => state.phase === 'ready' && !visits?.holdLeader() && !keyStory?.targets.size
       && disputes.state.phase === 'idle' && time - readySince >= .7};
 }

@@ -39,7 +39,7 @@ function leafSpray() {
 export function addCourtyardTrees(scene, materials, circles) {
   if (!circles?.length) return;
   const random = seeded(14046), branches = [], foliage = [], up = new THREE.Vector3(0,1,0);
-  const crowns = [];
+  const crowns = [], perches = [];
   const dummy = new THREE.Object3D();
   const branch = (a,b,radius) => {
     const direction = b.clone().sub(a);
@@ -51,7 +51,7 @@ export function addCourtyardTrees(scene, materials, circles) {
   };
   for (const tree of circles) {
     const height = 4.6 + random() * 1.4;
-    const root = new THREE.Vector3(tree.x,0,tree.z);
+    const root = new THREE.Vector3();
     const fork = root.clone().add(new THREE.Vector3(.12, height*.44, -.04));
     const crown = fork.clone().add(new THREE.Vector3(-.19, height*.49, .15));
     branch(root,fork,tree.radius);
@@ -63,6 +63,11 @@ export function addCourtyardTrees(scene, materials, circles) {
       const base = fork.clone().lerp(crown,level);
       const tip = base.clone().add(new THREE.Vector3(Math.cos(angle)*radius,.48+random()*.37,Math.sin(angle)*radius));
       branch(base,tip, .069-.034*level);
+      if (i < 7 && i % 2 === 0) {
+        const local = base.clone().lerp(tip,.83);
+        local.y += .069-.034*level;
+        perches.push({treeId:tree.id, local, x:tree.x+local.x, y:local.y, z:tree.z+local.z});
+      }
       for (let j=0;j<5;j++) {
         const origin=base.clone().lerp(tip,.30+.15*j);
         const twigAngle=angle+(j%2 ? .95 : -.95);
@@ -79,18 +84,25 @@ export function addCourtyardTrees(scene, materials, circles) {
       }
     }
   }
-  const wood=new THREE.InstancedMesh(new THREE.CylinderGeometry(.7,1,1,7),materials.bark(),branches.length);
-  branches.forEach((matrix,i)=>wood.setMatrixAt(i,matrix));
-  wood.name='courtyard-tree-branches';
+  const branchGeometry=new THREE.CylinderGeometry(.7,1,1,7), bark=materials.bark();
   const leafMaterial=new THREE.MeshLambertMaterial({
     vertexColors:true, side:THREE.DoubleSide,
   });
   const tint=new THREE.Color();
-  scene.add(wood);
   // Give each crown its own frustum bounds. Two distant trees used to form
   // one large sphere which intersected the camera even with both behind it.
   const perTree = foliage.length / circles.length;
-  circles.forEach(({x,z}, treeIndex) => {
+  const limbsPerTree = branches.length / circles.length;
+  circles.forEach(({id,x,z}, treeIndex) => {
+    const pivot = new THREE.Group();
+    pivot.name = id;
+    pivot.position.set(x,0,z);
+    const wood = new THREE.InstancedMesh(branchGeometry, bark, limbsPerTree);
+    for (let i=0; i<limbsPerTree; i++) {
+      wood.setMatrixAt(i,branches[treeIndex*limbsPerTree+i]);
+      wood.setColorAt(i,tint.setHex(i < 2 ? 0xffffff : i % 6 === 2 ? 0xb9aa91 : 0x6a6252));
+    }
+    wood.name = 'courtyard-tree-branches-' + treeIndex;
     const geometry = leafSpray();
     const leaves = new THREE.InstancedMesh(geometry, leafMaterial, perTree);
     for (let i=0; i<perTree; i++) {
@@ -98,9 +110,33 @@ export function addCourtyardTrees(scene, materials, circles) {
       leaves.setColorAt(i,tint.setRGB(.71+random()*.24,.72+random()*.21,.54+random()*.27));
     }
     leaves.name = 'courtyard-tree-foliage-' + treeIndex;
-    scene.add(leaves);
-    crowns.push({x,z,geometry, full:geometry.drawRange.count});
+    pivot.add(wood,leaves);
+    scene.add(pivot);
+    crowns.push({id,x,z,pivot,geometry, full:geometry.drawRange.count,
+      seats:perches.filter(p => p.treeId === id), bend:0, velocity:0, axis:new THREE.Vector3()});
   });
+  const point = new THREE.Vector3();
+  scene.userData.crowTrees = {
+    perches,
+    rock(perch, impulse) {
+      const crown = crowns.find(c => c.id === perch.treeId);
+      crown.axis.set(perch.local.z,0,-perch.local.x).normalize();
+      crown.velocity = Math.min(1.35,crown.velocity + impulse);
+    },
+    update(dt) {
+      for (const c of crowns) {
+        if (!c.bend && !c.velocity) continue;
+        c.velocity += (-42*c.bend - 2.6*c.velocity)*dt;
+        c.bend += c.velocity*dt;
+        if (Math.abs(c.bend)<.0004 && Math.abs(c.velocity)<.002) c.bend=c.velocity=0;
+        c.pivot.quaternion.setFromAxisAngle(c.axis,c.bend);
+        for (const perch of c.seats) {
+          point.copy(perch.local).applyQuaternion(c.pivot.quaternion);
+          perch.x = c.x + point.x; perch.y = point.y; perch.z = c.z + point.z;
+        }
+      }
+    },
+  };
   scene.userData.updateTreeDetail = (position, level) => {
     for (const {x,z,geometry,full} of crowns) {
       const distance = Math.hypot(position.x-x, position.y-4, position.z-z);

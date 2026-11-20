@@ -153,7 +153,24 @@ export function createYardMaterials() {
       return surface('plaster', 1, 1, color);
     },
     bark() {
-      return surface('bark', 1, 2);
+      const map = canvasTexture(256,256,(ctx,width,height) => {
+        let seed = 723;
+        const random = () => ((seed = (Math.imul(1664525,seed)+1013904223) >>> 0) / 4294967296);
+        ctx.fillStyle = '#cfc9b6';
+        ctx.fillRect(0,0,width,height);
+        for (let i=0; i<330; i++) {
+          const x=random()*width, y=random()*height;
+          const length=2+random()**2*38, thick=.5+random()**3*4;
+          ctx.fillStyle = i%6 === 0 ? '#59554b' : i%3 === 0 ? '#aaa38f' : '#e5ddca';
+          for (const dx of [x-width,x]) {
+            ctx.beginPath();
+            ctx.moveTo(dx,y); ctx.lineTo(dx+.65*length,y-thick);
+            ctx.lineTo(dx+length,y+.4*thick); ctx.lineTo(dx+.3*length,y+.3*thick);
+            ctx.fill();
+          }
+        }
+      },{repeat:true});
+      return new THREE.MeshStandardMaterial({map,bumpMap:map,bumpScale:.013,roughness:.94});
     },
     paintedMetal(color) {
       return surface('paint', 1, 1, color);

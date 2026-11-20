@@ -247,22 +247,28 @@ export function createAutoWalk(layout, { random = Math.random, openingView = lay
     const [x, z] = path.at(metres);
     const ahead = path.at(metres + 1.8 + 4 * airborne), behind = path.at(metres - 0.6);
     let heading = Math.atan2(ahead[0] - behind[0], behind[1] - ahead[1]) + glanceSide * 0.3 * glance;
-    if (waiting && Number.isFinite(flock.state.searchYaw)) {
+    const call = waiting && flock.rollCall?.targetId != null ? flock.rollCall : null;
+    if (call) {
+      heading = call.yaw;
+    } else if (waiting && Number.isFinite(flock.state.searchYaw)) {
       heading += clamp(angleBetween(heading, flock.state.searchYaw), -1.15, 1.15) * ease(progress);
     }
     const turn = angleBetween(pose.yaw, heading);
-    const acceleration = clamp(2.6 * turn - 2.8 * turnRate, -0.78, 0.78);
-    turnRate = clamp(turnRate + acceleration * step, -0.87, 0.87);
+    const acceleration = call ? clamp(12 * turn - 7 * turnRate, -3.6, 3.6)
+      : clamp(2.6 * turn - 2.8 * turnRate, -0.78, 0.78);
+    const turnLimit = call ? 1.62 : .87;
+    turnRate = clamp(turnRate + acceleration * step, -turnLimit, turnLimit);
     pose.x = x;
     pose.z = z;
     pose.yaw += turnRate * step;
     const climbRate = (toHeight - fromHeight) * 6 * progress * (1 - progress) / duration;
-    const targetPitch = 0.04 - 0.22 * airborne - 0.16 * glance + 0.19 * Math.atan2(climbRate, speed);
-    pose.pitch += clamp((targetPitch - pose.pitch) * 2, -0.24, 0.24) * step;
+    const targetPitch = call ? call.pitch : 0.04 - 0.22 * airborne - 0.16 * glance + 0.19 * Math.atan2(climbRate, speed);
+    pose.pitch += call ? clamp((targetPitch - pose.pitch) * 12, -.85, .85) * step
+      : clamp((targetPitch - pose.pitch) * 2, -.24, .24) * step;
     // A coordinated bank leads into the corner, while the eyes keep the
     // horizon steadier than the wings. Wing strokes disappear into a glide.
     const bank = airborne * clamp(-0.6 * Math.atan(groundSpeed * turnRate / 9.81), -0.3, 0.3);
-    pose.roll += (bank - pose.roll) * 2.2 * step;
+    pose.roll += ((call ? call.tilt : bank) - pose.roll) * (call ? 10 : 2.2) * step;
     const stroke = mode === 'flap' || mode === 'takeoff'
       ? Math.sin(Math.PI * progress) ** 2 * Math.sin(2 * Math.PI * 3.1 * elapsed) : 0;
     pose.eyeOffset = 0.017 * (1 - airborne) * Math.sin(stride) + 0.027 * airborne * stroke;
