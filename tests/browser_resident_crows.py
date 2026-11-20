@@ -160,7 +160,14 @@ def check(browser, mobile):
         else:
             assert max(b["travel"] for b in meeting["neighbours"]) > .6, meeting
         frames = page.evaluate("visitQA.frames")
-        page.wait_for_function("n=>visitQA.frames>=n+6 && document.querySelector('.room-resident[data-in-courtyard]')", arg=frames)
+        # Seeking jumps straight to a seated flock. Let the visible body finish
+        # moving from the previous layer before checking its seated silhouette.
+        page.wait_for_function("""n=>{
+          const {model}=visitQA.frame, seat=visitQA.flock.visit;
+          return visitQA.frames>=n+6 && document.querySelector('.room-resident[data-in-courtyard]')
+            && Math.hypot(model.position.x-seat.x,model.position.y-seat.y,model.position.z-seat.z)<.01
+            && model.scale.y>.99;
+        }""", arg=frames)
         report = page.evaluate("visitQA.silhouettes()")
         assert report["rendered"] and report["residents"] == 1 and report["lifted"] > .15, report
         assert min(report["residentPixels"], report["neighbourPixels"]) >= 8, (device, kind, report, meeting)
