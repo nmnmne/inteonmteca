@@ -1,6 +1,7 @@
 import * as THREE from './vendor/three.module.js';
 import { CROW_WALL_CONTACT_M } from './crow-wall-contact.js';
 import { createCrowKeyDoor } from './crow-key-door.js';
+import { createCrowBeaconPair } from './crow-beacon-pair.js';
 
 const clamp = (n, low, high) => Math.max(low, Math.min(high, n));
 
@@ -486,12 +487,18 @@ export function createCrowModels(wallContact = null, count = 12) {
   transform.rotation.order='YXZ';
   const spread=new Float32Array(count), amplitude=new Float32Array(count);
   let initialized=false;
-  let keyDoor=null;
-  function update(members,dt,digital=0,daylight=1,story=null) {
+  let keyDoor=null, beaconPair=null;
+  const emitters = [{},{}];
+  function update(members,dt,digital=0,daylight=1,story=null,exchange=null) {
     if (story && story.phase!=='idle' && digital<.12 && !keyDoor) {
       keyDoor=createCrowKeyDoor(); group.add(keyDoor.group);
     }
     keyDoor?.update(digital<.12 ? story : null);
+    const inStory = story && story.phase!=='idle';
+    const pair = digital<.12 && (inStory ? story.beacons : exchange);
+    const firstId = pair && (inStory ? story.thief : pair.sender.id);
+    const secondId = pair && (inStory ? story.accomplice : pair.recipient.id);
+    let first = null, second = null;
     const response=initialized?1-Math.exp(-Math.max(0,dt)*9):1;
     const elapsed=members[0]?.elapsed || 0;
     birds.count=shadows.count=Math.min(count,Math.max(0,members.length-1));
@@ -525,12 +532,24 @@ export function createCrowModels(wallContact = null, count = 12) {
       transform.rotation.set(pitch,-bird.yaw,bird.bank,'YXZ');
       transform.scale.setScalar(.97+.06*((i*7)%11)/10);
       transform.updateMatrix(); birds.setMatrixAt(i,transform.matrix);
+      if (bird.id===firstId || bird.id===secondId) {
+        const lamp = bird.id===firstId ? emitters[0] : emitters[1];
+        Object.assign(lamp,{x:bird.x,y:bird.y,z:bird.z,yaw:bird.yaw,gait,air,pitch,bank:bird.bank,
+          hop:pose?.hop || 0,scale:transform.scale.x});
+        if (bird.id===firstId) {first=lamp; first.pulse=(inStory ? pair.thief : pair.sender).pulse;}
+        else {second=lamp; second.pulse=(inStory ? pair.accomplice : pair.recipient).pulse;}
+      }
       const contact=clamp(1-(height-.20)/1.45,0,1);
       transform.position.set(bird.x,.052,bird.z+.008);
       transform.rotation.set(0,-bird.yaw,0,'YXZ');
       transform.scale.set(.35*contact,1,.63*contact);
       transform.updateMatrix(); shadows.setMatrixAt(i,transform.matrix);
     }
+    if (!beaconPair && first && second) {
+      beaconPair = createCrowBeaconPair();
+      group.add(beaconPair.group);
+    }
+    beaconPair?.update(first,second);
     initialized=true;
     wingTips.needsUpdate=true;
     motions.needsUpdate=strides.needsUpdate=birds.instanceMatrix.needsUpdate=shadows.instanceMatrix.needsUpdate=true;
@@ -546,6 +565,7 @@ export function createCrowModels(wallContact = null, count = 12) {
   return {group, update, dispose(){
     group.removeFromParent();
     keyDoor?.dispose();
+    beaconPair?.dispose();
     birds.dispose(); shadows.dispose();
     geometry.dispose(); shadowGeometry.dispose(); plumage.dispose(); shadowsMaterial.dispose();
   }};

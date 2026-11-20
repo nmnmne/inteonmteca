@@ -23,6 +23,34 @@ function makeCall(context, variant) {
   return clip;
 }
 
+function addWindReflections(context, windGain, bus) {
+  // Two diminishing reflections from the facing buildings, without feedback.
+  let reflected = windGain;
+  for (const [travel, level] of [[.19, .24], [.24, .10]]) {
+    const delay = context.createDelay(.5), send = context.createGain();
+    delay.delayTime.value = travel;
+    send.gain.value = level;
+    reflected.connect(delay).connect(send).connect(bus);
+    reflected = delay;
+  }
+
+  const rate = context.sampleRate, length = Math.ceil(rate * .84);
+  const impulse = context.createBuffer(2, length, rate);
+  const scale = 6 / Math.sqrt(length);
+  for (let side = 0; side < 2; side++) {
+    const channel = impulse.getChannelData(side);
+    for (let i = 0; i < length; i++) {
+      const t = i / rate;
+      channel[i] = (Math.random() * 2 - 1) * scale * Math.min(1, t / .035) * Math.exp(-6 * i / length);
+    }
+  }
+  const reverb = context.createConvolver(), wet = context.createGain();
+  reverb.normalize = false;
+  reverb.buffer = impulse;
+  wet.gain.value = .23;
+  windGain.connect(reverb).connect(wet).connect(bus);
+}
+
 function makeAmbience(context) {
   const bus = context.createGain();
   bus.gain.value = 0;
@@ -36,17 +64,30 @@ function makeAmbience(context) {
   air.buffer = noise;
   air.loop = true;
   const wind = context.createBiquadFilter(), rain = context.createBiquadFilter();
-  wind.type = 'bandpass'; wind.Q.value = .56;
+  wind.type = 'bandpass'; wind.Q.value = .85;
   rain.type = 'highpass'; rain.frequency.value = 2350;
   const windGain = context.createGain(), rainGain = context.createGain();
   windGain.gain.value = rainGain.gain.value = 0;
   air.connect(wind).connect(windGain).connect(bus);
   air.connect(rain).connect(rainGain).connect(bus);
+  addWindReflections(context, windGain, bus);
   air.start();
   const calls = [0,1,2].map(i => makeCall(context, i));
   const reverse = context.createBuffer(1, calls[2].length, calls[2].sampleRate);
   reverse.getChannelData(0).set(calls[2].getChannelData(0));
   reverse.getChannelData(0).reverse();
+
+  let gustStart = context.currentTime + 1 + Math.random() * 1.8;
+  let gustLength = 3 + Math.random() * 2, gustStrength = .8;
+  function windEnvelope(t) {
+    if (t >= gustStart + gustLength) {
+      gustStart = t + 3.5 + Math.random() * 6;
+      gustLength = 2.8 + Math.random() * 2.8;
+      gustStrength = .62 + Math.random() * .38;
+    }
+    if (t <= gustStart) return 0;
+    return gustStrength * Math.sin(Math.PI * (t - gustStart) / gustLength) ** 2;
+  }
 
   function call(clip, when, rate, volume, pan) {
     const source = context.createBufferSource(), gain = context.createGain();
@@ -62,11 +103,11 @@ function makeAmbience(context) {
   }
   return {
     update(weather, master, playing, bass) {
-      const t = context.currentTime, gust = .58 + .24 * Math.sin(t * .58) + .18 * Math.sin(t * 1.37);
+      const t = context.currentTime, gust = windEnvelope(t);
       bus.gain.setTargetAtTime(master * (playing ? .48 : .95), t, .12);
-      wind.frequency.setTargetAtTime(180 + (weather.autumn * 500 + weather.spring * 190 + 125) * gust + bass * 135, t, .45);
-      windGain.gain.setTargetAtTime(.048 + .105 * weather.autumn + .047 * weather.snow + .045 * gust, t, .45);
-      rainGain.gain.setTargetAtTime(.002 + .064 * weather.rain + .009 * weather.summer, t, .5);
+      wind.frequency.setTargetAtTime(410 + gust * (260 + weather.autumn * 330 + weather.spring * 170 + bass * 95), t, .28);
+      windGain.gain.setTargetAtTime(.005 + gust * (.046 + .03 * weather.autumn + .014 * weather.snow), t, .18);
+      rainGain.gain.setTargetAtTime(.001 + .035 * weather.rain + .004 * weather.summer, t, .5);
     },
     flockCall(index, pan, volume, delay, beat, magical) {
       const t = context.currentTime + delay + .015, clip = calls[index % calls.length];
@@ -119,11 +160,11 @@ export function createYardSound(view = () => initialView) {
     if (!master || now < nextCall || (playing && !accent && now < nextCall + 1.1)) return;
     const nearby = (location.birds || []).filter(b => b.id !== 0 && Math.hypot(b.x-location.x, b.z-location.z) < 42);
     const bird = nearby[Math.floor(Math.random() * nearby.length)];
-    let pan = .85 * Math.sin(callNumber * 2.4), volume = .12;
+    let pan = .85 * Math.sin(callNumber * 2.4), volume = .20;
     if (bird) {
       const dx = bird.x - location.x, dz = bird.z - location.z, length = Math.hypot(dx, dz);
       pan = clamp((Math.cos(location.yaw) * dx + Math.sin(location.yaw) * dz) / Math.max(3, length), -.93, .93);
-      volume = .19 / (1 + length / 31);
+      volume = .32 / (1 + length / 31);
     }
     const {beat, delay} = playing ? readBeat(engine, media) : {beat:.5, delay:0};
     const magical = playing && (callNumber % 4 === 2 || (accent && Math.random() < .22));

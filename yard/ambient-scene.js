@@ -127,7 +127,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
         solar.update(Date.now(), camera);
         if (yard.roofPigeons.group.visible) yard.roofPigeons.update(reducedMotion.matches ? 0 : dt, camera);
         crowModels.update(flock.allBirds, dt, yard.scene.userData.virtuality, yard.scene.userData.solarLighting.daylight,
-          reducedMotion.matches ? null : flock.keyStory);
+          reducedMotion.matches ? null : flock.keyStory, reducedMotion.matches ? null : flock.beacons);
         resident?.update(flock.visit, camera, yard.scene.userData.solarLighting.daylight,
           yard.scene.userData.virtuality, reducedMotion.matches ? 0 : dt);
         ripplePuddles(now / 1000);
@@ -167,9 +167,10 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     const aspect = canvas.clientWidth / Math.max(1, canvas.clientHeight);
     const openingView = ambientOpeningView(layout, aspect);
     const residentVisits = Boolean(document.querySelector('.room-presence'));
+    const allowCrowSignals = () => !reducedMotion.matches && (yard?.scene.userData.virtuality || 0)<.12;
     flock = createCrowFlock(layout, openingView, {residentVisits,
-      crowTrees:() => !reducedMotion.matches && (yard?.scene.userData.virtuality || 0)<.12 && yard?.scene.userData.crowTrees,
-      allowKeyStory:() => !reducedMotion.matches && (yard?.scene.userData.virtuality || 0)<.12});
+      crowTrees:() => allowCrowSignals() && yard?.scene.userData.crowTrees,
+      allowKeyStory:allowCrowSignals, allowBeacons:allowCrowSignals});
     walk = createAutoWalk(layout, { openingView, flock });
     const lighting = solarLighting(courtyardSunForLocation(layout.origin, Date.now()));
     yard = createYardScene(layout, lighting, {

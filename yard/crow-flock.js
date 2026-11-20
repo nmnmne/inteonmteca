@@ -5,6 +5,7 @@ import { createCrowKeyStory } from './crow-key-story.js';
 import { createCrowDisputes } from './crow-disputes.js';
 import { createCrowRollCall } from './crow-roll-call.js';
 import { createCrowTreePrank } from './crow-tree-prank.js';
+import { createCrowBeaconExchange } from './crow-beacon-exchange.js';
 
 const count = 13;
 const chest = 0.20;
@@ -16,7 +17,7 @@ const distance = (a, b) => Math.hypot(b.x - a.x, b.z - a.z);
 
 // One social simulation for the first-person bird and its twelve neighbours.
 // The ordinary birds persist when they split off. No bird is spawned at a reunion.
-export function createCrowFlock(layout, openingView, { random = Math.random, residentVisits = false, allowKeyStory, crowTrees } = {}) {
+export function createCrowFlock(layout, openingView, { random = Math.random, residentVisits = false, allowKeyStory, crowTrees, allowBeacons = () => true } = {}) {
   const range = (a, b) => a + (b - a) * random();
   const integer = (a, b) => Math.min(b, Math.floor(range(a, b + 1)));
   const birds = [];
@@ -82,6 +83,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
   const busyForPranks = {has: id => id === rollCall.state.targetId || keyStory?.targets.has(id) || disputes.reserved(birds[id])};
   const treePrank = createCrowTreePrank(birds, crowTrees);
   const busyForTrees = {has: id => busyForPranks.has(id) || pranks.targets.has(id) || visits?.perches.has(id)};
+  const beacons = createCrowBeaconExchange(birds,clearGround,{has:id=>busyForTrees.has(id) || treePrank.targets.has(id)});
 
   function shuffle(list) {
     for (let i = list.length - 1; i > 0; i--) {
@@ -381,6 +383,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
       if (b.inParty) assembled++;
     }
     state.partySize = assembled;
+    beacons.update(time, allowBeacons() && (!keyStory || keyStory.state.phase==='idle'));
     if (gathering && disputes.state.phase === 'idle') rollCall.update(dt, pose, state.targetSize);
     if (gathering && assembled === state.targetSize && state.phase !== 'ready'
         && rollCall.state.phase === 'done' && Math.abs(angleDelta(leader.yaw, heading)) < .22) {
@@ -397,6 +400,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
   }
 
   return {birds, allBirds, state, rollCall:rollCall.state, treePrank:treePrank.state, visit:visits?.state, prank:pranks.state, keyStory:keyStory?.state, dispute:disputes.state, update,
+    get beacons() { return beacons.current; },
     canTakeOff: () => state.phase === 'ready' && !visits?.holdLeader() && !keyStory?.targets.size
       && disputes.state.phase === 'idle' && time - readySince >= .7};
 }

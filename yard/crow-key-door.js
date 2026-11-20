@@ -68,6 +68,71 @@ function createKeyConstellation() {
   return lights;
 }
 
+// A shallow inlay stands above the asphalt; even the shut grate shows the dark
+// recess through its slots. The lid's geometry starts at its hinge.
+function createThiefCache() {
+  const cache=new THREE.Group();
+  cache.name='crow-key-cache';
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(.56,.42),new THREE.MeshBasicMaterial({color:0x0d141b}));
+  floor.name='crow-cache-recess';
+  floor.rotation.x=-Math.PI/2;
+  const plate=new THREE.Shape();
+  plate.moveTo(-.28,0); plate.lineTo(.28,0); plate.lineTo(.28,.42); plate.lineTo(-.28,.42); plate.closePath();
+  for(let i=0;i<6;i++) {
+    const l=-.251+i*.085, r=l+.057;
+    const slot=new THREE.Path();
+    slot.moveTo(l,.047);slot.lineTo(l,.373);slot.lineTo(r,.373);slot.lineTo(r,.047);slot.closePath();
+    plate.holes.push(slot);
+  }
+  const grate=new THREE.Mesh(new THREE.ExtrudeGeometry(plate,{depth:.014,bevelEnabled:false}),
+    new THREE.MeshStandardMaterial({color:0x788383,emissive:0x202523,roughness:.67,metalness:.42}));
+  grate.name='crow-cache-grate'; grate.position.set(0,.011,.21);
+  cache.add(floor,grate);
+  // Two jagged wax halves with the broken brass wire lying between them.
+  const seal=new THREE.Mesh(new THREE.PlaneGeometry(.32,.23), new THREE.ShaderMaterial({
+    uniforms:{amount:{value:0}}, transparent:true,depthWrite:false,
+    vertexShader:`varying vec2 mark;void main(){mark=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`varying vec2 mark;uniform float amount;
+      void main(){
+        vec2 p=mark-.5;
+        float seam=.017*sin(27.*p.y)+.024*sin(49.*p.y);
+        vec2 q=vec2(p.x-sign(p.x)*.066,p.y);
+        float wax=1.-smoothstep(.234,.25,length(q*vec2(1.28,1.)));
+        wax*=smoothstep(.053,.068,abs(p.x-seam));
+        float wireY=.074*sin(11.*p.x)+.14*p.x;
+        float wire=(1.-smoothstep(.012,.025,abs(p.y-wireY)))*smoothstep(.075,.095,abs(p.x));
+        float impression=1.-smoothstep(.006,.023,abs(length(q*vec2(1.28,1.))-.168));
+        float alpha=max(wax,wire)*amount;
+        if(alpha<.008)discard;
+        vec3 ink=mix(vec3(.69,.39,.12),vec3(.39,.033,.019)+impression*vec3(.26,.09,.034),wax);
+        gl_FragColor=vec4(ink,alpha);
+        #include <colorspace_fragment>
+      }`
+  }));
+  seal.name='crow-torn-seal';
+  for(const obj of [floor,grate,seal]) obj.userData.bakedShadowCaster=obj.userData.bakedShadowReceiver=false;
+  return {cache,seal,update(story){
+    cache.visible=Boolean(story.cache);
+    if(cache.visible) {
+      cache.position.set(story.cache.x,.072,story.cache.z);
+      cache.rotation.y=-story.yaw;
+      cache.updateMatrix();
+      grate.rotation.x=-Math.PI/2+THREE.MathUtils.clamp(story.cache.open || 0,0,1)*1.25;
+      grate.updateMatrix();
+    }
+    const amount=THREE.MathUtils.clamp(story.evidence || 0,0,1);
+    seal.visible=amount>.002;
+    if(seal.visible) {
+      seal.position.set(story.x,.077,story.z);
+      seal.rotation.set(-Math.PI/2,-story.yaw,0,'YXZ');
+      seal.material.uniforms.amount.value=amount;
+      seal.updateMatrix();
+    }
+  }, dispose(){
+    for(const obj of [floor,grate,seal]) {obj.geometry.dispose();obj.material.dispose();}
+  }};
+}
+
 export function createCrowKeyDoor() {
   const group=new THREE.Group();
   group.name='crows-thirteenth-door';
@@ -117,11 +182,12 @@ export function createCrowKeyDoor() {
   door.name='crow-key-doorway'; key.name='crow-brass-key'; echo.name='crow-key-double';
   door.userData.bakedShadowReceiver=key.userData.bakedShadowReceiver=echo.userData.bakedShadowReceiver=false;
   spill.userData.bakedShadowCaster=spill.userData.bakedShadowReceiver=false;
-  const constellation=createKeyConstellation();
-  group.add(door,key,echo,spill,constellation); group.visible=false;
+  const constellation=createKeyConstellation(), props=createThiefCache();
+  group.add(door,key,echo,spill,constellation,props.cache,props.seal); group.visible=false;
   function update(story) {
     group.visible=Boolean(story && story.phase!=='idle');
     if (!group.visible) return;
+    props.update(story);
     const {yaw,door:open}=story, k=story.key;
     key.position.set(k.x,k.y,k.z);
     // On the ground the bow lies flat. It lifts until the profile faces the viewer.
@@ -163,5 +229,6 @@ export function createCrowKeyDoor() {
     group.removeFromParent(); geometry.dispose(); brass.dispose(); door.geometry.dispose(); door.material.dispose();
     spill.geometry.dispose(); spill.material.dispose();
     constellation.geometry.dispose(); constellation.material.dispose();
+    props.dispose();
   }};
 }
