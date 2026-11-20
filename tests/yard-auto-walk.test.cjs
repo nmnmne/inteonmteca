@@ -2,6 +2,28 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const layout = require('../yard/data/site-layout.json');
 
+test('the arrival frames the signed wall in landscape and portrait before settling into flight', async () => {
+  const { ambientOpeningView, createAutoWalk } = await import('../yard/auto-walk.js');
+  const [a, b] = layout.musicWall.segment;
+  for (const aspect of [1.6, 0.5, 390 / 844]) {
+    const pose = ambientOpeningView(layout, aspect);
+    const halfWidth = aspect * Math.tan(pose.fov * Math.PI / 360);
+    const wallScreenX = fraction => {
+      const x = a[0] + (b[0] - a[0]) * fraction;
+      const z = a[1] + (b[1] - a[1]) * fraction;
+      const bearing = Math.atan2(x - pose.x, pose.z - z);
+      return 0.5 + 0.5 * Math.tan(bearing - pose.yaw) / halfWidth;
+    };
+    assert.ok(wallScreenX(0.5) > 0.4 && wallScreenX(0.5) < 0.8);
+    if (aspect > 1) {
+      for (const end of [0.1, 0.75]) assert.ok(wallScreenX(end) > 0 && wallScreenX(end) < 0.95);
+    }
+    const crow = createAutoWalk(layout, { openingView: pose, random: () => 0.3 });
+    assert.equal(crow.update(0).fov, pose.fov);
+    assert.equal(crow.update(8).fov, 64);
+  }
+});
+
 test('the backdrop crosses a house, returns to open ground and traverses all map sectors and edges', async () => {
   const { createAutoWalk } = await import('../yard/auto-walk.js');
   const { pointInRing } = await import('../yard/navigation.js');
@@ -34,14 +56,16 @@ test('the backdrop crosses a house, returns to open ground and traverses all map
       if (outside.size > 0 && pointInRing(x, z, layout.virtualBoundary.noticeableRing)) backInside ??= i * dt;
     }
     const speed = Math.hypot(x - previous.x, z - previous.z) / dt;
-    assert.ok(speed <= layout.movement.speedMps + 1e-6, 'teleport between destinations');
+    assert.ok(speed <= 8.5 + 1e-6, 'teleport between destinations');
     if (i > 30) assert.ok(speed > 0.005, 'unexpected stationary interval');
     travelled += speed * dt;
     const turn = (pose.yaw - previous.yaw) / dt;
-    assert.ok(Math.abs(turn) < 0.56, 'turn speed');
-    assert.ok(Math.abs(turn - previousTurn) < 0.35 * dt, 'abrupt change in turn speed');
-    assert.ok(Math.abs(pose.pitch - previous.pitch) < 0.036 * dt);
-    assert.ok(Math.abs(pose.eyeOffset) < 0.0041);
+    assert.ok(Math.abs(turn) < .88, 'turn speed');
+    assert.ok(Math.abs(turn - previousTurn) < .79 * dt, 'abrupt change in turn speed');
+    assert.ok(Math.abs(pose.pitch - previous.pitch) <= .241 * dt);
+    assert.ok(Math.abs(pose.roll - previous.roll) < .65 * dt);
+    assert.ok(Math.abs(pose.y - previous.y) < 5.5 * dt);
+    assert.ok(Math.abs(pose.eyeOffset) < .028);
     previousTurn = turn;
     previous = { ...pose };
   }
@@ -53,6 +77,37 @@ test('the backdrop crosses a house, returns to open ground and traverses all map
   assert.ok(travelled > 900 * layout.movement.speedMps * 0.98);
 });
 
+test('the crow walks on open ground, climbs, alternates wingbeats and glides, and lands', async () => {
+  const { createAutoWalk, ambientOpeningView } = await import('../yard/auto-walk.js');
+  const { isWalkable } = await import('../yard/navigation.js');
+  const opening = ambientOpeningView(layout);
+  const walk = createAutoWalk(layout, { random: () => .3, openingView:opening });
+  assert.equal(walk.pose.y,layout.movement.eyeM);
+  assert.equal(walk.pose.yaw,opening.yaw);
+  const phases = new Set();
+  let previous = { ...walk.pose }, touchdowns = 0, peak = 0, bank = 0, wingbeat = 0;
+  for (let i=0; i<3600; i++) {
+    const pose = walk.update(.05);
+    phases.add(pose.mode);
+    if (previous.mode === 'land' && pose.mode === 'walk') {
+      assert.ok(isWalkable(layout, pose.x, pose.z, .3), 'touchdown needs clear ground');
+      touchdowns++;
+    }
+    if (pose.mode === 'walk') {
+      assert.ok(pose.y > .38 && pose.y < .46, 'head stays at crow height while walking');
+    } else if (pose.mode === 'flap') {
+      wingbeat = Math.max(wingbeat,Math.abs(pose.eyeOffset));
+    } else if (pose.mode === 'glide') {
+      assert.equal(pose.eyeOffset,0,'head settles in the glide');
+    }
+    bank = Math.max(bank,Math.abs(pose.roll));
+    peak = Math.max(peak,pose.y);
+    previous = { ...pose };
+  }
+  assert.deepEqual(phases,new Set(['walk','takeoff','flap','glide','land']));
+  assert.ok(touchdowns >= 2 && peak > 10 && bank > .10 && wingbeat > .02);
+});
+
 test('camera pose after equal elapsed time is independent of the display frame rate', async () => {
   const { createAutoWalk } = await import('../yard/auto-walk.js');
   const poses = [12, 30, 60].map(fps => {
@@ -61,7 +116,8 @@ test('camera pose after equal elapsed time is independent of the display frame r
     return walk.pose;
   });
   for (const pose of poses.slice(1)) {
-    for (const key of ['x', 'z', 'yaw', 'pitch', 'eyeOffset']) {
+    assert.equal(poses[0].mode,pose.mode);
+    for (const key of ['x', 'y', 'z', 'yaw', 'pitch', 'roll', 'eyeOffset']) {
       assert.ok(Math.abs(pose[key] - poses[0][key]) < 1e-7, key);
     }
   }

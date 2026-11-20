@@ -1,5 +1,6 @@
 import * as THREE from './vendor/three.module.js';
 import { pointInRing, distanceToSegment } from './navigation.js';
+import { createCityHologram } from './city-hologram.js';
 const smooth = (x,a,b) => THREE.MathUtils.smootherstep(x,a,b);
 const signedDistance = (x,z,ring) => {
   let nearest = Infinity;
@@ -12,21 +13,44 @@ const signedDistance = (x,z,ring) => {
 // Fade within a stride of the facade so the camera can see through it before
 // its near plane clips the wall. Concave courtyards stay in their normal state.
 const facadeFadeM = 1;
+function animateWire(material, clock) {
+  material.onBeforeCompile = shader => {
+    shader.uniforms.wireSeconds = clock;
+    shader.vertexShader = 'varying vec3 wireWorld;\n' + shader.vertexShader.replace(
+      '#include <project_vertex>',
+      '#include <project_vertex>\nwireWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;'
+    );
+    shader.fragmentShader = 'varying vec3 wireWorld; uniform float wireSeconds;\n' + shader.fragmentShader.replace(
+      '#include <color_fragment>',
+      `#include <color_fragment>
+       float wavelength = length((wireWorld - vec3(39.0, 0.0, -2.5)) * vec3(0.93, 1.0, 1.07)) / 48.0;
+       float phase = fract(wavelength - wireSeconds * 0.22);
+       float packet = smoothstep(0.78, 0.95, phase) * (1.0 - smoothstep(0.95, 1.0, phase));
+       diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.78, 1.0, 0.96), packet * 0.92);
+       diffuseColor.a *= 0.61 + 0.39 * packet;`
+    );
+  };
+  material.customProgramCacheKey = () => 'city-wire-pulses-1';
+}
 function facadeCrossing(x, z, house) {
   const {min, max} = house.bounds;
   if (x < min.x - facadeFadeM || x > max.x + facadeFadeM ||
       z < min.z - facadeFadeM || z > max.z + facadeFadeM) return 0;
   return 1 - smooth(signedDistance(x,z,house.footprint), .1, facadeFadeM);
 }
-export function virtualAmount(layout,x,z) {
+export function virtualAmount(layout,x,z,edge=signedDistance(x,z,layout.walkable)) {
   const config=layout.virtualBoundary, ring=config?.noticeableRing || layout.walkable;
-  const d=signedDistance(x,z,ring), edge=signedDistance(x,z,layout.walkable);
+  const d=ring===layout.walkable ? edge : signedDistance(x,z,ring);
   if(d<0)return .4*smooth(d,-(config?.insideFadeM || 18),0);
   const remaining=Math.max(0,(config?.fullOutsideM || 52)-edge);
   return .4+.6*smooth(d/Math.max(.001,d+remaining),0,1);
 }
 export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{ passThroughBuildings = false } = {}) {
   const cx=39,cz=-2.5, span=700, outerDomeScale=1.65;
+  const city = createCityHologram(scene, layout.walkable);
+  const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
+  const clock = {value:0};
+  let animated = false;
   const grid=new THREE.GridHelper(span,100,0x80e8d3,0x408d82);grid.name='digital-ground';
   grid.position.set(cx,.055,cz);grid.material.transparent=true;grid.material.depthWrite=false;grid.material.fog=false;grid.material.opacity=0;scene.add(grid);
   const domes=[1,outerDomeScale].map((scale,i)=>{
@@ -35,6 +59,8 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
     mesh.name=`digital-dome-${i+1}`;mesh.position.set(cx,0,cz);mesh.scale.set(220*scale,125*scale,240*scale);mesh.userData.bakedShadowCaster=false;scene.add(mesh);return mesh;
   });
   const low=new THREE.Group();low.name='digital-buildings';scene.add(low);
+  animateWire(grid.material, clock);
+  for (const dome of domes) animateWire(dome.material, clock);
   const mix={value:0}, proxies=[];let detailed=[];
   const attached=new WeakSet(), clones=new Map();
   const patch=(material,uniform,inverse)=>{
@@ -58,11 +84,26 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
     proxies.push({footprint:b.footprint, bounds:geometry.boundingBox, surfaceMix, crossing:0});
     const mesh=new THREE.Mesh(geometry,material);mesh.name=`digital-${b.id}`;mesh.userData.digitalProxy=true;mesh.userData.bakedShadowCaster=false;low.add(mesh);
     const lines=new THREE.LineSegments(new THREE.EdgesGeometry(geometry,20),new THREE.LineBasicMaterial({color:0x9ff7df,transparent:true,opacity:0,fog:false}));lines.userData.bakedShadowCaster=false;low.add(lines);
+    animateWire(lines.material, clock);
   }
   low.visible=false;
   const baseSky=new THREE.Color(sun.skyColor),baseFog=new THREE.Color(sun.fogColor),dark=new THREE.Color(0x07121b);
+  // Behind the projection only its digital geometry is submitted. Keep each
+  // prior visibility state so a return restores the same courtyard and LOD.
+  const virtualObjects = new Set([city.root, low, grid, ...domes]);
+  const concealed = new Set();
+  let behindCity = false, lastChildCount = 0;
+  function concealStreet() {
+    for (const object of scene.children) {
+      if (!object.visible || virtualObjects.has(object) || object.isLight || object.isCamera) continue;
+      concealed.add(object);
+      object.visible = false;
+    }
+    lastChildCount = scene.children.length;
+  }
   let previous=-1;
   return {
+    get needsAnimation() { return animated && !reducedMotion?.matches; },
     attachBuildings(){
       detailed=detailed.filter(mesh=>mesh.parent);
       scene.traverse(mesh=>{
@@ -72,18 +113,35 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
         mesh.material=Array.isArray(mesh.material)?mesh.material.map(clone):clone(mesh.material);
         mesh.visible=mix.value<1;
       });
+      if (behindCity) concealStreet();
     },
-    update(x,z){
-      let amount=virtualAmount(layout,x,z);
+    update(x,z,y=layout.movement.eyeM,timeSeconds=performance.now()/1000){
+      const edge = signedDistance(x,z,layout.walkable);
+      const borderAmount = virtualAmount(layout,x,z,edge);
+      const reveal = Math.max(smooth(edge,-44,-4), smooth(borderAmount,.12,.4));
+      const backstage = smooth(edge,16,18);
+      clock.value = reducedMotion?.matches ? 0 : timeSeconds;
+      city.update(reveal, backstage, clock.value);
+      const sparse = backstage === 1;
+      if (sparse && (!behindCity || lastChildCount !== scene.children.length)) concealStreet();
+      if (!sparse && behindCity) {
+        for (const object of concealed) object.visible = true;
+        concealed.clear();
+        previous = -1;
+      }
+      behindCity = sparse;
+      let amount=Math.max(borderAmount,backstage);
       if (passThroughBuildings) {
         for (const house of proxies) {
-          house.crossing = facadeCrossing(x,z,house);
+          house.crossing = facadeCrossing(x,z,house) * (1 - smooth(y,house.bounds.max.y,house.bounds.max.y+1));
           amount = Math.max(amount, house.crossing);
         }
       }
       const radius=Math.hypot((x-cx)/220,(z-cz)/240), outer=smooth(radius,.92,1.25);
+      animated = amount > .001 || reveal > .001 || outer > .001;
       const outsideOuterDome=radius>=outerDomeScale;
       scene.userData.virtuality=amount;scene.userData.virtualLayer=outer;
+      scene.userData.cityHologram=reveal;scene.userData.cityBackstage=backstage;
       scene.userData.outsideOuterDome=outsideOuterDome;
       // The two domes are anchored to the courtyard, never to the camera.
       outside.position.set(Math.round(x/240)*240,-.05,Math.round(z/240)*240);outside.updateMatrix();
@@ -95,6 +153,8 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
       detailed.forEach(m=>m.visible=mix.value<1);low.visible=mix.value>0;
       low.children.forEach(m=>{if(m.isLineSegments)m.material.opacity=mix.value*.85;else m.material.color.set(0x345e65).lerp(new THREE.Color(0x433958),outer);});
       grid.material.opacity=outsideOuterDome?0:Math.min(.9,amount*1.8);domes[0].material.opacity=Math.min(.72,amount*1.5);domes[1].material.opacity=outer*.65;
+      grid.visible=grid.material.opacity>0;
+      for (const dome of domes) dome.visible=dome.material.opacity>0;
       if(outsideOuterDome){scene.background.set(0x000000);scene.fog.color.set(0x000000);}
       else {scene.background.copy(baseSky).lerp(dark,amount);scene.fog.color.copy(baseFog).lerp(dark,amount);}
       // Pull fog away as detail fades; proxy silhouettes and both shells ignore it.

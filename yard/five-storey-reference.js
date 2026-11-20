@@ -9,14 +9,14 @@ export function addFiveStoreyReference(scene, materials, building) {
   const pebble = project.referenceStyle === 'pebble-panel';
   const batches = new Map(), dummy = new THREE.Object3D();
   const palette = {
-    wall0: materials.flat(0xcdb9a5), wall1: materials.flat(0xc5ada1),
-    wall2: materials.flat(0xd3c1ad), wall3: materials.flat(0xc9b7a8),
-    seam: materials.flat(0x8e8174), red: materials.flat(0xa85748),
-    plinth: materials.flat(0x735149), frame: materials.flat(0xd5d1c2),
-    slab: materials.flat(0xaaa699), white: materials.flat(0xc3c4bb),
+    wall0: materials.mineral(0xcdb9a5), wall1: materials.mineral(0xc5ada1),
+    wall2: materials.mineral(0xd3c1ad), wall3: materials.mineral(0xc9b7a8),
+    seam: materials.flat(0x8e8174), red: materials.mineral(0xa85748),
+    plinth: materials.mineral(0x735149), frame: materials.flat(0xd5d1c2),
+    slab: materials.mineral(0xaaa699), white: materials.mineral(0xc3c4bb),
     blue: materials.flat(0x254d9e), dark: materials.flat(0x334048),
     glass: materials.photoWindow('pane', 0x405461), glassLight: materials.photoWindow('pane', 0x657a80),
-    door: materials.flat(0x685138), metal: materials.flat(0x5f6864),
+    door: materials.flat(0x685138), metal: materials.paintedMetal(0x5f6864),
   };
   if (pebble) {
     // Photo-derived aggregate plaster. The photograph itself is not a texture:
@@ -30,10 +30,10 @@ export function addFiveStoreyReference(scene, materials, building) {
       ctx.fillRect(random()*256,random()*256,1+random()*2,1+random()*2);
     }
     const map = new THREE.CanvasTexture(canvas); map.colorSpace = THREE.SRGBColorSpace;
-    for (let i=0;i<4;i++) palette[`wall${i}`] = new THREE.MeshLambertMaterial({map,color:0xffffff-i*0x020202});
-    palette.plinth = materials.flat(0x88867b);
-    palette.white = materials.flat(0xc8c9bd);
-    palette.blue = materials.flat(0x986555);
+    for (let i=0;i<4;i++) palette[`wall${i}`] = new THREE.MeshStandardMaterial({map,bumpMap:map,bumpScale:.008,roughness:.95,color:0xffffff-i*0x020202});
+    palette.plinth = materials.mineral(0x88867b);
+    palette.white = materials.mineral(0xc8c9bd);
+    palette.blue = materials.mineral(0x986555);
   }
   const floorH = building.heightM / building.floors;
   const entryCount = project.referenceEntranceCount || 4;

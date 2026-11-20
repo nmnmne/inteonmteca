@@ -59,11 +59,11 @@
   <link rel="stylesheet" href="responsive-ui.css?v=inset-panels-20261031">
   <link rel="stylesheet" href="pointer-life.css?v=pointer-life-20261103">
   <link rel="stylesheet" href="sound-controls.css?v=1">
-  <link rel="stylesheet" href="yard-backdrop.css?v=4">
+  <link rel="stylesheet" href="yard-backdrop.css?v=5">
   <script defer src="sound-filter.js?v=1"></script>
   <script defer src="sound-controls.js?v=2"></script>
-  <link rel="stylesheet" href="room-console.css?v=6">
-  <script defer src="yard-backdrop.js?v=4"></script>
+  <link rel="stylesheet" href="room-console.css?v=7">
+  <script defer src="yard-backdrop.js?v=5"></script>
 </head>
 <body class="perception-interface listening-room spatial-room room-console-home">
   <div class="perception-field" aria-hidden="true"></div>
@@ -90,9 +90,6 @@
       <canvas class="ink-field" id="ink-field" aria-hidden="true"></canvas>
       <header class="hero-header" aria-hidden="true"></header>
       <!-- Frozen brand copy. Do not rewrite these phrases. -->
-      <div class="hero-intro">
-        <p class="topline matrix-text">от всех наших</p>
-      </div>
       <article class="release-stage player-console" aria-label="Проигрыватель inteonmteca">
         <section class="release-card holo-stage" aria-label="Треки">
           <div class="listening-intro">
@@ -218,18 +215,31 @@
                     <div class="table-pane"><table><thead><tr><th class="col-index" scope="col">#</th><th class="col-title" scope="col"><button data-sort="title">Трек</button></th><th class="col-artist" scope="col"><button data-sort="artist">Артист</button></th><th class="col-bpm" scope="col"><button data-sort="bpm">BPM</button></th><th class="col-key" scope="col"><button data-sort="key">Тон.</button></th><th class="col-time" scope="col"><button data-sort="duration" aria-label="Сортировать по длительности"><i data-i="clock"></i></button></th><th class="col-load" scope="col">В деку</th><th class="col-fav" scope="col"><i data-i="star"></i></th></tr></thead><tbody id="track-list"></tbody></table><p hidden class="empty-state" id="empty-state"></p></div>
                   </div>
                 </section>
-                <footer class="status-bar"><span><b class="status-led"></b><span id="audio-status">Студия готова</span></span><button type="button" id="keys-footer"><i data-i="keyboard"></i>Горячие клавиши</button></footer>
+                <footer class="status-bar">
+                  <span><b class="status-led"></b><span id="audio-status">Студия готова</span></span>
+                  <button type="button" id="keys-footer"><i data-i="keyboard"></i>Горячие клавиши</button>
+                </footer>
               </div>
             </section>
           </div>
         </section>
       </article>
 
-      <p class="text matrix-text">Музыка, люди, вайб. Уже здесь</p>
 
       <!-- /Frozen brand copy -->
     </section>
   </main>
+  <footer class="room-colophon">
+    <div class="hero-intro"><p class="topline matrix-text">от всех наших</p></div>
+    <p class="text matrix-text">Музыка, люди, вайб. Уже здесь</p>
+    <button class="yard-attribution" type="button" popovertarget="yard-map-sources" aria-label="Открыть источники карты">© OpenStreetMap contributors <span aria-hidden="true">ⓘ</span></button>
+  </footer>
+  <aside id="yard-map-sources" popover aria-label="Источники карты">
+    <strong>Двор и голограмма Уральска</strong>
+    <p>Контуры двора и улицы — <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>. Городской слой улиц — <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a> и <a href="https://openmaptiles.org/" target="_blank" rel="noopener">© OpenMapTiles</a>.</p>
+    <p>Плотность застройки — <a href="https://github.com/microsoft/GlobalMLBuildingFootprints" target="_blank" rel="noopener">Microsoft Global ML Building Footprints</a>. Высоты дальних кварталов условны.</p>
+    <button type="button" popovertarget="yard-map-sources" popovertargetaction="hide">Закрыть</button>
+  </aside>
   <section class="immersive-mode" id="immersive-mode" aria-hidden="true">
     <canvas id="immersive-visual" class="immersive-visual" aria-hidden="true"></canvas>
     <div class="immersive-noise" aria-hidden="true"></div>
@@ -328,7 +338,7 @@
   <script defer src="logo-materials.js?v=cosmic-room-20261026"></script>
   <script data-development-only defer src="development-debug.js?v=server-only-20261029"></script>
   <script defer src="mobile-sections.js?v=now-playing-20261103"></script>
-  <script defer src="room-resident.js?v=studio-paths-1"></script>
+  <script defer src="room-resident.js?v=studio-paths-2"></script>
   <script defer src="logo-storm.js?v=state-duty-20261026"></script>
   <script defer src="text-waves.js?v=smooth-cadence-20261103"></script>
   <script defer src="room-finish.js?v=compact-window-20261026"></script>

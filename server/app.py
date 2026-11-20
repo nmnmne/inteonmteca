@@ -542,6 +542,12 @@ def make_handler(root: Path, store: Store, smtp: dict[str, Any] | None, force_de
     return Handler
 
 
+class SiteHTTPServer(ThreadingHTTPServer):
+    # A cold studio page opens several asset connections per browser. Accept
+    # concurrent page loads while the request threads start on Windows.
+    request_queue_size = 128
+
+
 def serve(root: Path | None = None, host: str = "127.0.0.1", port: int = 8080, db_path: Path | None = None,
           debug: bool = False, local_guest_code: bool = False, prepared_catalog: bool = False) -> ThreadingHTTPServer:
     site_root = (root or ROOT).resolve()
@@ -550,8 +556,7 @@ def serve(root: Path | None = None, host: str = "127.0.0.1", port: int = 8080, d
     show_code = (local_guest_code and host in {"127.0.0.1", "localhost", "::1"}) or os.environ.get("INTEONMTECA_DEV") == "1"
     handler = make_handler(site_root, store, smtp_config(), force_dev_code=show_code, debug=debug,
                            prepared_catalog=prepared_catalog)
-    server = ThreadingHTTPServer((host, port), handler)
-    return server
+    return SiteHTTPServer((host, port), handler)
 
 
 def main() -> int:

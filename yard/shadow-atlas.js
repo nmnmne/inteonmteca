@@ -7,22 +7,32 @@ export function isBakedReceiver(mesh) {
     (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).some(m => !m.wireframe && (!m.transparent || m.opacity === 1));
 }
 
-export async function loadBakedShadows(scene, preset) {
-  const mobile = globalThis.matchMedia?.('(max-width: 800px), (pointer: coarse)').matches;
-  const base = new URL(mobile ? './data/shadows/mobile/' : './data/shadows/', import.meta.url);
-  const response = await fetch(new URL('manifest.json', base), { signal: AbortSignal.timeout(15000) });
+export async function loadBakedShadows(scene, preset, {
+  smallAtlas = globalThis.matchMedia?.('(max-width: 800px), (pointer: coarse)').matches,
+  signal,
+} = {}) {
+  const base = new URL(smallAtlas ? './data/shadows/mobile/' : './data/shadows/', import.meta.url);
+  function requestSignal() {
+    const timeout = AbortSignal.timeout(15000);
+    return signal && AbortSignal.any ? AbortSignal.any([signal, timeout]) : signal || timeout;
+  }
+  const response = await fetch(new URL('manifest.json', base), { cache: 'no-cache', signal: requestSignal() });
   if (!response.ok) throw new Error(`Baked shadow manifest ${response.status}`);
   const manifest = await response.json();
   const entry = manifest.presets[preset.presetIndex ?? 0];
   if (!entry || entry.sunVectorXYZ.some((n, i) => Math.abs(n - preset.sunVectorXYZ[i]) > 1e-6)) {
     throw new Error('Baked shadow sun mismatch: rebuild offline assets');
   }
-  const imageResponse = await fetch(new URL(entry.file, base), { signal: AbortSignal.timeout(15000) });
+  const imageResponse = await fetch(new URL(entry.file, base), { cache: 'no-cache', signal: requestSignal() });
   if (!imageResponse.ok) throw new Error(`Baked shadow texture ${imageResponse.status}`);
   const imageUrl = URL.createObjectURL(await imageResponse.blob());
   let texture;
   try { texture = await new THREE.TextureLoader().loadAsync(imageUrl); }
   finally { URL.revokeObjectURL(imageUrl); }
+  if (signal?.aborted) {
+    texture.dispose();
+    signal.throwIfAborted();
+  }
   texture.colorSpace = THREE.NoColorSpace;
   texture.minFilter = texture.magFilter = THREE.NearestFilter;
   texture.generateMipmaps = false;

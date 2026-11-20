@@ -1,14 +1,24 @@
+import { isWalkable } from './navigation.js';
+
 const distance = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
 const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 const angleBetween = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+const ease = t => t * t * (3 - 2 * t);
+const groundEyeM = 0.42;
 
 // The still photograph and the live backdrop open on the same view.
-export function ambientOpeningView(layout) {
-  const { x, z, yaw } = layout.spawn;
+export function ambientOpeningView(layout, aspect = 1.6) {
+  const { x, z } = layout.spawn;
+  const wall = mix(...layout.musicWall.segment, 0.5);
+  const atWall = Math.atan2(wall[0] - x, z - wall[1]);
   const end = layout.roads.find(road => road.id === 'spawn-pedestrian-link').centerline.at(-1);
   const alongPath = Math.atan2(end[0] - x, z - end[1]);
-  return { ...layout.spawn, yaw: yaw + 0.62 * angleBetween(yaw, alongPath), pitch: -0.085 };
+  const wide = ease(clamp((aspect - 0.55) / 0.90, 0, 1));
+  // Keep the wordmark in front of the crow. Wide views leave the lane on
+  // its left; a portrait lens opens a little wider for the same two subjects.
+  const yaw = atWall + (0.045 + 0.145 * wide) * angleBetween(atWall, alongPath);
+  return { ...layout.spawn, yaw, pitch: -0.085, fov: 80 - 16 * wide };
 }
 
 // Even the L-shaped block and the tower have an interior point on this scanline.
@@ -103,6 +113,10 @@ function section(start, corner, end) {
   const radius = Math.min(8, incoming * 0.65, outgoing * 0.65);
   const entry = mix(corner, start, radius / incoming), exit = mix(corner, end, radius / outgoing);
   const points = [start, entry];
+  const headingIn = Math.atan2(corner[0] - start[0], start[1] - corner[1]);
+  const headingOut = Math.atan2(end[0] - corner[0], corner[1] - end[1]);
+  const bend = (1 - Math.cos(headingOut - headingIn)) / 2;
+  const brakingDistance = Math.min(8, incoming * 0.3, outgoing * 0.3);
   for (let i = 1; i <= 16; i++) {
     const t = i / 16;
     points.push(mix(mix(entry, corner, t), mix(corner, exit, t), t));
@@ -112,6 +126,12 @@ function section(start, corner, end) {
   for (let i = 1; i < points.length; i++) lengths.push(lengths[i - 1] + distance(points[i - 1], points[i]));
   return {
     length: lengths.at(-1),
+    flightPace(metres) {
+      // Bleed speed before a tight turn. A quadratic near a U-turn can have
+      // a much smaller turning radius than its tangent points suggest.
+      const away = Math.max(lengths[1] - metres, metres - lengths.at(-2), 0);
+      return 1 - 0.71 * bend * (1 - ease(clamp(away / brakingDistance, 0, 1)));
+    },
     at(metres) {
       if (metres <= 0) return start;
       if (metres >= this.length) return end;
@@ -130,15 +150,87 @@ export function createAutoWalk(layout, { random = Math.random, openingView = lay
   let start = [layout.spawn.x, layout.spawn.z];
   let corner = itinerary.next().value, next = itinerary.next().value;
   let end = mix(corner, next, 0.5), path = section(start, corner, end);
-  const pose = { ...openingView, eyeOffset: 0 };
-  const pace = layout.movement.speedMps;
+  // The opening photograph catches the bird on approach. The ground-level
+  // steps and flight use the same route and a continuous first-person camera.
+  const openingFov = openingView.fov ?? 64;
+  const pose = { ...openingView, y: layout.movement.eyeM, roll: 0, eyeOffset: 0, fov: openingFov, mode: 'land' };
   const step = 1 / 60;
-  let metres = 0, elapsed = 0, travelled = 0, turnRate = 0, remainder = 0;
+  let metres = 0, elapsed = 0, stride = 0, turnRate = 0, remainder = 0;
+  let phaseTime = 0, duration = 1.45, glides = 0, firstWalk = true;
+  let height = pose.y, fromHeight = height, toHeight = groundEyeM;
+  let speed = 1.9, fromSpeed = speed, toSpeed = 1.04, airspeed = 0;
+  let glanceSide = 1;
+  const range = (a, b) => a + (b - a) * random();
+
+  function changePhase(mode, seconds, targetHeight, targetSpeed) {
+    pose.mode = mode;
+    phaseTime = 0;
+    duration = seconds;
+    fromHeight = height;
+    toHeight = targetHeight;
+    fromSpeed = speed;
+    toSpeed = targetSpeed;
+  }
+
+  // Reserve a clear patch for the flare and touchdown. The bird can fly
+  // through digital architecture, but it lands on open ground.
+  function clearLanding(distanceNeeded) {
+    if (path.length - metres < distanceNeeded) return false;
+    for (let offset = 0; offset <= distanceNeeded; offset += 2) {
+      const [x, z] = path.at(metres + offset);
+      if (!isWalkable(layout, x, z, 1)) return false;
+    }
+    return true;
+  }
+
+  function nextPhase() {
+    switch (pose.mode) {
+      case 'land':
+        glanceSide = random() < 0.5 ? -1 : 1;
+        changePhase('walk', firstWalk ? 4.8 : range(5, 10), groundEyeM, range(0.95, 1.25));
+        firstWalk = false;
+        break;
+      case 'walk': {
+        glides = 0;
+        const cruiseHeight = range(9, 21);
+        airspeed = range(6.8, 8.5);
+        changePhase('takeoff', 2.5 + cruiseHeight / 4, cruiseHeight, airspeed);
+        break;
+      }
+      case 'takeoff':
+      case 'glide':
+        changePhase('flap', range(2.4, 3.6), Math.min(25, height + range(1.2, 2.5)), airspeed);
+        break;
+      case 'flap': {
+        const descent = Math.max(3.2, height / 3.2);
+        const approachMetres = descent * (speed + 1) / 2;
+        if (glides >= 2 && clearLanding(approachMetres + 5)) {
+          changePhase('land', descent, groundEyeM, 1);
+        } else {
+          glides++;
+          changePhase('glide', range(4, 6.5), Math.max(5.5, height - range(2, 4)), airspeed * 0.9);
+        }
+        break;
+      }
+    }
+  }
+
   function advance() {
     elapsed += step;
-    const speed = Math.min(pace, elapsed * 0.9);
-    metres += speed * step;
-    travelled += speed * step;
+    if (phaseTime >= duration) nextPhase();
+    phaseTime = Math.min(duration, phaseTime + step);
+    const progress = phaseTime / duration, blend = ease(progress);
+    const mode = pose.mode;
+    height = fromHeight + (toHeight - fromHeight) * blend;
+    speed = fromSpeed + (toSpeed - fromSpeed) * blend;
+    const airborne = ease(clamp((height - groundEyeM) / 2, 0, 1));
+    // Ease the pace while the crow turns its head to inspect the ground.
+    const glance = mode === 'walk' ? Math.sin(Math.PI * progress) ** 6 : 0;
+    const paceFactor = path.flightPace(metres);
+    const groundSpeed = speed * (1 - 0.65 * glance) * (1 - airborne * (1 - paceFactor));
+    const advanceM = groundSpeed * step;
+    metres += advanceM;
+    stride += advanceM * Math.PI * 2 / 0.43;
     while (metres >= path.length) {
       metres -= path.length;
       start = end;
@@ -148,17 +240,26 @@ export function createAutoWalk(layout, { random = Math.random, openingView = lay
       path = section(start, corner, end);
     }
     const [x, z] = path.at(metres);
-    const ahead = path.at(metres + 3), behind = path.at(metres - 1);
-    const heading = Math.atan2(ahead[0] - behind[0], behind[1] - ahead[1]);
+    const ahead = path.at(metres + 1.8 + 4 * airborne), behind = path.at(metres - 0.6);
+    const heading = Math.atan2(ahead[0] - behind[0], behind[1] - ahead[1]) + glanceSide * 0.3 * glance;
     const turn = angleBetween(pose.yaw, heading);
-    const acceleration = clamp(1.5 * turn - 2.3 * turnRate, -0.34, 0.34);
-    turnRate = clamp(turnRate + acceleration * step, -0.55, 0.55);
+    const acceleration = clamp(2.6 * turn - 2.8 * turnRate, -0.78, 0.78);
+    turnRate = clamp(turnRate + acceleration * step, -0.87, 0.87);
     pose.x = x;
     pose.z = z;
     pose.yaw += turnRate * step;
-    const targetPitch = 0.018 + 0.014 * Math.sin(elapsed * 0.12);
-    pose.pitch += clamp((targetPitch - pose.pitch) * 0.7, -0.035, 0.035) * step;
-    pose.eyeOffset = 0.004 * Math.sin(travelled * Math.PI * 2 / 1.6) * Math.min(1, speed);
+    const climbRate = (toHeight - fromHeight) * 6 * progress * (1 - progress) / duration;
+    const targetPitch = 0.04 - 0.22 * airborne - 0.16 * glance + 0.19 * Math.atan2(climbRate, speed);
+    pose.pitch += clamp((targetPitch - pose.pitch) * 2, -0.24, 0.24) * step;
+    // A coordinated bank leads into the corner, while the eyes keep the
+    // horizon steadier than the wings. Wing strokes disappear into a glide.
+    const bank = airborne * clamp(-0.6 * Math.atan(groundSpeed * turnRate / 9.81), -0.3, 0.3);
+    pose.roll += (bank - pose.roll) * 2.2 * step;
+    const stroke = mode === 'flap' || mode === 'takeoff'
+      ? Math.sin(Math.PI * progress) ** 2 * Math.sin(2 * Math.PI * 3.1 * elapsed) : 0;
+    pose.eyeOffset = 0.017 * (1 - airborne) * Math.sin(stride) + 0.027 * airborne * stroke;
+    pose.y = height + pose.eyeOffset;
+    pose.fov = openingFov + (64 - openingFov) * ease(clamp((elapsed - 2) / 5, 0, 1));
   }
   return { pose, update(dt) {
     if (Number.isFinite(dt) && dt > 0) remainder += dt;

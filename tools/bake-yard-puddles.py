@@ -113,13 +113,16 @@ def main(posters_only):
                 const {createYardScene} = await import('/yard/scene.js');
                 const {ambientOpeningView} = await import('/yard/auto-walk.js');
                 const {lightingPresetForLayout} = await import('/yard/baked-lighting.js');
+                const {loadBakedShadows} = await import('/yard/shadow-atlas.js');
                 const layout = await (await fetch('/yard/data/site-layout.json')).json();
                 const resources = new Promise((resolve, reject) => {
                     THREE.DefaultLoadingManager.onLoad = resolve;
                     THREE.DefaultLoadingManager.onError = url => reject(new Error(url));
                 });
-                const yard = createYardScene(layout, lightingPresetForLayout(layout, 2));
+                const lighting = lightingPresetForLayout(layout, 2);
+                const yard = createYardScene(layout, lighting);
                 await resources;
+                await loadBakedShadows(yard.scene, lighting, {smallAtlas:true});
                 const renderer = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true});
                 renderer.setSize(320, 320, false);
                 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -132,18 +135,18 @@ def main(posters_only):
                             addPuddles(yard.scene, layout, resolve);
                         });
                     }
-                    const pose = ambientOpeningView(layout);
+                    const pose = ambientOpeningView(layout, width / height);
                     camera.position.set(pose.x, layout.movement.eyeM, pose.z);
-                    camera.fov = 64; camera.aspect = width / height; camera.updateProjectionMatrix();
+                    camera.fov = pose.fov; camera.aspect = width / height; camera.updateProjectionMatrix();
                     camera.rotation.set(pose.pitch, -pose.yaw, 0, 'YXZ');
-                    yard.edgeEffect.update(layout.spawn.x, layout.spawn.z);
+                    yard.edgeEffect.update(pose.x, pose.z, camera.position.y, 0);
                     renderer.setSize(width, height, false);
                     renderer.render(yard.scene, camera);
                     return renderer.domElement.toDataURL('image/jpeg', 0.90).split(',')[1];
                 };
                 window.captureFaces = ({x, z, faces, ups}) => {
                     camera.position.set(x, 0.12, z);
-                    yard.edgeEffect.update(x, z);
+                    yard.edgeEffect.update(x, z, camera.position.y, 0);
                     return faces.map(([dx, dy, dz], i) => {
                         camera.up.set(...ups[i]);
                         camera.lookAt(x + dx, 0.12 + dy, z + dz);

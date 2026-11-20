@@ -18,8 +18,8 @@
       ],
       "file": "ground-00.png",
       "mobileFile": "ground-00-mobile.png",
-      "sha256": "c064e02e601bf93f649e5aaa395d90723294ef92c228686ed0b6b66c2462b473",
-      "mobileSha256": "cb90a86688d9a4aaa038e79e111b33f7c708c069c3a9d85045469d2b7f18d4d4"
+      "sha256": "0db41de1c121604ab806966d977088353926c16fadf1e1881137c20b0ff280ee",
+      "mobileSha256": "645308176990f795c41d8c3b6bb80f9adce5c8aed7c5b4fabfae583d76314f3c"
     },
     {
       "presetIndex": 1,
@@ -36,8 +36,8 @@
       ],
       "file": "ground-01.png",
       "mobileFile": "ground-01-mobile.png",
-      "sha256": "038206d433a95ab56c6c19f78cd2a2e53adb7dab07b9fd18989792731c69fd07",
-      "mobileSha256": "5fc8cd456b836bb2cc4fcfb45ac09ce6d744096e10a56f1183bce3ea837ec422"
+      "sha256": "64f6d5c2f22fb6d8f4647a45cdc644c50299ca03b3df5a8b9d47ce52beade1d3",
+      "mobileSha256": "1c2d35b0cd3158ca38d54081e203381787df7cf32b7907d128406fe43f82196e"
     },
     {
       "presetIndex": 2,
@@ -54,8 +54,8 @@
       ],
       "file": "ground-02.png",
       "mobileFile": "ground-02-mobile.png",
-      "sha256": "6155ace2377d4b23a49cbaab7350162ca4fd190b2bb8f2675b957b53abe3607c",
-      "mobileSha256": "d008489c178441e66ae8682c52a51b9ac61675f6adb33feb9c354fa745ce84a1"
+      "sha256": "10ea51577e5ca406ed27b175efe448520e2480d9074c6cac555c388be6e95265",
+      "mobileSha256": "7e4566497291c6ce20db0a45e39b9be5434f7c75bd0de239a569e5f9fa6361fe"
     },
     {
       "presetIndex": 3,
@@ -72,8 +72,8 @@
       ],
       "file": "ground-03.png",
       "mobileFile": "ground-03-mobile.png",
-      "sha256": "af6fc9b566150d630f19402a486e2d34ad0bc06f276ddc3b40827c962b778c87",
-      "mobileSha256": "427624d0e9a2b6519f9c845cb6688d90cb22b4c8758b5081fcb1368a05b38d3c"
+      "sha256": "8bb8db54e4ef67ee6a8f0c8d91895de98d29159b7b773d204bcd02b73da396d4",
+      "mobileSha256": "5424de40eabab30019d86cb4d7fec36427527c1b886606304f189e408d59ab9b"
     },
     {
       "presetIndex": 4,
@@ -90,8 +90,8 @@
       ],
       "file": "ground-04.png",
       "mobileFile": "ground-04-mobile.png",
-      "sha256": "19f7d521e503ef1fd0a76f9d5ea7a4bd5f5e1cdfd2f0e2444c0dbeaa512c456b",
-      "mobileSha256": "d73f1ba79c74febd9003fd6f91a05d04ea25b622f7f406f97f98898124756b8e"
+      "sha256": "cd9d84a409a420bf03dab48866b40a7461f883d403b13866a3470eb333dce9aa",
+      "mobileSha256": "18f80a24c72b16281cbbc9a9ae6ce5e06b871f76fa9aa9fd57c825c522a45ec5"
     },
     {
       "presetIndex": 5,
@@ -108,8 +108,8 @@
       ],
       "file": "ground-05.png",
       "mobileFile": "ground-05-mobile.png",
-      "sha256": "f8330bdbf200c7c6cfa14d48e37bc0c312cc2e36b69e3a15eabb7efc3b24b2a5",
-      "mobileSha256": "e2d436e51bb975cd14604cf9472e30b92b2f21a2147cbc4a5b5264b0b9b76b7b"
+      "sha256": "0ac96e481f2f4685b0bc4707f4b827e7ded15eb4c6d7f508df308c476a8a8025",
+      "mobileSha256": "4d367f4c960863c95f68ae0a8f99bd8e73100278e332667690c85da036344c6e"
     },
     {
       "presetIndex": 6,
@@ -126,8 +126,8 @@
       ],
       "file": "ground-06.png",
       "mobileFile": "ground-06-mobile.png",
-      "sha256": "5af1df3435f6c66370de13c4eb0338e599323db4c27d63be3637b242814f7b5e",
-      "mobileSha256": "52bc83f0690633436a6648e39f57ea621d86e9311b3ef7dbe5953973fc43a3e0"
+      "sha256": "f6e0b5494b12bc46119881cd6c9725c4702af95b4813bc425b0c1fcaab26b874",
+      "mobileSha256": "d114637ec478c114d6b64a39cfab4e7c70ee53fd8d43344226cc744ee53641ba"
     },
     {
       "presetIndex": 7,
@@ -144,8 +144,8 @@
       ],
       "file": "ground-07.png",
       "mobileFile": "ground-07-mobile.png",
-      "sha256": "da375b23785a621af9d0326ac79944465a19243b2ecdead1ce163d5fef847b88",
-      "mobileSha256": "d574a263ce413895cbf46a3b8eed9014200b5c12536fac5602eaf4d00f593835"
+      "sha256": "86e1a8f42bf933575ef6967e93c0feae1dd878fc769cfaca13e1474f92da2818",
+      "mobileSha256": "e2b68295d93a6ad389b116d6aad76b386a1a04a05795bf2a106e54b216011d4e"
     },
     {
       "presetIndex": 8,
@@ -162,8 +162,8 @@
       ],
       "file": "ground-08.png",
       "mobileFile": "ground-08-mobile.png",
-      "sha256": "9c812ba7ffb9b8350a5ee0bebf19b5d7a0eda824eed5d82481086060931dc750",
-      "mobileSha256": "67cee3d7a0a1e07e8dc2f6fc762e974cc540fb5ab6c6aa32a55f00ac8f5e31f3"
+      "sha256": "248e58655c5ccbc0feef1ef643f1dc369514627496ef97042f03c15895f0b314",
+      "mobileSha256": "08e216900bcf8135cd0f74364dedfd84c31a8b8de82d199383f8871b27233395"
     },
     {
       "presetIndex": 9,
@@ -180,8 +180,8 @@
       ],
       "file": "ground-09.png",
       "mobileFile": "ground-09-mobile.png",
-      "sha256": "95e53539bced7cb6a886a385c3a7364c2f8c548005f0681ca94292d638446a3e",
-      "mobileSha256": "98822651850be27688543c7abcf1563cc536a9527e192a2ca300e753ea8175fd"
+      "sha256": "e8c5ffc8d22e4b0cf83f589ac34080057f22a25ba6e4e2f6adce537b592fe4a8",
+      "mobileSha256": "53bd4d6fb0635247d4368747d2630ca7a5d288be30ac8e3da9a68a36ade16951"
     },
     {
       "presetIndex": 10,
@@ -198,8 +198,8 @@
       ],
       "file": "ground-10.png",
       "mobileFile": "ground-10-mobile.png",
-      "sha256": "5c4ae3a9556db4f73750f48a93534458b5fca214ed07bd92f2bc4abf35a57e1c",
-      "mobileSha256": "248b5958ff5f87199b1aa98df3e278411c0ec541d6e5023f66e07cc537119184"
+      "sha256": "6d7000019a9908cf2726d1d44e60a30369e0dd9dd4d5e88ae1d1cc4df374e783",
+      "mobileSha256": "c29c908cd6f703f47ed0d8cf0a7c36af196494528d1e5ffbf520137305419bc9"
     },
     {
       "presetIndex": 11,
@@ -216,8 +216,8 @@
       ],
       "file": "ground-11.png",
       "mobileFile": "ground-11-mobile.png",
-      "sha256": "cb332b01744d94f1c210081b05ad97005a603d475df0d02e8c4e25636f7ec669",
-      "mobileSha256": "6831fa68c2b6efb72c604f08149e68cc5ae8c73ac7381ce8561fccdcba545967"
+      "sha256": "d2d345acd35c3559385030a72083eda5ebe029bd0a19770b96a45bec7f029315",
+      "mobileSha256": "780e038f2fe6c9432f23308d953da60479afbe31e8b84a68bd70d7a5c7ce0d46"
     }
   ]
 }

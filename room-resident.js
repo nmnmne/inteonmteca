@@ -104,7 +104,7 @@
     route = [];
     resident.style.transform = position(here);
   };
-  const sharedObstacles = '.logo-wrap, .reactive-logo, .alternate-wordmark, .listening-intro h1, .listening-intro .label, .hero-intro, '
+  const sharedObstacles = '.logo-wrap, .reactive-logo, .alternate-wordmark, .listening-intro h1, .listening-intro .label, .hero-intro, .yard-attribution, '
     + '.catalog-heading, .playlist-shell, #active-player, .text, #auth-hint, #theme-hint, #chat-hint, #street-link, .street-return, '
     + '.chat-compose, .chat-stream:not(:empty), #theme-panel, #auth-panel, .theme-options, .visit-counter, .development-animation-menu, .development-debug-toggle';
   const deckObstacles = '.dd-head, .dd-screen, .dd-wheel-mount, .dd-transport button, .dd-pitch, .dd-wheel-modes, .dd-loop-group, .dd-pads';

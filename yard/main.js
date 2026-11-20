@@ -2,7 +2,7 @@ import * as THREE from "./vendor/three.module.js";
 import { distanceToWall, isWalkable, moveCircle } from "./navigation.js";
 import { createInputController } from "./input-controller.js";
 import { createQualityMeter, createRenderGate, pixelRatioCap, createAdaptiveQuality } from "./quality.js?v=optimization-20261009";
-import { createYardScene, drawScheme } from "./scene.js?v=instant-yard-20261031";
+import { createYardScene, drawScheme } from "./scene.js?v=ural-courtyard-1";
 import { createWallPlayer } from "./wall-player.js?v=seek-fade-20261006-2";
 import { createBoundaryMusic } from "./boundary-music.js";
 import { createLightingCycle, addBakedLighting } from "./baked-lighting.js";
@@ -22,7 +22,7 @@ const meter = createQualityMeter();
 try {
 let layout = null;
 if (location.protocol !== "file:") {
-  layout = await fetch(new URL("./data/site-layout.json?v=lawn-pipe-correction-20261031", import.meta.url)).then((response) => {
+  layout = await fetch(new URL("./data/site-layout.json?v=zhdanova-entrances-20261120", import.meta.url)).then((response) => {
     if (!response.ok) throw new Error(`site-layout ${response.status}`);
     return response.json();
   });
@@ -55,6 +55,8 @@ if (location.protocol === "file:") {
   let disposed = false;
   // Draw and enable input before fetching the optional projected-depth enhancement.
   const shouldRender = createRenderGate(matchMedia("(max-width: 800px), (pointer: coarse)").matches);
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const screenLogo = new THREE.Vector3();
   const quality = createAdaptiveQuality(pixelRatioCap(), matchMedia("(max-width: 800px), (pointer: coarse)").matches);
 
   const body = {
@@ -256,7 +258,7 @@ if (location.protocol === "file:") {
     const range = Math.hypot(body.x-39,body.z+2.5)+1200;
     if (Math.abs(camera.far-range)>100) {camera.far=range;camera.updateProjectionMatrix();}
     placeCamera();
-    edgeEffect?.update(body.x, body.z);
+    edgeEffect?.update(body.x, body.z, camera.position.y, now / 1000);
     if (lightingTransition.update()) renderRevision += 1;
     boundaryMusic(body.x, body.z);
     updateNear();
@@ -266,7 +268,10 @@ if (location.protocol === "file:") {
       schemeMap.drawMarker(body.x, body.z, body.yaw);
       lastMapDraw = now;
     }
-    const dirty = shouldRender(body, canvas.width, canvas.height, `${renderRevision}:${logo.material.map?.version || 0}`);
+    const animateDecal = !reducedMotion.matches && camera.position.distanceToSquared(logo.position) < 35 ** 2 &&
+      screenLogo.copy(logo.position).project(camera).lengthSq() < 2;
+    const effectFrame = (edgeEffect?.needsAnimation || animateDecal) ? Math.floor(now / 85) : 0;
+    const dirty = shouldRender(body, canvas.width, canvas.height, `${renderRevision}:${effectFrame}:${Boolean(logo.userData.inkReady)}`);
     const ratio = quality.sample(now, dirty && !returnPose);
     if (ratio !== null) {
       renderer.setPixelRatio(ratio);

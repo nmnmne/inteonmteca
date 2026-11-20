@@ -56,11 +56,11 @@
   <link rel="stylesheet" href="alternate-logo.css?v=restrained-lime-20261029">
   <link rel="stylesheet" href="responsive-ui.css?v=inset-panels-20261031">
   <link rel="stylesheet" href="pointer-life.css?v=pointer-life-20261103">
-  <link rel="stylesheet" href="yard-backdrop.css?v=3">
+  <link rel="stylesheet" href="yard-backdrop.css?v=5">
   <link rel="stylesheet" href="sound-controls.css?v=1">
   <script defer src="sound-filter.js?v=1"></script>
   <script defer src="sound-controls.js?v=2"></script>
-  <script defer src="yard-backdrop.js?v=4"></script>
+  <script defer src="yard-backdrop.js?v=5"></script>
 </head>
 <body class="perception-interface listening-room spatial-room">
   <div class="perception-field" aria-hidden="true"></div>
@@ -220,6 +220,13 @@
       <!-- /Frozen brand copy -->
     </section>
   </main>
+  <button class="yard-attribution" type="button" popovertarget="yard-map-sources" aria-label="Открыть источники карты">© OpenStreetMap contributors <span aria-hidden="true">ⓘ</span></button>
+  <aside id="yard-map-sources" popover aria-label="Источники карты">
+    <strong>Двор и голограмма Уральска</strong>
+    <p>Контуры двора и улицы — <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>. Городской слой улиц — <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a> и <a href="https://openmaptiles.org/" target="_blank" rel="noopener">© OpenMapTiles</a>.</p>
+    <p>Плотность застройки — <a href="https://github.com/microsoft/GlobalMLBuildingFootprints" target="_blank" rel="noopener">Microsoft Global ML Building Footprints</a>. Высоты дальних кварталов условны.</p>
+    <button type="button" popovertarget="yard-map-sources" popovertargetaction="hide">Закрыть</button>
+  </aside>
   <section class="immersive-mode" id="immersive-mode" aria-hidden="true">
     <canvas id="immersive-visual" class="immersive-visual" aria-hidden="true"></canvas>
     <div class="immersive-noise" aria-hidden="true"></div>
@@ -305,7 +312,7 @@
   <script defer src="logo-materials.js?v=cosmic-room-20261026"></script>
   <script data-development-only defer src="development-debug.js?v=server-only-20261029"></script>
   <script defer src="mobile-sections.js?v=now-playing-20261103"></script>
-  <script defer src="room-resident.js?v=studio-paths-1"></script>
+  <script defer src="room-resident.js?v=studio-paths-2"></script>
   <script defer src="logo-storm.js?v=state-duty-20261026"></script>
   <script defer src="text-waves.js?v=smooth-cadence-20261103"></script>
   <script defer src="room-finish.js?v=compact-window-20261026"></script>

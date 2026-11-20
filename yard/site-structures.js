@@ -83,7 +83,7 @@ export function addUtilityStructures(scene, materials, structures = []) {
     if (structure.role !== "electric-kiosk" || !Array.isArray(structure.footprint) || structure.footprint.length < 3) continue;
     const group = new THREE.Group();
     const height = Number(structure.heightM) || 2.7;
-    const wallMaterial = materials.flat(0xc8b79a);
+    const wallMaterial = materials.mineral(0xc8b79a);
 
     structure.footprint.forEach((start, index) => {
       const end = structure.footprint[(index + 1) % structure.footprint.length];
@@ -101,11 +101,11 @@ export function addUtilityStructures(scene, materials, structures = []) {
     });
 
     if (structure.footprint.length === 4) {
-      const roofMaterial = materials.flat(0x8a8d88);
+      const roofMaterial = materials.paintedMetal(0x8a8d88);
       roofMaterial.side = THREE.DoubleSide;
       addGableRoof(group, structure.footprint, height, 0.85, roofMaterial);
     } else {
-      const roof = new THREE.Mesh(roofGeometry(structure.footprint), materials.flat(0x8a8d88));
+      const roof = new THREE.Mesh(roofGeometry(structure.footprint), materials.paintedMetal(0x8a8d88));
       roof.position.y = height + 0.08;
       group.add(roof);
     }
@@ -131,7 +131,7 @@ function utilityBeam(group, from, to, radius, material, segments = 8) {
 export function addReferenceUtilities(scene, materials) {
   const group = new THREE.Group();
   group.name = "reference-utility-forms";
-  const concrete = materials.flat(0x777872);
+  const concrete = materials.mineral(0x777872);
   const metal = new THREE.MeshLambertMaterial({ color: 0x4f5653 });
   const pipeMaterial = new THREE.MeshLambertMaterial({ color: 0xb9b8aa });
   // Photo layout: a heavy concrete service pole just right of the kiosk

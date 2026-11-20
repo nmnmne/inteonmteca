@@ -7,14 +7,15 @@ const start = source.indexOf('const themeCoreFilters =');
 const end = source.indexOf('const themeStorageKey', start);
 assert.ok(start >= 0 && end > start);
 const themes = vm.runInNewContext(source.slice(start, end) + '\nthemeRegistry;');
-assert.equal(themes.length, 9);
-assert.equal(new Set(themes.map(t => t.id)).size, 9);
-assert.equal(new Set(themes.map(t => t.name)).size, 9);
-assert.equal(new Set(themes.map(t => JSON.stringify(t.tokens))).size, 9);
-assert.equal(themes.filter(t => t.mood === 'light').length, 2);
+// The listening room's supported palette is checked in themes.test.cjs.
+// Validate the colour channels and tokens of every entry in that registry.
+assert.ok(themes.length > 0);
+assert.equal(new Set(themes.map(t => t.id)).size, themes.length);
+assert.equal(new Set(themes.map(t => t.name)).size, themes.length);
+assert.equal(new Set(themes.map(t => JSON.stringify(t.tokens))).size, themes.length);
 for (const id of ['desert','saffron','terracotta','apricot','sunset','hibiscus','moss','infrared','pistachio','mint-copper','glacier','petrol','ceramic-blue','indigo','amethyst','wisteria']) assert.ok(!themes.some(t => t.id === id));
 for (const theme of themes) {
-  assert.equal(theme.name, theme.name.toLowerCase());
+  assert.equal(theme.id, theme.id.toLowerCase());
   assert.match(theme.tokens['--theme-bg'], /^#[0-9a-f]{6}$/);
   assert.ok(!Object.values(theme.tokens).includes('grayscale(1)'));
   assert.notEqual(theme.tokens['--theme-fog-blur'], '32px');
@@ -24,4 +25,4 @@ for (const theme of themes) {
     assert.ok(channels.every((value) => Number.isInteger(value) && value >= 0 && value <= 255));
   }
 }
-console.log('PASS: nine unique flat palettes, persistence and readable tokens');
+console.log('PASS: unique theme definitions and RGB channels');

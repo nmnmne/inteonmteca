@@ -1,5 +1,6 @@
 import * as THREE from './vendor/three.module.js';
 import { facadeNormal } from './facade-frame.js';
+import { addHouse14Shop } from './house14-shops.js';
 
 // Recessed single windows / inset loggia / two windows / inset loggia.
 // Repeated geometry is instanced so the ten facade bays stay inexpensive.
@@ -9,7 +10,7 @@ export function addHouseRelief(scene, solids, materials, layout, building) {
   layout.obstacles = (layout.obstacles || []).filter(item => !item.id?.startsWith('house14-relief-'));
   const depth = building.facadeProject.reliefDepthM || 1.25;
   const height = building.heightM, floorHeight = height / building.floors;
-  const palette = {brick: materials.facade(building.facadeMaterialId), glass: materials.photoWindow(), glazing:materials.photoWindow('glazing'), stair:materials.photoWindow('stair'), concrete: materials.flat(0xbcb7a9), panel: materials.flat(0xc9c1b4), band:materials.flat(0x9d6050)};
+  const palette = {brick: materials.facade(building.facadeMaterialId), glass: materials.photoWindow(), glazing:materials.photoWindow('glazing'), stair:materials.photoWindow('stair'), concrete: materials.mineral(0xc5bfb0), panel: materials.mineral(0xd2c9bb), mint:materials.mineral(0xb4cec1), band:materials.mineral(0xab6c59)};
   const batches = new Map(), dummy = new THREE.Object3D();
   for (const section of sections) {
     const a = building.footprint[section.edgeIndex], b = building.footprint[(section.edgeIndex + 1) % building.footprint.length];
@@ -47,7 +48,7 @@ export function addHouseRelief(scene, solids, materials, layout, building) {
         for (const side of [-1,1]) {
           const x=side*5.6;
           add(origin,'concrete',x,base,depth/2,5.2,.15,depth);
-          add(origin,'panel',x,base+.48,depth-.18,5.05,.82,.12);
+          add(origin,section.edgeIndex===5?'mint':'panel',x,base+.48,depth-.18,5.05,.82,.12);
           // Glazing sits behind the brick cheeks, not on an external balcony.
           for (let pane=0;pane<5;pane++) add(origin,'glazing',x+(pane-2)*.99,base+1.63,depth-.3,.94,1.45,.035);
           add(origin,'concrete',x,base+2.43,depth/2,5.2,.12,depth);
@@ -61,6 +62,7 @@ export function addHouseRelief(scene, solids, materials, layout, building) {
     for (const along of columns) for (let floor=0;floor<building.floors;floor++) {
       add(point(along),'glass',0,.45+floor*floorHeight+1.6,.09,1.3,1.45,.035);
     }
+    for (const shop of section.shops || []) addHouse14Shop(scene, point(shop.alongM), yaw, shop.id === 'pharmacy');
   }
   for (const [key,batch] of batches) {
     const geometry=new THREE.BoxGeometry(batch.w,batch.h,batch.d);

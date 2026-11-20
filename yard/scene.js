@@ -1,4 +1,5 @@
-import { createDigitalBoundary } from './digital-boundary.js?v=building-crossings-1';
+import { createDigitalBoundary } from './digital-boundary.js?v=holo-city-1';
+import { createWallWordmark } from './wall-wordmark.js';
 import * as THREE from "./vendor/three.module.js";
 import { batchStaticDecoration } from './static-batches.js';
 import { addFiveStoreyReference } from './five-storey-reference.js?v=lawn-pipe-correction-20261031';
@@ -9,7 +10,7 @@ import { createYardMaterials } from "./materials.js";
 import { facadeSpec, openingsForFacade } from "./models.js?v=refinement-20261009-2";
 import { addHruDetails } from "./hru-details.js";
 import { addRoadDetails } from "./road-details.js";
-import { addLandscaping } from "./landscaping.js";
+import { addCourtyardTrees, addLandscaping } from "./landscaping.js";
 import { addCourtyardClouds } from "./clouds.js";
 import { addReferenceUtilities, addUtilityStructures } from "./site-structures.js";
 import { addGasPipes, addSiteEntrances } from "./site-details.js?v=five-storey-20261006-2";
@@ -153,7 +154,35 @@ function addOpeningMeshes(scene, materials, list) {
   scene.add(balconyPost);
 }
 
-function addRoof(scene, footprint, y, color, pitched = false) {
+function roofingMaterial(materials, color) {
+  // Mineral granules catch the light up close; staggered laps of the rolled
+  // roofing remain legible from the crow's height. The tile covers 12 × 4 m.
+  const roof = materials.asphalt(1, 1).clone();
+  roof.color.set(color);
+  roof.roughness = .94;
+  roof.bumpScale *= .35;
+  roof.side = THREE.DoubleSide;
+  const sheet = document.createElement('canvas');
+  sheet.width = 512; sheet.height = 256;
+  const ink = sheet.getContext('2d');
+  ink.fillStyle = '#fff'; ink.fillRect(0, 0, sheet.width, sheet.height);
+  for (let row = 0; row < 4; row++) {
+    const y = row * 64;
+    ink.fillStyle = ['#e9e9e9','#fafafa','#eee','#f5f5f5'][row];
+    ink.fillRect(0, y, 512, 64);
+    ink.fillStyle = '#898989';
+    ink.fillRect(0, y, 512, 2);
+    ink.fillRect([36,194,326,438][row], y, 2, 64);
+  }
+  const seams = new THREE.CanvasTexture(sheet);
+  seams.wrapS = seams.wrapT = THREE.RepeatWrapping;
+  seams.repeat.set(1/12, 1/4);
+  roof.aoMap = seams;
+  roof.aoMapIntensity = .85;
+  return roof;
+}
+
+function addRoof(scene, footprint, y, material, pitched = false) {
   if (pitched && footprint.length === 4) {
     const [a, b, c, d] = footprint;
     const ridgeA = [(a[0] + d[0]) / 2, y + 0.9, (a[1] + d[1]) / 2];
@@ -164,15 +193,28 @@ function addRoof(scene, footprint, y, color, pitched = false) {
     ]);
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
+    geometry.setAttribute("uv", new THREE.Float32BufferAttribute(
+      Array.from({length: vertices.length / 3}, (_, i) => [vertices[i*3], -vertices[i*3+2]]).flat(), 2));
     geometry.setIndex([0, 1, 5, 0, 5, 4, 3, 4, 5, 3, 5, 2, 0, 4, 3, 1, 2, 5]);
     geometry.computeVertexNormals();
-    scene.add(new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color, roughness: 0.86, side: THREE.DoubleSide })));
+    scene.add(new THREE.Mesh(geometry, material));
     return;
   }
   const shape = new THREE.Shape();
   shape.moveTo(footprint[0][0], -footprint[0][1]);
   for (let index = 1; index < footprint.length; index += 1) shape.lineTo(footprint[index][0], -footprint[index][1]);
-  const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide }));
+  const geometry = new THREE.ShapeGeometry(shape);
+  const uv = geometry.attributes.uv;
+  const edge = footprint.reduce((best, a, i) => {
+    const b = footprint[(i+1) % footprint.length], dx = b[0]-a[0], dz = b[1]-a[1];
+    const length = Math.hypot(dx,dz);
+    return length > best.length ? {x:dx/length, z:dz/length, length} : best;
+  }, {x:1, z:0, length:0});
+  for (let i = 0; i < uv.count; i++) {
+    const x = uv.getX(i), z = -uv.getY(i);
+    uv.setXY(i, x*edge.x + z*edge.z, z*edge.x - x*edge.z);
+  }
+  const mesh = new THREE.Mesh(geometry, material);
   mesh.rotation.x = -Math.PI / 2;
   mesh.position.y = y;
   scene.add(mesh);
@@ -210,8 +252,8 @@ function addCornerDetails(scene, materials, layout) {
   const blankB = layout.musicWall.blank[1];
   const near = edgeFrame(nearA, nearB);
   const blank = edgeFrame(blankA, blankB);
-  addWall(scene, [], nearA, nearB, 0.9, materials.flat(0xc4b6a2), { outset: 0.016 });
-  addWall(scene, [], blankA, blankB, 0.9, materials.flat(0xc4897a), { outset: 0.016 });
+  addWall(scene, [], nearA, nearB, 0.9, materials.mineral(0xc4b6a2), { outset: 0.016 });
+  addWall(scene, [], blankA, blankB, 0.9, materials.mineral(0xc4897a), { outset: 0.016 });
 
   const signCanvas = document.createElement("canvas");
   signCanvas.width = 128;
@@ -234,7 +276,7 @@ function addCornerDetails(scene, materials, layout) {
   sign.rotation.y = near.yaw;
   scene.add(sign);
 
-  const air = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.45, 0.35), materials.flat(0xe7e4dc));
+  const air = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.45, 0.35), materials.paintedMetal(0xe7e4dc));
   const airAt = pointOnEdge(blank, blankA, 2.4, 2.7, 0.28);
   air.position.set(airAt.x, airAt.y, airAt.z);
   air.rotation.y = blank.yaw;
@@ -244,10 +286,10 @@ function addCornerDetails(scene, materials, layout) {
 
 function addPlayground(scene, materials, playground) {
   if (!playground) return;
-  const metal = materials.flat(0x76856f);
+  const metal = materials.paintedMetal(0x76856f);
   const wood = materials.flat(0x917859);
   const sand = materials.flat(0xc4ad79);
-  const yellow = materials.flat(0xd6b34d);
+  const yellow = materials.paintedMetal(0xd6b34d);
   const box = playground.sandbox;
   if (box) {
     const half = box.size / 2;
@@ -314,18 +356,6 @@ function addPlayground(scene, materials, playground) {
   }
 }
 
-function addTree(scene, materials, circle) {
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(circle.radius, circle.radius * 1.2, 3.2, 6), materials.flat(0x5c4634));
-  trunk.position.set(circle.x, 1.6, circle.z);
-  scene.add(trunk);
-  const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(1.45, 1), materials.flat(0x3f6b34));
-  crown.position.set(circle.x - 0.25, 4.1, circle.z);
-  scene.add(crown);
-  const sideCrown = new THREE.Mesh(new THREE.IcosahedronGeometry(1.1, 1), materials.flat(0x4c7740));
-  sideCrown.position.set(circle.x + 0.8, 3.85, circle.z + 0.25);
-  scene.add(sideCrown);
-}
-
 function pointInsideBoundary(x, z, ring) {
   let inside = false;
   for (let index = 0, previous = ring.length - 1; index < ring.length; previous = index, index += 1) {
@@ -360,6 +390,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
   scene.fog = new THREE.Fog(fixedSun.fogColor, 90, 260);
   addCourtyardClouds(scene);
   const materials = createYardMaterials();
+  const roofs = new Map();
   const solids = [];
 
   const outside = new THREE.Mesh(new THREE.PlaneGeometry(1200, 1200), materials.soil(1200, 1200));
@@ -386,7 +417,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
     for (let index = 1; index < surface.polygon.length; index += 1) {
       shape.lineTo(surface.polygon[index][0], -surface.polygon[index][1]);
     }
-    const material = surface.kind === "asphalt" ? materials.asphalt(24, 16) : materials.concrete(12, 10);
+    const material = surface.kind === "asphalt" ? materials.asphalt(1, 1) : materials.concrete(1, 1);
     const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), material);
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.y = 0.025;
@@ -421,7 +452,9 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
       if (building.id === music.buildingId && onSegment) mesh.name = "music-wall";
       if (!isMusic && building.id !== 'tower-34' && !building.facadeProject?.referenceStyle && !building.facadeProject?.reliefSections?.some(section => section.edgeIndex === index)) collectOpenings(openings, a, b, building, index);
     }
-    addRoof(scene, ring, building.heightM + 0.05, ROOF_COLOR[building.roof] || 0x8d9298, building.roof === "red");
+    const roofColor = ROOF_COLOR[building.roof] || 0x8d9298;
+    if (!roofs.has(roofColor)) roofs.set(roofColor, roofingMaterial(materials, roofColor));
+    addRoof(scene, ring, building.heightM + 0.05, roofs.get(roofColor), building.roof === "red");
     pendingDetails.push({ building, add() {
       if (progressive) {
         const textured = materials.facade(facadeId);
@@ -430,6 +463,9 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
           // Keep the digital-boundary shader attached to the existing material.
           wall.material.color.copy(textured.color);
           wall.material.map = textured.map;
+          wall.material.bumpMap = textured.bumpMap;
+          wall.material.bumpScale = textured.bumpScale;
+          wall.material.roughnessMap = textured.roughnessMap;
           wall.material.roughness = textured.roughness;
           wall.material.metalness = textured.metalness;
           wall.material.needsUpdate = true;
@@ -457,33 +493,20 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
   addUtilityStructures(scene, materials, layout.utilityStructures || []);
   addReferenceUtilities(scene, materials);
   addSiteEntrances(scene, materials, layout);
-  addGasPipes(scene, layout);
+  addGasPipes(scene, layout, materials);
 
   addCornerDetails(scene, materials, layout);
 
   const near = edgeFrame(layout.musicWall.segment[0], layout.musicWall.segment[1]);
   const logoAt = pointOnEdge(near, layout.musicWall.segment[0], 5.6, 1.9, 0.2);
-  const logo = new THREE.Mesh(
-    new THREE.PlaneGeometry(8.2, 1.65),
-    new THREE.MeshBasicMaterial({ color: 0xf4efe6, transparent: true }),
-  );
-  logo.name = "music-logo";
+  const logo = createWallWordmark();
   logo.position.set(logoAt.x, logoAt.y, logoAt.z);
   logo.rotation.y = near.yaw;
   scene.add(logo);
   solids.push(logo);
-  // The same scene can be mounted in the courtyard or in the studio at the site root.
-  const logoURL = new URL("../assets/logo-wordmark.svg", import.meta.url);
-  const logoTexture = new THREE.TextureLoader().load(logoURL.href);
-  logoTexture.colorSpace = THREE.SRGBColorSpace;
-  logoTexture.generateMipmaps = false;
-  logoTexture.minFilter = THREE.LinearFilter;
-  logo.material.map = logoTexture;
 
   addPlayground(scene, materials, layout.playground);
-  for (const circle of layout.circles || []) {
-    if (circle.id.startsWith("tree-")) addTree(scene, materials, circle);
-  }
+  addCourtyardTrees(scene, materials, layout.circles || []);
   // Offline depth textures are loaded explicitly by main.js after geometry construction.
 
   scene.add(new THREE.AmbientLight(fixedSun.ambientColor || 0xfff6ea, fixedSun.ambientIntensity));

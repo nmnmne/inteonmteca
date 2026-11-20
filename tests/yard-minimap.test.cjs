@@ -11,7 +11,7 @@ const main = fs.readFileSync(path.join(root,'yard/main.js'),'utf8');
 for (const coarsePointer of [false, true]) {
   test(`minimap coalesces moving frames and skips stationary frames (touch=${coarsePointer})`, () => {
     const start = main.indexOf('    updateNear();') + '    updateNear();'.length;
-    const end = main.indexOf('    const dirty = shouldRender', start);
+    const end = main.indexOf('    const animateDecal', start);
     const update = new vm.Script('{' + main.slice(start, end) + '}');
     const draws = [];
     const scope = vm.createContext({coarsePointer, now:0, lastMapDraw:0, marked:null,

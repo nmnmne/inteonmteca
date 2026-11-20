@@ -153,6 +153,33 @@ def build(layout):
         parts = polygons(path.intersection(envelope).difference(aprons).difference(roads))
         paths.extend(parts)
         path_entries.extend([entry['id']] * len(parts))
+    # Street photographs show paving under both external flights and a narrow
+    # connection across the west lawn. The measured frontage sets their axes.
+    shop_paths = set()
+    house = next(b for b in layout['buildings'] if b['id'] == 'house-14')
+    for section in house['facadeProject']['reliefSections']:
+        if not section.get('shops'):
+            continue
+        edge = section['edgeIndex']
+        a, b = house['footprint'][edge], house['footprint'][(edge+1) % len(house['footprint'])]
+        length = math.dist(a,b)
+        tx, tz = (b[0]-a[0])/length, (b[1]-a[1])/length
+        def point(along, outward):
+            return a[0]+tx*along-tz*outward, a[1]+tz*along+tx*outward
+        for shop in section['shops']:
+            center = shop['alongM']
+            apron = Polygon([point(center+dx, depth) for dx, depth in
+                             [(-5.4, .75), (4, .75), (4, 3.35), (-5.4, 3.35)]])
+            foot = center + (.35 if shop['id'] == 'pharmacy' else -4.3)
+            ray = LineString([point(foot, 2.55), point(foot, 18)])
+            hit = ray.intersection(roads)
+            reach = 18 if hit.is_empty else min(18, 2.65 + Point(ray.coords[0]).distance(hit))
+            path = LineString([point(foot, 2.55), point(foot, reach)]).buffer(.78, cap_style=2)
+            parts = polygons(apron.union(path).difference(roads))
+            entry_id = 'house-14-' + shop['id']
+            paths.extend(parts)
+            path_entries.extend([entry_id] * len(parts))
+            shop_paths.add(entry_id)
     clear = unary_union(paths)
     lawn = envelope.difference(aprons).difference(roads.buffer(.15, join_style=2)).difference(clear.buffer(.12, join_style=2))
     patches = [p for p in polygons(lawn) if p.area > .5 and not p.buffer(-.75).is_empty]
@@ -169,7 +196,9 @@ def build(layout):
             'outline': ring(outline.exterior.coords), 'curbHeightM': .14, 'curbWidthM': .18,
             'additionalOutlines': [{'id': name, **encode(area)} for name, area in additional.items()],
             'patches': [encode(p) for p in patches],
-            'paths': [{**encode(p), 'entranceId': entry_id} for p,entry_id in zip(paths,path_entries)],
+            'paths': [{**encode(p), 'entranceId': entry_id,
+                       **({'material': 'concrete'} if entry_id in shop_paths else {})}
+                      for p,entry_id in zip(paths,path_entries)],
             'curbs': curbs}
 
 

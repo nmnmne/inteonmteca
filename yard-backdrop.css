@@ -62,3 +62,23 @@ body.spatial-room[data-yard-backdrop] { isolation: isolate; }
 @media (prefers-reduced-motion: reduce) {
   [data-yard-layer] canvas { transition: none; }
 }
+.yard-attribution {
+  position: fixed; z-index: 6; right: max(6px,env(safe-area-inset-right)); bottom: 2px;
+  padding: 1px 4px; border: 0; border-radius: 2px; background: #10181cde; color: #d5ded8; cursor: pointer;
+  font: 10px/1.35 system-ui,sans-serif; text-decoration: none;
+}
+.yard-attribution:is(:hover,:focus-visible) { text-decoration: underline; }
+#yard-map-sources {
+  position: fixed; inset: auto max(8px,env(safe-area-inset-right)) max(38px,env(safe-area-inset-bottom)) auto;
+  box-sizing: border-box; width: min(320px,calc(100vw - 16px)); margin: 0; padding: 16px;
+  color: #e1e8e4; background: #152027; border: 1px solid #718181; border-radius: 6px;
+  font: 14px/1.45 system-ui,sans-serif; box-shadow: 0 5px 20px #0008;
+}
+#yard-map-sources p { margin: .65em 0; }
+#yard-map-sources a { color: #a6e6ec; text-decoration: underline; }
+#yard-map-sources button { padding: 4px 8px; color: inherit; background: transparent; border: 1px solid #718181; border-radius: 3px; cursor: pointer; }
+@media (max-width: 650px) {
+  html[data-theme] body.spatial-room:not(.room-console-home) .text.matrix-text {
+    left: 7px; right: auto; transform: none; width: max-content;
+  }
+}

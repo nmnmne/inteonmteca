@@ -58,7 +58,7 @@
       document.body.dataset.yardBackdrop = 'fallback';
     };
     try {
-      const { startAmbientScene } = await import('./yard/ambient-scene.js?v=4');
+      const { startAmbientScene } = await import('./yard/ambient-scene.js?v=ural-crow-1');
       if (run.signal.aborted) return;
       await startAmbientScene(canvas, {
         signal: run.signal,

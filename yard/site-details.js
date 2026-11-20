@@ -35,10 +35,10 @@ function box(width, height, depth, material, point, y, yaw, offset = 0) {
 
 export function addSiteEntrances(scene, materials, layout) {
   const entries = layout.entrances || [];
-  const doorMaterial = materials.flat(0x293238);
-  const frameMaterial = materials.flat(0x958f82);
-  const concrete = materials.flat(0xa59d8e);
-  const canopy = materials.flat(0x70756f);
+  const doorMaterial = materials.paintedMetal(0x303b43);
+  const frameMaterial = materials.mineral(0xa59f92);
+  const concrete = materials.concrete(1.8, .8);
+  const canopy = materials.paintedMetal(0x7a8079);
   const group = new THREE.Group();
   group.name = "site-entrances";
 
@@ -70,7 +70,7 @@ export function addSiteEntrances(scene, materials, layout) {
       const handle = {...anchor, x: anchor.x + Math.cos(anchor.yaw) * doorWidth * .3, z: anchor.z - Math.sin(anchor.yaw) * doorWidth * .3};
       entryGroup.add(box(.055, .3, .09, frameMaterial, handle, 1.45, anchor.yaw, .22));
       if (entry.handrails) {
-        const rail = materials.flat(0x477c9c);
+        const rail = materials.paintedMetal(0x477c9c);
         for (const side of [-1, 1]) {
           const point = {...anchor, x: anchor.x + Math.cos(anchor.yaw) * side * (doorWidth + .85) / 2, z: anchor.z - Math.sin(anchor.yaw) * side * (doorWidth + .85) / 2};
           const near = {x: point.x + point.nx * .45, y: 1.38, z: point.z + point.nz * .45};
@@ -124,7 +124,7 @@ function cylinderBetween(group, from, to, radius, material, name) {
   group.add(mesh);
 }
 
-export function addGasPipes(scene, layout) {
+export function addGasPipes(scene, layout, materials) {
   const collection = new THREE.Group();
   collection.name = "gas-pipes";
   for (const pipe of layout.gasPipes || []) {
@@ -136,8 +136,10 @@ export function addGasPipes(scene, layout) {
     if (points.length < 2) continue;
     const pipeGroup = new THREE.Group();
     pipeGroup.name = pipe.id;
-    const pipeMaterial = new THREE.MeshStandardMaterial({ color: pipe.color || "#e2c04a", roughness: pipe.roughness ?? 0.64, metalness: pipe.metalness ?? 0.2 });
-    const supportMaterial = new THREE.MeshStandardMaterial({ color: pipe.supportColor || "#665c46", roughness: 0.82, metalness: 0.05 });
+    const pipeMaterial = materials.paintedMetal(pipe.color || "#e2c04a").clone();
+    pipeMaterial.roughness = pipe.roughness ?? .76;
+    pipeMaterial.metalness = pipe.metalness ?? .15;
+    const supportMaterial = materials.paintedMetal(pipe.supportColor || "#665c46");
     const radius = Math.max(0.04, Number(pipe.diameterM) / 2 || 0.055);
     for (let index = 1; index < points.length; index += 1) {
       cylinderBetween(pipeGroup, points[index - 1], points[index], radius, pipeMaterial, `${pipe.id}-segment-${index}`);

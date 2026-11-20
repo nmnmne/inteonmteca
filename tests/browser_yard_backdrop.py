@@ -91,7 +91,15 @@ def exercise(browser, route, mobile=False, fallback=False):
         # Observe genuine camera-transform changes on the scene's own Three
         # module. The courtyard shaders can optimize away a viewMatrix uniform.
         page.evaluate("""async () => {
-          const { PerspectiveCamera } = await import('./yard/vendor/three.module.js');
+          const { PerspectiveCamera, Scene } = await import('./yard/vendor/three.module.js');
+          const renderScene = Scene.prototype.onBeforeRender;
+          Scene.prototype.onBeforeRender = function(renderer, ...args) {
+            if (renderer.domElement.closest('[data-yard-layer]') && this.userData.bakedLighting) {
+              const {gpuBytes, receivers} = this.userData.bakedLighting;
+              qaYard.shadows = {gpuBytes, receivers, detail:this.userData.detailLoading.status};
+            }
+            return renderScene.call(this, renderer, ...args);
+          };
           const update = PerspectiveCamera.prototype.updateMatrixWorld;
           PerspectiveCamera.prototype.updateMatrixWorld = function(...args) {
             const result = update.apply(this,args);
@@ -151,6 +159,9 @@ def exercise(browser, route, mobile=False, fallback=False):
     if not studio:
         assert page.evaluate("history.length") == baseline["history"]
     if not fallback:
+        page.wait_for_function("qaYard.shadows?.detail === 'ready'", timeout=45000)
+        shadows = page.evaluate("qaYard.shadows")
+        assert shadows["gpuBytes"] == 1024 * 1024 * 4 and shadows["receivers"] > 150, shadows
         before = page.evaluate("qaYard.matrices")
         page.wait_for_function("n => qaYard.matrices > n", arg=before)
     assert not errors and not scene_failures, (errors, scene_failures)

@@ -5,6 +5,90 @@ function seeded(seed) {
   return () => ((seed = (1664525 * seed + 1013904223) >>> 0) / 4294967296);
 }
 
+// A leafy spray has folded blades with a raised midrib. Its gaps are real
+// geometry, so the same silhouette is visible from the path and from the air.
+function leafSpray() {
+  const points = [], colors = [], indices = [];
+  const shades = [[.32,.45,.14],[.40,.52,.20],[.28,.40,.12],[.44,.54,.22]];
+  for (let i=0;i<14;i++) {
+    const t = i / 14, side = i % 2 ? 1 : -1;
+    const x = t * .56, y = .12 * Math.sin(t * Math.PI) + (i%3) * .013;
+    const size = .115 + .055*Math.sin((i+1)*2.2);
+    const shade = shades[i%shades.length];
+    const start = points.length / 3;
+    points.push(x,y,0, x+.013,y+.025,side*size*.57, x+.045,y+.047,side*size*.51,
+      x+.093,y+.017,side*size*.56, x+.11,y-.008,side*size);
+    for(let k=0;k<5;k++) colors.push(...shade);
+    for(const tri of [[0,1,2],[0,2,3],[1,4,2],[2,4,3]]) {
+      const winding = side > 0 ? tri : [tri[0],tri[2],tri[1]];
+      indices.push(...winding.map(v=>start+v));
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors,3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+export function addCourtyardTrees(scene, materials, circles) {
+  if (!circles?.length) return;
+  const random = seeded(14046), branches = [], foliage = [], up = new THREE.Vector3(0,1,0);
+  const dummy = new THREE.Object3D();
+  const branch = (a,b,radius) => {
+    const direction = b.clone().sub(a);
+    dummy.position.copy(a).lerp(b,.5);
+    dummy.quaternion.setFromUnitVectors(up,direction.clone().normalize());
+    dummy.scale.set(radius,direction.length(),radius);
+    dummy.updateMatrix();
+    branches.push(dummy.matrix.clone());
+  };
+  for (const tree of circles) {
+    const height = 4.6 + random() * 1.4;
+    const root = new THREE.Vector3(tree.x,0,tree.z);
+    const fork = root.clone().add(new THREE.Vector3(.12, height*.44, -.04));
+    const crown = fork.clone().add(new THREE.Vector3(-.19, height*.49, .15));
+    branch(root,fork,tree.radius);
+    branch(fork,crown,tree.radius*.53);
+    const phase = random()*Math.PI*2;
+    for (let i=0;i<16;i++) {
+      const level=i/16, angle = phase + i * 2.4;
+      const radius = (1.1 + .8 * Math.sin(Math.PI*(.18+level*.82))) * (.84 + random()*.24);
+      const base = fork.clone().lerp(crown,level);
+      const tip = base.clone().add(new THREE.Vector3(Math.cos(angle)*radius,.48+random()*.37,Math.sin(angle)*radius));
+      branch(base,tip, .069-.034*level);
+      for (let j=0;j<5;j++) {
+        const origin=base.clone().lerp(tip,.30+.15*j);
+        const twigAngle=angle+(j%2 ? .95 : -.95);
+        const reach=.42+random()*.32;
+        const end=origin.clone().add(new THREE.Vector3(Math.cos(twigAngle)*reach,.17+random()*.21,Math.sin(twigAngle)*reach));
+        branch(origin,end,.018);
+        for (let k=0;k<4;k++) {
+          dummy.position.copy(origin).lerp(end,.19+.23*k);
+          dummy.rotation.set((random()-.5)*.55,-twigAngle+(k%2?.8:-.8),(random()-.25)*.68);
+          dummy.scale.setScalar(.86+random()*.49);
+          dummy.updateMatrix();
+          foliage.push(dummy.matrix.clone());
+        }
+      }
+    }
+  }
+  const wood=new THREE.InstancedMesh(new THREE.CylinderGeometry(.7,1,1,7),materials.bark(),branches.length);
+  branches.forEach((matrix,i)=>wood.setMatrixAt(i,matrix));
+  wood.name='courtyard-tree-branches';
+  const leaves=new THREE.InstancedMesh(leafSpray(),new THREE.MeshLambertMaterial({
+    vertexColors:true, side:THREE.DoubleSide,
+  }),foliage.length);
+  const tint=new THREE.Color();
+  foliage.forEach((matrix,i)=>{
+    leaves.setMatrixAt(i,matrix);
+    leaves.setColorAt(i,tint.setRGB(.71+random()*.24,.72+random()*.21,.54+random()*.27));
+  });
+  leaves.name='courtyard-tree-foliage';
+  scene.add(wood,leaves);
+}
+
 function surface(data, material, height) {
   const points = ring => ring.map(([x,z]) => new THREE.Vector2(x,-z));
   const shape = new THREE.Shape(points(data.polygon));
@@ -174,7 +258,7 @@ export function addLandscaping(scene, materials, data) {
   addLawnTufts(scene, lawns, data.patches);
   const pathMaterial=materials.asphalt(1,1);
   data.paths.forEach((path,i) => {
-    const mesh=surface(path,pathMaterial,.027);
+    const mesh=surface(path,path.material==='concrete' ? materials.concrete(1,1) : pathMaterial,.027);
     mesh.name=`lawn-entrance-path-${i}`;
     scene.add(mesh);
   });

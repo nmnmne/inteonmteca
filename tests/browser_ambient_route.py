@@ -42,8 +42,8 @@ def check_route(browser, mobile):
         const {pointInRing, distanceToSegment} = await import('/yard/navigation.js');
         const {virtualAmount} = await import('/yard/digital-boundary.js');
         const qa = window.qaRoute, layout = qa.layout;
-        const classify = ({x,z}) => {
-            const building = layout.buildings.find(b => pointInRing(x, z, b.footprint));
+        const classify = ({x,y,z}) => {
+            const building = layout.buildings.find(b => y < b.heightM && pointInRing(x, z, b.footprint));
             const wall = Math.min(...layout.buildings.map(b => Math.min(...b.footprint.map((a,i,ring) => {
                 const next = ring[(i+1) % ring.length];
                 return distanceToSegment(x, z, a[0], a[1], next[0], next[1]);
@@ -54,7 +54,9 @@ def check_route(browser, mobile):
         Scene.prototype.onBeforeRender = function(renderer, scene, camera, ...rest) {
             if (renderer.domElement.closest('[data-yard-layer]')) {
                 const proxy = scene.getObjectByName('digital-buildings'), grid = scene.getObjectByName('digital-ground');
+                qa.decal = scene.getObjectByName('music-logo').material.map;
                 qa.frame = {x:camera.position.x, z:camera.position.z, amount:scene.userData.virtuality,
+                            city:scene.getObjectByName('city-hologram').visible, backstage:scene.userData.cityBackstage,
                             proxy:proxy.visible, grid:grid.material.opacity, sky:scene.background.getHex()};
                 qa.count++;
             }
@@ -72,6 +74,21 @@ def check_route(browser, mobile):
             throw Error('The real route did not reach ' + stage);
         };
     }""")
+    page.wait_for_function("qaRoute.decal?.version > 2")
+    # The starting facade uses actual transparent letter shapes and updates while
+    # the camera is held still. The credit line has its own space on the screen.
+    version = page.evaluate("qaRoute.decal.version")
+    page.wait_for_function("v => qaRoute.decal.version > v", arg=version)
+    assert page.evaluate("""() => {
+        const image = qaRoute.decal.image;
+        const data = image.getContext('2d').getImageData(0,0,image.width,image.height).data;
+        let ink=0;
+        for(let i=3; i<data.length; i+=4) if(data[i]>90) ink++;
+        const title=document.querySelector('#logo-wrap').getBoundingClientRect();
+        const credit=document.querySelector('.room-colophon .topline').getBoundingClientRect();
+        return ink>1000 && ink<image.width*image.height*.85
+            && credit.top>title.bottom && credit.bottom<=innerHeight;
+    }""")
     screenshot_dir = os.environ.get("INTEON_ROUTE_SHOTS")
     street_sky = None
     for name, stage in [("01-before", "street"), ("02-inside", "house"), ("03-after", "street"),
@@ -83,6 +100,8 @@ def check_route(browser, mobile):
         digital = stage != "street"
         assert (frame["amount"] > .98 if digital else frame["amount"] < .002), (target, frame)
         assert frame["proxy"] == digital, (target, frame)
+        if stage == "outside":
+            assert frame["city"] and frame["backstage"] == 1, (target, frame)
         sky = frame["sky"].to_bytes(3, "big")
         if street_sky is None:
             street_sky = sky

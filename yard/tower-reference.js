@@ -4,7 +4,7 @@ import { facadeNormal } from './facade-frame.js';
 /* Exterior proportions from the supplied street photograph, not an interior plan.
    One instanced draw per material, including slab ends and inset glazing. */
 export function addTowerReference(scene, materials, building) {
-  const palette={stone:materials.flat(0xc9c4b6),recess:materials.flat(0x95574b),
+  const palette={stone:materials.mineral(0xc9c4b6),recess:materials.mineral(0x95574b),
     glass:materials.photoWindow(),glazing:materials.photoWindow('glazing'),frame:materials.flat(0xddd9ca),dark:materials.flat(0x424c4c)};
   const batches=new Map(),dummy=new THREE.Object3D(),ring=building.footprint;
   const stacks=new Set(building.facadeProject.balconyEdges),fh=building.heightM/building.floors;

@@ -126,3 +126,67 @@ test('deferred building attachments reuse shader patches and adopt the current b
  edge.update(layout.spawn.x,layout.spawn.z);assert.equal(batch.visible,true);
  assert.equal(scene.getObjectByName('digital-buildings').children.filter(m=>m.isMesh).length,layout.buildings.length);
 });
+
+test('the mapped city rises on approach, leaves only its pulse network beyond the seam and restores the street', async () => {
+  const THREE = await import('../yard/vendor/three.module.js');
+  const {createDigitalBoundary} = await import('../yard/digital-boundary.js');
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(); scene.fog = new THREE.Fog(0,90,260);
+  const edge = createDigitalBoundary(scene,layout,{skyColor:0xabcdef,fogColor:0xeeeeee},new THREE.Mesh(),[]);
+  const street = new THREE.Group(), hiddenDetail = new THREE.Group();
+  hiddenDetail.visible = false;
+  scene.add(street,hiddenDetail);
+  const city = scene.getObjectByName('city-hologram');
+  const blocks = city.getObjectByName('city-projected-blocks');
+  const allOral = city.getObjectByName('city-distant-relief');
+  const backbone = city.getObjectByName('city-signal-backbone');
+  const relays = city.getObjectByName('city-relay-network');
+  const lines = blocks.children.find(item => item.isLineSegments);
+  const retained = backbone.children.find(item => item.isLineSegments);
+  assert.ok(lines.geometry.getAttribute('position').count > retained.geometry.getAttribute('position').count * 5);
+  const bounds = new THREE.Box3().setFromObject(city);
+  assert.ok(bounds.max.y >= 39 && bounds.max.x-bounds.min.x > 900 && bounds.max.z-bounds.min.z > 900);
+  const cityExtent = new THREE.Box3().setFromObject(allOral).getSize(new THREE.Vector3());
+  assert.ok(cityExtent.x > 11000 && cityExtent.z > 13000, 'city-scale geographic coverage');
+  assert.equal(allOral.children.length,2,'batched walls and linework for the distant city');
+  city.traverse(object => {
+    if (object.isMesh || object.isLineSegments) assert.equal(object.userData.bakedShadowCaster, false);
+  });
+  edge.update(layout.spawn.x,layout.spawn.z);
+  assert.equal(city.visible,false);
+  assert.equal(edge.needsAnimation,false);
+  edge.update(-65,0,1.35,8);
+  assert.ok(scene.userData.cityHologram > 0 && scene.userData.cityHologram < 1);
+  assert.ok(lines.material.uniforms.rise.value < 1);
+  assert.ok(street.visible && blocks.visible && !relays.visible);
+  edge.update(-87,0,1.35,10);
+  assert.equal(lines.material.uniforms.rise.value,1);
+  assert.ok(allOral.visible);
+  edge.update(-87,0,1.35,11);
+  assert.equal(lines.material.uniforms.seconds.value,11);
+  assert.equal(edge.needsAnimation,true);
+  edge.update(-106,0,1.35,15);
+  assert.ok(!blocks.visible && !allOral.visible && backbone.visible && relays.visible && !street.visible);
+  const lateDetail = new THREE.Group();
+  scene.add(lateDetail);
+  edge.update(-107,0);
+  assert.equal(lateDetail.visible,false);
+  edge.update(-86,0);
+  assert.ok(blocks.visible && allOral.visible && !relays.visible && street.visible && lateDetail.visible);
+  assert.equal(hiddenDetail.visible,false);
+});
+
+test('a flight above a roof does not trigger a facade crossing', async () => {
+  const THREE = await import('../yard/vendor/three.module.js');
+  const {createDigitalBoundary} = await import('../yard/digital-boundary.js');
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(); scene.fog = new THREE.Fog(0,90,260);
+  const effect = createDigitalBoundary(scene,layout,{skyColor:0xabcdef,fogColor:0xeeeeee},new THREE.Mesh(),[],{passThroughBuildings:true});
+  const b = layout.buildings.find(h => h.id === 'house-46-1');
+  const x = b.footprint.reduce((sum,p) => sum+p[0],0) / b.footprint.length;
+  const z = b.footprint.reduce((sum,p) => sum+p[1],0) / b.footprint.length;
+  effect.update(x,z,b.heightM+3);
+  assert.equal(scene.userData.virtuality,0);
+  effect.update(x,z,b.heightM-0.5);
+  assert.equal(scene.userData.virtuality,1);
+});
