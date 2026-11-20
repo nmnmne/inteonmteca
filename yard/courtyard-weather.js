@@ -91,7 +91,7 @@ function shadePavement(material, wind, motion) {
     shader.uniforms.weatherSeconds = motion.matches ? {value:0} : wind;
     shader.vertexShader = 'varying vec2 weatherWorld;\n' + shader.vertexShader.replace(
       '#include <project_vertex>', '#include <project_vertex>\nweatherWorld=(modelMatrix*vec4(transformed,1.)).xz;');
-    shader.fragmentShader = 'varying vec2 weatherWorld; uniform float weatherSeconds;\n' + weatherFieldShader + shader.fragmentShader.replace(
+    shader.fragmentShader = 'varying vec2 weatherWorld; uniform float weatherSeconds;\n' + weatherFieldShader + '\n' + shader.fragmentShader.replace(
       '#include <color_fragment>', `#include <color_fragment>
       vec4 climate = weatherAt(weatherWorld, weatherSeconds);
       diffuseColor.rgb *= mix(vec3(1.),vec3(.52,.65,.79),climate.r);

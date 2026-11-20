@@ -74,7 +74,7 @@ function galleryGeometry(house) {
 export function createHouseBackstage(house, clock, entryPulse) {
   const fade={value:0};
   const material=new THREE.ShaderMaterial({
-    side:THREE.DoubleSide,
+    side:THREE.DoubleSide,transparent:true,forceSinglePass:true,
     uniforms:{fade,seconds:clock,entryPulse,storey:{value:house.heightM/(house.floors || Math.max(1,Math.round(house.heightM/2.8)))}},
     vertexShader:`
       attribute float surfaceKind;
@@ -89,36 +89,39 @@ export function createHouseBackstage(house, clock, entryPulse) {
       ${entryPulseShader}
       float stripe(float x,float period,float width) {
         float d=abs(fract(x/period+.5)-.5)*period;
-        float aa=max(.006,fwidth(x));
-        return (1.-smoothstep(width,width+aa,d))*min(1.,period/(aa*3.));
+        float footprint=fwidth(x);
+        return (1.-smoothstep(0.,width+max(.025,footprint),d))*min(1.,period/max(.001,footprint*4.));
       }
       void main() {
-        float threshold=fract(52.9829189*fract(dot(floor(gl_FragCoord.xy),vec2(.06711056,.00583715))));
-        if (threshold>=fade) discard;
-        vec3 ink=vec3(.018,.030,.048);
+        // Broad reflected light keeps the floor and the joists readable between pulses.
+        float bounce=.5+.5*cos(metres.x*.42+metres.y*.27);
+        vec3 ink=mix(vec3(.037,.051,.066),vec3(.057,.074,.083),bounce);
         float route=0.;
         if(surface<.5){
-          float joints=max(stripe(metres.x,5.4,.025),stripe(metres.y,2.7,.025));
-          ink+=vec3(.023,.046,.066)*joints;
-          route=stripe(abs(metres.y),5.4,.075);
+          float joints=max(stripe(metres.x,5.4,.055),stripe(metres.y,2.7,.055));
+          ink+=vec3(.012,.016,.018)*joints;
+          route=stripe(metres.y,5.4,.13);
         }else if(surface<1.5){
           vec2 panel=vec2(fract(metres.x/3.6)-.5,fract(metres.y/storey)-.54);
-          vec2 edge=abs(panel)-vec2(.29,.205);
-          float opening=max(edge.x,edge.y);
-          if(opening<-.018) discard;
-          ink+=vec3(.085,.20,.25)*(1.-smoothstep(.004,.030,abs(opening)));
-          ink+=vec3(.022,.040,.055)*stripe(metres.y,.19,.018);
-          route=stripe(metres.y-.33,storey,.055);
+          vec2 rim=abs(panel)-vec2(.25,.165);
+          float opening=length(max(rim,0.))+min(max(rim.x,rim.y),0.)-.04;
+          if(opening<0.) discard;
+          ink+=vec3(.035,.048,.052)*(1.-smoothstep(0.,.074,opening));
+          ink+=vec3(.009,.012,.014)*stripe(metres.y,.38,.036);
+          route=stripe(metres.y-.33,storey,.11);
         }else{
-          ink=vec3(.052,.073,.095);
-          route=.20+.80*max(stripe(world.y-.36,storey,.10),stripe(metres.x,2.7,.07));
+          ink=vec3(.073,.092,.105);
+          route=.22+.58*max(stripe(world.y-.36,storey,.16),stripe(metres.x,2.7,.15));
         }
-        float phase=fract((world.x*.68+world.z*.44+world.y*.9)/13.-seconds*.16);
-        float packet=smoothstep(.68,.91,phase)*(1.-smoothstep(.91,1.,phase));
-        vec3 glow=mix(vec3(.06,.39,.47),vec3(.57,.28,.88),packet);
-        ink+=route*glow*(.52+.48*packet);
-        float energy;
-        gl_FragColor=vec4(applyEntryPulse(ink,world,energy),1.);
+        float phase=(world.x*.68+world.z*.44+world.y*.9)/13.-seconds*.10;
+        float packet=.5+.5*cos(6.2831853*phase);
+        vec3 glow=mix(vec3(.031,.084,.095),vec3(.116,.092,.142),packet);
+        ink+=route*glow;
+        float behind;
+        float wave=entryWave(world,behind);
+        vec3 sheen=mix(vec3(.062,.108,.115),vec3(.112,.079,.134),smoothstep(1.,15.,behind));
+        ink+=sheen*wave*(.62+.38*route);
+        gl_FragColor=vec4(ink,fade);
         #include <colorspace_fragment>
       }`
   });

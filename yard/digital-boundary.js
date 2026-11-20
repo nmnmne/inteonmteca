@@ -15,18 +15,19 @@ const signedDistance = (x,z,ring) => {
   }
   return pointInRing(x,z,ring) ? -nearest : nearest;
 };
-function animateDigitalMaterial(material, clock, entryPulse, isWire) {
+function animateDigitalMaterial(material, clock, entryPulse, pulseStrength, isWire) {
   const original = material.onBeforeCompile;
   const baseKey = material.customProgramCacheKey();
   material.onBeforeCompile = (shader, renderer) => {
     original.call(material, shader, renderer);
     shader.uniforms.entryPulse = entryPulse;
+    shader.uniforms.pulseStrength = pulseStrength;
     shader.uniforms.wireSeconds = clock;
     shader.vertexShader = 'varying vec3 wireWorld;\n' + shader.vertexShader.replace(
       '#include <project_vertex>',
       '#include <project_vertex>\nwireWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;'
     );
-    shader.fragmentShader = 'varying vec3 wireWorld; uniform float wireSeconds;\n' + entryPulseShader + shader.fragmentShader.replace(
+    shader.fragmentShader = 'varying vec3 wireWorld; uniform float wireSeconds, pulseStrength;\n' + entryPulseShader + shader.fragmentShader.replace(
       '#include <color_fragment>',
       `#include <color_fragment>
        ${isWire ? `
@@ -36,7 +37,7 @@ function animateDigitalMaterial(material, clock, entryPulse, isWire) {
        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.78, 1.0, 0.96), packet * 0.92);
        diffuseColor.a *= 0.61 + 0.39 * packet;` : ''}
        float entryEnergy;
-       diffuseColor.rgb = applyEntryPulse(diffuseColor.rgb, wireWorld, entryEnergy);`
+       diffuseColor.rgb = mix(diffuseColor.rgb, applyEntryPulse(diffuseColor.rgb, wireWorld, entryEnergy), pulseStrength);`
     );
   };
   material.customProgramCacheKey = () => `${baseKey}:entry-pulse-${isWire}`;
@@ -51,6 +52,7 @@ export function virtualAmount(layout,x,z,edge=signedDistance(x,z,layout.walkable
 export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{ passThroughBuildings = false } = {}) {
   const cx=39,cz=-2.5, span=700, outerDomeScale=1.65;
   const entryPulse = { value: new THREE.Vector4(0, 0, 0, -1) };
+  const pulseStrength = {value:1};
   const city = createCityHologram(scene, layout.walkable, entryPulse);
   let sampled = false, inBackstage = false, pulseStarted = -Infinity;
   const wallContact = passThroughBuildings ? createCrowWallContact(layout) : null;
@@ -66,8 +68,8 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
     mesh.name=`digital-dome-${i+1}`;mesh.position.set(cx,0,cz);mesh.scale.set(220*scale,125*scale,240*scale);mesh.userData.bakedShadowCaster=false;scene.add(mesh);return mesh;
   });
   const low=new THREE.Group();low.name='digital-buildings';scene.add(low);
-  animateDigitalMaterial(grid.material, clock, entryPulse, true);
-  for (const dome of domes) animateDigitalMaterial(dome.material, clock, entryPulse, true);
+  animateDigitalMaterial(grid.material, clock, entryPulse, pulseStrength, true);
+  for (const dome of domes) animateDigitalMaterial(dome.material, clock, entryPulse, pulseStrength, true);
   const galleries = new THREE.Group(); galleries.name='house-backstages';
   if (wallContact) scene.add(galleries);
   const mix={value:0}, proxies=[];let detailed=[];
@@ -90,13 +92,13 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
     const material=new THREE.MeshBasicMaterial({color:0x345e65,fog:false,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});
     const surfaceMix={value:0};
     patch(material,surfaceMix,true);
-    animateDigitalMaterial(material, clock, entryPulse, false);
+    animateDigitalMaterial(material, clock, entryPulse, pulseStrength, false);
     const gallery = wallContact && createHouseBackstage(b,clock,entryPulse);
     if (gallery) galleries.add(gallery);
-    proxies.push({surfaceMix, crossing:0, inside:false, gallery});
     const mesh=new THREE.Mesh(geometry,material);mesh.name=`digital-${b.id}`;mesh.userData.digitalProxy=true;mesh.userData.bakedShadowCaster=false;low.add(mesh);
     const lines=new THREE.LineSegments(new THREE.EdgesGeometry(geometry,20),new THREE.LineBasicMaterial({color:0x9ff7df,transparent:true,opacity:0,fog:false}));lines.userData.bakedShadowCaster=false;low.add(lines);
-    animateDigitalMaterial(lines.material, clock, entryPulse, true);
+    animateDigitalMaterial(lines.material, clock, entryPulse, pulseStrength, true);
+    proxies.push({surfaceMix, crossing:0, inside:false, gallery, lines});
   }
   low.visible=false;
   const baseSky=new THREE.Color(sun.skyColor),baseFog=new THREE.Color(sun.fogColor),dark=new THREE.Color(0x07121b);
@@ -186,6 +188,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
       if (reducedMotion?.matches) pulseStarted = -Infinity;
       else if (sampled && entered) {
         entryPulse.value.set(x, y, z, 0);
+        pulseStrength.value = sparse ? 1 : .20;
         pulseStarted = timeSeconds;
       }
       sampled = true;
@@ -195,6 +198,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
       animated = entryPulse.value.w >= 0 || amount > .001 || reveal > .001 || outer > .001;
       const outsideOuterDome=radius>=outerDomeScale;
       scene.userData.virtuality=amount;scene.userData.virtualLayer=outer;
+      scene.userData.houseInterior=roomFade;
       scene.userData.cityHologram=reveal;scene.userData.cityBackstage=backstage;
       scene.userData.outsideOuterDome=outsideOuterDome;
       // The two domes are anchored to the courtyard, never to the camera.
@@ -204,13 +208,16 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
       mix.value=Math.max(smooth(Math.max(borderAmount,backstage),.35,.85),smooth(roomFade,.08,.49));
       // Keep the wireframe of the house being crossed, with an open view
       // through its surface. Other digital houses keep their solid silhouettes.
-      for (const house of proxies) house.surfaceMix.value = mix.value * (1 - smooth(house.crossing,.03,.49));
+      for (const house of proxies) {
+        house.surfaceMix.value = mix.value * (1 - smooth(house.crossing,.03,.49));
+        house.lines.material.opacity = mix.value * (.85 - .60*house.crossing);
+      }
       const key=Math.round(amount*1000)+Math.round(outer*1000)*1001+Number(outsideOuterDome)*1002001;
       const mixKey=Math.round(mix.value*1000);
       if(key===previous && mixKey===previousMix)return;
       previous=key;previousMix=mixKey;
       detailed.forEach(m=>m.visible=mix.value<1);low.visible=mix.value>0;
-      low.children.forEach(m=>{if(m.isLineSegments)m.material.opacity=mix.value*.85;else m.material.color.set(0x345e65).lerp(new THREE.Color(0x433958),outer);});
+      low.children.forEach(m=>{if(m.isMesh)m.material.color.set(0x345e65).lerp(new THREE.Color(0x433958),outer);});
       grid.material.opacity=outsideOuterDome?0:Math.min(.9,amount*1.8);domes[0].material.opacity=Math.min(.72,amount*1.5);domes[1].material.opacity=outer*.65;
       grid.visible=grid.material.opacity>0;
       for (const dome of domes) dome.visible=dome.material.opacity>0;

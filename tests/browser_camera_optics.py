@@ -38,6 +38,8 @@ def verify(browser):
         camera.position.x=0; lens.render(scene,camera,dt,8,still); return snap();
       }
       const raw=shoot(0), facets=shoot(-.002), motion=shoot(-.15), paused=shoot(-.15,.033,true), cut=shoot(-8);
+      scene.userData.houseInterior=1;
+      const gallery=shoot(-.002);
       function difference(a,b,x0,x1) {
         let total=0,changed=0,count=0;
         for(let y=44;y<195;y++)for(let x=x0;x<x1;x++) {
@@ -46,11 +48,13 @@ def verify(browser):
         return {mean:total/count,changed:changed/count};
       }
       const data={near:difference(raw,facets,80,190),far:difference(raw,facets,230,340),
-        moving:difference(raw,motion,80,190),still:difference(raw,paused,80,340),cut:difference(raw,cut,80,340)};
+        gallery:difference(raw,gallery,80,190),moving:difference(raw,motion,80,190),
+        still:difference(raw,paused,80,340),cut:difference(raw,cut,80,340)};
       lens.dispose();renderer.dispose();return data;
     }""")
     assert not errors, errors
     assert measured['near']['mean'] > .8 and measured['far']['mean'] < .6, measured
+    assert 0 < measured['gallery']['mean'] < .55 * measured['near']['mean'], measured
     assert measured['moving']['mean'] > 1.5 * measured['near']['mean'], measured
     assert measured['still']['mean'] == measured['cut']['mean'] == 0, measured
     print(measured, flush=True)

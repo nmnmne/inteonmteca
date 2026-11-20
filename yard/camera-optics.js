@@ -106,7 +106,7 @@ export function createCameraOptics(renderer) {
       uniforms.eye.value.copy(camera.position);
       uniforms.shutter.value=Math.min(.65, .014/Math.max(.01,dt));
       uniforms.maxTrail.value=level<4 ? 4 : 9;
-      uniforms.facetStrength.value=1;
+      uniforms.facetStrength.value=1-.80*(scene.userData.houseInterior || 0);
       uniforms.extraTap.value=level>=5 ? 1 : 0;
       renderer.setRenderTarget(target); renderer.render(scene,camera);
       renderer.setRenderTarget(null); renderer.render(pass,screenCamera);

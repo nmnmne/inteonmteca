@@ -34,7 +34,11 @@ test('touch and desktop render every seasonal front through one instanced draw, 
       global.matchMedia = query => ({matches: query.includes('pointer') && compact});
       const scene = new T.Scene();
       scene.userData.grassWind = {value:29};
-      addCourtyardWeather(scene,{});
+      const pavement=new T.MeshStandardMaterial();
+      addCourtyardWeather(scene,{},pavement);
+      const shader={...T.ShaderLib.standard,uniforms:{}};
+      pavement.onBeforeCompile(shader);
+      assert.match(shader.fragmentShader,/\n[ \t]*#define STANDARD/,'the surface shader directive starts on its own line');
       const front=scene.getObjectByName('courtyard-weather-fronts');
       assert.equal(front.geometry.instanceCount,compact ? 830 : 1500);
       assert.equal(front.material.uniforms.weatherMap.value,weatherTexture(T));
