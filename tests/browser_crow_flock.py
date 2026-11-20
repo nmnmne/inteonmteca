@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 
+from courtyard_phase import fixed_courtyard_phase
 from playwright.sync_api import sync_playwright
 
 
@@ -166,6 +167,7 @@ def check(browser, mobile):
     page.on("console", lambda msg: errors.append(msg.text) if "Shader Error" in msg.text else None)
     page.route("**/yard/auto-walk.js*", observe_walk)
     epoch = "2026-06-21T00:08:00Z" if not mobile else "2026-11-20T00:21:00Z"
+    fixed_courtyard_phase(page)
     page.add_init_script(f"Date.now = () => Date.parse('{epoch}') + performance.now()")
     page.goto(BASE, wait_until="domcontentloaded")
     page.wait_for_selector('body[data-yard-backdrop="live"]', timeout=75000)

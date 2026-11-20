@@ -3,6 +3,7 @@ import base64
 import os
 from pathlib import Path
 
+from courtyard_phase import fixed_courtyard_phase
 from playwright.sync_api import sync_playwright
 
 from browser_ambient_route import BASE, expose_walker
@@ -41,6 +42,7 @@ def sample(browser, day):
     page.route("**/yard/auto-walk.js*", expose_walker)
     page.route("**/yard/wall-wordmark.js*", expose_mural_clock)
     stamp = "2026-06-21T00:08:00Z" if day else "2026-11-20T00:21:00Z"
+    fixed_courtyard_phase(page)
     page.add_init_script(f"Date.now = () => Date.parse('{stamp}') + performance.now()")
     page.goto(BASE, wait_until="domcontentloaded")
     page.wait_for_selector('body[data-yard-backdrop="live"]', timeout=60000)

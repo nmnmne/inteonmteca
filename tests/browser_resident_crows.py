@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 
+from courtyard_phase import fixed_courtyard_phase
 from playwright.sync_api import sync_playwright
 
 
@@ -140,6 +141,7 @@ def check(browser, mobile):
                             is_mobile=mobile, has_touch=mobile)
     page.route("**/yard/auto-walk.js*", observe_simulation)
     page.route("**/yard/crow-flock.js*", observe_simulation)
+    fixed_courtyard_phase(page)
     page.add_init_script("Date.now=()=>Date.parse('2026-06-21T00:08:00Z')+performance.now()")
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))

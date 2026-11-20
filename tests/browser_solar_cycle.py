@@ -2,6 +2,7 @@
 import os
 from datetime import datetime, timezone
 
+from courtyard_phase import fixed_courtyard_phase
 from playwright.sync_api import sync_playwright
 
 from browser_ambient_route import expose_walker
@@ -101,6 +102,7 @@ def exercise(browser, mobile):
     evening_at = noon_at + 6 * SOLAR_HOUR
     night_at = noon_at + 12 * SOLAR_HOUR
     morning_at = MIDNIGHT + 4 * SOLAR_HOUR
+    fixed_courtyard_phase(page)
     page.add_init_script(f"window.qaTime={morning_at}; Date.now = () => window.qaTime;")
     page.goto(BASE + "/#studio", wait_until="domcontentloaded")
     page.wait_for_selector('body[data-yard-backdrop="live"]', timeout=90000)

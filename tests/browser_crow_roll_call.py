@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 
+from courtyard_phase import fixed_courtyard_phase
 from playwright.sync_api import sync_playwright
 
 from browser_resident_crows import BASE, observe_simulation
@@ -102,6 +103,7 @@ def check(browser, mobile):
     page.on("console", lambda message: errors.append(message.text) if "Shader Error" in message.text else None)
     page.route("**/yard/auto-walk.js*", observe_simulation)
     page.route("**/yard/crow-flock.js*", observe_simulation)
+    fixed_courtyard_phase(page)
     page.add_init_script("Date.now=()=>Date.parse('2026-06-21T06:08:00Z')+performance.now()")
     page.goto(BASE, wait_until="domcontentloaded")
     page.wait_for_function("window.visitQA && document.body.dataset.yardBackdrop==='live'", timeout=75000)

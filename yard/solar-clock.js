@@ -1,8 +1,32 @@
 const radians = Math.PI / 180;
 const dayMs = 86400000;
 const courtyardDayMs = 20 * 60000;
+const phaseKey = 'inteon.courtyard.phase-ms';
 // Matches data/site-layout.json. Also available before the 3D layout has loaded.
 export const COURTYARD_ORIGIN = Object.freeze({lat:51.230186, lon:51.439256});
+
+function readPhase() {
+  try {
+    const stored = window.sessionStorage.getItem(phaseKey);
+    if (stored !== null && /^\d+$/.test(stored) && Number(stored)<courtyardDayMs) return Number(stored);
+  } catch { /* The document keeps its own phase if storage is unavailable. */ }
+  return null;
+}
+
+let visitPhase = 0;
+if (typeof window !== 'undefined') {
+  const navigation = window.performance?.getEntriesByType?.('navigation')[0]?.type;
+  const internal = window.document.referrer.startsWith(window.location.origin+'/');
+  const newTab = window.opener && window.history.length===1;
+  const continuing = navigation==='back_forward' || (navigation!=='reload' && internal && !newTab);
+  visitPhase = (continuing ? readPhase() : null) ?? Math.floor(Math.random()*courtyardDayMs);
+  try { window.sessionStorage.setItem(phaseKey,String(visitPhase)); } catch { /* Keep this document running. */ }
+  window.addEventListener('pageshow',event => {
+    // A later page may have started a fresh day. Restore it before the poster's
+    // pageshow listener samples the sky for the first visible frame.
+    if (event.persisted) visitPhase = readPhase() ?? visitPhase;
+  }, {capture:true});
+}
 
 function smooth(value, low, high) {
   const t = Math.max(0, Math.min(1, (value - low) / (high - low)));
@@ -16,13 +40,13 @@ export function sunForLocation({lat, lon}, epochMs) {
   return solarPosition(lat, lon, epochMs, dayMs);
 }
 
-// All visitors share the same 20-minute rotation. Only the Earth's rotation
-// speeds up: its seasonal tilt still follows the actual date in Uralsk.
-export function courtyardSunForLocation({lat, lon}, epochMs) {
-  return solarPosition(lat, lon, epochMs, courtyardDayMs);
+// The whole visit shares one accelerated rotation. Declination still follows
+// the real seasonal calendar in Uralsk, including across virtual midnights.
+export function courtyardSunForLocation({lat, lon}, epochMs, phaseMs = visitPhase) {
+  return solarPosition(lat, lon, epochMs, courtyardDayMs, phaseMs);
 }
 
-function solarPosition(lat, lon, epochMs, rotationMs) {
+function solarPosition(lat, lon, epochMs, rotationMs, phaseMs = 0) {
   const year = new Date(epochMs).getUTCFullYear();
   const start = Date.UTC(year, 0, 1);
   const yearDays = (Date.UTC(year + 1, 0, 1) - start) / dayMs;
@@ -32,7 +56,8 @@ function solarPosition(lat, lon, epochMs, rotationMs) {
   const declination = .006918 - .399912*Math.cos(gamma) + .070257*Math.sin(gamma)
     - .006758*Math.cos(2*gamma) + .000907*Math.sin(2*gamma)
     - .002697*Math.cos(3*gamma) + .00148*Math.sin(3*gamma);
-  const intoRotation = epochMs - Math.floor(epochMs / rotationMs) * rotationMs;
+  const rotated = epochMs + phaseMs;
+  const intoRotation = rotated - Math.floor(rotated / rotationMs) * rotationMs;
   const utcMinutes = intoRotation * 1440 / rotationMs;
   const hourAngle = ((utcMinutes + correction + 4 * lon) / 4 - 180) * radians;
   const latitude = lat * radians;

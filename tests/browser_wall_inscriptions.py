@@ -3,6 +3,7 @@ import base64
 import os
 from pathlib import Path
 
+from courtyard_phase import fixed_courtyard_phase
 from playwright.sync_api import sync_playwright
 from browser_ambient_route import BASE, expose_walker
 
@@ -16,6 +17,7 @@ def check(browser, mobile=False):
     page.route("**/yard/auto-walk.js*", expose_walker)
     # In the courtyard's 20-minute day these instants are 18:30 and 08:30 UTC.
     stamp = "2026-06-21T00:15:25Z" if mobile else "2026-06-21T00:07:05Z"
+    fixed_courtyard_phase(page)
     page.add_init_script(f"Date.now = () => Date.parse('{stamp}') + performance.now()")
     page.goto(BASE, wait_until="domcontentloaded")
     page.wait_for_selector('body[data-yard-backdrop="live"]', timeout=60000)
