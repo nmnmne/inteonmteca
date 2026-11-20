@@ -31,6 +31,7 @@ jobs:
       - name: Опубликовать на inteonmteca.online
         shell: pwsh
         env:
+          GH_TOKEN: ${{ github.token }}
           SITE_RELEASE_ACCOUNT: ${{ vars.SITE_RELEASE_ACCOUNT }}
           TEMP: ${{ runner.temp }}
           AWS_DEFAULT_REGION: ru-central1
