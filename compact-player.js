@@ -117,12 +117,12 @@
   }
   async function adjacent(step) {
     const id = side;
-    const entries = library.list();
+    const entries = library.list(id);
     if (!entries.length) return;
     mix.manual(id);
     const state = engine.snapshot()[id];
     const index = entries.findIndex(t => t.id === state.track?.id);
-    const next = index < 0 ? 0 : (index + step + entries.length) % entries.length;
+    const next = index < 0 ? (step > 0 ? 0 : entries.length - 1) : (index + step + entries.length) % entries.length;
     const key = entries[next].id, request = ++requests[id];
     const isCurrent = () => request === requests[id];
     if (!await library.load(id, key, isCurrent) || !isCurrent()) return;

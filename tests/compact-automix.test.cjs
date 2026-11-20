@@ -203,3 +203,20 @@ test('a target media error during preparation leaves the audible deck playing', 
   assert.equal(state.A.loopBeats, 0);
   assert.deepEqual(switched, []);
 });
+
+test('Auto spends every track in the round before playing a repeat', async () => {
+  const {mix, state, loads, advance} = studio({random: 0});
+  mix.setAuto('A', true);
+  let current = 'A';
+  for (let i = 0; i < 5; i++) {
+    state[current].time = state[current].duration - 3;
+    mix.sync();
+    await advance(16000);
+    current = current === 'A' ? 'B' : 'A';
+  }
+  const played = ['original', ...loads.map(([,id]) => id)];
+  const expected = new Set(tracks.map(track => track.id));
+  assert.deepEqual(new Set(played.slice(0, 3)), expected);
+  assert.deepEqual(new Set(played.slice(3, 6)), expected);
+  assert.notEqual(played[2], played[3]);
+});

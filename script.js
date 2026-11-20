@@ -1405,8 +1405,9 @@ const shuffle = (items) => {
 };
 
 const shufflePlaylist = (items) => {
-  const opening = window.CourtyardOpening?.find(items);
-  return opening ? [opening, ...shuffle(items.filter(track => track !== opening))] : shuffle(items);
+  const ordered = window.CourtyardOpening?.order(items) ?? shuffle(items);
+  const opening = isListeningRoom && window.CourtyardOpening?.find(ordered);
+  return opening ? [opening, ...ordered.filter(track => track !== opening)] : ordered;
 };
 
 const setPlaybackStatus = (text = "", state = "") => {

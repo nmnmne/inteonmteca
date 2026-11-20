@@ -7,6 +7,35 @@
     return tracks.find(track => track.id === trackId || track.audio === trackId);
   }
 
+  // Keep one order for the visible rows, deck transport and listening room.
+  // New imports receive a position without moving existing tracks past each other.
+  const sequence = [];
+  const ranks = new Map();
+  const keyOf = track => track.audio || track.id || track.file || track;
+  function order(items) {
+    const initial = sequence.length === 0;
+    const previousSize = sequence.length;
+    for (const track of items) {
+      const key = keyOf(track);
+      if (ranks.has(key)) continue;
+      const pos = Math.floor(Math.random() * (sequence.length + 1));
+      sequence.splice(pos, 0, key);
+      ranks.set(key, pos);
+    }
+    if (initial && sequence.length > 1) {
+      try {
+        const storageKey = 'inteonmteca.playlist.first';
+        if (localStorage.getItem(storageKey) === sequence[0]) {
+          const next = 1 + Math.floor(Math.random() * (sequence.length - 1));
+          [sequence[0], sequence[next]] = [sequence[next], sequence[0]];
+        }
+        localStorage.setItem(storageKey, sequence[0]);
+      } catch { /* Shuffling also works when storage is unavailable. */ }
+    }
+    if (sequence.length !== previousSize) sequence.forEach((key, index) => ranks.set(key, index));
+    return items.slice().sort((a,b) => ranks.get(keyOf(a)) - ranks.get(keyOf(b)));
+  }
+
   function watchDay(onChange) {
     let lastDay = new Date().toDateString();
     let timer;
@@ -38,5 +67,5 @@
     };
   }
 
-  window.CourtyardOpening = Object.freeze({trackId, find, watchDay});
+  window.CourtyardOpening = Object.freeze({trackId, find, order, watchDay});
 })();

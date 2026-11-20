@@ -131,7 +131,8 @@ def check_deck_browser(page):
     b_list = b.get_by_role("listbox")
     selected_title = "[role=option][aria-selected=true] .dd-browse-title"
     original_a, original_b = page.evaluate("[DJEngine.snapshot().A.track.title, DJEngine.snapshot().B.track.title]")
-    assert (original_a, original_b) == ("Memphis", "Виртуальная реальность")
+    assert original_a == page.evaluate("DJStudioLibrary.list()[0].title")
+    assert original_b != original_a
     assert a_list.is_visible() and b_list.is_visible()
     assert a.locator(".dd-wave").is_visible() and b.locator(".dd-wave").is_visible()
     a_list.hover()
@@ -309,12 +310,12 @@ def check_file_drops(browser, url):
                 wav.setparams((1, 2, 11025, 0, "NONE", ""))
                 wav.writeframes(array("h", (int(8000 * math.sin(2 * math.pi * (220 + 110*i) * n / 11025))
                                              for n in range(33075))).tobytes())
+        opening_decks = page.evaluate("[DJEngine.snapshot().A.track.title, DJEngine.snapshot().B.track.title]")
         drop_files("#mixer", paths[:2])
         drop_files("#deck-b .dd-browse-list", paths[2:])
         page.wait_for_function("DJStorage.list().then(tracks => tracks.length === 3)")
         page.locator("#deck-b [role=option]").filter(has_text="Над домом").wait_for(state="attached")
-        assert page.evaluate("[DJEngine.snapshot().A.track.title, DJEngine.snapshot().B.track.title]") == [
-            "Memphis", "Виртуальная реальность"]
+        assert page.evaluate("[DJEngine.snapshot().A.track.title, DJEngine.snapshot().B.track.title]") == opening_decks
         # Read the exact original bytes after closing the tab (all object URLs are gone).
         page.close()
         page = context.new_page()

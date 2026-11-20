@@ -1,9 +1,11 @@
 import * as THREE from './vendor/three.module.js';
 import { pointInRing, distanceToSegment } from './navigation.js';
 import { createCityHologram } from './city-hologram.js';
-import { createCrowWallContact, CROW_WALL_CONTACT_M } from './crow-wall-contact.js';
+import { createCrowWallContact } from './crow-wall-contact.js';
 import { entryPulseShader } from './entry-pulse.js';
+import { createHouseBackstage } from './house-backstage.js';
 
+const HOUSE_FADE_METRES = 1.25;
 const smooth = (x,a,b) => THREE.MathUtils.smootherstep(x,a,b);
 const signedDistance = (x,z,ring) => {
   let nearest = Infinity;
@@ -66,6 +68,8 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
   const low=new THREE.Group();low.name='digital-buildings';scene.add(low);
   animateDigitalMaterial(grid.material, clock, entryPulse, true);
   for (const dome of domes) animateDigitalMaterial(dome.material, clock, entryPulse, true);
+  const galleries = new THREE.Group(); galleries.name='house-backstages';
+  if (wallContact) scene.add(galleries);
   const mix={value:0}, proxies=[];let detailed=[];
   const attached=new WeakSet(), clones=new Map();
   const patch=(material,uniform,inverse)=>{
@@ -87,7 +91,9 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
     const surfaceMix={value:0};
     patch(material,surfaceMix,true);
     animateDigitalMaterial(material, clock, entryPulse, false);
-    proxies.push({surfaceMix, crossing:0, inside:false});
+    const gallery = wallContact && createHouseBackstage(b,clock,entryPulse);
+    if (gallery) galleries.add(gallery);
+    proxies.push({surfaceMix, crossing:0, inside:false, gallery});
     const mesh=new THREE.Mesh(geometry,material);mesh.name=`digital-${b.id}`;mesh.userData.digitalProxy=true;mesh.userData.bakedShadowCaster=false;low.add(mesh);
     const lines=new THREE.LineSegments(new THREE.EdgesGeometry(geometry,20),new THREE.LineBasicMaterial({color:0x9ff7df,transparent:true,opacity:0,fog:false}));lines.userData.bakedShadowCaster=false;low.add(lines);
     animateDigitalMaterial(lines.material, clock, entryPulse, true);
@@ -96,7 +102,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
   const baseSky=new THREE.Color(sun.skyColor),baseFog=new THREE.Color(sun.fogColor),dark=new THREE.Color(0x07121b);
   // Behind the projection only its digital geometry is submitted. Keep each
   // prior visibility state so a return restores the same courtyard and LOD.
-  const virtualObjects = new Set([city.root, low, grid, ...domes]);
+  const virtualObjects = new Set([city.root, low, grid, galleries, ...domes]);
   const concealed = new Set();
   let behindCity = false, lastChildCount = 0;
   function concealStreet() {
@@ -107,7 +113,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
     }
     lastChildCount = scene.children.length;
   }
-  let previous=-1;
+  let previous=-1, previousMix=-1;
   return {
     wallContact,
     get facadeDistance() { return facadeDistance; },
@@ -158,17 +164,22 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
       let entered = !inBackstage && sparse;
       if (sparse) inBackstage = true;
       else if (edge < 16) inBackstage = false;
+      let roomFade = 0;
       if (wallContact) {
         facadeDistance = Infinity;
         for (let i=0; i<proxies.length; i++) {
           const house = proxies[i];
-          const distance = wallContact.distanceToHouse(i,x,y,z,.20);
+          const distance = wallContact.distanceToHouse(i,x,y,z,HOUSE_FADE_METRES);
           if (!house.inside && distance <= 0) {
             house.inside = true;
             entered = true;
           } else if (distance > .15) house.inside = false;
           facadeDistance = Math.min(facadeDistance,distance);
-          house.crossing = 1 - smooth(distance,0,CROW_WALL_CONTACT_M);
+          // Blend over 2.5 surveyed metres instead of swapping scenes at the wall.
+          house.crossing = 1 - smooth(distance,-HOUSE_FADE_METRES,HOUSE_FADE_METRES);
+          house.gallery.material.uniforms.fade.value = house.crossing;
+          house.gallery.visible = house.crossing > .001;
+          roomFade = Math.max(roomFade,house.crossing);
           amount = Math.max(amount, house.crossing);
         }
       }
@@ -188,11 +199,16 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
       scene.userData.outsideOuterDome=outsideOuterDome;
       // The two domes are anchored to the courtyard, never to the camera.
       outside.position.set(Math.round(x/240)*240,-.05,Math.round(z/240)*240);outside.updateMatrix();
-      mix.value=smooth(amount,.35,.85);
+      // Open the facade before the near plane cuts through it. The street's own
+      // boundary keeps its original timing independently of the house layers.
+      mix.value=Math.max(smooth(Math.max(borderAmount,backstage),.35,.85),smooth(roomFade,.08,.49));
       // Keep the wireframe of the house being crossed, with an open view
       // through its surface. Other digital houses keep their solid silhouettes.
-      for (const house of proxies) house.surfaceMix.value = mix.value * (1 - house.crossing);
-      const key=Math.round(amount*1000)+Math.round(outer*1000)*1001+Number(outsideOuterDome)*1002001;if(key===previous)return;previous=key;
+      for (const house of proxies) house.surfaceMix.value = mix.value * (1 - smooth(house.crossing,.03,.49));
+      const key=Math.round(amount*1000)+Math.round(outer*1000)*1001+Number(outsideOuterDome)*1002001;
+      const mixKey=Math.round(mix.value*1000);
+      if(key===previous && mixKey===previousMix)return;
+      previous=key;previousMix=mixKey;
       detailed.forEach(m=>m.visible=mix.value<1);low.visible=mix.value>0;
       low.children.forEach(m=>{if(m.isLineSegments)m.material.opacity=mix.value*.85;else m.material.color.set(0x345e65).lerp(new THREE.Color(0x433958),outer);});
       grid.material.opacity=outsideOuterDome?0:Math.min(.9,amount*1.8);domes[0].material.opacity=Math.min(.72,amount*1.5);domes[1].material.opacity=outer*.65;

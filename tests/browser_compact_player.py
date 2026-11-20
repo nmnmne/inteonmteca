@@ -16,7 +16,7 @@ def check(browser, url, width, height, touch):
     waveform = compact.locator("canvas.dd-wave")
     waveform.wait_for()
     opening_a = page.evaluate("DJEngine.snapshot().A.track.id")
-    assert opening_a == "media/Memphis/Матт - Memphis.flac"
+    assert opening_a == page.evaluate("DJStudioLibrary.list()[0].id")
     bottom = compact.locator(".compact-display").bounding_box()
     clear = bottom["y"]
     assert clear >= .56 * height and bottom["x"] >= 0 and bottom["x"] + bottom["width"] <= width

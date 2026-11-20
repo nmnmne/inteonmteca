@@ -10,6 +10,7 @@
 
   function create(engine, library, {onDeckChange, onStatus}) {
     const auto = new Set();
+    const played = new Set();
     let mix = null, timer = null, period = 0, sequence = 0, retryAfter = 0;
     let directLoad = false;
 
@@ -228,8 +229,16 @@
     }
 
     function pick(current) {
-      const choices = library.list().filter(track => track.id !== current);
-      return choices[Math.floor(Math.random() * choices.length)]?.id;
+      played.add(current);
+      const others = library.list().filter(track => track.id !== current);
+      let choices = others.filter(track => !played.has(track.id));
+      if (!choices.length) {
+        played.clear();
+        choices = others;
+      }
+      const id = choices[Math.floor(Math.random() * choices.length)]?.id;
+      if (id) played.add(id);
+      return id;
     }
 
     function sync() {

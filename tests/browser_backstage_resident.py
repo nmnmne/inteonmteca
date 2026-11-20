@@ -155,7 +155,7 @@ def check(browser, mobile):
                               !document.querySelector('.room-resident[data-in-backstage]')""")
     assert overlay.is_visible()
     page.evaluate("orbQA.place='yard'")
-    page.wait_for_function("orbQA.scene.userData.virtuality===0 && !orbQA.actor.visible")
+    page.wait_for_function("orbQA.scene.userData.virtuality<.45 && !orbQA.actor.visible")
     jumps["room -> yard (px)"] = transfer(page, "yard", True, "yard")
     # Let the visitor reach its seat before measuring the body on either side
     # of a small camera move through the facade.

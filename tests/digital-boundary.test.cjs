@@ -52,20 +52,33 @@ test('a backdrop walk reveals the digital yard through both facades and restores
    return scene.userData.virtuality;
  };
  assert.equal(walkTo(-2),0);
- assert.equal(walkTo(-.11),0);
- assert.ok(walkTo(-.05)>0 && scene.userData.virtuality<1);
- for (const metre of [.001, width/2, width-.001]) {
+ const gallery=scene.getObjectByName('backstage-house-46-1');
+ const origin=gallery.position.clone();
+ const layers=scene.getObjectByName('house-backstages');
+ const fade=gallery.material.uniforms.fade;
+ assert.equal(gallery.visible,false);
+ const samples=[-1,-.5,0,.5,1].map(walkTo);
+ assert.ok(samples.every((v,i)=>v>0 && v<1 && (!i || v>samples[i-1])));
+ assert.ok(Math.abs(samples[2]-.5)<.005);
+ for (const metre of [2, width/2, width-2]) {
    assert.equal(walkTo(metre),1);
    assert.equal(detail.visible,false);
    assert.equal(proxies.visible,true);
+   assert.equal(gallery.visible,true);
+   assert.equal(fade.value,1);
+   assert.equal(layers.children.filter(g=>g.visible).length,1);
+   assert.ok(gallery.position.equals(origin));
    assert.equal(current.value,0);
    assert.equal(other.value,1);
    assert.ok(scene.getObjectByName('digital-ground').material.opacity>0);
  }
  assert.ok(walkTo(width+.05)>0 && scene.userData.virtuality<1);
- assert.equal(walkTo(width+.11),0);
+ const exitFade=walkTo(width+.5);
+ assert.ok(Math.abs(exitFade-samples[1])<.005);
  assert.equal(walkTo(width+2),0);
  assert.equal(proxies.visible,false);
+ assert.equal(gallery.visible,false);
+ assert.equal(fade.value,0);
  assert.equal(detail.visible,true);
  assert.equal(scene.background.getHex(),sun.skyColor);
  // Inside the bounds of the L-shaped building, on the courtyard side.
@@ -193,11 +206,12 @@ test('a flight above a roof does not trigger a facade crossing', async () => {
   const z = b.footprint.reduce((sum,p) => sum+p[1],0) / b.footprint.length;
   effect.update(x,z,b.heightM+3);
   assert.equal(scene.userData.virtuality,0);
- effect.update(x,z,b.heightM+.16);
- assert.equal(scene.userData.virtuality,0);
- effect.update(x,z,b.heightM+.10);
- assert.ok(Math.abs(scene.userData.virtuality-.5)<.001);
-  effect.update(x,z,b.heightM-0.5);
+  const samples=[1,.5,0,-.5,-1].map(height=>{
+    effect.update(x,z,b.heightM+height);
+    return scene.userData.virtuality;
+  });
+  assert.ok(samples.every((v,i)=>v>0 && v<1 && (!i || v>samples[i-1])));
+  effect.update(x,z,b.heightM-1.5);
   assert.equal(scene.userData.virtuality,1);
 });
 
@@ -266,4 +280,28 @@ test('backstage entry pulses once beyond the seam and honours reduced motion', a
   at(12, 13);
   at(19, 14);
   assert.equal(pulse.w, -1, 'crossing with reduced motion produces no travelling light');
+});
+
+test('house galleries follow concave footprints and preserve surveyed storey heights',async()=>{
+  const {createHouseBackstage}=await import('../yard/house-backstage.js');
+  const {pointInRing,distanceToSegment}=await import('../yard/navigation.js');
+  for(const building of layout.buildings){
+    const mesh=createHouseBackstage(building,{value:0},{value:null});
+    const geometry=mesh.geometry, points=geometry.getAttribute('position'), kinds=geometry.getAttribute('surfaceKind');
+    const ring=building.footprint;
+    assert.equal(mesh.frustumCulled,true);
+    assert.equal(mesh.position.length(),0);
+    assert.equal(mesh.userData.bakedShadowCaster,false);
+    const slabs=new Set();
+    for(let i=0;i<points.count;i+=3){
+      const x=(points.getX(i)+points.getX(i+1)+points.getX(i+2))/3;
+      const z=(points.getZ(i)+points.getZ(i+1)+points.getZ(i+2))/3;
+      const dist=ring.reduce((min,a,j)=>{const b=ring[(j+1)%ring.length];return Math.min(min,distanceToSegment(x,z,...a,...b));},Infinity);
+      assert.ok(pointInRing(x,z,ring)||dist<.002,building.id+' leaks outside its facade');
+      const y=points.getY(i);
+      assert.ok(y>=0 && y<=building.heightM+.001);
+      if(kinds.getX(i)===0)slabs.add(y);
+    }
+    assert.equal(slabs.size,building.floors+1);
+  }
 });

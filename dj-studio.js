@@ -144,6 +144,9 @@
     notice(track.title + ' · Дека ' + id + level);
     return true;
   }
+  function orderedTracks() {
+    return window.CourtyardOpening?.order(tracks) ?? tracks.slice();
+  }
   function mountDeckBrowser(root, id) {
     const find = selector => root.querySelector(selector);
     const panel = find('.dd-browser'), search = find('.dd-browse-search');
@@ -190,7 +193,7 @@
       const wanted = loaded !== lastLoaded ? loaded : rows[selected]?.id ?? loaded;
       lastLoaded = loaded;
       const query = search.value.trim().toLocaleLowerCase();
-      rows = tracks.filter(track => inCrate(track, filter.value)
+      rows = orderedTracks().filter(track => inCrate(track, filter.value)
         && (!query || (track.title + ' ' + track.artist).toLocaleLowerCase().includes(query)));
       if (sort.value) {
         const desc = sort.value.startsWith('-');
@@ -273,6 +276,7 @@
     };
     deckBrowsers.set(id, {
       id, refresh, revealSelection,
+      get rows() { return rows; },
       showImports() { filter.value = 'imports'; search.value = ''; refilter(); },
       focusSearch() {
         if (!root.offsetWidth) $(`.controller-tabs [data-panel="${id.toLowerCase()}"]`)?.click();
@@ -788,7 +792,7 @@
   }
   const studio = $('#studio');
   window.DJStudioLibrary = {
-    list: () => tracks.map(({id, title, artist}) => ({id, title, artist})),
+    list: side => (deckBrowsers.get(side)?.rows ?? orderedTracks()).map(({id, title, artist}) => ({id, title, artist})),
     get activeDeck() { return focusedDeck; },
     setCompactControls(controls) { compactControls = controls; },
     revealSelection: side => deckBrowsers.get(side).revealSelection(),
@@ -938,9 +942,9 @@
       e.returnValue = '';
     }
   });
-  const preferredB = tracks.find(track => track.title === 'Виртуальная реальность');
-  const openingA = window.CourtyardOpening?.find(tracks) || tracks.find(track => track !== preferredB);
-  const openingB = preferredB || tracks.find(track => track !== openingA);
+  const openingTracks = orderedTracks();
+  const openingA = openingTracks[0];
+  const openingB = openingTracks.find(track => track !== openingA && track.title === 'Виртуальная реальность') || openingTracks[1];
   if (openingA) engine.load('A', openingA);
   if (openingB) engine.load('B', openingB);
   let dailyOpeningPending = false;
