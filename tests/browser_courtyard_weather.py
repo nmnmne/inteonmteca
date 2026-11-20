@@ -53,10 +53,10 @@ def particles(browser):
 def posters(browser):
     for mobile in [False, True]:
         page = browser.new_page(viewport={'width': 390 if mobile else 1120, 'height': 800}, reduced_motion='reduce')
-        start = datetime(2026, 9, 22, 0, 2, 52, tzinfo=timezone.utc)
+        start = datetime(2026, 9, 22, 0, 2, 23, tzinfo=timezone.utc)
         page.clock.install(time=start)
         page.goto(BASE + '/#studio', wait_until='domcontentloaded')
-        for phase, elapsed in [('dawn',0),('day',360),('dusk',700),('night',1080),('dawn',1440)]:
+        for phase, elapsed in [('dawn',0),('day',300),('dusk',583),('night',900),('dawn',1200)]:
             # Let the site's own visible-tab timer update the still image.
             delta = round(start.timestamp()*1000 + elapsed*1000 - page.evaluate("Date.now()"))
             if delta > 0:

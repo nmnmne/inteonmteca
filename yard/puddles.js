@@ -1,4 +1,5 @@
 import * as THREE from './vendor/three.module.js';
+import { weatherTexture, weatherFieldShader } from './weather-field.js';
 
 // The grayscale shoreline and probe lookup use the same X/Z bounds as the
 // walkable asphalt. Their top scanline is the north edge of the courtyard.
@@ -8,7 +9,7 @@ export function addPuddles(scene, layout, onReady = () => {}) {
   const width = Math.max(...x) - west, length = Math.max(...z) - north;
   const uniforms = {
     ...THREE.UniformsUtils.clone(THREE.UniformsLib.lights),
-    shores: { value: null }, probes: { value: null }, panorama: { value: null },
+    weatherMap: { value: weatherTexture(THREE) }, shores: { value: null }, probes: { value: null }, panorama: { value: null },
     atlasGrid: { value: new THREE.Vector2() }, seconds: { value: 0 }, daylight: { value: 1 },
     reflectionTint: { value: new THREE.Color(0xffffff) },
     nightPanorama: { value:null }, nightMix: { value:0 },
@@ -42,6 +43,7 @@ export function addPuddles(scene, layout, onReady = () => {}) {
       varying vec2 mapUV;
       varying vec3 surface;
       const float pi = 3.14159265;
+      ${weatherFieldShader}
       vec3 radiance(float index, vec2 direction) {
         vec2 tile = vec2(mod(index, atlasGrid.x), floor(index / atlasGrid.x));
         // Keep linear filtering inside this probe's 512 by 128 texel tile.
@@ -63,7 +65,7 @@ export function addPuddles(scene, layout, onReady = () => {}) {
         vec2 p = surface.xz;
         vec2 slope = vec2(sin(dot(p, vec2(4.1, 1.8)) + seconds * 0.48),
                           sin(dot(p, vec2(-2.4, 3.7)) - seconds * 0.38));
-        float rain = smoothstep(.52,.94,cos(p.x*.086 + p.y*.041 + .72*sin(p.y*.075) + .46*sin(p.x*.053) - seconds*.031));
+        float rain = weatherAt(p,seconds).r;
         vec2 cell = p*2.8, ripple = fract(cell)-.5;
         float age = fract(seconds*1.22 + fract(sin(dot(floor(cell), vec2(17.13,43.37)))*341.531));
         float ring = length(ripple)-age*.49;

@@ -358,7 +358,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
   }
   addRoadDetails(scene, materials, layout.roads || []);
   addLandscaping(scene, materials, layout.landscaping);
-  addCourtyardWeather(scene, layout);
+  addCourtyardWeather(scene, layout, ground.material);
   const buildingStart = scene.children.length;
   const pendingDetails = [];
   const detailState = scene.userData.detailLoading = {

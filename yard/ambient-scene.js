@@ -134,7 +134,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
         if (yard.scene.userData.grassWind) yard.scene.userData.grassWind.value = now / 1000;
         yard.scene.userData.updateLandscapingDetail?.(camera.position,graphicsLevel);
         optics.render(yard.scene,camera,dt,graphicsLevel,reducedMotion.matches);
-        onFrame?.(canvas, now);
+        onFrame?.(canvas, now, pose, flock);
         if (!ready) {
           ready = true;
           nextDetail = now + 700;

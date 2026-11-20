@@ -13,6 +13,11 @@
   let lenses, lensResize, view;
   let lensLayoutDirty = true;
   let nextReflection = 0;
+  let soundView;
+  if (location.protocol !== 'file:' && !new URLSearchParams(location.search).has('portal-preview')) {
+    import('./yard/yard-sound.js').then(({createYardSound}) => createYardSound(() => soundView))
+      .catch(() => {}); // The poster and live scene also work without audio support.
+  }
   let controller = null;
   let retryTimer = 0, lastRetry = -Infinity;
 
@@ -103,6 +108,7 @@
     clearTimeout(retryTimer);
     controller?.abort();
     controller = null;
+    soundView = undefined;
     layer.querySelector('canvas')?.remove();
     clearReflections();
     nextReflection = 0;
@@ -134,7 +140,15 @@
       await startAmbientScene(canvas, {
         signal: run.signal,
         clearView: Boolean(consoleSurface),
-        onFrame: consoleSurface ? reflect : undefined,
+        onFrame(canvas, now, pose, flock) {
+          soundView ||= {};
+          soundView.x = pose.x;
+          soundView.z = pose.z;
+          soundView.yaw = pose.yaw;
+          soundView.birds = flock.allBirds;
+          soundView.elapsed = flock.allBirds[0]?.elapsed || 0;
+          if (consoleSurface) reflect(canvas, now);
+        },
         onReady() { if (!run.signal.aborted) document.body.dataset.yardBackdrop = 'live'; },
         onError: fallback,
       });

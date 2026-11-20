@@ -1,4 +1,4 @@
-"""Follow a full 24-minute day in the public courtyard renderer with a controlled wall clock."""
+"""Follow a full 20-minute day in the public courtyard renderer with a controlled wall clock."""
 import os
 from datetime import datetime, timezone
 
@@ -8,7 +8,7 @@ from browser_ambient_route import expose_walker
 
 BASE = os.environ.get("INTEON_BASE_URL", "http://127.0.0.1:8080").rstrip("/")
 MIDNIGHT = int(datetime(2026, 3, 20, tzinfo=timezone.utc).timestamp() * 1000)
-MINUTE = 60_000
+SOLAR_HOUR = 50_000  # One simulated hour in real milliseconds.
 
 
 def observe(page):
@@ -96,11 +96,11 @@ def exercise(browser, mobile):
     page.on("request", lambda req: shadow_downloads.append(req.url) if "/data/shadows/" in req.url else None)
     page.route("**/yard/auto-walk.js*", expose_walker)
     # At the equinox the sun crosses the southern meridian near 08:42 UTC in Oral.
-    noon_at = MIDNIGHT + 8*MINUTE + 42000
-    dawn_at = noon_at - 6*MINUTE
-    evening_at = noon_at + 6*MINUTE
-    night_at = noon_at + 12*MINUTE
-    morning_at = MIDNIGHT + 4*MINUTE
+    noon_at = MIDNIGHT + (8 * 60 + 42) * SOLAR_HOUR // 60
+    dawn_at = noon_at - 6 * SOLAR_HOUR
+    evening_at = noon_at + 6 * SOLAR_HOUR
+    night_at = noon_at + 12 * SOLAR_HOUR
+    morning_at = MIDNIGHT + 4 * SOLAR_HOUR
     page.add_init_script(f"window.qaTime={morning_at}; Date.now = () => window.qaTime;")
     page.goto(BASE + "/#studio", wait_until="domcontentloaded")
     page.wait_for_selector('body[data-yard-backdrop="live"]', timeout=90000)
@@ -119,7 +119,7 @@ def exercise(browser, mobile):
     moving = [capture(page, noon_at + step*125//2) for step in range(1, 33)]
     depth_passes = moving[-1]["updates"] - noon["updates"]
     assert 1 <= depth_passes <= 16 and moving[-1]["x"] < noon["x"] - .007, (depth_passes, moving[-1])
-    afternoon = capture(page, MIDNIGHT + 13*MINUTE + 20000)
+    afternoon = capture(page, MIDNIGHT + (13 * 60 + 20) * SOLAR_HOUR // 60)
     dusk = capture(page, evening_at)
     assert abs(dawn["elevation"]) < 1 and dawn["x"] > .95, dawn
     assert noon["elevation"] > 37 and afternoon["x"] < -.9, (noon, afternoon)
@@ -138,8 +138,8 @@ def exercise(browser, mobile):
     night = capture(page, night_at)
     assert night["night"] == 1 and night["intensity"] == 0 and night["updates"] == dusk["updates"], night
     assert 2 < night["brightness"] < noon["brightness"]*.7, (noon, night)
-    next_dawn = capture(page, noon_at + 18*MINUTE)
-    next_noon = capture(page, noon_at + 24*MINUTE)
+    next_dawn = capture(page, noon_at + 18 * SOLAR_HOUR)
+    next_noon = capture(page, noon_at + 24 * SOLAR_HOUR)
     for original, next_day in ((dawn, next_dawn), (noon, next_noon)):
         assert abs(original["elevation"] - next_day["elevation"]) < .03, (original, next_day)
         assert abs(original["x"] - next_day["x"]) < .001, (original, next_day)
@@ -152,7 +152,7 @@ def exercise(browser, mobile):
     returned = capture(page, noon_at)
     assert returned["elevation"] == noon["elevation"] and returned["levels"] > 3, returned
     assert not errors and not shadow_downloads, (errors, shadow_downloads)
-    print("phone" if mobile else "desktop", "elevations at 6-minute intervals",
+    print("phone" if mobile else "desktop", "elevations at 5-minute intervals",
           [round(row["elevation"], 3) for row in (dawn,noon,dusk,night,next_dawn,next_noon)],
           "visible noon shadow", f"{footprint:.1%}", "map", noon["map"],
           "depth passes in 2 seconds", depth_passes, flush=True)

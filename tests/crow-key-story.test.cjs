@@ -78,5 +78,15 @@ test('the door opens and the brass key moves even when the next facade finishes 
   assert.equal(door.visible,true);
   assert.ok(new Vector3().setFromMatrixPosition(key.matrixWorld).distanceTo(new Vector3(3.33,.44,1))<1e-6);
   assert.ok(new Vector3().setFromMatrixPosition(door.matrixWorld).distanceTo(door.position)<1e-6);
+  const lights=scene.getObjectByName('crow-key-constellation');
+  assert.equal(lights.visible,false);
+  s.phase='escape';s.door=0;s.elapsed=8.15;
+  model.update(s);scene.updateMatrixWorld(true);
+  assert.equal(door.visible,false);
+  assert.equal(lights.visible,true);
+  assert.equal(lights.geometry.getAttribute('position').count,13);
+  assert.equal(lights.material.uniforms.age.value,8.15);
+  s.elapsed=9.7;model.update(s);
+  assert.equal(lights.visible,false);
   model.dispose();
 });

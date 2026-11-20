@@ -1,5 +1,6 @@
 import * as THREE from './vendor/three.module.js';
 import { pointInRing } from './navigation.js';
+import { weatherTexture, weatherFieldShader } from './weather-field.js';
 
 function randomSource() {
   let seed = 141017;
@@ -80,23 +81,44 @@ function groundDetails(scene, layout, random) {
   scene.add(slush);
 }
 
-// One instanced draw covers rain, snowfall, windblown leaves and wisps of mist.
-// The field is anchored in world metres. The camera only wraps the particle pool.
-export function addCourtyardWeather(scene, layout) {
+// The asphalt already carries surveyed surface wear. Use that relief to leave
+// dark aggregate exposed through the frost and keep sunlight under real shadows.
+function shadePavement(material, wind, motion) {
+  const previous = material.onBeforeCompile, cacheKey = material.customProgramCacheKey();
+  material.onBeforeCompile = (shader, renderer) => {
+    previous.call(material, shader, renderer);
+    shader.uniforms.weatherMap = {value:weatherTexture(THREE)};
+    shader.uniforms.weatherSeconds = motion.matches ? {value:0} : wind;
+    shader.vertexShader = 'varying vec2 weatherWorld;\n' + shader.vertexShader.replace(
+      '#include <project_vertex>', '#include <project_vertex>\nweatherWorld=(modelMatrix*vec4(transformed,1.)).xz;');
+    shader.fragmentShader = 'varying vec2 weatherWorld; uniform float weatherSeconds;\n' + weatherFieldShader + shader.fragmentShader.replace(
+      '#include <color_fragment>', `#include <color_fragment>
+      vec4 climate = weatherAt(weatherWorld, weatherSeconds);
+      diffuseColor.rgb *= mix(vec3(1.),vec3(.52,.65,.79),climate.r);
+      float frost = climate.g * smoothstep(.12,.80,wear.r*.53+wear.b*.47);
+      diffuseColor.rgb = mix(diffuseColor.rgb,vec3(.36,.46,.56),frost*.68);
+      diffuseColor.rgb *= vec3(1.) + climate.b*vec3(.02,.14,.04) + climate.a*vec3(.65,.23,-.08);
+      `);
+  };
+  material.customProgramCacheKey = () => cacheKey + ':local-seasons';
+}
+
+// The five climates are sampled at each particle, so rain and snow can fall on
+// opposite sides of the same street. The billboard pool remains one draw call.
+export function addCourtyardWeather(scene, layout, pavement) {
   const random = randomSource();
   groundDetails(scene,layout,random);
   const compact = matchMedia('(pointer: coarse), (max-width: 800px)').matches;
+  const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const count = compact ? 830 : 1500, seeds = new Float32Array(count*4);
-  for (let i=0;i<count;i++) {
-    const type = random();
-    seeds.set([random(),random(),random(), type < .49 ? 0 : type < .87 ? 1 : type < .977 ? 2 : 3],i*4);
-  }
+  for (let i=0;i<seeds.length;i++) seeds[i]=random();
   const plane = new THREE.PlaneGeometry();
   const geometry = new THREE.InstancedBufferGeometry();
   geometry.index=plane.index; geometry.attributes=plane.attributes;
   geometry.setAttribute('particle',new THREE.InstancedBufferAttribute(seeds,4));
   geometry.instanceCount=count;
-  const uniforms={seconds:{value:0},visibility:{value:1},twilight:{value:0}};
+  if (pavement) shadePavement(pavement, scene.userData.grassWind || {value:0}, motion);
+  const uniforms={seconds:{value:0},visibility:{value:1},twilight:{value:0},weatherMap:{value:weatherTexture(THREE)}};
   const material = new THREE.ShaderMaterial({
     uniforms,transparent:true,depthWrite:false,side:THREE.DoubleSide,
     vertexShader:`
@@ -106,38 +128,61 @@ export function addCourtyardWeather(scene, layout) {
       varying vec4 ink;
       varying float kind;
       const float tau=6.2831853;
+      ${weatherFieldShader}
       void main() {
-        kind=particle.w; st=uv*2.-1.;
-        vec2 drift = vec2(.09,.025)*seconds;
-        float rate=.64;
-        if(kind>.5) { drift += vec2(sin(particle.x*18.+seconds*.61),cos(particle.y*11.+seconds*.49))*.55; rate=.092; }
-        if(kind>1.5) { drift += vec2(.44,.11)*seconds; rate=.055; }
-        vec2 xz = mod(particle.xy*52.+drift-cameraPosition.xz+26.,52.)-26.+cameraPosition.xz;
-        float y=fract(particle.z-seconds*rate)*10.5 + max(0.,cameraPosition.y-5.);
-        // The fifth interval leaves a clear gap between mist and rain.
-        float front=xz.x*.086+xz.y*.041+.72*sin(xz.y*.075)+.46*sin(xz.x*.053)-seconds*.031;
-        float strength=smoothstep(.52,.94,cos(front-kind*1.25664));
-        float fade=1.-smoothstep(18.,26.,length(xz-cameraPosition.xz));
-        vec2 size=vec2(.018,.31);
-        vec3 color=vec3(.61,.75,.83); float opacity=.55;
-        if(kind>.5){ size=vec2(.042+particle.z*.048); color=vec3(.92,.96,1.); opacity=.87; }
-        if(kind>1.5){ size=vec2(.103,.056); color=mix(vec3(.39,.19,.071),vec3(.73,.46,.15),particle.y); opacity=.94; y*=.55; }
-        if(kind>2.5){ size=vec2(3.6,1.1)*(1.+particle.x); color=vec3(.75,.82,.83); opacity=.16; y=.6+particle.z*1.45; }
+        st=uv*2.-1.;
+        vec2 drift=vec2(.16,.06)*seconds + vec2(sin(particle.x*18.+seconds*.68),cos(particle.y*11.+seconds*.45))*.64;
+        vec2 xz=mod(particle.xy*48.+drift-cameraPosition.xz+24.,48.)-24.+cameraPosition.xz;
+        vec4 c=weatherAt(xz,seconds);
+        float pick=particle.w;
+        kind=0.;
+        if(pick>=c.r) kind=1.;
+        if(pick>=c.r+c.g) kind=2.;
+        if(pick>=c.r+c.g+c.b) kind=3.;
+        if(pick>=dot(c,vec4(1.))) kind=4.;
+        float rate=.81, opacity=.71;
+        vec2 size=vec2(.022,.40);
+        vec3 color=vec3(.35,.66,.90);
+        float twist=0.;
+        if(kind==1.) {
+          rate=.081; size=vec2(.051+.065*particle.z);
+          color=vec3(.82,.93,1.); opacity=.90; twist=seconds*.63;
+        } else if(kind==2.) {
+          rate=.051; size=vec2(.105,.068);
+          color=mix(vec3(.85,.32,.46),vec3(1.,.86,.80),particle.z);
+          opacity=.91; twist=seconds*(.65+particle.x);
+          if(particle.z>.976){kind=5.;size=vec2(3.6,.75);color=vec3(.72,.85,.78);opacity=.095;}
+        } else if(kind==3.) {
+          rate=-.024; size=vec2(.048+.035*particle.z);
+          color=mix(vec3(1.,.57,.085),vec3(1.,.86,.37),particle.y);
+          opacity=.35+.43*pow(.5+.5*sin(seconds*1.7+particle.z*30.),2.);
+        } else if(kind==4.) {
+          rate=.057; size=vec2(.14,.072); opacity=.92;
+          color=mix(vec3(.55,.16,.043),vec3(1.,.52,.105),particle.z);
+          twist=seconds*(1.+particle.x);
+        }
+        float altitude=fract(particle.z-seconds*rate)*10.5;
+        if(kind>=2.) altitude*=.61;
+        if(kind==5.) altitude=.55+particle.y*1.13;
+        float y=altitude+max(0.,cameraPosition.y-4.5);
         vec4 view=viewMatrix*vec4(xz.x,y,xz.y,1.);
         vec2 corner=position.xy*size;
-        if(kind<.5) corner.x+=corner.y*.19;
-        if(kind>1.5 && kind<2.5) {
-          float a=particle.y*tau+seconds*(1.+particle.z);
+        if(kind==0.) corner.x+=corner.y*.26;
+        else if(kind!=5.) {
+          float a=particle.x*tau+twist;
           corner=mat2(cos(a),sin(a),-sin(a),cos(a))*corner;
         }
         view.xy+=corner; gl_Position=projectionMatrix*view;
-        ink=vec4(color*mix(1.,.46,twilight),opacity*strength*fade*visibility);
+        float fade=1.-smoothstep(17.,24.,length(xz-cameraPosition.xz));
+        ink=vec4(color*mix(1.,.48,twilight),opacity*fade*visibility);
       }`,
     fragmentShader:`
       varying vec2 st; varying vec4 ink; varying float kind;
       void main() {
-        float alpha=ink.a*(1.-smoothstep(.12,1.,dot(st,st)));
-        if(kind>2.5) alpha*=.65+.35*cos(st.x*4.+st.y*2.);
+        vec2 q=st;
+        if(kind==2. || kind==4.) { q.x+=.17*(1.-q.y*q.y); q.y*=1.+.30*abs(q.x); }
+        float alpha=ink.a*(1.-smoothstep(.20,1.,dot(q,q)));
+        if(kind==5.) alpha*=.65+.35*cos(st.x*4.+st.y*2.);
         if(alpha<.006) discard;
         gl_FragColor=vec4(ink.rgb,alpha);
         #include <colorspace_fragment>
@@ -148,7 +193,6 @@ export function addCourtyardWeather(scene, layout) {
   weather.frustumCulled=false;
   weather.userData.bakedShadowReceiver=false;
   weather.userData.bakedShadowCaster=false;
-  const motion=matchMedia('(prefers-reduced-motion: reduce)');
   weather.onBeforeRender=()=>{
     uniforms.seconds.value=motion.matches ? 0 : scene.userData.grassWind?.value || 0;
     uniforms.twilight.value=scene.userData.windowNight?.value || 0;

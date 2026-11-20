@@ -3,6 +3,7 @@ import { distanceToWall, isWalkable, moveCircle } from "./navigation.js";
 import { createInputController } from "./input-controller.js";
 import { createQualityMeter, createRenderGate, pixelRatioCap, createAdaptiveQuality } from "./quality.js?v=optimization-20261009";
 import { createYardScene, drawScheme } from "./scene.js?v=ural-courtyard-1";
+import { createYardSound } from "./yard-sound.js";
 import { createWallPlayer } from "./wall-player.js?v=seek-fade-20261006-2";
 import { createBoundaryMusic } from "./boundary-music.js";
 import { createLightingCycle, addBakedLighting } from "./baked-lighting.js";
@@ -65,6 +66,7 @@ if (location.protocol === "file:") {
     yaw: start.yaw,
     pitch: start.pitch || 0,
   };
+  const yardSound = portalPreview ? null : createYardSound(() => body);
   let flightPromise = null;
   let returnPose = null, flightEye = layout.movement.eyeM, flightRoll = 0;
   const boundaryMusic = createBoundaryMusic(layout.walkable, body, () => player.playBoundaryTrack());
@@ -353,6 +355,7 @@ if (location.protocol === "file:") {
 
   window.addEventListener("pagehide", () => {
     disposed = true;
+    yardSound?.dispose();
     cancelAnimationFrame(frameHandle);
     frameHandle = null;
     lightingTransition.dispose();

@@ -510,12 +510,14 @@ export function createCrowModels(wallContact = null, count = 12) {
       const watchTime=elapsed*(.63+.033*(i%5))+i*2.4;
       const glance=pose ? (pose.glance || 0) : .35*clamp(Math.sin(watchTime)*4,-1,1)*Math.sin(i+Math.floor(watchTime/Math.PI)*2.4);
       const alert=pose?.posture || 0;
-      const dip=(pose?.dip || 0)-alert*.14 + (gaze ? 0 : .030*gait*(1-air));
+      const callAge=elapsed-(bird.musicReplyAt ?? -Infinity);
+      const nod=!pose && callAge>=0 && callAge<.40 ? Math.sin(Math.PI*callAge/.40)**2 : 0;
+      const dip=(pose?.dip || 0)-nod*.25-alert*.14 + (gaze ? 0 : .030*gait*(1-air));
       const landing=bird.mode==='land';
       const fan=clamp(.20+(landing ? .56 : .04)*air+Math.abs(bird.bank)*.5+(pose?.tail || 0),0,1);
       motions.setXYZW(i,spread[i],amplitude[i],bird.wingPhase,air);
       strides.setXYZW(i,gait,gaze ? glance : (1-air)*glance,dip,fan);
-      wingTips.setX(i,clamp(gaze?.wingTip || 0,-1,1)*(1-air));
+      wingTips.setX(i,clamp((gaze?.wingTip || 0)+nod*(i%2 ? -.18 : .18),-1,1)*(1-air));
       const height=bird.y+(pose?.hop || 0);
       transform.position.set(bird.x,height+Math.abs(gait)*.008*(1-air),bird.z);
       if (wallIds) wallContact.resolve(bird.x,transform.position.y,bird.z,wallIds.array,2*i);

@@ -1,6 +1,6 @@
 const radians = Math.PI / 180;
 const dayMs = 86400000;
-const courtyardDayMs = 24 * 60000;
+const courtyardDayMs = 20 * 60000;
 // Matches data/site-layout.json. Also available before the 3D layout has loaded.
 export const COURTYARD_ORIGIN = Object.freeze({lat:51.230186, lon:51.439256});
 
@@ -16,7 +16,7 @@ export function sunForLocation({lat, lon}, epochMs) {
   return solarPosition(lat, lon, epochMs, dayMs);
 }
 
-// All visitors share the same 24-minute rotation. Only the Earth's rotation
+// All visitors share the same 20-minute rotation. Only the Earth's rotation
 // speeds up: its seasonal tilt still follows the actual date in Uralsk.
 export function courtyardSunForLocation({lat, lon}, epochMs) {
   return solarPosition(lat, lon, epochMs, courtyardDayMs);

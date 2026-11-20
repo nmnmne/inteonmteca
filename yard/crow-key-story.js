@@ -82,6 +82,9 @@ export function createCrowKeyStory(layout,birds,clearGround,allowed) {
     if (age<6.6) face(thief,state,dt);
     f.dip=.99*(beat(age,.3,.6)+beat(age,1.32,.6)+beat(age,8.4,.65));
     t.glance=.45*beat(age,.7,1.65);
+    // The finder follows the false bird into the sky, then pecks where it vanishes.
+    f.glance=.48*beat(age,6.05,1.85)-.34*beat(age,7.9,1.55);
+    if (age>6.6) f.wings=.40*beat(age,6.6,1.65);
     if (age<2.1) {
       k.y=.073+.07*(beat(age,.52,.46)+beat(age,1.56,.5));
       return;
