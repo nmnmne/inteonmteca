@@ -6,6 +6,7 @@ import { createCrowDisputes } from './crow-disputes.js';
 import { createCrowRollCall } from './crow-roll-call.js';
 import { createCrowTreePrank } from './crow-tree-prank.js';
 import { createCrowBeaconExchange } from './crow-beacon-exchange.js';
+import { crowPersonality } from './crow-personalities.js';
 
 const count = 13;
 const chest = 0.20;
@@ -79,7 +80,9 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
   const keyStory = allowKeyStory ? createCrowKeyStory(layout,birds,clearGround,allowKeyStory,storyDeck) : null;
   const disputes = createCrowDisputes(layout, birds, groundNear, clearGround, relative);
   const allBirds = [...birds, ...disputes.guests];
+  for (const bird of allBirds) bird.personality = crowPersonality(bird.id);
   for (const bird of allBirds.slice(1)) {
+    bird.neighbourLook = 0;
     bird.ordinaryLandings = 0;
     bird.approachingGround = false;
     bird.alternatePerch = null;
@@ -90,10 +93,13 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
   const xs = layout.walkable.map(p => p[0]), zs = layout.walkable.map(p => p[1]);
   const west = Math.min(...xs), east = Math.max(...xs), north = Math.min(...zs), south = Math.max(...zs);
   const rollCall = createCrowRollCall(birds);
-  const busyForPranks = {has: id => id === rollCall.state.targetId || keyStory?.targets.has(id) || disputes.reserved(birds[id])};
+  const onStage = id => id === rollCall.state.targetId || keyStory?.targets.has(id) || disputes.reserved(birds[id]);
+  const busyForPranks = {has: id => onStage(id) || beacons.current?.sender.id === id || beacons.current?.recipient.id === id};
   const treePrank = createCrowTreePrank(birds, crowTrees);
   const busyForTrees = {has: id => busyForPranks.has(id) || pranks.targets.has(id) || visits?.perches.has(id)};
-  const beacons = createCrowBeaconExchange(birds,clearGround,{has:id=>busyForTrees.has(id) || treePrank.targets.has(id)});
+  // A resting bird can signal with its ankle without leaving the resident's side.
+  const beacons = createCrowBeaconExchange(birds,clearGround,{has:id=>onStage(id) || pranks.targets.has(id)
+    || treePrank.targets.has(id) || (visits?.state.phase !== 'sitting' && visits?.perches.has(id))});
 
   function shuffle(list) {
     for (let i = list.length - 1; i > 0; i--) {
@@ -179,14 +185,16 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
 
   function chooseForage(b, departing = false) {
     const elder = birds[b.elder];
+    const {sociability, curiosity} = b.personality.habits;
     let dest;
     if (!departing && b.elder && !elder.called && distance(elder, leader) < 48 && random() < .72) {
       const around = b.id * 2.4 + range(-1, 1);
-      dest = {x: elder.roamX + 3.3 * Math.cos(around), z: elder.roamZ + 3.3 * Math.sin(around)};
+      const spacing = 1.8 + 3.2 * (1 - sociability);
+      dest = {x: elder.roamX + spacing * Math.cos(around), z: elder.roamZ + spacing * Math.sin(around)};
     } else {
       const catchUp = distance(b, leader) > 38;
       const base = catchUp ? leader : b, a = departing ? bearing(leader, b) + range(-.65, .65) : range(0, turn);
-      const radius = departing || catchUp ? range(8, 18) : range(1.8, 12);
+      const radius = departing || catchUp ? range(8, 18) : range(1.8, 8 + 7 * curiosity);
       dest = relative(base, a, 0, radius);
     }
     const perch = groundNear(dest.x, dest.z);
@@ -261,24 +269,38 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     return {x, y, z};
   }
 
-  function steer(b, x, y, z, dt, escort) {
+  function steer(b, x, y, z, dt, escort, foraging = false) {
+    const habits = b.personality.habits;
     const dx = x - b.x, dz = z - b.z, d = Math.hypot(dx, dz);
     const groundTrip = y <= chest + .03;
     const lift = groundTrip ? Math.min(b.cruise || 4.6, Math.max(0, d - (b.airborne > .25 ? 1.4 : 3.3)) * .73) : 0;
     let height = y + lift;
     const flying = height > chest + .38 || b.y > chest + .45;
-    const limit = flying ? 13.6 : 1.75;
+    const limit = flying ? 13.6 : 1.75 * (foraging ? habits.pace : 1);
     const pursuit = Math.min(1.7, limit / Math.max(.01, d));
     let vx = dx * pursuit + (escort ? leader.vx : 0), vz = dz * pursuit + (escort ? leader.vz : 0);
-    // Separation at close range keeps neighbouring silhouettes and feet distinct.
+    // At a feeding patch a wary bird yields first. Family members will feed
+    // closer together than strangers, especially when a bird likes company.
+    const social = foraging && !flying;
+    let watched, nearest = 3.2 * 3.2;
     for (const other of allBirds) {
       if (other === b) continue;
       const sx = b.x - other.x, sz = b.z - other.z, sy = b.y - other.y;
-      const safe = other.id ? .85 : 1.45, sq = sx*sx + sz*sz;
-      if (sq >= safe*safe || Math.abs(sy) > .95 || sq < .0001) continue;
+      const sq = sx*sx + sz*sz;
+      if (Math.abs(sy) > .95 || sq < .0001) continue;
+      let safe = other.id ? .85 : 1.45;
+      if (social) {
+        const familiar = b.flockId === other.flockId;
+        safe += familiar ? .55 * (1 - habits.sociability) : .85 * (1 - habits.boldness);
+        if (sq < nearest) { watched = other; nearest = sq; }
+      }
+      if (sq >= safe*safe) continue;
       const radius = Math.sqrt(sq), repulsion = 3.6 * (safe - radius) / radius;
       vx += sx * repulsion; vz += sz * repulsion;
     }
+    const interest = watched && (b.flockId === watched.flockId ? habits.sociability : habits.vigilance);
+    const attention = watched ? clamp(angleDelta(b.yaw, bearing(b, watched)), -.82, .82) * interest : 0;
+    b.neighbourLook += (attention - b.neighbourLook) * Math.min(1, dt * 4);
     const magnitude = Math.hypot(vx, vz);
     if (magnitude > limit) { vx *= limit / magnitude; vz *= limit / magnitude; }
     const change = Math.hypot(vx - b.vx, vz - b.vz);
@@ -307,11 +329,11 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     b.yaw += yawStep;
     b.airborne = clamp((b.y - chest) / .86, 0, 1);
     b.bank += (clamp(-yawStep / dt * .22, -.57, .57) * b.airborne - b.bank) * Math.min(1, 4.5*dt);
-    b.gaitPhase = (b.gaitPhase + dt * b.speed * 11) % turn;
-    b.wingPhase = (b.wingPhase + dt * turn * (2.65 + .075 * (b.id % 7) + .24 * clamp(b.vy, 0, 3))) % turn;
+    b.gaitPhase = (b.gaitPhase + dt * b.speed * 11 * habits.pace) % turn;
+    b.wingPhase = (b.wingPhase + dt * turn * (2.85 * habits.flap + .24 * clamp(b.vy, 0, 3))) % turn;
     b.mode = b.airborne < .20 ? (b.speed > .23 ? 'walk' : 'perch')
       : b.vy < -.45 ? 'land' : b.vy > .85 ? 'takeoff'
-      : Math.sin(time * 1.6 + b.id * 1.9) < -.30 ? 'glide' : 'flap';
+      : Math.sin(time * 1.6 * habits.flap + b.id * 1.9) < .45 - .75 * habits.pace ? 'glide' : 'flap';
   }
 
   function alternatePerch(bird) {
@@ -335,7 +357,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
       if (b.ordinaryLandings % 2 === 1) b.alternatePerch = alternatePerch(b);
     }
     const spot = b.alternatePerch;
-    steer(b,spot?.x ?? b.roamX,chest,spot?.z ?? b.roamZ,dt,false);
+    steer(b,spot?.x ?? b.roamX,chest,spot?.z ?? b.roamZ,dt,false,true);
     if (b.approachingGround && b.airborne < .07 && clearGround(b.x,b.z)) {
       if (spot) { b.roamX = spot.x; b.roamZ = spot.z; }
       b.ordinaryLandings++;
@@ -354,6 +376,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     if (leader.speed > .08) heading += angleDelta(heading, Math.atan2(leader.vx, -leader.vz)) * Math.min(1, dt * 1.1);
     leader.x = pose.x; leader.y = pose.y; leader.z = pose.z; leader.yaw = pose.yaw;
     leader.bank = pose.roll || 0; leader.mode = pose.mode;
+    leader.wingPhase = pose.wingPhase ?? leader.wingPhase;
     leader.airborne = clamp((leader.y - .42) / 1.8, 0, 1);
     if (pose.mode === 'walk' && previous !== 'walk') touchdown();
     if (pose.mode === 'takeoff' && previous !== 'takeoff') startMission();
@@ -428,7 +451,10 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
       if (b.inParty) assembled++;
     }
     state.partySize = assembled;
+    const previousExchange = beacons.current;
     beacons.update(time, allowBeacons() && (!keyStory || keyStory.state.phase==='idle'), pose);
+    // Give the story a turn to claim the landing after the final reply.
+    if (previousExchange && !beacons.current && state.phase === 'ready') readySince = time;
     if (gathering && disputes.state.phase === 'idle') rollCall.update(dt, pose, state.targetSize);
     if (gathering && assembled === state.targetSize && state.phase !== 'ready'
         && rollCall.state.phase === 'done' && Math.abs(angleDelta(leader.yaw, heading)) < .22) {
@@ -446,6 +472,6 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
 
   return {birds, allBirds, state, rollCall:rollCall.state, treePrank:treePrank.state, visit:visits?.state, prank:pranks.state, keyStory:keyStory?.state, dispute:disputes.state, update,
     get beacons() { return beacons.current; },
-    canTakeOff: () => state.phase === 'ready' && !visits?.holdLeader() && !keyStory?.targets.size
+    canTakeOff: () => state.phase === 'ready' && !visits?.holdLeader() && !keyStory?.targets.size && !beacons.current
       && disputes.state.phase === 'idle' && time - readySince >= .7};
 }

@@ -5,6 +5,7 @@ import { ambientOpeningView, createAutoWalk } from './auto-walk.js?v=crow-flock-
 import { createCrowFlock } from './crow-flock.js';
 import { createCrowStoryDeck } from './crow-story-deck.js';
 import { createCrowModels } from './crow-models.js';
+import { enableCrowNames } from './crow-identification.js';
 import { createResidentLayers } from './resident-layers.js';
 import { addPuddles } from './puddles.js';
 import { createSolarLighting } from './solar-lighting.js';
@@ -131,7 +132,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
         solar.update(epoch, camera);
         if (yard.roofPigeons.group.visible) yard.roofPigeons.update(reducedMotion.matches ? 0 : dt, camera);
         crowModels.update(flock.allBirds, dt, yard.scene.userData.virtuality, yard.scene.userData.solarLighting.daylight,
-          reducedMotion.matches ? null : flock.keyStory, reducedMotion.matches ? null : flock.beacons);
+          reducedMotion.matches ? null : flock.keyStory, reducedMotion.matches ? null : flock.beacons, reducedMotion.matches);
         resident?.update(flock.visit, camera, yard.scene.userData.solarLighting.daylight,
           yard.scene.userData.virtuality, reducedMotion.matches ? 0 : dt);
         ripplePuddles(weatherSeconds);
@@ -187,6 +188,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     crowModels = createCrowModels(yard.edgeEffect.wallContact, flock.allBirds.length - 1);
     crowModels.group.userData.visibleInBackstage = true;
     yard.scene.add(crowModels.group);
+    if (clearView) enableCrowNames(canvas, camera, yard, flock, lifetime.signal);
     if (residentVisits) resident = createResidentLayers(yard.scene, canvas);
     ripplePuddles = addPuddles(yard.scene, layout);
     canvas.addEventListener('webglcontextlost', contextLost);

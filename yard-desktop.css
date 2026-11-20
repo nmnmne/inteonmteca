@@ -34,17 +34,23 @@
 }
 
 body.room-console-home:is([data-yard-window=desktop],[data-yard-window=engrus]) > :not(
-  [data-yard-layer], #yard-desktop-shell, #yard-engrus-window, #yard-map-sources,
+  [data-yard-layer], .yard-crow-name, #yard-desktop-shell, #yard-engrus-window, #yard-map-sources,
   .pointer-fluid, .pointer-ring, script, style, link
 ) { display: none !important; }
 body.room-console-home:is([data-yard-window=desktop],[data-yard-window=engrus])::before,
 body.room-console-home:is([data-yard-window=desktop],[data-yard-window=engrus])::after { content: none; }
 body.room-console-home[data-yard-window=dj][data-dj-mode=compact] > :not(
-  [data-yard-layer], #yard-dj-compact, dialog[open], [popover]:popover-open, #notice,
+  [data-yard-layer], .yard-crow-name, #yard-dj-compact, dialog[open], [popover]:popover-open, #notice,
   .room-resident, .resident-speech, .pointer-fluid, .pointer-ring, script, style, link
 ) { display: none !important; }
 body.room-console-home[data-yard-window=dj][data-dj-mode=compact]::before,
 body.room-console-home[data-yard-window=dj][data-dj-mode=compact]::after { content: none; }
+
+.yard-crow-name:not([hidden]) {
+  position: fixed; z-index: 27; transform: translate(-50%, -100%); pointer-events: none;
+  padding: 3px 8px; border-radius: 3px; background: #172021e6;
+  color: #f4f3eb; font: 500 14px/1.35 system-ui, sans-serif;
+}
 
 #yard-desktop-shell { --shell-ink: #f6f4f1; color: var(--shell-ink); }
 #yard-desktop-shell[hidden], #yard-engrus-window[hidden] { display: none; }

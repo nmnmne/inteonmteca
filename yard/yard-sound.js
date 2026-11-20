@@ -1,8 +1,12 @@
+import {crowPersonality} from './crow-personalities.js';
 import {sampleWeather} from './weather-field.js';
 import {courtyardEffectSeconds} from './solar-clock.js';
 
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 const initialView = {x: 39, z: -2.5, yaw: 0};
+// The walking view and reduced-motion poster have no simulated flock. Keep
+// their off-screen residents at fixed world positions as the listener moves.
+const distantBirds = [{id:1, x:20, z:-7}, {id:2, x:45, z:-18}, {id:13, x:29, z:10}, {id:16, x:44, z:9}];
 
 // The camera uses rotation.y = -yaw; its right vector in the courtyard is (cos(yaw), sin(yaw)).
 function listenerPan(dx, dz, yaw, distance) {
@@ -20,23 +24,34 @@ function routeFrontPair(destination) {
   catch { /* Some fixed hardware layouts lock speaker interpretation as well as the width. */ }
 }
 
-// A crow has a voiced, rough call: vary the glottal period, then reinforce
-// two broad harmonics. Each bird uses a different throat and rasp.
-function makeCall(context, variant) {
-  const rate = 24000, length = .32 + variant * .047;
+// Pre-render a rough, voiced sound once per individual. Its throat stays the
+// same from visit to visit; small performance variations happen at playback.
+function makeCall(context, {id, voice}) {
+  const rate = 24000, length = .38 * voice.length, pitch = 234 * voice.pitch;
   const clip = context.createBuffer(1, Math.round(rate * length), rate);
   const samples = clip.getChannelData(0);
-  let phase = 0, rough = 0;
+  const rasp = voice.rasp, flutter = 31 + 19 * rasp;
+  let phase = 0, rough = 0, seed = id + 1, energy = 0;
   for (let i = 0; i < samples.length; i++) {
     const t = i / rate, f = t / length;
-    rough = rough * .82 + (Math.random() * 2 - 1) * .18;
-    const hz = (223 + variant * 15) * (1.04 + .25 * Math.sin(Math.PI * f) - .34 * f);
-    phase += 2 * Math.PI * hz / rate * (1 + .047 * Math.sin(2 * Math.PI * t * 37) + .09 * rough);
-    const voice = Math.sin(phase) * .14 + Math.sin(phase*2 + .3) * .25
-      + Math.sin(phase*4) * .25 + Math.sin(phase*5 + .8) * .17 + Math.sin(phase*7) * .08;
-    const envelope = Math.min(1, t / .028) * Math.min(1, (length - t) / .095);
-    samples[i] = (voice + rough * .32) * envelope * (.78 + .22 * Math.sin(2 * Math.PI * 41 * t));
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    rough = rough * .74 + (seed / 2147483648 - 1) * .26;
+    const hz = pitch * (1.04 + (.16 + .12 * rasp) * Math.sin(Math.PI * f) - .29 * f);
+    const vibration = Math.sin(2 * Math.PI * t * flutter);
+    phase += 2 * Math.PI * hz / rate * (1 + (.018 + .044 * rasp) * vibration + .13 * rasp * rough);
+    const harmonics = Math.sin(phase) * .20 + Math.sin(2 * phase + .3) * (.32 - .10 * rasp)
+      + Math.sin(4 * phase) * .23 + Math.sin(5 * phase + .8) * (.08 + .14 * rasp)
+      + Math.sin(7 * phase) * (.035 + .10 * rasp);
+    const envelope = Math.min(1, t / (.043 - .024 * rasp)) * Math.min(1, (length - t) / (.105 - .037 * rasp));
+    const depth = .10 + .22 * rasp;
+    const sample = (harmonics + rough * (.10 + .29 * rasp)) * envelope * (1 - depth + depth * vibration);
+    samples[i] = sample;
+    energy += sample * sample;
   }
+  // Give the throat colours the same reference level, then let each bird's
+  // voice.volume, its distance and its place in the phrase set its loudness.
+  const normal = .22 / Math.sqrt(energy / samples.length);
+  for (let i = 0; i < samples.length; i++) samples[i] *= normal;
   return clip;
 }
 
@@ -111,10 +126,22 @@ function makeAmbience(context) {
   addWindReflections(context, windGain, bus);
   air.start();
   rainfall.start();
-  const calls = [0,1,2].map(i => makeCall(context, i));
-  const reverse = context.createBuffer(1, calls[2].length, calls[2].sampleRate);
-  reverse.getChannelData(0).set(calls[2].getChannelData(0));
-  reverse.getChannelData(0).reverse();
+  const voices = new Map();
+  function voiceClip(bird, backwards = false) {
+    let clips = voices.get(bird.id);
+    if (!clips) {
+      clips = {natural:makeCall(context, crowPersonality(bird.id))};
+      voices.set(bird.id, clips);
+    }
+    if (!backwards) return clips.natural;
+    if (!clips.reverse) {
+      const {natural} = clips;
+      clips.reverse = context.createBuffer(1, natural.length, natural.sampleRate);
+      clips.reverse.getChannelData(0).set(natural.getChannelData(0));
+      clips.reverse.getChannelData(0).reverse();
+    }
+    return clips.reverse;
+  }
 
   let gustId, gustX, gustZ;
   const callsInFlight = new Set();
@@ -185,15 +212,29 @@ function makeAmbience(context) {
       windGain.gain.setTargetAtTime(.0035 + gust * (.032 + .019 * weather.autumn + .01 * weather.snow), t, .18);
       rainGain.gain.setTargetAtTime(.001 + .035 * weather.rain + .004 * weather.summer, t, .5);
     },
-    flockCall(index, point, reply, listener, delay, beat, magical) {
-      const t = context.currentTime + delay + .015, clip = calls[index % calls.length];
-      call(clip, t, .93 + Math.random() * .14, point, 1, listener);
+    flockCall(bird, reply, listener, delay, beat, magical) {
+      const t = context.currentTime + delay + .015, clip = voiceClip(bird);
+      const voice = crowPersonality(bird.id).voice;
+      const rate = .985 + Math.random() * .03;
+      call(clip, t, rate, bird, voice.volume, listener);
       if (magical) {
-        call(reverse, t + beat * 1.5, .82, reply, .52, listener);
-        call(clip, t + beat * 2.5, 1.26, point, .23, listener);
-      } else if (Math.random() < .57) {
-        call(clip, t + .42 + Math.random() * .17, .91, point, .79, listener);
+        const otherVoice = crowPersonality(reply.id).voice;
+        call(voiceClip(reply, true), t + beat * 1.5, .82, reply, .52 * otherVoice.volume, listener);
+        call(clip, t + beat * 2.5, 1.26, bird, .23 * voice.volume, listener);
+        return beat * 1.5;
       }
+      const spacing = clip.length / clip.sampleRate / rate + .20 * voice.cadence;
+      for (let n = 1; n < voice.notes; n++) {
+        call(clip, t + n * spacing, rate * (1 - n * .026), bird, voice.volume * .84 ** n, listener);
+      }
+      const neighbour = crowPersonality(reply.id);
+      if (reply !== bird && Math.random() < .14 + .38 * neighbour.habits.sociability) {
+        const otherVoice = neighbour.voice;
+        const after = voice.notes * spacing + .18 * otherVoice.cadence;
+        call(voiceClip(reply), t + after, .97, reply, .70 * otherVoice.volume, listener);
+        return after;
+      }
+      return null;
     },
     stop() { callsInFlight.clear(); air.stop(); rainfall.stop(); air.disconnect(); rainfall.disconnect(); bus.disconnect(); },
   };
@@ -221,7 +262,7 @@ export function createYardSound(view = () => initialView) {
   const media = document.querySelector('#album-player'), masterControl = document.querySelector('#master');
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let context, graph, timer, away = false, disposed = false, resuming = false;
-  let nextCall = 0, callNumber = 0, lastBass = 0;
+  let nextCall = 0, callNumber = 0, lastBass = 0, lastCaller;
   function update() {
     if (!graph || context.state !== 'running' || document.hidden || away) return;
     const location = view() || initialView, engine = window.DJEngine;
@@ -235,15 +276,24 @@ export function createYardSound(view = () => initialView) {
     const accent = bass > .42 && bass - lastBass > .12;
     lastBass = bass;
     if (!master || now < nextCall || (playing && !accent && now < nextCall + 1.1)) return;
-    const nearby = (location.birds || []).filter(b => b.id !== 0 && Math.hypot(b.x-location.x, b.z-location.z) < 42);
-    const bird = nearby[Math.floor(Math.random() * nearby.length)];
-    const angle = callNumber * 2.4;
-    const point = bird || {x:location.x + 19 * Math.sin(angle), z:location.z + 19 * Math.cos(angle)};
-    const reply = nearby.find(other => other !== bird) || point;
+    const nearby = location.birds ? location.birds.filter(b => Math.hypot(b.x-location.x, b.z-location.z) < 42) : distantBirds;
+    if (!nearby.length) return;
+    const pool = nearby.length > 1 ? nearby.filter(other => other !== lastCaller) : nearby;
+    const bird = pool[Math.floor(Math.random() * pool.length)];
+    lastCaller = bird;
+    // A neighbour answers within earshot of the caller, from its own position.
+    let reply = bird, closest = 16;
+    for (const other of nearby) {
+      const distance = Math.hypot(other.x - bird.x, other.z - bird.z);
+      if (other !== bird && distance < closest) { closest = distance; reply = other; }
+    }
     const {beat, delay} = playing ? readBeat(engine, media) : {beat:.5, delay:0};
     const magical = playing && (callNumber % 4 === 2 || (accent && Math.random() < .22));
-    graph.flockCall(bird?.id ?? callNumber, point, reply, location, delay, beat, magical);
-    if (playing && bird && !motion.matches) bird.musicReplyAt = location.elapsed + delay;
+    const responseAt = graph.flockCall(bird, reply, location, delay, beat, magical);
+    if (location.birds && !motion.matches) {
+      bird.musicReplyAt = location.elapsed + delay;
+      if (reply !== bird && responseAt !== null) reply.musicReplyAt = location.elapsed + delay + responseAt;
+    }
     callNumber++;
     nextCall = now + delay + (playing ? 3 + beat * (5 + Math.floor(Math.random() * 7)) : 3.8 + Math.random() * 6);
   }

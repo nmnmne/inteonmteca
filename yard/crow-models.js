@@ -2,8 +2,10 @@ import * as THREE from './vendor/three.module.js';
 import { CROW_WALL_CONTACT_M } from './crow-wall-contact.js';
 import { createCrowKeyDoor } from './crow-key-door.js';
 import { createCrowBeaconPair } from './crow-beacon-pair.js';
+import { crowPersonality } from './crow-personalities.js';
 
 const clamp = (n, low, high) => Math.max(low, Math.min(high, n));
+const marks = ['bib','nape','wing','tail','brow','shoulder'];
 
 // The two shapes share their topology. A folded wing lays its coverts down the
 // flank, while the long primaries slide together above the tail.
@@ -39,7 +41,9 @@ function plumageGeometry() {
         const chord=p[2]+.14;
         detail.push(chord*17.,(Math.abs(p[0])-.44*chord)*32.,3);
       } else detail.push(0,0,0);
-      parts.push(typeof part==='number' ? part : part(p));
+      const joint=typeof part==='number' ? part : part(p);
+      parts.push(joint);
+      detail.push(joint);
     }
   }
   // Each ring follows the crown, throat, breast and mantle in section. The
@@ -243,19 +247,46 @@ function plumageGeometry() {
   }
   geometry.setIndex(index);
   geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
-  geometry.setAttribute('crowPart',new THREE.Float32BufferAttribute(parts,1));
-  geometry.setAttribute('crowDetail',new THREE.Float32BufferAttribute(detail,3));
+  geometry.setAttribute('crowDetail',new THREE.Float32BufferAttribute(detail,4));
   return geometry;
 }
 
 const jointShader = `
-attribute float crowPart;
-attribute vec3 crowDetail;
+attribute vec4 crowDetail;
+#define crowPart crowDetail.w
 varying vec3 plumageDetail;
 attribute vec3 crowFold, crowFoldNormal;
 attribute vec4 crowMotion;
 attribute vec4 crowStride;
-attribute float crowWingTip;
+// Keep the complete rig within WebGL 2's minimum of sixteen vertex attributes.
+attribute vec4 crowWingTip; // salute, marking, marking strength, warm/cool undertone
+attribute vec4 crowLook; // wing span, tail length, bill length, grey of the mantle
+vec3 individualPlumage(vec3 ink) {
+  float x=abs(position.x), y=position.y, z=position.z;
+  bool skin=crowDetail.z>1.5 && crowDetail.z<2.5;
+  bool wing=crowPart==2., tail=crowPart==5.;
+  if(!skin && !wing && !tail) return ink;
+  vec3 silver=mix(vec3(.78,.88,1.05),vec3(1.12,.94,.77),.5+.5*crowWingTip.w);
+  float gray=crowLook.w;
+  float hood=skin ? smoothstep(-.13,-.043,z) : 0.;
+  vec3 base=ink*(.79+.54*gray)*mix(vec3(1.),silver,.48);
+  base+=silver*(.006+.095*gray*gray)*hood;
+  float mark=crowWingTip.y, marking=0.;
+  if(mark<.5 && skin) { // feathered breast, with a dark cap above it
+    marking=(1.-smoothstep(.010,.094,y))*smoothstep(-.18,-.09,z)*(1.-smoothstep(.026,.092,z));
+  } else if(mark<1.5 && mark>.5 && skin) { // pale, swept nape
+    marking=smoothstep(-.221,-.172,z)*(1.-smoothstep(-.11,-.059,z))*smoothstep(.045,.113,y);
+  } else if(mark<2.5 && mark>1.5 && wing) { // lighter outer coverts on the left wing
+    marking=(position.x<0. ? 1. : .18)*smoothstep(.17,.28,x)*(1.-smoothstep(.46,.57,x));
+  } else if(mark<3.5 && mark>2.5 && tail) {
+    marking=smoothstep(.217,.317,z);
+  } else if(mark<4.5 && mark>3.5 && skin) { // a small pale fleck above the eye
+    marking=(1.-smoothstep(-.189,-.160,z))*smoothstep(.112,.150,y);
+  } else if(mark>4.5 && wing) { // pale shoulder visible even with wings tucked
+    marking=(1.-smoothstep(.14,.29,x))*smoothstep(-.112,-.072,z);
+  }
+  return base+silver*marking*crowWingTip.z*.23;
+}
 vec2 crowRotate(vec2 v,float angle) {
   float s=sin(angle), c=cos(angle);
   return vec2(c*v.x-s*v.y,s*v.x+c*v.y);
@@ -264,7 +295,7 @@ void poseCrow(inout vec3 p, inout vec3 n){
   float open=crowMotion.x, power=crowMotion.y, phase=crowMotion.z, air=crowMotion.w;
   if(crowPart>1.5 && crowPart<2.5){
     float side=sign(p.x), span=abs(p.x);
-    float salute=max(0.,side*crowWingTip);
+    float salute=max(0.,side*crowWingTip.x);
     float beat=sin(phase);
     // Wrist and primary tips lag the upper arm. The upstroke sweeps aft
     // and narrows the hand, then the whole wing opens for the power stroke.
@@ -283,9 +314,12 @@ void poseCrow(inout vec3 p, inout vec3 n){
     n.xy=crowRotate(n.xy,side*(arm+bend));
     float opening=max(open,salute);
     p=mix(crowFold,p,opening);
+    p.x*=mix(1.,crowLook.x,opening);
+    p.z+=(crowLook.x-1.)*(1.-opening)*max(0.,p.z+.075);
     n=normalize(mix(crowFoldNormal,n,opening));
   }else if(crowPart>0. && crowPart<=1.){
     float weight=crowPart;
+    p.z-=max(0.,-.235-p.z)*(crowLook.z-1.);
     vec2 hinge=vec2(.064,-.092);
     float dip=-crowStride.z*weight;
     p.yz=hinge+crowRotate(p.yz-hinge,dip);
@@ -298,6 +332,7 @@ void poseCrow(inout vec3 p, inout vec3 n){
     p.z-=weight*(.027*air+crowStride.x*.016*(1.-air));
   }else if(crowPart>4.5){
     float base=.13, reach=smoothstep(base,.36,p.z);
+    p.z+=(crowLook.y-1.)*max(0.,p.z-base);
     float fan=(crowStride.w-.26)*reach;
     p.x*=1.+fan*.78;
     p.y+=reach*(.014*crowStride.w+.014*power*air*sin(phase-.7));
@@ -389,13 +424,65 @@ function addWallContactShader(shader, wallContact, clock) {
       'outgoingLight = holographicFeathers(outgoingLight);\n#include <opaque_fragment>');
 }
 
+// In first person only the ends of the near-side primaries enter the crow's
+// peripheral vision on a deep upstroke. Their projected size follows the
+// camera's aspect, keeping the middle of the view clear on a portrait phone.
+function createLeaderPrimaries() {
+  const {look}=crowPersonality(0);
+  const points=[], shades=[];
+  const dark=new THREE.Color(0x24292d), light=new THREE.Color(0x657079);
+  const vane=dark.clone().lerp(light,.18+.48*look.tint);
+  const edge=dark.clone().lerp(light,.34+.45*look.tint);
+  const split=look.wingSpan;
+  for(const side of [-1,1]) {
+    for(let i=0;i<5;i++) {
+      const arc=Math.sin((i+1)*Math.PI/7);
+      const root=[side*1.14,-.88+i*.015,0];
+      const tip=[side*(1.-(.078+.087*arc)*split),-.88+.048*i+.08*arc,0];
+      const middle=[side*(.99-.056*arc),tip[1]-.070,0];
+      const back=[side*(1.013-.056*arc),tip[1]-.103,0];
+      for(const [point,shade] of [[root,vane],[back,vane],[tip,vane],[root,edge],[tip,edge],[middle,edge]]) {
+        points.push(...point); shades.push(shade.r,shade.g,shade.b);
+      }
+    }
+  }
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
+  geometry.setAttribute('color',new THREE.Float32BufferAttribute(shades,3));
+  const material=new THREE.ShaderMaterial({
+    vertexColors:true, side:THREE.DoubleSide, depthWrite:false,
+    uniforms:{lift:{value:0},light:{value:1}},
+    vertexShader:`uniform float lift; varying vec3 feather;
+      void main(){
+        float aspect=min(1.25,projectionMatrix[0][0]/projectionMatrix[1][1]);
+        float side=sign(position.x);
+        float reach=(abs(position.x)-1.)*aspect;
+        gl_Position=vec4(side*(1.+reach+.34*(1.-lift)),position.y-.10*(1.-lift),-.996,1.);
+        feather=color;
+      }`,
+    fragmentShader:`uniform float light; varying vec3 feather;
+      void main(){
+        gl_FragColor=vec4(feather*light,1.);
+        #include <colorspace_fragment>
+      }`
+  });
+  const mesh=new THREE.Mesh(geometry,material);
+  mesh.name='crow-leader-wingtips';
+  mesh.frustumCulled=false;
+  mesh.userData.bakedShadowCaster=mesh.userData.bakedShadowReceiver=false;
+  mesh.visible=false;
+  return mesh;
+}
+
 export function createCrowModels(wallContact = null, count = 12) {
   const group=new THREE.Group();
   group.name='crow-flock';
   const geometry=plumageGeometry();
   const motions=new THREE.InstancedBufferAttribute(new Float32Array(4*count),4).setUsage(THREE.DynamicDrawUsage);
   const strides=new THREE.InstancedBufferAttribute(new Float32Array(4*count),4).setUsage(THREE.DynamicDrawUsage);
-  const wingTips=new THREE.InstancedBufferAttribute(new Float32Array(count),1).setUsage(THREE.DynamicDrawUsage);
+  const wingTips=new THREE.InstancedBufferAttribute(new Float32Array(4*count),4).setUsage(THREE.DynamicDrawUsage);
+  const looks=new THREE.InstancedBufferAttribute(new Float32Array(4*count),4);
+  geometry.setAttribute('crowLook',looks);
   geometry.setAttribute('crowMotion',motions);
   geometry.setAttribute('crowStride',strides);
   geometry.setAttribute('crowWingTip',wingTips);
@@ -409,8 +496,9 @@ export function createCrowModels(wallContact = null, count = 12) {
   plumage.onBeforeCompile=shader=>{
     shader.uniforms.crowLowLight=lowLight;
     shader.vertexShader=jointShader+shader.vertexShader
+      .replace('#include <color_vertex>', '#include <color_vertex>\nvColor.rgb = individualPlumage(vColor.rgb);')
       .replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
-        plumageDetail = crowDetail;
+        plumageDetail = crowDetail.xyz;
         vec3 crowPosition = position;
         poseCrow(crowPosition,objectNormal);`)
       .replace('#include <begin_vertex>','vec3 transformed = crowPosition;');
@@ -483,13 +571,16 @@ export function createCrowModels(wallContact = null, count = 12) {
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     group.add(mesh);
   }
+  const primaries=createLeaderPrimaries();
+  group.add(primaries);
   const transform=new THREE.Object3D();
   transform.rotation.order='YXZ';
   const spread=new Float32Array(count), amplitude=new Float32Array(count);
+  const identities=new Array(count);
   let initialized=false;
   let keyDoor=null, beaconPair=null;
   const emitters = [{},{}];
-  function update(members,dt,digital=0,daylight=1,story=null,exchange=null) {
+  function update(members,dt,digital=0,daylight=1,story=null,exchange=null,reducedMotion=false) {
     if (story && story.phase!=='idle' && digital<.12 && !keyDoor) {
       keyDoor=createCrowKeyDoor(); group.add(keyDoor.group);
     }
@@ -501,9 +592,27 @@ export function createCrowModels(wallContact = null, count = 12) {
     let first = null, second = null;
     const response=initialized?1-Math.exp(-Math.max(0,dt)*9):1;
     const elapsed=members[0]?.elapsed || 0;
+    const leader=members[0];
+    const lift=(leader?.mode==='flap' || leader?.mode==='takeoff')
+      ? Math.max(0,Math.sin(leader.wingPhase))*clamp(leader.airborne,0,1) : 0;
+    primaries.visible=!reducedMotion && digital<.15 && lift>.38;
+    if(primaries.visible) {
+      primaries.material.uniforms.lift.value=lift;
+      primaries.material.uniforms.light.value=.36+.80*clamp(daylight,0,1);
+    }
     birds.count=shadows.count=Math.min(count,Math.max(0,members.length-1));
     for(let i=0;i<birds.count;i++) {
       const bird=members[i+1];
+      const profile=bird.personality || crowPersonality(bird.id);
+      const {look,habits}=profile;
+      if (identities[i]!==profile) {
+        identities[i]=profile;
+        looks.setXYZW(i,look.wingSpan,look.tail,look.beak,look.tint);
+        wingTips.setY(i,marks.indexOf(look.mark));
+        wingTips.setZ(i,look.markStrength);
+        wingTips.setW(i,look.warmth);
+        looks.needsUpdate=true;
+      }
       const gaze=bird.gazePose;
       const pose=gaze || bird.storyPose || bird.encounterPose || bird.prankPose;
       const air=clamp(bird.airborne,0,1), flight=bird.mode==='flap'||bird.mode==='glide';
@@ -514,35 +623,58 @@ export function createCrowModels(wallContact = null, count = 12) {
       const gait=Math.sin(bird.gaitPhase)*clamp(bird.speed*2,0,1);
       // Hold a bearing, make a quick glance and settle. Each perched bird
       // chooses its own cadence, while an encounter holds its attention.
-      const watchTime=elapsed*(.63+.033*(i%5))+i*2.4;
-      const glance=pose ? (pose.glance || 0) : .35*clamp(Math.sin(watchTime)*4,-1,1)*Math.sin(i+Math.floor(watchTime/Math.PI)*2.4);
+      const watchTime=elapsed*(.43+.56*habits.vigilance)+bird.id*2.4;
+      const watchSide=Math.sin(bird.id+Math.floor(watchTime/Math.PI)*2.4);
       const alert=pose?.posture || 0;
       const callAge=elapsed-(bird.musicReplyAt ?? -Infinity);
       const nod=!pose && callAge>=0 && callAge<.40 ? Math.sin(Math.PI*callAge/.40)**2 : 0;
-      const dip=(pose?.dip || 0)-nod*.25-alert*.14 + (gaze ? 0 : .030*gait*(1-air));
+      const quiet=!pose && air<.18 && bird.speed<.65 && !nod;
+      const cycle=(watchTime*.21)%1;
+      const pulse=cycle<.32 ? Math.sin(Math.PI*cycle/.32)**2 : 0;
+      let glance=.36*clamp(Math.sin(watchTime)*4,-1,1)*watchSide;
+      let dip=.030*gait*(1-air)*habits.bob;
+      if (quiet) {
+        if (habits.gesture==='preen') {
+          glance+=.96*pulse*watchSide;
+          dip+=.52*pulse;
+        } else if (habits.gesture==='forage') {
+          dip+=.82*pulse*Math.sin(watchTime*4.8)**2;
+        } else if (habits.gesture==='watch') {
+          glance=.25*watchSide;
+          dip-=.14*(1.-pulse);
+        } else {
+          glance+=.57*pulse*watchSide;
+        }
+        glance+=bird.neighbourLook || 0;
+      }
+      if (pose) {
+        glance=pose.glance || 0;
+        dip=(pose.dip || 0)-alert*.14;
+      }
+      dip-=nod*.25;
       const landing=bird.mode==='land';
       const fan=clamp(.20+(landing ? .56 : .04)*air+Math.abs(bird.bank)*.5+(pose?.tail || 0),0,1);
       motions.setXYZW(i,spread[i],amplitude[i],bird.wingPhase,air);
       strides.setXYZW(i,gait,gaze ? glance : (1-air)*glance,dip,fan);
       wingTips.setX(i,clamp((gaze?.wingTip || 0)+nod*(i%2 ? -.18 : .18),-1,1)*(1-air));
-      const height=bird.y+(pose?.hop || 0);
+      const height=bird.y+(pose?.hop || 0)+.195*(look.size-1)*(1-air);
       transform.position.set(bird.x,height+Math.abs(gait)*.008*(1-air),bird.z);
       if (wallIds) wallContact.resolve(bird.x,transform.position.y,bird.z,wallIds.array,2*i);
       const pitch=air*((landing ? .12 : 0)+clamp(bird.vy || 0,-4,5)*.034+.023*amplitude[i]*Math.sin(bird.wingPhase-.7));
       transform.rotation.set(pitch,-bird.yaw,bird.bank,'YXZ');
-      transform.scale.setScalar(.97+.06*((i*7)%11)/10);
+      transform.scale.setScalar(look.size);
       transform.updateMatrix(); birds.setMatrixAt(i,transform.matrix);
       if (bird.id===firstId || bird.id===secondId) {
         const lamp = bird.id===firstId ? emitters[0] : emitters[1];
         Object.assign(lamp,{x:bird.x,y:bird.y,z:bird.z,yaw:bird.yaw,gait,air,pitch,bank:bird.bank,
-          hop:pose?.hop || 0,scale:transform.scale.x});
+          hop:height-bird.y,scale:transform.scale.x});
         if (bird.id===firstId) {first=lamp; first.pulse=(inStory ? pair.thief : pair.sender).pulse;}
         else {second=lamp; second.pulse=(inStory ? pair.accomplice : pair.recipient).pulse;}
       }
       const contact=clamp(1-(height-.20)/1.45,0,1);
       transform.position.set(bird.x,.052,bird.z+.008);
       transform.rotation.set(0,-bird.yaw,0,'YXZ');
-      transform.scale.set(.35*contact,1,.63*contact);
+      transform.scale.set(.35*contact*look.size,1,.63*contact*look.size);
       transform.updateMatrix(); shadows.setMatrixAt(i,transform.matrix);
     }
     if (!beaconPair && first && second) {
@@ -566,6 +698,7 @@ export function createCrowModels(wallContact = null, count = 12) {
     group.removeFromParent();
     keyDoor?.dispose();
     beaconPair?.dispose();
+    primaries.geometry.dispose(); primaries.material.dispose();
     birds.dispose(); shadows.dispose();
     geometry.dispose(); shadowGeometry.dispose(); plumage.dispose(); shadowsMaterial.dispose();
   }};

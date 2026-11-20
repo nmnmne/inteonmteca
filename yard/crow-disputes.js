@@ -1,4 +1,5 @@
 import { pointInRing } from './navigation.js';
+import { crowPersonality } from './crow-personalities.js';
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const bearing = (a, b) => Math.atan2(b.x - a.x, a.z - b.z);
@@ -18,15 +19,17 @@ export function createCrowDisputes(layout, home, groundNear, clearGround, relati
   function patch(point) {
     return groundNear(point.x, point.z, inside);
   }
-  function memberSpot(family, index) {
-    const point = relative(family.center, family.yaw, (index - 1) * 1.45 + draw() * .6, draw() * 2 - 1);
+  function memberSpot(family, index, id) {
+    const {sociability, curiosity} = crowPersonality(id).habits;
+    const point = relative(family.center, family.yaw, (index - 1) * (2.1 - sociability) + draw() * .6,
+      draw() * 2 - 1 + curiosity - .5);
     return patch(point) || family.center;
   }
   for (const side of [-1, 1]) {
     const center = patch(relative(leader, leader.yaw, side * (6 + draw() * 2), 10 + draw() * 3)) || leader;
     const family = {side, center, yaw:leader.yaw + side * .7, moveAt:8 + draw() * 6, members:[]};
     for (let i = 0; i < 3; i++) {
-      const id = home.length + guests.length, spot = memberSpot(family, i);
+      const id = home.length + guests.length, spot = memberSpot(family, i, id);
       const flying = i === 2;
       const bird = {id, flockId:families.length + 1, x:spot.x, z:spot.z, y:flying ? 2.5 : ground,
         yaw:family.yaw + draw() - .5, vx:0, vz:0, vy:0, bank:0, speed:0, cruise:3.4,
@@ -44,7 +47,7 @@ export function createCrowDisputes(layout, home, groundNear, clearGround, relati
     family.center = center;
     family.moveAt = time + 7 + draw() * 9;
     family.members.forEach((bird, index) => {
-      const spot = memberSpot(family, index);
+      const spot = memberSpot(family, index, bird.id);
       bird.roamX = spot.x;
       bird.roamZ = spot.z;
     });
@@ -77,14 +80,17 @@ export function createCrowDisputes(layout, home, groundNear, clearGround, relati
       const points = [-1,1].map(sign => relative(site, heading, sign * .78, sign * .18));
       if (!inside(site.x, site.z) || (lastSite && distance(lastSite, site) < 4)
           || !clearPath(leader, site) || !clearPath(points[0], points[1]) || !clearGround(points[0].x, points[0].z)) continue;
+      // A bolder neighbour is more likely to claim a nearby contested patch.
+      const approachCost = (bird, spot) => distance(bird, spot) - 2.8 * bird.personality.habits.boldness;
       const visiting = families.map((family, i) => family.members.filter(b => time >= b.quietUntil)
-        .sort((a, b) => distance(a, points[i]) - distance(b, points[i]))[0]);
+        .sort((a, b) => approachCost(a, points[i]) - approachCost(b, points[i]))[0]);
       if (visiting.some(b => !b || distance(b, site) > 35)) continue;
       // The camera stays with the home flock. Its free senior neighbours
       // physically fly to the noise. The nearest available adult can back one up.
       const available = home.slice(1).filter(b => !b.called && time >= b.breakUntil && !b.prankPose
           && distance(b, site) > 2.8 && distance(b, site) < 34)
-        .sort((a, b) => Number(b.senior) - Number(a.senior) || distance(a, site) - distance(b, site));
+        .sort((a, b) => Number(b.senior) - Number(a.senior) || distance(a, site) - distance(b, site)
+          - 1.6 * (a.personality.habits.sociability - b.personality.habits.sociability));
       if (!available[0]?.senior) continue;
       actors = visiting;
       elders = available.slice(0, 2);
@@ -151,7 +157,7 @@ export function createCrowDisputes(layout, home, groundNear, clearGround, relati
         face(bird, actors[1 - i], dt);
         // Alternating forward threats with closed beaks, low shoulders and a
         // short lift of the folded wings. The opponent stands its ground.
-        const threat = Math.max(0, Math.sin(age * 2.8 + i * Math.PI)) ** 3;
+        const threat = (.52 + .6 * bird.personality.habits.boldness) * Math.max(0, Math.sin(age * 2.8 + i * Math.PI)) ** 3;
         bird.encounterPose.dip = .38 * threat;
         bird.encounterPose.wings = .08 + .38 * threat;
       });

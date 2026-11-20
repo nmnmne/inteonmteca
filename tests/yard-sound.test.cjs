@@ -1,10 +1,13 @@
-const {test} = require('node:test');
+const {before, test} = require('node:test');
 const assert = require('node:assert/strict');
 const {readFileSync} = require('node:fs');
 const {join} = require('node:path');
 const vm = require('node:vm');
 
-function fixture(channels = 2) {
+let crowPersonality;
+before(async () => { ({crowPersonality} = await import('../yard/crow-personalities.js')); });
+
+function fixture(channels = 2, random = Math.random) {
   const document = new EventTarget(), window = new EventTarget();
   let interval = null, context, time = 0, playing = false;
   const sources = [], nodes = [];
@@ -51,7 +54,7 @@ function fixture(channels = 2) {
   const code=readFileSync(join(__dirname,'../yard/yard-sound.js'),'utf8')
     .replace(/^import .*?;$/gm,'').replace('export function createYardSound','function createYardSound');
   const bird={id:1,x:2,z:1};
-  const scope=vm.createContext({window,document,navigator:{},Math,Float32Array,
+  const scope=vm.createContext({window,document,navigator:{},Math:Object.assign(Object.create(Math), {random}),Float32Array,crowPersonality,
     Date:{now:()=>time*1000}, courtyardEffectSeconds:ms=>-ms/1000,
     sampleWeather:()=>({rain:1,snow:0,autumn:0,summer:0,spring:0}),
   });
@@ -220,5 +223,58 @@ test('wind and an active crow call retain their world positions when the listene
     positions.push(windPan.pan.value);
   }
   assert.ok(Math.max(...positions) - Math.min(...positions) > .5);
+  scene.yard.dispose();
+});
+
+test('all nineteen residents keep individual waveforms, phrase lengths, rhythm and gain across visits', async () => {
+  const twoRuns = [];
+  for (let visit = 0; visit < 2; visit++) {
+    const scene = fixture(2, () => visit ? .9 : .1);
+    await scene.start();
+    const voices = [];
+    for (let id = 0; id < 19; id++) {
+      const bird = {id, x:0, z:0};
+      scene.listener.birds = [bird];
+      const before = scene.sources.length, now = 2 + 12 * id;
+      scene.step(now);
+      const notes = scene.sources.slice(before), signature = crowPersonality(id).voice;
+      assert.equal(notes.length, signature.notes);
+      assert.equal(bird.musicReplyAt, now, 'the caller, including the leader, actually gestures');
+      const [first, second] = notes, clip = first.buffer;
+      const level = first.outputs[0].gain.value;
+      assert.equal(level, .32 * signature.volume);
+      assert.equal(clip.length, Math.round(.38 * signature.length * clip.sampleRate));
+      if (second) assert.ok(Math.abs(second.at - first.at - clip.length / clip.sampleRate / first.playbackRate.value - .2 * signature.cadence) < 1e-8);
+      const samples = clip.getChannelData(0);
+      assert.ok(samples.every(value => Number.isFinite(value) && Math.abs(value) < 1));
+      voices.push(require('node:crypto').createHash('sha256').update(Buffer.from(samples.buffer)).digest('hex'));
+    }
+    assert.equal(new Set(voices).size, 19);
+    twoRuns.push(voices);
+    scene.yard.dispose();
+  }
+  assert.deepEqual(twoRuns[0], twoRuns[1]);
+});
+
+test('a neighbour answers in its own voice and from its own position, including rhythmic reverse replies', async () => {
+  const scene = fixture(2, () => 0), leader = {id:0, x:-3, z:0}, other = {id:2, x:4, z:0};
+  scene.listener.birds = [leader, other];
+  await scene.start();
+  scene.step(2);
+  const firstCall = scene.sources.filter(s => !s.loop);
+  const outgoing = firstCall[0], answer = firstCall.at(-1);
+  assert.ok(answer.at > outgoing.at && other.musicReplyAt > leader.musicReplyAt);
+  assert.ok(outgoing.outputs[0].outputs[0].pan.value < 0 && answer.outputs[0].outputs[0].pan.value > 0);
+  assert.notEqual(outgoing.buffer, answer.buffer);
+  scene.step(17); // The other bird takes the next turn, using the same cached voice.
+  assert.equal(scene.sources[2 + firstCall.length].buffer, answer.buffer);
+  scene.setPlaying(true);
+  const offset = scene.sources.length;
+  scene.step(32); // Third bout is beat-aligned; the neighbour answers backwards.
+  const magical = scene.sources.slice(offset);
+  assert.equal(magical.length, 3);
+  assert.ok(Math.abs(magical[1].at - magical[0].at - .75) < 1e-8);
+  assert.deepEqual(magical[1].buffer.getChannelData(0), answer.buffer.getChannelData(0).slice().reverse());
+  assert.equal(other.musicReplyAt, scene.listener.elapsed + .25 + .75);
   scene.yard.dispose();
 });
