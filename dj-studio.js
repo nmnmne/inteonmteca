@@ -67,6 +67,8 @@
   }));
   const channels = ['A', 'B'];
   const loadRequests = { A: 0, B: 0 };
+  let compactControls;
+  const compactActive = () => document.body.dataset.yardWindow === 'dj' && document.body.dataset.djMode === 'compact';
   const retiredURLs = new Set();
   const mixerDisplays = [];
   const deckBrowsers = new Map();
@@ -110,7 +112,7 @@
     const visible = channels.filter(id => $('#deck-' + id.toLowerCase()).offsetWidth);
     return deckBrowsers.get(visible.length === 1 ? visible[0] : focusedDeck);
   }
-  async function loadDeck(id, track) {
+  async function loadDeck(id, track, isCurrent) {
     if (!track) return false;
     const request = ++loadRequests[id];
     if (track.imported && !track.src) {
@@ -122,6 +124,7 @@
         return false;
       }
     }
+    if (isCurrent && !isCurrent()) return false;
     engine.load(id, track);
     const state = engine.snapshot();
     if (state[id].track !== track) return false;
@@ -216,7 +219,10 @@
     }
 
     function loadSelected() {
-      if (rows[selected]) void loadDeck(id, rows[selected]);
+      const track = rows[selected];
+      if (!track) return;
+      if (compactActive() && compactControls) compactControls.choose(id, track.id);
+      else void loadDeck(id, track);
     }
     function rowIndex(event) {
       const row = event.target.closest('[role="option"]');
@@ -784,8 +790,9 @@
   window.DJStudioLibrary = {
     list: () => tracks.map(({id, title, artist}) => ({id, title, artist})),
     get activeDeck() { return focusedDeck; },
+    setCompactControls(controls) { compactControls = controls; },
     revealSelection: side => deckBrowsers.get(side).revealSelection(),
-    load: (side, key) => loadDeck(side, tracks.find(track => track.id === key)),
+    load: (side, key, isCurrent) => loadDeck(side, tracks.find(track => track.id === key), isCurrent),
     importFiles: (side, files) => importFiles(files, deckBrowsers.get(side)),
     openSettings,
     toggleFullscreen
@@ -878,7 +885,7 @@
     importBrowser = null;
   };
   document.addEventListener('keydown', (e) => {
-    const compact = document.body.dataset.yardWindow === 'dj' && document.body.dataset.djMode === 'compact';
+    const compact = compactActive();
     if (
       (studio.inert && !compact) ||
       e.repeat ||
@@ -891,7 +898,11 @@
     )
       return;
     const code = e.code;
-    if (code === 'KeyQ' || code === 'KeyP') engine.toggle(code === 'KeyQ' ? 'A' : 'B');
+    if (code === 'KeyQ' || code === 'KeyP') {
+      const id = code === 'KeyQ' ? 'A' : 'B';
+      if (compact && compactControls) compactControls.toggle(id);
+      else engine.toggle(id);
+    }
     else if (code === 'KeyW' || code === 'KeyO') engine.cue(code === 'KeyW' ? 'A' : 'B');
     else if (['Digit1', 'Digit2', 'Digit3', 'Digit4'].includes(code))
       engine.hotCue('A', Number(code.slice(-1)), e.shiftKey);

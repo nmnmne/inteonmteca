@@ -105,6 +105,7 @@ $syncArgs = @(
   "--include", "eng-rus-cards.css",
   "--include", "eng-rus-cards.js",
   "--include", "compact-player.css",
+  "--include", "compact-automix.js",
   "--include", "compact-player.js",
   "--include", "opening-track.js",
   "--include", "yard-desktop.css",

@@ -348,6 +348,21 @@
       return pcmChannels(data, fmt);
     }
 
+    canScratchAt(time) {
+      if (!this.voice || this.closed) return false;
+      if (this.status === 'history') {
+        return Boolean(this.history && time >= this.history.from && time <= this.history.to + .15
+          && this.history.to - this.history.from >= .25);
+      }
+      if (this.status !== 'ready') return false;
+      // Blocks span two seconds. Include both sides of the brief gesture when
+      // the needle is close to a block boundary.
+      const end = (this.format.frames - 1) / this.format.rate;
+      const first = Math.floor(Math.max(0, time - .25) / 2);
+      const last = Math.floor(Math.min(end, time + .25) / 2);
+      return this.blocks.has(first) && this.blocks.has(last);
+    }
+
     start(time) {
       this.gesture = {time, lastMove: performance.now()};
       this.capture(false);

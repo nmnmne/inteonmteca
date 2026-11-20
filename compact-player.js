@@ -3,7 +3,7 @@
 
   const engine = window.DJEngine;
   const library = window.DJStudioLibrary;
-  if (!engine || !library) return;
+  if (!engine || !library || !window.DJCompactMix) return;
   const sides = ['A', 'B'];
   const scopes = Object.fromEntries(sides.map(id => [id, document.querySelector('#deck-' + id.toLowerCase() + ' .dd-scope')]));
   const browsers = Object.fromEntries(sides.map(id => [id, document.querySelector('#deck-' + id.toLowerCase() + ' .dd-browser')]));
@@ -43,10 +43,10 @@
       <div class="compact-transport">
         <button type="button" class="compact-previous" aria-label="Предыдущий трек">${icon('previous')}</button>
         <button type="button" class="compact-play" aria-label="Воспроизвести">${icon('play')}</button>
-        <button type="button" class="compact-auto" aria-label="Автовоспроизведение" title="Автоматически включать следующий трек" aria-pressed="false">Авто</button>
+        <button type="button" class="compact-auto" aria-label="Автовоспроизведение" title="Сводить со случайным треком перед окончанием" aria-pressed="false">Авто</button>
         <button type="button" class="compact-next" aria-label="Следующий трек">${icon('next')}</button>
       </div>
-      <div class="compact-wave"></div>
+      <div class="compact-wave"><div class="compact-mix-status" role="status" aria-live="polite"></div></div>
       <div class="compact-utilities">
         <img class="compact-brand" src="assets/logo-wordmark.svg" alt="inteonmteca">
         <time data-yard-clock></time>
@@ -69,11 +69,16 @@
   const picker = find('#compact-picker'), librarySlot = find('.compact-library');
   const play = find('.compact-play'), fileInput = find('.compact-import');
   const auto = find('.compact-auto');
-  const autoDecks = new Set();
+  const mixStatus = find('.compact-mix-status');
   const sideButtons = [...root.querySelectorAll('[data-compact-side]')];
   const requests = { A: 0, B: 0 };
   let side = 'A', importSide = 'A';
   const active = () => document.body.dataset.yardWindow === 'dj' && document.body.dataset.djMode === 'compact';
+
+  const mix = window.DJCompactMix.create(engine, library, {
+    onDeckChange: activate,
+    onStatus(text) { mixStatus.textContent = text; }
+  });
 
   function update() {
     if (!active()) return;
@@ -98,45 +103,67 @@
     if (picker.matches(':popover-open')) picker.hidePopover();
     returnScope();
     side = id;
-    auto.setAttribute('aria-pressed', String(autoDecks.has(id)));
+    auto.setAttribute('aria-pressed', String(mix.isAuto(id)));
     root.dataset.side = id;
     sideButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.compactSide === id)));
     document.querySelector('.controller-tabs [data-panel="' + id.toLowerCase() + '"]').click();
     wave.append(scopes[id]);
     update();
   }
-  async function load(id, key, autoAdvance = false) {
-    const request = ++requests[id];
-    const wasPlaying = engine.snapshot()[id].playing;
-    if (!await library.load(id, key) || request !== requests[id]) return;
-    const loaded = engine.snapshot()[id];
-    const shouldPlay = autoAdvance ? autoDecks.has(id) : wasPlaying;
-    if (shouldPlay && !loaded.playing && loaded.track?.id === key) engine.toggle(id);
-    update();
+  function choose(id, key) {
+    ++requests[id];
+    if (picker.matches(':popover-open')) picker.hidePopover();
+    return mix.choose(id, key);
   }
-  function adjacent(step, id = side, autoAdvance = false) {
+  async function adjacent(step) {
+    const id = side;
     const entries = library.list();
     if (!entries.length) return;
-    const index = entries.findIndex(t => t.id === engine.snapshot()[id].track?.id);
+    mix.manual(id);
+    const state = engine.snapshot()[id];
+    const index = entries.findIndex(t => t.id === state.track?.id);
     const next = index < 0 ? 0 : (index + step + entries.length) % entries.length;
-    void load(id, entries[next].id, autoAdvance);
+    const key = entries[next].id, request = ++requests[id];
+    const isCurrent = () => request === requests[id];
+    if (!await library.load(id, key, isCurrent) || !isCurrent()) return;
+    const loaded = engine.snapshot()[id];
+    if (state.playing && !loaded.playing && loaded.track?.id === key) engine.toggle(id);
+    update();
   }
-  async function importTo(id, files) {
+  function importTo(id, files) {
     if (!files.length) return;
-    const request = ++requests[id], version = engine.snapshot()[id].loadVersion;
-    const first = await library.importFiles(id, files);
-    if (first && requests[id] === request && engine.snapshot()[id].loadVersion === version) await load(id, first.id);
+    return choose(id, async () => (await library.importFiles(id, files))?.id);
   }
+  function toggle(id) {
+    ++requests[id];
+    const wasPlaying = engine.snapshot()[id].playing;
+    if (mix.manual(id) && wasPlaying) {
+      const state = engine.snapshot();
+      for (const deck of sides) if (state[deck].playing) engine.toggle(deck);
+    } else engine.toggle(id);
+  }
+  function stopMix() {
+    for (const id of sides) {
+      ++requests[id];
+      mix.setAuto(id, false);
+    }
+    mix.cancel();
+  }
+  library.setCompactControls({ choose, toggle });
   sideButtons.forEach(button => button.onclick = () => activate(button.dataset.compactSide));
   auto.onclick = () => {
-    if (autoDecks.has(side)) autoDecks.delete(side);
-    else autoDecks.add(side);
-    auto.setAttribute('aria-pressed', String(autoDecks.has(side)));
+    mix.setAuto(side, !mix.isAuto(side));
+    auto.setAttribute('aria-pressed', String(mix.isAuto(side)));
   };
-  window.addEventListener('dj-ended', ({detail: {id}}) => {
-    if (autoDecks.has(id)) adjacent(1, id, true);
-  });
-  play.onclick = () => { ++requests[side]; engine.toggle(side); };
+  window.addEventListener('dj-ended', ({detail: {id}}) => mix.ended(id));
+  play.onclick = () => toggle(side);
+  wave.addEventListener('pointerdown', event => {
+    if (event.button === 0 && event.target.matches('canvas.dd-wave')) mix.manual(side);
+  }, true);
+  wave.addEventListener('keydown', event => {
+    if (event.target.matches('canvas.dd-wave') &&
+        ['ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End'].includes(event.key)) mix.manual(side);
+  }, true);
   find('.compact-previous').onclick = () => adjacent(-1);
   find('.compact-next').onclick = () => adjacent(1);
   find('.compact-sound').onclick = () => library.openSettings();
@@ -192,21 +219,18 @@
     if (!files.length && !track) return;
     event.preventDefault();
     if (files.length) void importTo(side, files);
-    else void load(side, track);
+    else void choose(side, track);
   };
   window.addEventListener('yard-dj-mode', () => {
     if (active()) activate(library.activeDeck);
     else {
-      autoDecks.clear();
+      stopMix();
       returnScope();
     }
   });
   window.addEventListener('yard-app-visibility', ({detail}) => {
     if (detail.app !== 'dj') return;
-    if (detail.action === 'close') {
-      autoDecks.clear();
-      ++requests.A; ++requests.B;
-    }
+    if (detail.action === 'close') stopMix();
     if (detail.visible && active()) activate(library.activeDeck);
   });
   window.addEventListener('dj-load', ({detail}) => {

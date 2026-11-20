@@ -4,10 +4,23 @@
 
   const clamp = (value, min, max) => Math.min(max, Math.max(min, Number(value) || 0));
   const signal = (type, detail) => window.dispatchEvent(new CustomEvent(type, { detail }));
+  let batchDepth = 0, changePending = false;
   const change = () => {
+    if (batchDepth) { changePending = true; return; }
     syncVisualPlayback();
     signal('dj-change');
   };
+  function batch(action) {
+    ++batchDepth;
+    try { return action(); }
+    finally {
+      --batchDepth;
+      if (!batchDepth && changePending) {
+        changePending = false;
+        change();
+      }
+    }
+  }
   const fail = (id, message) => signal('dj-error', { id, message });
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   const decks = {};
@@ -487,11 +500,12 @@
     else { ++deck.sequence; deck.audio.pause(); }
   }
 
-  function beginScratch(id) {
+  function beginScratch(id, {bufferedOnly = false} = {}) {
     const deck = decks[id];
     if (!deck?.track || !deck.vinyl || deck.scratch) return false;
     const vinyl = deck.vinyl;
     let time = position(deck);
+    if (bufferedOnly && !vinyl.canScratchAt(time)) return false;
     if (vinyl.status === 'unavailable') {
       fail(id, 'Браузер не смог включить обработку скретча.');
       return false;
@@ -593,26 +607,48 @@
     }
   }
 
-  function loop(id, beats) {
+  function configureLoop(id, beats, fallbackBPM, manual) {
     const deck = decks[id];
-    if (!deck?.track) return;
-    beats = Math.max(0, Number(beats) || 0);
-    if (beats === deck.loopBeats || !beats) { clearLoop(deck); change(); return; }
-    if (!deck.baseBPM) { fail(id, 'Для петли нужен BPM трека.'); return; }
-    const beat = 60 / deck.baseBPM;
+    if (!deck?.track) return false;
+    if (beats === deck.loopBeats) return true;
+    if (!beats) { clearLoop(deck); change(); return true; }
+    const bpm = deck.baseBPM || fallbackBPM;
+    if (!(bpm > 0) || !Number.isFinite(bpm)) {
+      if (manual) fail(id, 'Для петли нужен BPM трека.');
+      return false;
+    }
+    const beat = 60 / bpm;
     const offset = Number(deck.track.offset) || 0;
     const length = beat * beats;
     const total = duration(deck);
-    if (total && length > total) { fail(id, 'Трек короче выбранной петли.'); return; }
+    if (!Number.isFinite(length) || (total && length > total)) {
+      if (manual) fail(id, 'Трек короче выбранной петли.');
+      return false;
+    }
     const latest = total ? total - length : Infinity;
     const from = Math.min(latest, deck.loopStart ?? position(deck));
     const start = offset + Math.floor((from - offset) / beat + 1e-9) * beat;
     deck.loopStart = Math.max(0, start);
     deck.loopEnd = deck.loopStart + length;
     deck.loopBeats = beats;
-    if (position(deck) >= deck.loopEnd || position(deck) < deck.loopStart) move(deck, deck.loopStart);
+    const elapsed = position(deck) - deck.loopStart;
+    if (elapsed < 0 || elapsed >= length) {
+      // Folding the playhead into a shorter loop keeps the beat phase during a roll.
+      move(deck, deck.loopStart + (!manual && elapsed > 0 ? elapsed % length : 0));
+    }
     updateLoopTimer();
     change();
+    return true;
+  }
+
+  function loop(id, beats) {
+    beats = Math.max(0, Number(beats) || 0);
+    return configureLoop(id, beats === decks[id]?.loopBeats ? 0 : beats, 0, true);
+  }
+
+  function setLoop(id, beats, fallbackBPM = 0) {
+    if (!Number.isFinite(beats) || beats < 0) return false;
+    return configureLoop(id, beats, fallbackBPM, false);
   }
 
   function setTempo(id, percent) {
@@ -885,6 +921,9 @@
   function deckSnapshot(deck) {
     return {
       track: deck.track, loadVersion: deck.loadVersion, playing: deck.scratch ? deck.scratch.resume : !deck.audio.paused && !deck.audio.ended,
+      audioRunning: context?.state === 'running' && !deck.audio.paused && !deck.audio.seeking
+        && !deck.audio.ended && deck.audio.readyState >= 3,
+      audioFailed: Boolean(deck.audio.error),
       scratching: Boolean(deck.scratch), scratchStatus: deck.vinyl?.status || 'unavailable',
       time: position(deck), duration: duration(deck), bpm: effectiveBPM(deck),
       tempo: deck.tempo, bend: deck.bend, baseBPM: deck.baseBPM, keyLock: deck.keyLock,
@@ -906,9 +945,9 @@
   }
 
   window.DJEngine = {
-    visuals,
+    visuals, batch,
     beginScratch, moveScratch, endScratch,
-    load, toggle, seek, cue, setCue, hotCue, loop, sync, setTempo, setBend, setKeyLock,
+    load, toggle, seek, cue, setCue, hotCue, loop, setLoop, sync, setTempo, setBend, setKeyLock,
     setChannel, setEQ, setMaster, setCross, setCrossCurve, setCut, setMonitorDevice, setMonitor, setOutputLayout, testOutputChannel, toggleRecording, snapshot,
     setBPM(id, bpm) {
       const deck = decks[id];
