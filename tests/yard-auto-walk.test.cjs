@@ -135,3 +135,35 @@ test('the walker can choose different itineraries after visiting the wall', asyn
   }
   assert.ok(widestSeparation > 4);
 });
+
+test('every other approach picks a different safe courtyard touchdown on the same flight', async () => {
+  const {createAutoWalk} = await import('../yard/auto-walk.js');
+  const {isWalkable, pointInRing} = await import('../yard/navigation.js');
+  function fly(selectionFrame, selection, count) {
+    let frame = 0, draws = 0;
+    const walk = createAutoWalk(layout, {random: () => {
+      draws++;
+      return frame === selectionFrame ? selection : .3;
+    }});
+    const approaches = [], stops = [];
+    while (stops.length < count && frame < 30000) {
+      const before = walk.pose.mode;
+      draws = 0;
+      const pose = walk.update(1/60);
+      if (before !== 'land' && pose.mode === 'land') approaches.push({frame, draws});
+      if (before === 'land' && pose.mode === 'walk') stops.push([pose.x, pose.z]);
+      frame++;
+    }
+    assert.equal(stops.length, count);
+    return {approaches, stops};
+  }
+  const regular = fly(-1, 0, 4);
+  assert.deepEqual(regular.approaches.map(a => a.draws), [1, 0, 1]);
+  const frame = regular.approaches[0].frame;
+  const near = fly(frame, 0, 2), far = fly(frame, .999, 2);
+  assert.deepEqual(near.stops[0], far.stops[0]);
+  assert.ok(Math.hypot(near.stops[1][0]-far.stops[1][0], near.stops[1][1]-far.stops[1][1]) > 6);
+  for (const stop of [near.stops[1], far.stops[1], regular.stops[3]]) {
+    assert.ok(pointInRing(...stop, layout.walkable) && isWalkable(layout, ...stop, 1));
+  }
+});

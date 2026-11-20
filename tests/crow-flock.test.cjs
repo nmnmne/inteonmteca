@@ -327,3 +327,41 @@ test('a flying leader can lose its entire party, then bring all twelve neighbour
   }
   assert.fail('solo flight must be followed by a new gathering and full-flock flight');
 });
+
+test('every second free touchdown takes a reserved alternative until the bird lands or joins a scene', async () => {
+  const {walk,flock} = await createRoute(7,390/844,true);
+  const {isWalkable,pointInRing} = await import('../yard/navigation.js');
+  const birds = flock.allBirds.slice(1);
+  const familyKinds = new Set();
+  let alternates = 0, regular = 0, interrupted = 0;
+  for (let frame=0; frame<9000 && (familyKinds.size<2 || alternates<14 || !interrupted); frame++) {
+    const before = birds.map(b => [b.ordinaryLandings,b.alternatePerch]);
+    walk.update(1/15);
+    birds.forEach((b,i) => {
+      const [count,spot] = before[i];
+      if (b.alternatePerch) {
+        assert.ok(b.approachingGround);
+        assert.equal(b.ordinaryLandings%2,1,'first, third and fifth trips keep their original spot');
+        const {x,z} = b.alternatePerch;
+        assert.ok(isWalkable(layout,x,z,.2) && pointInRing(x,z,layout.walkable));
+        if (spot) assert.equal(b.alternatePerch,spot,'a moving bird keeps its reserved touchdown point');
+        else assert.ok(Math.hypot(x-b.roamX,z-b.roamZ)>=2);
+      }
+      if (count !== b.ordinaryLandings) {
+        assert.equal(b.ordinaryLandings,count+1);
+        assert.ok(b.airborne < .11 && isWalkable(layout,b.x,b.z,.15));
+        if (count%2) {
+          assert.ok(spot);
+          assert.ok(Math.hypot(b.x-spot.x,b.z-spot.z)<2.6);
+          familyKinds.add(b.flockId ? 'guest' : 'home');
+          alternates++;
+        } else { assert.equal(spot,null); regular++; }
+      } else if (spot && !b.alternatePerch) {
+        assert.equal(b.approachingGround,false);
+        interrupted++;
+      }
+    });
+  }
+  assert.equal(familyKinds.size,2);
+  assert.ok(alternates>=14 && regular>=14 && interrupted>0,JSON.stringify({alternates,regular,interrupted}));
+});

@@ -1,4 +1,4 @@
-import { isWalkable } from './navigation.js';
+import { isWalkable, pointInRing } from './navigation.js';
 
 const distance = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
 const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
@@ -156,7 +156,7 @@ export function createAutoWalk(layout, { random = Math.random, openingView = lay
   const pose = { ...openingView, y: layout.movement.eyeM, roll: 0, eyeOffset: 0, fov: openingFov, mode: 'land' };
   const step = 1 / 60;
   let metres = 0, elapsed = 0, stride = 0, turnRate = 0, remainder = 0;
-  let phaseTime = 0, duration = 1.45, glides = 0, firstWalk = true;
+  let phaseTime = 0, duration = 1.45, glides = 0, touchdowns = 0;
   let height = pose.y, fromHeight = height, toHeight = groundEyeM;
   let speed = 1.9, fromSpeed = speed, toSpeed = 1.04, airspeed = 0;
   let glanceSide = 1, gatheringPace = 1;
@@ -172,23 +172,32 @@ export function createAutoWalk(layout, { random = Math.random, openingView = lay
     toSpeed = targetSpeed;
   }
 
-  // Reserve a clear patch for the flare and touchdown. The bird can fly
-  // through digital architecture, but it lands on open ground.
-  function clearLanding(distanceNeeded) {
-    if (path.length - metres < distanceNeeded) return false;
-    for (let offset = 0; offset <= distanceNeeded; offset += 2) {
+  // Reserve an obstacle-free approach and rollout. Every second touchdown can
+  // use any clear ground along the next twenty metres of the same flight path.
+  function landingDuration() {
+    const descent = Math.max(3.2, height / 3.2);
+    const meanSpeed = (speed + 1) / 2;
+    const minimum = descent * meanSpeed + 5;
+    const alternate = touchdowns % 2 === 1;
+    const limit = Math.min(path.length - metres, minimum + (alternate ? 20 : 0));
+    if (limit < minimum) return 0;
+    let clear = 0;
+    for (let offset = 0; ; offset = Math.min(limit, offset + 1.5)) {
       const [x, z] = path.at(metres + offset);
-      if (!isWalkable(layout, x, z, 1)) return false;
+      if (!isWalkable(layout, x, z, 1) || (alternate && !pointInRing(x, z, layout.walkable))) break;
+      clear = offset;
+      if (offset === limit) break;
     }
-    return true;
+    if (clear < minimum) return 0;
+    return alternate ? descent + random() * (clear - minimum) / meanSpeed : descent;
   }
 
   function nextPhase() {
     switch (pose.mode) {
       case 'land':
+        touchdowns++;
         glanceSide = random() < 0.5 ? -1 : 1;
-        changePhase('walk', firstWalk ? 4.8 : range(5, 10), groundEyeM, range(0.95, 1.25));
-        firstWalk = false;
+        changePhase('walk', touchdowns === 1 ? 4.8 : range(5, 10), groundEyeM, range(0.95, 1.25));
         break;
       case 'walk': {
         glides = 0;
@@ -202,9 +211,8 @@ export function createAutoWalk(layout, { random = Math.random, openingView = lay
         changePhase('flap', range(2.4, 3.6), Math.min(25, height + range(1.2, 2.5)), airspeed);
         break;
       case 'flap': {
-        const descent = Math.max(3.2, height / 3.2);
-        const approachMetres = descent * (speed + 1) / 2;
-        if (glides >= 2 && clearLanding(approachMetres + 5)) {
+        const descent = glides >= 2 ? landingDuration() : 0;
+        if (descent) {
           changePhase('land', descent, groundEyeM, 1);
         } else {
           glides++;

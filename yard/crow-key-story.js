@@ -196,8 +196,8 @@ export function createCrowKeyStory(layout,birds,clearGround,allowed,deck) {
     k.x+=(state.cache.x-k.x)*hiding; k.z+=(state.cache.z-k.z)*hiding;
     k.y+=(-.10-k.y)*hiding; k.tilt*=1-hiding;
     k.scale=1-smooth((hiding-.78)/.22);
-    // The finder inspects the broken seal while the accomplice shuts the lid.
-    f.dip+=.93*beat(exchanged,2.6,.73);
+    // The finder inspects the broken seal as the lid settles shut.
+    f.dip+=.93*beat(exchanged,2.85,.73);
     if (exchanged>3.8) clear(time,true);
   }
   return {state,targets,update};

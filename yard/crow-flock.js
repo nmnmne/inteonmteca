@@ -1,4 +1,4 @@
-import { isWalkable } from './navigation.js';
+import { isWalkable, pointInRing } from './navigation.js';
 import { createCrowVisits } from './crow-visits.js';
 import { createCrowPranks } from './crow-pranks.js';
 import { createCrowKeyStory } from './crow-key-story.js';
@@ -79,6 +79,16 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
   const keyStory = allowKeyStory ? createCrowKeyStory(layout,birds,clearGround,allowKeyStory,storyDeck) : null;
   const disputes = createCrowDisputes(layout, birds, groundNear, clearGround, relative);
   const allBirds = [...birds, ...disputes.guests];
+  for (const bird of allBirds.slice(1)) {
+    bird.ordinaryLandings = 0;
+    bird.approachingGround = false;
+    bird.alternatePerch = null;
+  }
+  // Free landings draw independently from recruitment, story order and camera timing.
+  let landingSeed = Math.floor(birds[1].wingPhase / turn * 4294967296);
+  const landingDraw = () => ((landingSeed = (Math.imul(landingSeed,1664525) + 1013904223) >>> 0) / 4294967296);
+  const xs = layout.walkable.map(p => p[0]), zs = layout.walkable.map(p => p[1]);
+  const west = Math.min(...xs), east = Math.max(...xs), north = Math.min(...zs), south = Math.max(...zs);
   const rollCall = createCrowRollCall(birds);
   const busyForPranks = {has: id => id === rollCall.state.targetId || keyStory?.targets.has(id) || disputes.reserved(birds[id])};
   const treePrank = createCrowTreePrank(birds, crowTrees);
@@ -304,6 +314,36 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
       : Math.sin(time * 1.6 + b.id * 1.9) < -.30 ? 'glide' : 'flap';
   }
 
+  function alternatePerch(bird) {
+    const cx = clamp(bird.roamX,west,east), cz = clamp(bird.roamZ,north,south);
+    function available(x,z) {
+      return pointInRing(x,z,layout.walkable) && Math.hypot(x-bird.roamX,z-bird.roamZ) >= 2 &&
+        allBirds.every(other => other === bird || !other.alternatePerch ||
+          Math.hypot(x-other.alternatePerch.x,z-other.alternatePerch.z) >= 1);
+    }
+    for (let attempt=0; attempt<20; attempt++) {
+      const angle = turn*landingDraw(), radius = 3+7*landingDraw();
+      const x = cx+radius*Math.cos(angle), z = cz+radius*Math.sin(angle);
+      if (clearGround(x,z) && available(x,z)) return {x,z};
+    }
+    return groundNear(cx,cz,available);
+  }
+
+  function forageLanding(b,dt) {
+    if (!b.approachingGround && b.airborne > .45) {
+      b.approachingGround = true;
+      if (b.ordinaryLandings % 2 === 1) b.alternatePerch = alternatePerch(b);
+    }
+    const spot = b.alternatePerch;
+    steer(b,spot?.x ?? b.roamX,chest,spot?.z ?? b.roamZ,dt,false);
+    if (b.approachingGround && b.airborne < .07 && clearGround(b.x,b.z)) {
+      if (spot) { b.roamX = spot.x; b.roamZ = spot.z; }
+      b.ordinaryLandings++;
+      b.approachingGround = false;
+      b.alternatePerch = null;
+    }
+  }
+
   function update(dt, pose) {
     if (!(dt > 0) || !Number.isFinite(dt)) return;
     time += dt;
@@ -328,7 +368,8 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     const encounterWasActive = disputes.state.phase !== 'idle';
     if (!encounterWasActive) {
       if (!keyStory?.targets.size) visits?.update(dt, time, state, heading);
-      keyStory?.update(dt,time,state,visits?.holdLeader());
+      // Let the receiving crow finish its answer before the camera turns to the key.
+      keyStory?.update(dt,time,state,visits?.holdLeader() || beacons.current);
     }
     // Active visits and key scenes keep ownership of the camera and their birds.
     const calling = rollCall.state.targetId !== null || (rollCall.state.phase === 'idle' && rollCall.state.answered.length > 0);
@@ -345,6 +386,10 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
       const prankTarget = pranks.targets.get(b.id);
       const encounterTarget = disputes.targets.get(b.id);
       const branch = treePrank.targets.get(b.id);
+      // Reserved actors always follow their scene, even when recruited during a flare.
+      const foraging = !perch && !storyTarget && !encounterTarget &&
+        (b.flockId || (!prankTarget && !branch && !b.called && time >= b.breakUntil));
+      if (!foraging) { b.approachingGround = false; b.alternatePerch = null; }
       if (perch) {
         if (visits.state.phase === 'sitting') {
           // A settled guest stays put. Passing neighbours still steer around it.
@@ -359,7 +404,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
       } else if (encounterTarget) {
         steer(b, encounterTarget.x, encounterTarget.y, encounterTarget.z, dt, false);
       } else if (b.flockId) {
-        steer(b, b.roamX, chest, b.roamZ, dt, false);
+        forageLanding(b,dt);
       } else if (prankTarget) {
         steer(b, prankTarget.x, chest, prankTarget.z, dt, false);
       } else if (time < b.breakUntil) {
@@ -368,7 +413,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
         if (!branch.perched) steer(b, branch.x, branch.y, branch.z, dt, false);
       } else if (!b.called) {
         if (time >= b.roamAt) chooseForage(b);
-        steer(b, b.roamX, chest, b.roamZ, dt, false);
+        forageLanding(b,dt);
       } else if (time < b.launchAt) {
         steer(b, b.slotX, chest, b.slotZ, dt, false);
         if (b.speed < .25) b.yaw += clamp(angleDelta(b.yaw, bearing(b, leader)), -1.7*dt, 1.7*dt);
