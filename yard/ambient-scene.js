@@ -1,9 +1,9 @@
 import * as THREE from './vendor/three.module.js';
 import { createYardScene } from './scene.js?v=ural-courtyard-1';
-import { lightingPresetForLayout } from './baked-lighting.js';
+import { solarLighting, sunForLocation } from './solar-clock.js';
 import { ambientOpeningView, createAutoWalk } from './auto-walk.js?v=crow-wall-framing-2';
 import { addPuddles } from './puddles.js';
-import { loadBakedShadows } from './shadow-atlas.js?v=ambient-shadows-1';
+import { createSolarLighting } from './solar-lighting.js';
 
 const layoutURL = new URL('./data/site-layout.json?v=zhdanova-entrances-20261120', import.meta.url);
 
@@ -31,7 +31,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
   const maxPixels = clearView ? (mobile ? 400000 : 1048576) : (mobile ? 160000 : 385000);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const frameMs = 1000 / 30;
-  let renderer, yard, walk, camera, resizeObserver, ripplePuddles, lighting, atlas;
+  let renderer, yard, walk, camera, resizeObserver, ripplePuddles, solar;
   let frame = 0, lastDraw = null, nextDraw = 0, nextDetail = 0, ready = false;
   let moreDetail = true;
 
@@ -44,7 +44,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     canvas.removeEventListener('webglcontextlost', contextLost);
     cancelAnimationFrame(frame);
     resizeObserver?.disconnect();
-    atlas?.dispose();
+    solar?.dispose();
     if (yard) releaseScene(yard.scene);
     if (renderer) {
       renderer.dispose();
@@ -61,23 +61,6 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
 
   function contextLost() {
     fail(new Error('WebGL context lost'));
-  }
-
-  async function lightBackdrop(scene) {
-    scene.userData.bakedLightingStatus = 'loading';
-    try {
-      const shadows = await loadBakedShadows(scene, lighting, {smallAtlas: true, signal: lifetime.signal});
-      if (lifetime.signal.aborted) {
-        shadows.dispose();
-        return;
-      }
-      atlas = shadows;
-      scene.userData.bakedLightingStatus = 'ready';
-    } catch (error) {
-      if (lifetime.signal.aborted) return;
-      scene.userData.bakedLightingStatus = 'unavailable';
-      console.warn('Courtyard backdrop shadow texture unavailable:', error);
-    }
   }
 
   function resize() {
@@ -117,6 +100,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
         camera.position.set(pose.x, reducedMotion.matches ? pose.y - pose.eyeOffset : pose.y, pose.z);
         camera.rotation.set(pose.pitch, -pose.yaw, reducedMotion.matches ? 0 : pose.roll, 'YXZ');
         yard.edgeEffect.update(pose.x, pose.z, camera.position.y, now / 1000);
+        solar.update(Date.now(), camera);
         ripplePuddles(now / 1000);
         if (yard.scene.userData.grassWind) yard.scene.userData.grassWind.value = now / 1000;
         renderer.render(yard.scene, camera);
@@ -129,7 +113,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
           // Build only one nearby block at a time, leaving the mixer time between upgrades.
           moreDetail = yard.loadNextDetail(pose);
           nextDetail = now + 800;
-          if (!moreDetail) void lightBackdrop(yard.scene);
+          if (!moreDetail) solar.refreshGeometry();
         }
       } catch (error) {
         fail(error);
@@ -151,10 +135,11 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     camera = new THREE.PerspectiveCamera(64, 1, 0.1, 510);
     const aspect = canvas.clientWidth / Math.max(1, canvas.clientHeight);
     walk = createAutoWalk(layout, { openingView: ambientOpeningView(layout, aspect) });
-    lighting = lightingPresetForLayout(layout, 2);
+    const lighting = solarLighting(sunForLocation(layout.origin, Date.now()));
     yard = createYardScene(layout, lighting, {
       progressive: true, origin: walk.update(0), passThroughBuildings: true,
     });
+    solar = createSolarLighting(renderer, yard, layout);
     ripplePuddles = addPuddles(yard.scene, layout);
     canvas.addEventListener('webglcontextlost', contextLost);
     resize();

@@ -12,6 +12,8 @@ import { addHruDetails } from "./hru-details.js";
 import { addRoadDetails } from "./road-details.js";
 import { addCourtyardTrees, addLandscaping } from "./landscaping.js";
 import { addCourtyardClouds } from "./clouds.js";
+import { addCourtyardFurniture } from './courtyard-furniture.js';
+import { addCourtyardWeather } from "./courtyard-weather.js";
 import { addReferenceUtilities, addUtilityStructures } from "./site-structures.js";
 import { addGasPipes, addSiteEntrances } from "./site-details.js?v=five-storey-20261006-2";
 import { fixedSunForLayout } from "./baked-lighting.js";
@@ -390,6 +392,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
   scene.fog = new THREE.Fog(fixedSun.fogColor, 90, 260);
   addCourtyardClouds(scene);
   const materials = createYardMaterials();
+  scene.userData.windowNight = materials.windowNight;
   const roofs = new Map();
   const solids = [];
 
@@ -425,6 +428,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
   }
   addRoadDetails(scene, materials, layout.roads || []);
   addLandscaping(scene, materials, layout.landscaping);
+  addCourtyardWeather(scene, layout);
   const buildingStart = scene.children.length;
   const pendingDetails = [];
   const detailState = scene.userData.detailLoading = {
@@ -506,6 +510,7 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
   solids.push(logo);
 
   addPlayground(scene, materials, layout.playground);
+  addCourtyardFurniture(scene, materials, layout.obstacles);
   addCourtyardTrees(scene, materials, layout.circles || []);
   // Offline depth textures are loaded explicitly by main.js after geometry construction.
 

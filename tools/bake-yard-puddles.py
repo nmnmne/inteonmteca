@@ -1,4 +1,4 @@
-"""Bake local reflection probes and the two still courtyard backgrounds."""
+"""Bake local reflection probes and still courtyard views at four solar phases."""
 import argparse
 import base64
 import functools
@@ -19,6 +19,12 @@ WIDTH, HEIGHT = 512, 128
 COLUMNS = 4
 FACES = [(1, 0, 0), (-1, 0, 0), (0, 0, 1), (0, 0, -1), (0, 1, 0)]
 UPS = [(0, 1, 0)] * 4 + [(0, 0, -1)]
+POSTER_TIMES = {
+    'day': '2026-06-21T08:30:00Z',
+    'dawn': '2026-09-22T02:52:00Z',
+    'dusk': '2026-09-22T14:32:00Z',
+    'night': '2026-09-22T21:00:00Z',
+}
 
 
 class QuietServer(SimpleHTTPRequestHandler):
@@ -26,16 +32,16 @@ class QuietServer(SimpleHTTPRequestHandler):
         pass
 
 
-def panorama(faces):
+def panorama(faces, width=WIDTH, height=HEIGHT):
     # Texel centres, with the zenith in the first scanline and the horizon in the last.
-    azimuth = 2 * np.pi * ((np.arange(WIDTH) + 0.5) / WIDTH - 0.5)
-    elevation = (np.pi / 2) * (1 - (np.arange(HEIGHT)[:, None] + 0.5) / HEIGHT)
+    azimuth = 2 * np.pi * ((np.arange(width) + 0.5) / width - 0.5)
+    elevation = (np.pi / 2) * (1 - (np.arange(height)[:, None] + 0.5) / height)
     rays = np.stack(np.broadcast_arrays(np.cos(elevation) * np.cos(azimuth),
                                         np.sin(elevation),
                                         np.cos(elevation) * np.sin(azimuth)), axis=-1)
     depth = rays @ np.array(FACES).T
     nearest = depth.argmax(axis=-1)
-    frame = np.empty((HEIGHT, WIDTH, 3), dtype=np.uint8)
+    frame = np.empty((height, width, 3), dtype=np.uint8)
     for index, (forward, up) in enumerate(zip(FACES, UPS)):
         mask = nearest == index
         selected = rays[mask]
@@ -106,33 +112,40 @@ def main(posters_only):
         threading.Thread(target=server.serve_forever, daemon=True).start()
         browser = pw.chromium.launch(channel='msedge', headless=True, args=['--enable-unsafe-swiftshader'])
         try:
-            page = browser.new_page()
+            page = browser.new_page(reduced_motion='reduce')
+            errors = []
+            page.on('pageerror', lambda err: errors.append(str(err)))
+            page.on('console', lambda msg: errors.append(msg.text) if 'Shader Error' in msg.text else None)
             page.goto(f'http://127.0.0.1:{server.server_port}/robots.txt')
             page.evaluate("""async () => {
                 const THREE = await import('/yard/vendor/three.module.js');
                 const {createYardScene} = await import('/yard/scene.js');
                 const {ambientOpeningView} = await import('/yard/auto-walk.js');
-                const {lightingPresetForLayout} = await import('/yard/baked-lighting.js');
-                const {loadBakedShadows} = await import('/yard/shadow-atlas.js');
+                const {sunForLocation, solarLighting} = await import('/yard/solar-clock.js');
+                const {createSolarLighting} = await import('/yard/solar-lighting.js');
                 const layout = await (await fetch('/yard/data/site-layout.json')).json();
                 const resources = new Promise((resolve, reject) => {
                     THREE.DefaultLoadingManager.onLoad = resolve;
                     THREE.DefaultLoadingManager.onError = url => reject(new Error(url));
                 });
-                const lighting = lightingPresetForLayout(layout, 2);
+                let time = Date.parse('2026-06-21T08:30:00Z');
+                const lighting = solarLighting(sunForLocation(layout.origin, time));
                 const yard = createYardScene(layout, lighting);
                 await resources;
-                await loadBakedShadows(yard.scene, lighting, {smallAtlas:true});
                 const renderer = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true});
                 renderer.setSize(320, 320, false);
                 renderer.outputColorSpace = THREE.SRGBColorSpace;
                 const camera = new THREE.PerspectiveCamera(90, 1, 0.025, 510);
-                window.capturePoster = async ({width, height}) => {
+                const rig = createSolarLighting(renderer, yard, layout, {mapSize: 2048});
+                rig.refreshGeometry();
+                let ripple;
+                window.capturePoster = async ({width, height, isoTime}) => {
+                    time = Date.parse(isoTime);
                     if (!yard.scene.getObjectByName('courtyard-puddles')) {
                         const {addPuddles} = await import('/yard/puddles.js');
                         await new Promise((resolve, reject) => {
                             THREE.DefaultLoadingManager.onError = url => reject(new Error(url));
-                            addPuddles(yard.scene, layout, resolve);
+                            ripple = addPuddles(yard.scene, layout, resolve);
                         });
                     }
                     const pose = ambientOpeningView(layout, width / height);
@@ -140,9 +153,29 @@ def main(posters_only):
                     camera.fov = pose.fov; camera.aspect = width / height; camera.updateProjectionMatrix();
                     camera.rotation.set(pose.pitch, -pose.yaw, 0, 'YXZ');
                     yard.edgeEffect.update(pose.x, pose.z, camera.position.y, 0);
+                    rig.update(time, camera);
+                    const preloadNight = yard.scene.userData.windowNight.value > .02
+                        && !yard.scene.getObjectByName('courtyard-puddles').material.uniforms.nightPanorama.value;
+                    const nightReady = preloadNight && new Promise((resolve, reject) => {
+                        THREE.DefaultLoadingManager.onLoad = resolve;
+                        THREE.DefaultLoadingManager.onError = url => reject(new Error(url));
+                    });
+                    ripple(0);
+                    if (nightReady) { await nightReady; ripple(0); }
                     renderer.setSize(width, height, false);
                     renderer.render(yard.scene, camera);
                     return renderer.domElement.toDataURL('image/jpeg', 0.90).split(',')[1];
+                };
+                window.setProbeLight = ({isoTime, size}) => {
+                    time = Date.parse(isoTime);
+                    renderer.setSize(size, size, false);
+                    // Precipitation and the solar disk keep moving independently of the buildings.
+                    yard.scene.getObjectByName('courtyard-weather-fronts').visible = false;
+                    yard.scene.getObjectByName('courtyard-sun').visible = false;
+                };
+                window.restoreSky = () => {
+                    yard.scene.getObjectByName('courtyard-weather-fronts').visible = true;
+                    yard.scene.getObjectByName('courtyard-sun').visible = true;
                 };
                 window.captureFaces = ({x, z, faces, ups}) => {
                     camera.position.set(x, 0.12, z);
@@ -150,6 +183,7 @@ def main(posters_only):
                     return faces.map(([dx, dy, dz], i) => {
                         camera.up.set(...ups[i]);
                         camera.lookAt(x + dx, 0.12 + dy, z + dz);
+                        rig.update(time, camera);
                         renderer.render(yard.scene, camera);
                         return renderer.domElement.toDataURL('image/png').split(',')[1];
                     });
@@ -158,21 +192,30 @@ def main(posters_only):
             if not posters_only:
                 sites = probe_sites(layout)
                 assert len(sites) <= 256
-                atlas = Image.new('RGB', (COLUMNS * WIDTH, math.ceil(len(sites) / COLUMNS) * HEIGHT))
                 print(f'Baking {len(sites)} courtyard probes', flush=True)
-                for i, (x, z) in enumerate(sites):
-                    samples = page.evaluate('options => window.captureFaces(options)',
-                                            {'x': x, 'z': z, 'faces': FACES, 'ups': UPS})
-                    faces = [np.asarray(Image.open(io.BytesIO(base64.b64decode(face))).convert('RGB'))
-                             for face in samples]
-                    atlas.paste(Image.fromarray(panorama(faces)), (i % COLUMNS * WIDTH, i // COLUMNS * HEIGHT))
-                    if (i + 1) % 20 == 0:
-                        print(f'{i + 1}/{len(sites)}', flush=True)
-                atlas.save(folder / 'puddle-reflections.jpg', quality=88, subsampling=0, optimize=True)
+                for phase, divisor in [('day',1), ('night',4)]:
+                    w, h = WIDTH // divisor, HEIGHT // divisor
+                    atlas = Image.new('RGB', (COLUMNS*w, math.ceil(len(sites)/COLUMNS)*h))
+                    page.evaluate('window.setProbeLight', {'isoTime': POSTER_TIMES[phase], 'size': 320//divisor})
+                    for i, (x, z) in enumerate(sites):
+                        samples = page.evaluate('window.captureFaces', {'x': x, 'z': z, 'faces': FACES, 'ups': UPS})
+                        faces = [np.asarray(Image.open(io.BytesIO(base64.b64decode(face))).convert('RGB'))
+                                 for face in samples]
+                        atlas.paste(Image.fromarray(panorama(faces,w,h)), (i%COLUMNS*w, i//COLUMNS*h))
+                    suffix = '' if phase == 'day' else '-night'
+                    atlas.save(folder / f'puddle-reflections{suffix}.jpg', quality=88, subsampling=0, optimize=True)
+                    print('Saved ' + phase + ' reflections.', flush=True)
                 bake_lookup(sites, layout, folder)
-            for kind, width, height in [('desktop', 1440, 900), ('mobile', 540, 1080)]:
-                jpeg = page.evaluate('args => window.capturePoster(args)', {'width': width, 'height': height})
-                (folder / f'spawn-{kind}.jpg').write_bytes(base64.b64decode(jpeg))
+                page.evaluate('window.restoreSky()')
+            for phase, iso_time in POSTER_TIMES.items():
+                suffix = '' if phase == 'day' else '-' + phase
+                for kind, width, height in [('desktop', 1440, 900), ('mobile', 540, 1080)]:
+                    jpeg = page.evaluate('args => window.capturePoster(args)', {
+                        'width': width, 'height': height, 'isoTime': iso_time,
+                    })
+                    if errors:
+                        raise RuntimeError('\n'.join(errors))
+                    (folder / f'spawn-{kind}{suffix}.jpg').write_bytes(base64.b64decode(jpeg))
             print('Saved reflection assets and still backgrounds.', flush=True)
         finally:
             browser.close()

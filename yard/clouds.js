@@ -37,7 +37,9 @@ export function addCourtyardClouds(scene) {
   clouds.onBeforeRender = () => {
     const daylight = 1 - (scene.userData.virtuality || 0);
     material.opacity = 0.94 * daylight;
-    material.color.setRGB(0.83, 0.84, 0.87).lerp(scene.background, 0.17);
+    if (scene.userData.solarLighting) material.color.copy(scene.userData.solarLighting.cloudColor);
+    else material.color.setRGB(0.83, 0.84, 0.87);
+    material.color.lerp(scene.background, 0.17);
   };
   scene.add(clouds);
 }

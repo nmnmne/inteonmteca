@@ -69,12 +69,12 @@
           <div class="dd-bpm-box"><span class="dd-bpm">—</span><span class="dd-bpm-unit">BPM</span></div>
         </div>
         <div class="dd-scope">
-          <div class="dd-wave-controls"><span class="dd-current">00:00</span><div class="dd-wave-tools"><span class="dd-remaining">−00:00</span><button type="button" class="dd-zoom" title="Изменить масштаб волны" aria-label="Масштаб волны 1×">${icon('zoom',12)}<span>1×</span></button></div></div>
-          <canvas class="dd-wave" tabindex="0" role="slider" aria-label="Позиция на волне деки ${id}" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"></canvas>
-          <div class="dd-overview">
-            <input class="dd-seek" type="range" min="0" max="1000" value="0" aria-label="Позиция во всём треке деки ${id}" disabled>
+          <div class="dd-wave-controls">
+            <span class="dd-current">00:00</span>
             <span class="dd-beats" role="img" aria-label="Сетка долей недоступна"><i></i><i></i><i></i><i></i></span>
+            <div class="dd-wave-tools"><span class="dd-remaining">−00:00</span><button type="button" class="dd-zoom" title="Изменить масштаб волны" aria-label="Масштаб волны 1×">${icon('zoom',12)}<span>1×</span></button></div>
           </div>
+          <canvas class="dd-wave" tabindex="0" role="slider" aria-label="Позиция на волне деки ${id}" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" title="Коснитесь волны или потяните для перемотки. Стрелки — по доле, с Shift — точнее."></canvas>
         </div>
         <section class="dd-browser" id="dd-browser-${id}" aria-label="Плейлист деки ${id}">
           <div class="dd-browser-head">
@@ -111,7 +111,6 @@
               <div class="dd-platter" aria-hidden="true"><i class="dd-position-light"></i></div>
               <div class="dd-jog-display" aria-hidden="true"><span class="dd-jog-channel">${id}</span><strong class="dd-jog-readout">00:00</strong><span class="dd-jog-mode">Скретч</span></div>
             </div>
-            <div class="dd-scrub" tabindex="0" role="slider" aria-label="Перемотка джогом деки ${id}" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" title="Тяните центр джога для перемотки. Shift — точнее, стрелки — по одной доле." hidden></div>
             <span class="dd-scratch-status" role="status" hidden>Загрузка звука…</span>
           </div>
         </div>
@@ -148,8 +147,7 @@
       jog: find('.dd-jog'), platter: find('.dd-platter'), jogFace: find('.dd-jog-face'), jogReadout: find('.dd-jog-readout'), jogMode: find('.dd-jog-mode'),
       title: find('h2'), artist: find('.dd-artist'), key: find('.dd-key'),
       bpm: find('.dd-bpm'), time: find('.dd-current'), remaining: find('.dd-remaining'),
-      seek: find('.dd-seek'), beats: find('.dd-beats'),
-      wave: find('canvas'), zoom: find('.dd-zoom'), lock: find('.dd-lock'), scrub: find('.dd-scrub'), scratchStatus: find('.dd-scratch-status'),
+      beats: find('.dd-beats'), wave: find('.dd-wave'), zoom: find('.dd-zoom'), lock: find('.dd-lock'), scratchStatus: find('.dd-scratch-status'),
       range: find('.dd-pitch-range'), steps: find('.dd-tempo-steps'), modes: find('.dd-wheel-modes'),
       rate: find('.dd-rail input'), rateText: find('.dd-pitch-value'),
       play: find('.dd-play'), cue: find('.dd-cue'), sync: find('.dd-sync'), loop: find('.dd-loop'),
@@ -237,7 +235,6 @@
       Array.from(refs.modes.children).forEach(button => pressed(button, button.dataset.jog === chosen));
       refs.jog.setAttribute('aria-label', ({ scratch: 'Скретч на деке ', bend: 'Подгонка скорости диском деки ', tempo: 'Темп диском деки ' })[chosen] + id);
       refs.jog.title = jogHints[chosen];
-      refs.scrub.hidden = chosen === 'scratch';
     }
     refs.modes.addEventListener('click', event => {
       const chosen = event.target.closest('[data-jog]')?.dataset.jog;
@@ -249,6 +246,7 @@
       clearTimeout(deck.timer);
       if (deck.wavePointer != null && refs.wave.hasPointerCapture(deck.wavePointer))
         refs.wave.releasePointerCapture(deck.wavePointer);
+      delete deck.wavePointer;
       delete deck.dragStart;
       deck.spin = 0;
       useRange(8);
@@ -290,12 +288,12 @@
         const cx = bounds.left + bounds.width / 2, cy = bounds.top + bounds.height / 2;
         const radius = bounds.width / 2;
         const x = event.clientX - cx, y = event.clientY - cy;
-        let mode = control === refs.scrub ? 'scrub' : deck.mode;
+        let mode = deck.mode;
         const touchRadius = radius * refs.jogFace.offsetWidth / refs.jog.offsetWidth;
         if (mode === 'scratch' && Math.hypot(x, y) > touchRadius) mode = 'bend';
         control.focus({ preventScroll: true });
         const input = { control, loadVersion: currentState().loadVersion, pointer: event.pointerId, mode,
-          cx, cy, x, y, radius, axis: mode === 'scrub' ? 'x' : '', total: 0 };
+          cx, cy, x, y, radius, axis: '', total: 0 };
         if (!grab(input)) return;
         control.setPointerCapture(event.pointerId);
       });
@@ -311,9 +309,7 @@
         if (event.shiftKey) step /= 8;
         const seconds = step * revolution / fullTurn;
         if (g.mode === 'scratch') engine().moveScratch(id, seconds);
-        else if (g.mode === 'scrub') {
-          engine().seek(id, state.time + seconds);
-        } else {
+        else {
           g.total += step;
           deck.spin = (deck.spin + step * 180 / Math.PI) % 360;
           if (g.mode === 'bend') engine().setBend(id, bound(g.total * 7, -12, 12));
@@ -335,7 +331,6 @@
       }
     }
     trackPointer(refs.jog);
-    trackPointer(refs.scrub);
     refs.jog.addEventListener('keydown', event => {
       const direction = ['ArrowRight', 'ArrowUp'].includes(event.key) ? 1 : ['ArrowLeft', 'ArrowDown'].includes(event.key) ? -1 : 0;
       if (!direction || !available()) return;
@@ -412,7 +407,8 @@
       engine().seek(id, deck.from + fraction * deck.span);
     }
     refs.wave.addEventListener('pointerdown', event => {
-      if (event.button !== 0 || !available()) return;
+      if (event.button !== 0 || deck.wavePointer != null || !available()) return;
+      refs.wave.focus({ preventScroll: true });
       refs.wave.setPointerCapture(event.pointerId);
       deck.wavePointer = event.pointerId;
       // Keep the viewport stable while scrubbing a zoomed waveform.
@@ -420,18 +416,23 @@
       seekAt(event);
     });
     refs.wave.addEventListener('pointermove', event => {
-      if (refs.wave.hasPointerCapture(event.pointerId)) seekAt(event);
+      if (deck.wavePointer === event.pointerId) seekAt(event);
     });
-    refs.wave.addEventListener('lostpointercapture', () => {
-      delete deck.wavePointer;
-      delete deck.dragStart;
-    });
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+      refs.wave.addEventListener(type, event => {
+        if (deck.wavePointer !== event.pointerId) return;
+        if (type === 'pointerup') seekAt(event);
+        delete deck.wavePointer;
+        delete deck.dragStart;
+      });
+    }
     const keyboardSeek = event => {
       if (!available()) return;
       const current = currentState();
       const beat = 60 / (baseTempo(current) || 120);
       const time = current.time || 0;
-      const positions = {ArrowLeft: time - beat, ArrowRight: time + beat, PageDown: time - beat * 16, PageUp: time + beat * 16, Home: 0, End: current.duration};
+      const step = event.shiftKey ? beat / 8 : beat;
+      const positions = {ArrowLeft: time - step, ArrowRight: time + step, PageDown: time - beat * 16, PageUp: time + beat * 16, Home: 0, End: current.duration};
       if (Object.hasOwn(positions, event.key)) {
         event.preventDefault();
         event.stopPropagation();
@@ -439,15 +440,6 @@
       }
     };
     refs.wave.addEventListener('keydown', keyboardSeek);
-    refs.seek.addEventListener('keydown', keyboardSeek);
-    refs.seek.addEventListener('input', () => {
-      const state = currentState();
-      engine().seek(id, refs.seek.valueAsNumber / Number(refs.seek.max) * state.duration);
-    });
-    refs.scrub.addEventListener('keydown', keyboardSeek);
-    refs.jog.addEventListener('keydown', event => {
-      if (deck.mode === 'scratch' && ['Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) keyboardSeek(event);
-    });
     const resize = new ResizeObserver(entries => {
       const box = entries[0].contentRect;
       deck.size = { width: box.width, height: box.height };
@@ -503,10 +495,10 @@
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
     ctx.clearRect(0, 0, width, height);
     const teal = deck.id === 'A';
-    const outer = teal ? '#208f81' : '#bc5a48';
-    const mid = teal ? '#44cbb1' : '#ee8b73';
-    const inner = teal ? '#9af1ce' : '#ffcd9c';
-    const cursor = teal ? '#a4fce5' : '#ffe2cf';
+    const outer = teal ? '#3ea7c3' : '#7a6ace';
+    const mid = teal ? '#6ddbe3' : '#ac98f1';
+    const inner = teal ? '#cbfff0' : '#ece4ff';
+    const cursor = teal ? '#e1fffb' : '#f5eeff';
     const center = Math.floor(height / 2) + 0.5;
     ctx.fillStyle = 'rgba(255,255,255,.04)';
     for (const row of [.2, .8]) ctx.fillRect(0, Math.round(row * height), width, 1);
@@ -563,13 +555,13 @@
         ctx.fillRect(x, center - core, pxPerBar - .45, core * 2);
       }
     }
-    ctx.fillStyle = teal ? '#59cdb66b' : '#faab846b';
+    ctx.fillStyle = teal ? '#6ddbe36b' : '#ac98f16b';
     ctx.fillRect(0, center, width, 1);
     if (!span) return;
     if (state.loopBeats > 0 && Number.isFinite(state.loopStart)) {
       const startX = (state.loopStart - from) / span * width;
       const loopWidth = beat * state.loopBeats / span * width;
-      ctx.fillStyle = teal ? '#69eace22' : '#ff9d8325';
+      ctx.fillStyle = teal ? '#6ddbe322' : '#ac98f125';
       ctx.fillRect(startX, 0, loopWidth, height);
       ctx.fillStyle = mid;
       ctx.fillRect(startX, height - 2, loopWidth, 2);
@@ -620,7 +612,6 @@
       for (const control of [refs.play, refs.cue, refs.sync, refs.loop, refs.zoom, refs.rate, refs.range, refs.lock, ...refs.steps.children, ...refs.modes.children, ...refs.pads]) control.disabled = !loaded;
       refs.wave.setAttribute('aria-disabled', String(!loaded));
       refs.jog.setAttribute('aria-disabled', String(!loaded));
-      refs.scrub.setAttribute('aria-disabled', String(!loaded));
     }
     const bpm = Number(state.bpm || track?.bpm);
     write(refs.bpm, Number.isFinite(bpm) && bpm > 0 ? bpm.toFixed(1) : '—');
@@ -631,13 +622,6 @@
     }
     const duration = Number(state.duration || track?.duration) || 0;
     const time = Number(state.time) || 0;
-    const progress = duration > 0 ? Math.max(0, Math.min(1, time / duration)) : 0;
-    const seekPosition = Math.round(progress * Number(refs.seek.max));
-    if (deck.seekPosition !== seekPosition) {
-      deck.seekPosition = seekPosition;
-      refs.seek.value = seekPosition;
-      refs.seek.style.setProperty('--progress', (progress * 100).toFixed(1) + '%');
-    }
     // The grid is indexed in source time. Playback speed is already reflected in time.
     const baseBPM = baseTempo(state);
     const gridBeat = Math.floor((time - (Number(track?.offset) || 0)) * baseBPM / 60 + 1e-9);
@@ -681,13 +665,9 @@
     if (deck.a11yTime !== second || deck.a11yDuration !== duration) {
       deck.a11yTime = second;
       deck.a11yDuration = duration;
-      refs.seek.disabled = !loaded || !(duration > 0);
-      refs.seek.setAttribute('aria-valuetext', clock(time) + ' / ' + clock(duration));
-      for (const control of [refs.wave, refs.scrub]) {
-        control.setAttribute('aria-valuenow', String(second));
-        control.setAttribute('aria-valuemax', String(Math.ceil(duration)));
-        control.setAttribute('aria-valuetext', clock(time) + ' / ' + clock(duration));
-      }
+      refs.wave.setAttribute('aria-valuenow', String(second));
+      refs.wave.setAttribute('aria-valuemax', String(Math.ceil(duration)));
+      refs.wave.setAttribute('aria-valuetext', clock(time) + ' / ' + clock(duration));
     }
     pressed(refs.loop, state.loopBeats > 0);
     if (trackChanged || deck.lastLoop !== state.loopBeats) {

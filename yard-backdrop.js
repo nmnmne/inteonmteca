@@ -5,7 +5,7 @@
   layer.dataset.yardLayer = '';
   layer.setAttribute('aria-hidden', 'true');
   layer.inert = true;
-  layer.innerHTML = '<picture><source media="(max-width: 680px) and (orientation: portrait)" srcset="yard/assets/spawn-mobile.jpg"><img src="yard/assets/spawn-desktop.jpg" alt=""></picture>';
+  layer.innerHTML = '<picture><source media="(max-width: 680px) and (orientation: portrait)"><img alt=""></picture>';
   const field = document.querySelector('.perception-field');
   if (field) field.after(layer);
   else document.body.prepend(layer);
@@ -22,6 +22,37 @@
     reflectionContext = reflection.getContext('2d');
   }
   let controller = null;
+
+  const poster = layer.querySelector('img');
+  const mobilePoster = layer.querySelector('source');
+  let clock;
+  function updatePoster() {
+    if (document.hidden || (clock === undefined && location.protocol !== 'file:')) return;
+    const sun = clock?.sunForLocation(clock.COURTYARD_ORIGIN, Date.now());
+    let phase = 'day';
+    if (sun && sun.elevationDeg < -6) phase = 'night';
+    else if (sun && sun.elevationDeg < 8) phase = sun.direction[0] > 0 ? 'dawn' : 'dusk';
+    if (layer.dataset.solarPhase === phase) return;
+    const suffix = phase === 'day' ? '' : '-' + phase;
+    mobilePoster.srcset = 'yard/assets/spawn-mobile' + suffix + '.jpg';
+    poster.src = 'yard/assets/spawn-desktop' + suffix + '.jpg';
+    layer.dataset.solarPhase = phase;
+  }
+  poster.addEventListener('load', () => {
+    if (reflection) reflection.style.backgroundImage = 'url("' + poster.currentSrc + '")';
+  });
+  if (location.protocol === 'file:') updatePoster();
+  else import('./yard/solar-clock.js').then(module => { clock = module; updatePoster(); }, () => { clock = null; updatePoster(); });
+  let posterTimer;
+  function schedulePoster() {
+    clearInterval(posterTimer);
+    if (document.hidden) return;
+    updatePoster();
+    posterTimer = setInterval(updatePoster, 180000);
+  }
+  window.addEventListener('pagehide', () => clearInterval(posterTimer));
+  window.addEventListener('pageshow', schedulePoster);
+  document.addEventListener('visibilitychange', schedulePoster);
 
   function reflect(source, now) {
     if (!reflectionContext || now < nextReflection) return;
@@ -93,7 +124,7 @@
       document.body.dataset.yardBackdrop = 'fallback';
     };
     try {
-      const { startAmbientScene } = await import('./yard/ambient-scene.js?v=ural-crow-1');
+      const { startAmbientScene } = await import('./yard/ambient-scene.js?v=courtyard-weather-1');
       if (run.signal.aborted) return;
       await startAmbientScene(canvas, {
         signal: run.signal,

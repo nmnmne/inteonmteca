@@ -51,13 +51,74 @@ export function createFacadeMaterial(id, surface) {
   return spec.kind === 'brick' ? surface('brick') : surface('plaster', 1, 1, spec.baseColor);
 }
 
-export function createWindowMaterial(environment, kind = 'cross', tint = 0xffffff) {
+// A single linear atlas represents rooms at different depths behind the glass.
+// The window frames stay on the facade when the viewing angle changes.
+export function createApartmentInteriors() {
+  const cell = 64;
+  const atlas = texture(cell * 4, cell * 4, ctx => {
+    for (let index = 0; index < 16; index++) {
+      ctx.save();
+      ctx.translate(index % 4 * cell, Math.floor(index / 4) * cell);
+      ctx.beginPath(); ctx.rect(0, 0, cell, cell); ctx.clip();
+      const daylight = ctx.createLinearGradient(0, 0, cell, cell);
+      daylight.addColorStop(0, '#bcbcbc'); daylight.addColorStop(1, '#545454');
+      ctx.fillStyle = daylight; ctx.fillRect(0, 0, cell, cell);
+      ctx.fillStyle = '#424242';
+      ctx.fillRect(15 + index * 7 % 28, 15 + index % 5, 10 + index % 6, 54);
+      ctx.fillStyle = '#666'; ctx.fillRect(0, 50 + index % 8, cell, 14);
+      if (index % 4 === 0) {
+        const drop = 17 + index * 3;
+        ctx.fillStyle = '#c1c1c1'; ctx.fillRect(0, 0, cell, drop);
+        ctx.fillStyle = '#777'; for (let y = 2; y < drop; y += 4) ctx.fillRect(0, y, cell, 1);
+      } else {
+        for (const right of [false, true]) {
+          const breadth = 8 + (index * (right ? 9 : 5)) % 17;
+          for (let s = 0; s < breadth; s++) {
+            const value = Math.round(170 + 36 * Math.cos(s * .93 + index));
+            ctx.fillStyle = `rgb(${value} ${value} ${value} / .88)`;
+            ctx.fillRect(right ? cell - s - 1 : s, 0, 1, cell - 3 - (s % 6 === 0 ? 1 : 0));
+          }
+        }
+      }
+      ctx.restore();
+    }
+  });
+  atlas.colorSpace = THREE.NoColorSpace;
+  atlas.wrapS = atlas.wrapT = THREE.ClampToEdgeWrapping;
+  return atlas;
+}
+
+export function createWindowMaterial(environment, interiors, night, kind = 'cross', tint = 0xffffff) {
   // All panes share one courtyard probe. Painted frames and mullions have a
   // black specular mask, keeping their diffuse paint intact as the viewer moves.
   const material = new THREE.MeshPhongMaterial({
     color: tint, envMap: environment, combine: THREE.MixOperation,
     reflectivity: 0.34, specular: 0x252b2d, shininess: 72,
   });
+  material.customProgramCacheKey = () => 'apartment-interior-v1';
+  material.onBeforeCompile = shader => {
+    shader.uniforms.roomAtlas = { value: interiors };
+    shader.uniforms.roomNight = night;
+    shader.vertexShader = 'varying vec2 roomUv; varying float roomSeed;\n' + shader.vertexShader;
+    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      mat4 paneWorld = modelMatrix;
+      #ifdef USE_INSTANCING
+        paneWorld *= instanceMatrix;
+      #endif
+      vec3 paneCenter = paneWorld[3].xyz;
+      vec3 eye = normalize(cameraPosition - paneCenter);
+      roomUv = clamp(uv + .13 * vec2(dot(normalize(paneWorld[0].xyz), eye), eye.y), .018, .982);
+      vec3 unit = floor(paneCenter / vec3(2.8, 2.6, 2.8));
+      roomSeed = fract(sin(dot(unit, vec3(13.31, 7.9, 37.71))) * 4387.27);`);
+    shader.fragmentShader = 'varying vec2 roomUv; varying float roomSeed; uniform sampler2D roomAtlas; uniform float roomNight;\n' + shader.fragmentShader;
+    shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      float tile = floor(roomSeed * 16.);
+      float room = texture2D(roomAtlas, (vec2(mod(tile, 4.), floor(tile / 4.)) + roomUv) * .25).r;
+      diffuseColor.rgb *= mix(1., .58 + .51 * room, specularStrength);
+      vec3 lamp = mix(vec3(.86,.48,.23), vec3(.54,.64,.71), fract(roomSeed * 37.));
+      totalEmissiveRadiance += lamp * room * room * specularStrength * roomNight * step(.63, roomSeed) * .78;
+      specularStrength *= mix(1., .075, roomNight);`);
+  };
   if (kind === 'pane') return material;
   const cross = kind === 'cross';
   const width = cross ? 256 : 192, height = 256;

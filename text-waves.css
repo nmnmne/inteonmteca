@@ -20,3 +20,22 @@
   font-weight: 400; font-style: normal;
   text-shadow: 0 0 .6em rgba(var(--theme-accent-rgb), .18);
 }
+.room-console .direct-wave-char::after, .room-console .text-wave-mask {
+  color: var(--dd-accent, #b5f1ed);
+  text-shadow: 0 1px 2px #142535, 0 0 4px #94dbe773;
+}
+.studio-wave-word { position: relative; display: inline-block; }
+.studio-wave-ink { position: absolute; inset: 0; visibility: hidden; white-space: pre; pointer-events: none; user-select: none; }
+.studio-wave-ink .text-wave-char::before { content: attr(data-letter); }
+@media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+  .studio-wave-word:has(.is-wave-noisy) > .studio-wave-source { color: transparent; text-shadow: none; }
+  .studio-wave-word:has(.is-wave-noisy) > .studio-wave-ink { visibility: visible; }
+}
+.studio-projection {
+  position: absolute; left: 0; top: 0; z-index: -1; height: auto;
+  pointer-events: none; user-select: none; contain: strict; opacity: .82;
+}
+@media (prefers-reduced-motion: reduce) {
+  .studio-wave-source { color: inherit; text-shadow: inherit; }
+  .studio-projection, .studio-wave-ink { display: none; }
+}

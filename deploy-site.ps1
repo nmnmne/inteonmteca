@@ -90,6 +90,7 @@ $syncArgs = @(
   "--include", "room-recesses.css",
   "--include", "text-waves.css",
   "--include", "text-waves.js",
+  "--include", "studio-holograms.js",
   "--include", "theme-morph.js",
   "--include", "track-play.js",
   "--include", "street-return.js",

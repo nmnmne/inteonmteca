@@ -1,5 +1,5 @@
 import * as THREE from "./vendor/three.module.js";
-import { createBalconyMaterial, createFacadeMaterial, createSurfaceLibrary, createWindowMaterial } from "./material-textures.js";
+import { createApartmentInteriors, createBalconyMaterial, createFacadeMaterial, createSurfaceLibrary, createWindowMaterial } from "./material-textures.js";
 
 function canvasTexture(width, height, paint, { srgb = true, repeat = false } = {}) {
   const canvas = document.createElement("canvas");
@@ -59,10 +59,13 @@ export function createYardMaterials() {
   const environment = new THREE.TextureLoader().load(new URL('./assets/window-probe.jpg', import.meta.url).href);
   environment.mapping = THREE.EquirectangularReflectionMapping;
   environment.colorSpace = THREE.SRGBColorSpace;
-  const windowMaterial = createWindowMaterial(environment);
+  const interiors = createApartmentInteriors();
+  const windowNight = { value: 0 };
+  const windowMaterial = createWindowMaterial(environment, interiors, windowNight);
   const balconyMaterial = createBalconyMaterial();
 
   return {
+    windowNight,
     brickWall(width, height) {
       return surface('brick', width / 2.08, height / .6);
     },
@@ -75,7 +78,7 @@ export function createYardMaterials() {
     },
     photoWindow(kind = 'casement', tint = 0xffffff) {
       const key = `${kind}:${tint}`;
-      if (!photoWindows.has(key)) photoWindows.set(key, createWindowMaterial(environment, kind, tint));
+      if (!photoWindows.has(key)) photoWindows.set(key, createWindowMaterial(environment, interiors, windowNight, kind, tint));
       return photoWindows.get(key);
     },
     balcony() {

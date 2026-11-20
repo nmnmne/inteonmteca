@@ -102,7 +102,18 @@
     '.transport-time', '.playback-status', '.auth-hint', '.street-link', '.theme-hint', '.chat-hint',
     '.auth-kicker', '.auth-label', '.auth-submit', '.auth-close', '.auth-logout', '.chat-close',
     '.theme-kicker', '.theme-label', '.theme-action', '.theme-duration-output', '.theme-status',
+    '.room-console .page-title h2', '.room-console .section-heading h2', '.room-console .meter-copy span:first-child',
+    '.room-console .console-nav button', '.room-console .controller-tabs button', '.room-console #keys-footer', '.room-console #record-text', '.room-console #audio-status',
+    '.room-console .dd-deck-state', '.room-console .dd-track-text h2', '.room-console .dd-artist',
+    '.room-console .dd-key', '.room-console .dd-bpm', '.room-console .dd-bpm-unit', '.room-console .dd-browse-title', '.room-console .dd-browse-artist',
+    '.room-console .dd-browse-count', '.room-console .dd-browse-bpm', '.room-console .dd-browse-load span',
+    '.room-console .dd-lock span', '.room-console .dd-wheel-modes button', '.room-console .dd-sync span', '.room-console .dd-cue',
+    '.room-console .dd-loop span', '.room-console .dd-pad-label', '.room-console .dd-pitch-title', '.room-console .dd-pitch-value',
+    '.room-console .strip-tag', '.room-console .dial-name', '.room-console .vol-label', '.room-console .center-cross',
+    '.room-console .cross-title label', '.room-console .master-control label',
   ].join(',');
+  const studio = document.querySelector('.room-console');
+  const projection = studio && window.createStudioHolograms?.(studio);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const coarse = matchMedia('(pointer: coarse), (max-width: 800px)');
   const directGlyph = Boolean(window.CSS?.supports('content', 'attr(data-glyph) / ""'));
@@ -120,7 +131,7 @@
   let fullScan = true;
   let geometryRevision = 0;
   const pendingOwners = new Set();
-  const trackList = document.querySelector('.track-list');
+  const rowSelector = '.track-item, .dd-browse-row';
   const observedRows = new Set(), nearbyRows = new Set(), pendingRows = new Set();
   // Only a small window of the three repeated playlist cycles needs glyph DOM.
   // IntersectionObserver supplies clipping bounds without measuring every row.
@@ -133,9 +144,9 @@
       row.querySelectorAll(selector).forEach(owner => pendingOwners.add(owner));
     }
     needsScan = true; dirty = true;
-  }, {root: trackList, rootMargin: '72px 0px', threshold: 0});
+  }, {rootMargin: '72px 0px', threshold: 0});
   const observeRows = scope => {
-    const rows = scope.matches?.('.track-item') ? [scope] : scope.querySelectorAll?.('.track-item') || [];
+    const rows = scope.matches?.(rowSelector) ? [scope] : scope.querySelectorAll?.(rowSelector) || [];
     for (const row of rows) {
       if (observedRows.has(row)) continue;
       observedRows.add(row); rowObserver.observe(row);
@@ -149,12 +160,15 @@
   });
   const paint = glyphQueue.paint;
   const restore = () => chars.forEach(char => paint(char));
-  const observerOptions = {subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['hidden', 'aria-hidden']};
+  const observerOptions = {subtree: true, childList: true, characterData: true, attributeOldValue: true, attributeFilter: ['hidden', 'aria-hidden', 'data-panel']};
   const observer = new MutationObserver(records => {
     for (const record of records) {
       const element = record.target.nodeType === Node.ELEMENT_NODE ? record.target : record.target.parentElement;
-      if (element?.closest('.text-wave-char')) continue;
-      if (record.type === 'attributes') { fullScan = true; needsScan = true; continue; }
+      if (!element || element.closest('.text-wave-char, .studio-projection')) continue;
+      if (record.type === 'attributes') {
+        if (element.getAttribute(record.attributeName) !== record.oldValue) { fullScan = true; needsScan = true; }
+        continue;
+      }
       const owner = element?.closest(selector);
       if (owner) { pendingOwners.add(owner); needsScan = true; }
       for (const node of record.addedNodes) {
@@ -163,7 +177,10 @@
         if (node.matches(selector)) pendingOwners.add(node);
         node.querySelectorAll(selector).forEach(el => pendingOwners.add(el));
       }
-      if (record.removedNodes.length) needsScan = true;
+      // An audio meter may write the same text every frame. Only removal of
+      // actual text-wave DOM or playlist rows invalidates measured geometry.
+      if (!needsScan && Array.from(record.removedNodes).some(node => node.nodeType === Node.ELEMENT_NODE &&
+          (node.matches('.text-wave-run,' + rowSelector) || node.querySelector('.text-wave-run,' + rowSelector)))) needsScan = true;
       if (pendingOwners.size) needsScan = true;
     }
   });
@@ -175,7 +192,7 @@
     }
     const owners = [...(fullScan ? document.querySelectorAll(selector) : pendingOwners)].filter(owner => {
       if (!owner.isConnected || owner.closest('[hidden]')) return false;
-      const row = owner.closest('.track-item');
+      const row = owner.closest(rowSelector);
       return (!row || nearbyRows.has(row)) && owner.getClientRects().length;
     });
     fullScan = false; pendingOwners.clear();
@@ -193,7 +210,7 @@
     owners.forEach(owner => {
       const walker = document.createTreeWalker(owner, NodeFilter.SHOW_TEXT, {
         acceptNode(node) {
-          if (!node.textContent.trim() || node.parentElement.closest('.text-wave-char, .visually-hidden, input, textarea, select, [contenteditable], svg')) return NodeFilter.FILTER_REJECT;
+          if (!node.textContent.trim() || node.parentElement.closest('.text-wave-run, .visually-hidden, input, textarea, select, [contenteditable], svg')) return NodeFilter.FILTER_REJECT;
           const hidden = node.parentElement.closest('[aria-hidden="true"]');
           if (hidden && !hidden.classList.contains('heading-letter')) return NodeFilter.FILTER_REJECT;
           return NodeFilter.FILTER_ACCEPT;
@@ -202,23 +219,36 @@
       const nodes = [];
       while (walker.nextNode()) nodes.push(walker.currentNode);
       nodes.forEach(node => {
-        const fragment = document.createDocumentFragment();
-        for (const letter of node.textContent) {
-          if (/\s/.test(letter)) { fragment.append(document.createTextNode(letter)); continue; }
-          const el = document.createElement('span'); el.className = 'text-wave-char'; el.textContent = letter;
-          // Empty CSS alternative text keeps decorative glyphs out of speech.
-          // Supporting browsers need one element per letter, not two nested layers.
-          let mask = el;
-          if (directGlyph) el.classList.add('direct-wave-char');
-          else {
-            mask = document.createElement('span'); mask.className = 'text-wave-mask'; mask.setAttribute('aria-hidden', 'true');
-            el.append(mask);
+        const studioLabel = studio && studio.contains(owner);
+        const run = document.createElement('span'); run.className = 'text-wave-run';
+        // Each word wraps at the native text boundary. Glyph kerning must never
+        // push the second word of a track title onto a different line.
+        const parts = studioLabel ? node.textContent.split(/(\s+)/) : [node.textContent];
+        for (const part of parts) {
+          if (!part) continue;
+          if (studioLabel && /^\s+$/.test(part)) { run.append(document.createTextNode(part)); continue; }
+          let ink = run;
+          if (studioLabel) {
+            const word = document.createElement('span'); word.className = 'studio-wave-word';
+            const source = document.createElement('span'); source.className = 'studio-wave-source'; source.textContent = part;
+            ink = document.createElement('span'); ink.className = 'studio-wave-ink'; ink.setAttribute('aria-hidden', 'true');
+            word.append(source, ink); run.append(word);
           }
-          fragment.append(el);
-          chars.push({el, mask, owner, seed: ++serial, glyph: '', x: 0, y: 0, visible: false});
+          for (const letter of part) {
+            if (/\s/.test(letter)) { ink.append(document.createTextNode(letter)); continue; }
+            const el = document.createElement('span'); el.className = 'text-wave-char';
+            if (studioLabel) el.dataset.letter = letter;
+            else el.textContent = letter;
+            let mask = el;
+            if (directGlyph) el.classList.add('direct-wave-char');
+            else {
+              mask = document.createElement('span'); mask.className = 'text-wave-mask'; mask.setAttribute('aria-hidden', 'true');
+              el.append(mask);
+            }
+            ink.append(el);
+            chars.push({el, mask, owner, seed: ++serial, glyph: '', x: 0, y: 0, visible: false});
+          }
         }
-        // Keep a text run as one flex item (navigation buttons and small labels).
-        const run = document.createElement('span'); run.className = 'text-wave-run'; run.append(fragment);
         node.replaceWith(run);
         changed = true;
       });
@@ -232,14 +262,16 @@
   };
   const measure = now => {
     const bounds = new Map();
-    const list = trackList?.getBoundingClientRect();
+    const lists = new Map();
     visibleChars = [];
     // Finish every layout read before restoring ink; writes here used to force a
     // second layout for the next character, including clipped playlist rows.
     chars.forEach(char => {
-      if (!bounds.has(char.owner)) bounds.set(char.owner, {
-        rect: char.owner.getBoundingClientRect(), clip: char.owner.closest('.track-list') && list,
-      });
+      if (!bounds.has(char.owner)) {
+        const list = char.owner.closest('.track-list, .dd-browse-list');
+        if (list && !lists.has(list)) lists.set(list, list.getBoundingClientRect());
+        bounds.set(char.owner, {rect: char.owner.getBoundingClientRect(), clip: lists.get(list)});
+      }
       const {rect: owner, clip} = bounds.get(char.owner);
       char.visible = false;
       if (!owner.width || !owner.height || owner.bottom < 0 || owner.top > innerHeight ||
@@ -262,11 +294,12 @@
     chars.forEach(char => { if (!char.visible) paint(char); });
     dirty = false; measuredAt = now;
   };
-  const blocked = () => document.hidden || window.inteonHomeEffects?.ambientBlocked;
+  let studioVisible = true;
+  const blocked = () => document.hidden || window.inteonHomeEffects?.ambientBlocked || (studio && (reduced.matches || !studioVisible));
   const tick = now => {
     window.inteonHomeEffects?.beat('text');
     frameId = 0;
-    if (blocked()) return;
+    if (blocked()) { resume(); return; }
     frameId = requestAnimationFrame(tick);
     const cadence = audioMotion.update(now, window.inteonAudioBands?.read());
     if (!reduced.matches && !cadence.due) return;
@@ -289,9 +322,17 @@
     const mode = coarse.matches ? {...baseMode, gap: Math.min(baseMode.gap, 1600), strength: Math.max(baseMode.strength, .24)} : baseMode;
     if (document.documentElement.dataset.textWaveMode !== mode.name) document.documentElement.dataset.textWaveMode = mode.name;
     if (now >= nextWave) {
-      waves.push({at: cadence.motionTime, x: innerWidth * (.12 + Math.random() * .76), y: innerHeight * (.1 + Math.random() * .65), ...mode});
+      const origin = studio && visibleChars[Math.floor(Math.random() * visibleChars.length)];
+      const x = origin ? origin.x : innerWidth * (.12 + Math.random() * .76);
+      const y = origin ? origin.y : innerHeight * (.1 + Math.random() * .65);
+      if (origin && !selected && !origin.focused && (!pointer.active || now > pointer.until || Math.hypot(x - pointer.x, y - pointer.y) > 110)) {
+        paint(origin, '·', now + 220);
+        projection?.seed(cadence.motionTime, x, y);
+      }
+      waves.push({at: cadence.motionTime + (origin ? 120 : 0), x, y, ...mode});
       nextWave = now + mode.gap * (mode.name === 'rhythm' ? 1 : .75 + Math.random() * .5);
     }
+    projection?.draw(cadence.motionTime, coarse.matches);
     waves = waves.filter(wave => (cadence.motionTime - wave.at) * wave.speed < Math.hypot(innerWidth, innerHeight) + wave.width * 2);
     const focus = document.activeElement;
     if (focus !== focusTarget) {
@@ -328,8 +369,10 @@
       let intensity = 0;
       for (const wave of waves) {
         const distance = Math.hypot(char.x - wave.x, char.y - wave.y);
-        const band = (distance - (cadence.motionTime - wave.at) * wave.speed) / wave.width;
-        intensity = Math.max(intensity, Math.exp(-band * band * 2) * wave.strength);
+        const age = cadence.motionTime - wave.at;
+        const band = (distance - age * wave.speed) / wave.width;
+        const onset = studio ? Math.max(0, Math.min(1, age / 320)) : 1;
+        intensity = Math.max(intensity, Math.exp(-band * band * 2) * wave.strength * onset);
       }
       if (pointer.active && now < pointer.until) {
         const distance = Math.hypot(char.x - pointer.x, char.y - pointer.y);
@@ -339,7 +382,8 @@
         if (distance < calmRadius * .65 && Math.floor(now / 110) % 47 === 0) intensity = .012;
       }
       const noisy = hash(char.seed * 37 + frame * 213) < intensity;
-      if (noisy && paint(char, symbols[Math.floor(hash(char.seed + frame * 73) * symbols.length)], now + renewalMs)) {
+      const glyph = studio && intensity < .18 ? '·' : symbols[Math.floor(hash(char.seed + frame * 73) * symbols.length)];
+      if (noisy && paint(char, glyph, now + renewalMs)) {
         writes++; glyphStartCredit--;
       }
     }
@@ -359,7 +403,11 @@
   });
   document.addEventListener('scroll', () => { dirty = true; }, {capture: true, passive: true});
   window.addEventListener('resize', () => { geometryRevision++; dirty = true; });
-  const resume = () => { cancelAnimationFrame(frameId); frameId = 0; waves = []; modeUntil = 0; lastGlyphFrame = -1; glyphAt = 0; glyphCredit = 0; glyphStartCredit = 0; audioMotion.reset(); dirty = true; focusTarget = null; restore(); if (!blocked()) frameId = requestAnimationFrame(tick); };
+  const resume = () => { cancelAnimationFrame(frameId); frameId = 0; waves = []; modeUntil = 0; lastGlyphFrame = -1; glyphAt = 0; glyphCredit = 0; glyphStartCredit = 0; audioMotion.reset(); projection?.clear(); dirty = true; focusTarget = null; restore(); if (!blocked()) frameId = requestAnimationFrame(tick); };
+  if (studio) new IntersectionObserver(entries => {
+    const visible = entries[0].isIntersecting;
+    if (visible !== studioVisible) { studioVisible = visible; resume(); }
+  }).observe(studio);
   window.inteonHomeEffects?.watch('text', {blocked, restart: resume});
   document.addEventListener('visibilitychange', resume);
   reduced.addEventListener('change', resume);
@@ -379,7 +427,7 @@
     wasBlocked = next;
     resume();
   });
-  window.addEventListener('pagehide', () => { cancelAnimationFrame(frameId); frameId = 0; restore(); });
+  window.addEventListener('pagehide', () => { cancelAnimationFrame(frameId); frameId = 0; projection?.clear(); restore(); });
   window.addEventListener('pageshow', resume);
   document.fonts?.ready.then(() => { geometryRevision++; dirty = true; });
   resume();

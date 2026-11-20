@@ -12,6 +12,7 @@ export function addHouseRelief(scene, solids, materials, layout, building) {
   const height = building.heightM, floorHeight = height / building.floors;
   const palette = {brick: materials.facade(building.facadeMaterialId), glass: materials.photoWindow(), glazing:materials.photoWindow('glazing'), stair:materials.photoWindow('stair'), concrete: materials.mineral(0xc5bfb0), panel: materials.mineral(0xd2c9bb), mint:materials.mineral(0xb4cec1), band:materials.mineral(0xab6c59)};
   const batches = new Map(), dummy = new THREE.Object3D();
+  palette.reveal = materials.flat(0x60594e);
   for (const section of sections) {
     const a = building.footprint[section.edgeIndex], b = building.footprint[(section.edgeIndex + 1) % building.footprint.length];
     const length = Math.hypot(b[0]-a[0], b[1]-a[1]);
@@ -42,8 +43,10 @@ export function addHouseRelief(scene, solids, materials, layout, building) {
         for (const x of [-1.4,1.4]) {
           if (section.entrances && floor===0 && x===-1.4) continue;
           const stair=section.entrances && x===-1.4;
-          add(origin,stair?'stair':'glass',x,stair?windowY-.42:windowY,depth+.055,stair?.78:1.4,1.45,.035);
-          add(origin,'concrete',x,windowY-.77,depth+.1,1.55,.09,.24);
+          const wy = stair ? windowY - .42 : windowY, width = stair ? .78 : 1.4;
+          add(origin,'reveal',x,wy,depth+.024,width+.11,1.56,.042);
+          add(origin,stair?'stair':'glass',x,wy,depth+.055,width,1.45,.035);
+          add(origin,'concrete',x,wy-.77,depth+.1,width+.16,.09,.24);
         }
         for (const side of [-1,1]) {
           const x=side*5.6;
@@ -60,7 +63,10 @@ export function addHouseRelief(scene, solids, materials, layout, building) {
     // A single window column at either end, two adjacent recessed columns at bay joins.
     const columns = section.centersM.flatMap(center=>[center-10.2,center+10.2]).filter(c=>c>1&&c<length-1);
     for (const along of columns) for (let floor=0;floor<building.floors;floor++) {
-      add(point(along),'glass',0,.45+floor*floorHeight+1.6,.09,1.3,1.45,.035);
+      const at = point(along), wy = .45 + floor*floorHeight + 1.6;
+      add(at,'reveal',0,wy,.05,1.41,1.56,.054);
+      add(at,'glass',0,wy,.09,1.3,1.45,.035);
+      add(at,'concrete',0,wy-.77,.12,1.47,.09,.24);
     }
     for (const shop of section.shops || []) addHouse14Shop(scene, point(shop.alongM), yaw, shop.id === 'pharmacy');
   }

@@ -9,6 +9,8 @@ export function addPuddles(scene, layout, onReady = () => {}) {
   const uniforms = {
     shores: { value: null }, probes: { value: null }, panorama: { value: null },
     atlasGrid: { value: new THREE.Vector2() }, seconds: { value: 0 }, daylight: { value: 1 },
+    reflectionTint: { value: new THREE.Color(0xffffff) },
+    nightPanorama: { value:null }, nightMix: { value:0 },
   };
   const material = new THREE.ShaderMaterial({
     uniforms, transparent: true, depthWrite: false, visible: false,
@@ -22,9 +24,11 @@ export function addPuddles(scene, layout, onReady = () => {}) {
         gl_Position = projectionMatrix * viewMatrix * world;
       }`,
     fragmentShader: `
-      uniform sampler2D shores, probes, panorama;
+      uniform sampler2D shores, probes, panorama, nightPanorama;
       uniform vec2 atlasGrid;
       uniform float seconds, daylight;
+      uniform vec3 reflectionTint;
+      uniform float nightMix;
       varying vec2 mapUV;
       varying vec3 surface;
       const float pi = 3.14159265;
@@ -32,7 +36,13 @@ export function addPuddles(scene, layout, onReady = () => {}) {
         vec2 tile = vec2(mod(index, atlasGrid.x), floor(index / atlasGrid.x));
         // Keep linear filtering inside this probe's 512 by 128 texel tile.
         vec2 uv = clamp(direction, vec2(0.5/512.0, 0.5/128.0), vec2(1.0-0.5/512.0, 1.0-0.5/128.0));
-        return texture2D(panorama, (tile + uv) / atlasGrid).rgb;
+        vec3 color = vec3(0.);
+        if (nightMix < .999) color = texture2D(panorama, (tile + uv) / atlasGrid).rgb * reflectionTint;
+        if (nightMix > .001) {
+          vec2 nightUV=clamp(direction, vec2(.5/128.,.5/32.), vec2(1.-.5/128.,1.-.5/32.));
+          color=mix(color,texture2D(nightPanorama,(tile + nightUV)/atlasGrid).rgb,nightMix);
+        }
+        return color;
       }
       void main() {
         float depth = texture2D(shores, mapUV).r;
@@ -43,6 +53,11 @@ export function addPuddles(scene, layout, onReady = () => {}) {
         vec2 p = surface.xz;
         vec2 slope = vec2(sin(dot(p, vec2(4.1, 1.8)) + seconds * 0.48),
                           sin(dot(p, vec2(-2.4, 3.7)) - seconds * 0.38));
+        float rain = smoothstep(.52,.94,cos(p.x*.086 + p.y*.041 + .72*sin(p.y*.075) + .46*sin(p.x*.053) - seconds*.031));
+        vec2 cell = p*2.8, ripple = fract(cell)-.5;
+        float age = fract(seconds*1.22 + fract(sin(dot(floor(cell), vec2(17.13,43.37)))*341.531));
+        float ring = length(ripple)-age*.49;
+        slope += ripple * (rain*26.) * exp(-210.*ring*ring) * cos(41.*ring) * (1.-age);
         float detail = 1.0 - smoothstep(7.0, 35.0, distance(cameraPosition, surface));
         vec3 normal = normalize(vec3(slope.x * 0.003 * detail, 1.0, slope.y * 0.004 * detail));
         vec3 ray = reflect(-toEye, normal);
@@ -53,7 +68,7 @@ export function addPuddles(scene, layout, onReady = () => {}) {
                          radiance(floor(selection.g * 255.0 + 0.5), direction), selection.b);
         float grazing = pow(1.0 - max(dot(toEye, normal), 0.0), 3.0);
         float reflection = 0.22 + 0.73 * grazing;
-        vec3 color = mix(vec3(0.040, 0.041, 0.033), light, reflection);
+        vec3 color = mix(vec3(0.040, 0.041, 0.033)*reflectionTint, light, reflection);
         float wet = smoothstep(0.35, 0.65, depth);
         gl_FragColor = vec4(color, wet * (0.52 + 0.43 * grazing) * daylight);
         #include <colorspace_fragment>
@@ -71,6 +86,7 @@ export function addPuddles(scene, layout, onReady = () => {}) {
   const loader = new THREE.TextureLoader();
   let loaded = 0, disposed = false;
   const textures = [];
+  let nightTexture, nightReady = false;
   for (const [name, filename] of [
     ['panorama', 'puddle-reflections.jpg'], ['probes', 'puddle-probes.png'], ['shores', 'puddle-shores.png'],
   ]) {
@@ -95,5 +111,17 @@ export function addPuddles(scene, layout, onReady = () => {}) {
   return seconds => {
     uniforms.seconds.value = seconds;
     uniforms.daylight.value = 1 - (scene.userData.virtuality || 0);
+    if (scene.userData.solarLighting) uniforms.reflectionTint.value.copy(scene.userData.solarLighting.reflectionTint);
+    const night = scene.userData.windowNight?.value || 0;
+    if (night > .02 && !nightTexture && !disposed) {
+      nightTexture = loader.load(new URL('./assets/puddle-reflections-night.jpg', import.meta.url).href, () => { nightReady = true; });
+      nightTexture.flipY = false;
+      nightTexture.colorSpace = THREE.SRGBColorSpace;
+      nightTexture.generateMipmaps = false;
+      nightTexture.minFilter = nightTexture.magFilter = THREE.LinearFilter;
+      uniforms.nightPanorama.value = nightTexture;
+      textures.push(nightTexture);
+    }
+    uniforms.nightMix.value = nightReady ? night : 0;
   };
 }

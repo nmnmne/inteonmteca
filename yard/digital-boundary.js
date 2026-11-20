@@ -65,6 +65,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
   const attached=new WeakSet(), clones=new Map();
   const patch=(material,uniform,inverse)=>{
     const original=material.onBeforeCompile;
+    const baseKey=material.customProgramCacheKey?.() || '';
     material.onBeforeCompile=(shader,renderer)=>{
       original.call(material,shader,renderer);shader.uniforms.digitalMix=uniform;
       shader.fragmentShader='uniform float digitalMix;\n'+shader.fragmentShader;
@@ -72,7 +73,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
         float cell=fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453);
         if (${inverse?'cell >= digitalMix':'cell < digitalMix'}) discard;`);
     };
-    material.customProgramCacheKey=()=>`digital-${inverse}`;material.needsUpdate=true;
+    material.customProgramCacheKey=()=>`${baseKey}:digital-${inverse}`;material.needsUpdate=true;
   };
   for(const b of layout.buildings){
     const shape=new THREE.Shape(b.footprint.map(p=>new THREE.Vector2(p[0],-p[1])));
@@ -103,13 +104,29 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
   }
   let previous=-1;
   return {
+    setSky(skyColor, fogColor) {
+      baseSky.set(skyColor);
+      baseFog.set(fogColor);
+      if (scene.userData.outsideOuterDome) return;
+      const amount = scene.userData.virtuality || 0;
+      scene.background.copy(baseSky).lerp(dark, amount);
+      scene.fog.color.copy(baseFog).lerp(dark, amount);
+    },
     get needsAnimation() { return animated && !reducedMotion?.matches; },
     attachBuildings(){
       detailed=detailed.filter(mesh=>mesh.parent);
       scene.traverse(mesh=>{
         if(!mesh.isMesh || !mesh.userData.digitalBuilding || attached.has(mesh))return;
         attached.add(mesh); detailed.push(mesh);
-        const clone=m=>{if(!clones.has(m)){const n=m.clone();patch(n,mix,false);clones.set(m,n);clones.set(n,n);}return clones.get(m);};
+        const clone=m=>{
+          if(!clones.has(m)){
+            const n=m.clone();
+            n.onBeforeCompile=m.onBeforeCompile;
+            n.customProgramCacheKey=m.customProgramCacheKey;
+            patch(n,mix,false);clones.set(m,n);clones.set(n,n);
+          }
+          return clones.get(m);
+        };
         mesh.material=Array.isArray(mesh.material)?mesh.material.map(clone):clone(mesh.material);
         mesh.visible=mix.value<1;
       });

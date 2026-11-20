@@ -42,9 +42,9 @@ def measure(browser, url, width, height, touch):
     change = ImageChops.difference(*samples).convert("L")
     for name, box in regions.items():
         transmitted = ImageStat.Stat(change.crop(box)).median[0] / 200
-        # Allow for readable ink, knobs, meters and screen tint, while ensuring
-        # at least half of each large component transmits changing scenery.
-        minimum = .13 if name == 'screen' else .30
+        # The screens and optical encoders have a darker face for legibility.
+        # The space between controls stays especially clear.
+        minimum = {'screen': .55, 'jog': .62, 'body': .72, 'mixer': .80}[name]
         assert transmitted > minimum, (width, height, name, round(transmitted, 3))
         print(f"{width}×{height} {name} {transmitted:.0%}", flush=True)
     page.close()

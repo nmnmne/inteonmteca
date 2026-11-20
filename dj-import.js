@@ -232,10 +232,11 @@
     try {
       const duration = await mediaDuration(src);
       const name = (file.name || 'Аудиофайл').replace(/\.[^.]+$/, '');
-      const parts = name.split(/\s+[–—-]\s+/);
-      const artist = parts.length > 1 ? parts.shift().trim() : '';
+      const separator = /\s+[–—-]\s+/.exec(name);
+      const artist = separator ? name.slice(0, separator.index).trim() : '';
+      const title = separator ? name.slice(separator.index + separator[0].length).trim() : name;
       const track = {
-        id: await fileId(file), src, title: parts.join(' - ').trim() || name, artist, duration,
+        id: await fileId(file), src, title: title || name, artist, duration,
         bpm: null, offset: 0, key: null, peaks: [], bass: [], imported: true, analysisStatus: 'ready',
       };
       track.normalization = await window.DJImportLoudness.measure(file, duration);

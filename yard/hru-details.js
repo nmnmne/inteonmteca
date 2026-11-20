@@ -1,7 +1,26 @@
 import * as THREE from "./vendor/three.module.js";
 
 /** Adds the lived-in details that make five-storey blocks readable at street level. */
-export function addHruDetails(scene, materials, { balconies = [] }) {
+export function addHruDetails(scene, materials, { windows = [], balconies = [] }) {
+  if (windows.length) {
+    const box = new THREE.BoxGeometry();
+    const rebates = new THREE.InstancedMesh(box, materials.flat(0x665f54), windows.length);
+    const sills = new THREE.InstancedMesh(box, materials.mineral(0xb6afa1), windows.length);
+    const part = new THREE.Object3D();
+    for (const [index, pane] of windows.entries()) {
+      const nx = Math.sin(pane.yaw), nz = Math.cos(pane.yaw);
+      part.rotation.set(0, pane.yaw, 0, 'YXZ');
+      part.position.set(pane.x - .045 * nx, pane.y, pane.z - .045 * nz);
+      part.scale.set(pane.width + .11, pane.height + .10, .07);
+      part.updateMatrix(); rebates.setMatrixAt(index, part.matrix);
+      part.position.set(pane.x + .038 * nx, pane.y - pane.height / 2 - .042, pane.z + .038 * nz);
+      part.rotation.x = .07;
+      part.scale.set(pane.width + .18, .075, .24);
+      part.updateMatrix(); sills.setMatrixAt(index, part.matrix);
+    }
+    rebates.name = 'window-rebates'; sills.name = 'window-sills';
+    scene.add(rebates, sills);
+  }
   if (balconies.length) {
     const panels = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 0.78, 0.07), materials.balcony(), balconies.length);
     const dummy = new THREE.Object3D();

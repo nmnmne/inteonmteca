@@ -179,7 +179,7 @@
   box-shadow: inset 0 1px 0 #e1e8e6a8, 0 3px 2px #080f14bd;
   user-select: none; touch-action: none; cursor: grab;
 }
-.dd-jog[aria-disabled=true], .dd-scrub[aria-disabled=true] { opacity: .62; cursor: default; }
+.dd-jog[aria-disabled=true] { opacity: .62; cursor: default; }
 .dd-jog-face {
   pointer-events: none; position: absolute; inset: 6%; border-radius: 50%;
   border: 1px solid #192027;
@@ -215,15 +215,7 @@
 .dd-jog-readout { color: #f2f8f5; letter-spacing: -.075em; font: 600 clamp(12px,22cqw,64px)/1 var(--dd-mono); font-variant-numeric: tabular-nums; }
 .dd-jog-mode { font-size: clamp(7px,8cqw,18px); text-transform: uppercase; letter-spacing: .08em; }
 .dd-scratching .dd-jog-display { border-color: var(--dd-accent); }
-.dd-scrub {
-  position:absolute;
-  inset: 33%;
-  border-radius:50%;
-  cursor: ew-resize;
-  touch-action:none;
-  user-select:none;
-}
-.dd-jog:focus-visible,.dd-scrub:focus-visible {
+.dd-jog:focus-visible {
   outline: 2px solid var(--dd-accent);
   outline-offset: 2px;
 }
@@ -362,18 +354,11 @@
   display: block;
   width: 100%;
   height: 66px;
-  cursor: crosshair;
+  cursor: ew-resize;
   touch-action: pan-y;
 }
 .dd-wave:focus-visible { outline-offset: -2px !important; }
-.dd-overview { display: flex; gap: 12px; align-items: center; padding: 0 10px; border-top: 1px solid #253138; background: #101920; }
-.dd-seek {
-  appearance: none; min-width: 0; flex: 1; height: 22px; margin: 0;
-  background: linear-gradient(90deg,var(--dd-accent) var(--progress,0%),#455863 var(--progress,0%)) center / 100% 4px no-repeat;
-  cursor: ew-resize; touch-action: none;
-}
-.dd-seek::-webkit-slider-thumb { appearance: none; height: 10px; width: 5px; border-radius: 1px; background: #e3ebeb; box-shadow: 0 0 0 1px #1a2a32; }
-.dd-seek::-moz-range-thumb { height: 10px; width: 5px; border: 0; border-radius: 1px; background: #e3ebeb; }
+#studio[data-file-drag] #import { color: #cbfff0; background: #3ea7c32b; box-shadow: 0 0 13px #6ddbe37a; }
 .dd-beats { display: flex; gap: 3px; }
 .dd-beats i { width: clamp(6px,1.6cqw,16px); height: 5px; background: #35454d; border-radius: 1px; }
 .dd-beats i.is-current { background: var(--dd-accent); box-shadow: 0 0 4px rgba(var(--dd-channels),.45); }
@@ -487,7 +472,6 @@
   .dd-track { padding-block: 9px; }
   .dd-head-controls .dd-chip { min-height: 40px; }
   .dd-browse-controls button, .dd-browse-row { min-height: 44px; }
-  .dd-seek { height: 30px; }
 }
 @media (max-width:680px), (pointer:coarse) {
   .dd-transport .dd-btn, .dd-loop-group > * { min-height:42px; }
@@ -550,7 +534,6 @@
   .dd-ident { width:clamp(28px,1.25vw,48px); height:clamp(28px,1.25vw,48px); font-size:clamp(18px,.64vw,25px); }
   .dd-chip, .dd-zoom { height:clamp(25px,1.2vw,43px); font-size:clamp(12px,.55vw,20px) !important; }
   .dd-head, .dd-track, .dd-pads { padding-inline:1.9cqw; }
-  .dd-overview { min-height: 1.2vw; }
   .dd-pad-label, .dd-bpm-unit { font-size:clamp(11px,.49vw,19px); }
   .dd-pitch .dd-rail { width:67%; }
   .dd-rail input { inset-inline-start:25%; width:56%; background-size:clamp(7px,.32vw,12px) 100%; }
@@ -589,7 +572,6 @@
   .dd-wave { flex:1; min-height:0; height:0; }
   .dd-wave-controls { min-height:22px; flex:none; }
   .dd-zoom { min-height: 20px; }
-  .dd-overview .dd-seek { height: 20px; }
   .dd-browse-row { min-height: 34px; }
   .dd-browser-head, .dd-browse-controls { padding-block: 2px; }
   .dd-browse-controls button { min-height: 34px; }
@@ -646,7 +628,6 @@
   .dd-wave-controls { flex-wrap: wrap; min-width: 0; overflow: hidden; padding: 3px 4px; min-height: 22px; font-size: 10px; }
   .dd-wave-tools { gap: 2px; }
   .dd-zoom { padding: 0 2px; min-width: 0; min-height: 22px; font-size: 10px !important; }
-  .dd-overview { padding-inline: 4px; gap: 3px; }
   .dd-browse-controls, .dd-browser-head { padding: 2px 3px; gap: 2px; }
   .dd-browse-controls button, .dd-browse-options { min-width: 26px; min-height: 30px; height: 30px; }
   .dd-browse-count { font-size: 9px; }

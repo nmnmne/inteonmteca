@@ -1,4 +1,4 @@
-/* The frame and jog rims catch the light around the clear glass controller. */
+/* The controls float above the same unfiltered courtyard image as the masthead. */
 html[data-theme] body.room-console-home {
   --room-edge: clamp(5px, .75vw, 22px);
   --brand-width: clamp(155px, 17vw, 265px);
@@ -90,32 +90,46 @@ html[data-theme] body.room-console-home .room-colophon .topline {
 
 .room-console {
   --console-edge: clamp(5px,.6vw,12px);
-  --line: #cbd6c74a; --ink: #f3f5eb; --acid: rgb(var(--theme-accent-rgb));
+  --a: #8ae6ef; --b: #c5b2ff; --acid: #baf9e7; --ink: #f4fcff; --line: transparent;
   --mono: JetBrains, ui-monospace, monospace; --sans: 'Segoe UI', sans-serif;
-  --glass-seam: #c9ece559;
-  --glass-print-shadow: 0 1px 2px #061114, 0 0 3px #061114, 0 0 1px #061114;
-  --key-glass: linear-gradient(155deg, #d3eced38, #203e426b 30%, #13272cc7);
-  --key-relief: inset 0 1px #f5ffff87, inset 1px 0 #bdedde36, inset 0 -2px #091d2380, 0 2px 2px #05121488;
-  --cap-side: linear-gradient(90deg,#76807f,#484f50 17%,#252d2e 40%,#e0e3d8 45% 54%,#4f5958 59%,#202727 88%,#828b87);
+  --glass-print-shadow: 0 1px 2px #07151d, 0 0 3px #07151d, 0 0 1px #07151d;
+  --key-glass: linear-gradient(150deg, #cceff315, #1122360d 37%, #0d203338);
+  --key-relief: inset 0 1px #d8fcff38, 0 1px 2px #1023323d;
+  --cap-side: linear-gradient(90deg,#91b6c288,#183242aa 33%,#effcff 44% 50%,#334a5dba 58%,#b1ced466);
+  --pane-shape: polygon(0 15%, 85% 0, 100% 85%, 15% 100%);
   position: relative; isolation: isolate; container: console / inline-size;
   box-sizing: border-box; display: flex; flex-direction: column;
   width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden;
   pointer-events: auto; text-align: left; color: var(--ink); font: 14px/1.3 var(--sans);
-  border: solid; border-width: 2px clamp(3px,.34vw,7px) 4px;
-  border-color: #d9f1eaa8 #99bdb78f #496e6dba #afcbc799; border-radius: 14px;
-  background:
-    linear-gradient(115deg, transparent 16%, #effffb13 23%, #e0f9fc03 29%, transparent 30% 75%, #e9fffd0a 84%, transparent 87%),
-    rgb(14 42 45 / 3%);
-  box-shadow: inset 0 1px #fff9, inset 2px 0 1px #e3fff84d, inset -2px -3px 1px #244b4d91,
-    0 2px #698b877d, 0 4px #172d2eaa, 0 5px 1px #c8efe76b, 0 9px 15px #07121554;
+  border: solid transparent; border-width: 2px clamp(3px,.34vw,7px) 4px;
+  background: transparent; text-shadow: var(--glass-print-shadow);
 }
+/* Only the film has oblique edges. Native controls, text and popovers keep their geometry. */
+.room-console::before, .room-console :is(.dj-deck,.mixer-panel,.dd-screen,.dd-pitch,.dd-pads,.cross-section)::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  clip-path: var(--pane-shape);
+  background: linear-gradient(116deg, transparent 9%, #a5e2f406 18%, transparent 30% 75%, #c8b8fb0a 86%, transparent);
+}
+/* The clocked joints alternate across A / mixer / B and down the pad strip. */
+.room-console .dj-deck::before { background: linear-gradient(118deg,#90e2f012,transparent 45%,#adc4f10c); }
+.room-console .mixer-panel::before, .room-console .dj-deck--b::before,
+.room-console .dj-deck--a .dd-pitch::before, .room-console .dj-deck--b .dd-pads::before {
+  clip-path: polygon(0 0, 85% 15%, 100% 100%, 15% 85%);
+}
+.room-console .dj-deck--b .dd-screen::before { transform: scaleX(-1); }
+.room-console .dj-deck {
+  --dd-accent: var(--a); --dd-channels: 110, 218, 231;
+  --dd-line: transparent; --dd-wash: rgb(var(--dd-channels), .12);
+}
+.room-console .dj-deck--b { --dd-accent: var(--b); --dd-channels: 182, 160, 248; }
+.room-console .tone-a { --ch: var(--a); }
+.room-console .tone-b { --ch: var(--b); }
 .room-console-top, .console-nav, .console-tools, .console-nav .import-btn {
   display: flex; align-items: center; gap: 6px;
 }
 .room-console-top {
   flex: none; justify-content: space-between; padding: 6px max(8px, .8vw);
-  border-bottom: 1px solid var(--line);
-  background: linear-gradient(180deg,#edfff733,#1d30384a 12%,#182d3445 84%,#19373c78);
+  border-bottom: 1px solid transparent; background: transparent;
 }
 .console-nav .import-btn {
   min-height: 31px; padding: 0 11px; color: #e0e5df;
@@ -134,93 +148,54 @@ html[data-theme] body.room-console-home .room-colophon .topline {
 .room-console .status-bar { flex: none; min-height: 24px; padding: 3px 5px; margin: 0; color: #e4e8df; }
 .room-console :is(.status-bar,.status-bar button,.meter-copy,.dd-track-text,.dd-bpm-box,.page-title h2,.section-heading,.strip-tag,.dial-name,.cross-title) { text-shadow: 0 1px 3px #081014; }
 .room-console .meter-copy, .room-console .dd-artist, .room-console .dd-remaining { color: #d7dedb; }
-.room-console .meter-readout { background: #11242acc; border-radius: 4px; padding: 3px 5px; box-shadow: inset 0 2px 3px #040708, 0 1px 0 #dfe7e54d; }
-.room-console :is(.dd-hardware,.dd-transport,.dial-bank) { background: transparent; }
-
-/* The faceplate is edge-lit. Its large uninterrupted areas transmit the scene. */
+.room-console .meter-readout { background: #0a20341a; padding: 3px 5px; box-shadow: none; }
 .room-console .deck-bank {
-  --cap-metal: linear-gradient(to bottom,#a7afad 0%,#616969 13%,#303738 37%,#111717 42%,#cbd1c9 48% 55%,#414a4a 62%,#252c2c 91%,#5e6765);
-  --cap-shadow: inset 1px 0 0 #eef1df38, inset -1px 0 0 #0008, 0 2px 3px #070a0bcc;
+  --cap-metal: linear-gradient(#c4e1e67c,#3751659c 30%,#193247ad 42%,#eafaff 48% 53%,#274455b3 57%,#a2c2c988);
+  --cap-shadow: inset 1px 0 #ebfffe40, 0 1px 2px #0b172b66;
   margin: 0; gap: 0; position: relative; isolation: isolate;
-  border-radius: 7px;
-  background: linear-gradient(112deg, #c5eadb07, transparent 37% 76%, #c8eae208);
-  box-shadow: inset 0 1px #ecfff780, inset 0 -1px #1b414580, 0 2px 3px #09101245;
 }
-.room-console :is(.dj-deck,.mixer-panel) {
-  color: var(--ink); border: 0; border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+.room-console :is(.deck-bank,.dj-deck,.mixer-panel,.mixer-bed,.channel-strip,.dd-head,.panel-head,
+  .dd-hardware,.dd-transport,.dial-bank,.dd-track,.dd-scope,.dd-browser,.dd-browser-head,.dd-browse-controls,
+  .dd-wave-controls,.dd-browse-list,.dd-pitch,.dd-wheel-settings,.dd-pads,.cross-section,.status-bar,.quick-cross) {
+  background: transparent; border-color: transparent; box-shadow: none;
 }
-.room-console .mixer-panel {
-  position: relative; box-sizing: border-box; padding-left: var(--passage-width);
-  background: linear-gradient(90deg,#b4dcd622,#1630380e 5% 95%,#a2c9c125);
-}
-.mixer-side-passage, .mixer-cross-passage {
-  pointer-events: none;
-  background-color: rgb(20 56 61 / 4%);
-}
-.mixer-side-passage {
-  position: absolute; inset: 0 auto 0 0; width: var(--passage-width);
-  box-shadow: inset 2px 0 3px #09191d5c, inset -1px 0 #d5eadc38;
-}
-.mixer-cross-passage {
-  position: relative; flex: none; height: var(--passage-height);
-  margin-left: calc(0px - var(--passage-width));
-  background-image: linear-gradient(#14212429, transparent 30% 75%, #18292c20);
-  box-shadow: inset 0 -1px #d5eadc38;
-}
-.room-console .mixer-bed, .room-console .channel-strip { background: transparent; }
+.room-console :is(.dj-deck,.mixer-panel,.dd-screen,.dd-pitch,.dd-pads,.cross-section) { position: relative; isolation: isolate; color: var(--ink); }
+.room-console .mixer-panel { box-sizing: border-box; padding-left: var(--passage-width); }
+.mixer-side-passage, .mixer-cross-passage { pointer-events: none; }
+.mixer-side-passage { position: absolute; inset: 0 auto 0 0; width: var(--passage-width); }
+.mixer-cross-passage { position: relative; flex: none; height: var(--passage-height); margin-left: calc(0px - var(--passage-width)); }
 .room-console .dd-hardware { position: relative; }
-.room-console .dd-hardware::before, .room-console .dd-hardware::after {
-  content: ""; position: absolute; left: 5px; width: 5px; height: 5px;
-  border-radius: 50%; pointer-events: none;
-  background:
-    linear-gradient(138deg,transparent 37%,#131717 40% 57%,#767b71 60%,transparent 67%) center / 68% 68% no-repeat,
-    linear-gradient(140deg,#838b83,#424b47 55%,#242a28);
-  box-shadow: 0 0 0 1px #17201e, 0 1px 0 1px #cbd1be32;
+.room-console .dd-screen { background: transparent; border-color: transparent; box-shadow: none; }
+.room-console .dd-screen::before {
+  clip-path: polygon(0 15%, 42% 0, 100% 15%, 100% 85%, 58% 100%, 0 85%);
+  background: linear-gradient(111deg,#071c3138,#10253555 44%,#0c172945 44%,#0e213a38 82%,#c1aaf327);
 }
-.room-console .dd-hardware::before { top: 9px; }
-.room-console .dd-hardware::after { bottom: 9px; }
-.room-console :is(.dd-head,.mixer-panel .panel-head,.dd-pads,.cross-section) {
-  border-color: #0c111470; border-radius: 0;
-  background: linear-gradient(#d9e4d908,#10161715);
+.room-console :is(.dd-pitch,.dd-pads,.cross-section)::before {
+  background: linear-gradient(115deg,#90d8eb1b, #172b3a12 43%, #b8aff11a);
 }
-.room-console .dj-deck .dd-head {
-  background: linear-gradient(100deg,#1a353b62,#1028312b 58%,#1b353b4a);
-  border-bottom: 1px solid var(--glass-seam);
+.room-console :is(.dd-browse-row,.channel-strip.tone-b,.mixer-panel .gain-control) { border-color: transparent; }
+.room-console .dd-browse-list { scrollbar-color: #c0e6ef58 transparent; }
+.room-console .dd-browse-row:hover { background: #c3e6f21c; }
+.room-console .dd-browse-row[aria-selected=true] {
+  background: linear-gradient(90deg,rgba(var(--dd-channels),.15),transparent 93%);
+  box-shadow: inset 2px 0 var(--dd-accent);
 }
-.room-console :is(.dd-screen,.dd-scope,.dd-track,.dd-browser,.dd-overview,.dd-browser-head,.dd-browse-controls,.dd-browse-list) {
-  background-color: transparent;
-}
-.room-console .dd-screen {
-  border-color: #d0e6dd80 #7eaaa47a #3654589c #a4cbbd80;
-  background: linear-gradient(123deg,#d4edf010,#0a222b04 33% 79%,#cce7e214), #06161d56;
-  box-shadow: inset 0 1px #edfff747, inset 0 -1px #cbded530, 0 2px 2px #15282d66;
-}
-.room-console .dd-track { background: linear-gradient(100deg,rgba(var(--dd-channels),.09),transparent 72%); }
-.room-console .dd-scope, .room-console .dd-overview { border-color: var(--glass-seam); }
-.room-console :is(.dd-browser-head,.dd-browse-controls,.dd-browse-row) { border-color: #c0dbd437; }
-.room-console .dd-browse-row:hover { background-color: #c1ddd41a; }
-.room-console .dd-browse-row[aria-selected=true] { background: linear-gradient(90deg,rgba(var(--dd-channels),.28),rgba(var(--dd-channels),.07)); }
 .room-console :is(.dd-track,.dd-bpm-box,.dd-wave-controls,.dd-browse-row,.dd-browser-head,.dd-heading,
-  .monitor-status,.strip-head,.dd-pitch-value,.dd-jog-display,.dd-scrub,.cross-title,.status-bar,.dd-wheel-settings,.controller-tabs) {
+  .monitor-status,.strip-head,.dd-pitch-value,.dd-jog-display,.cross-title,.status-bar,.dd-wheel-settings,.controller-tabs) {
   text-shadow: var(--glass-print-shadow);
 }
-.room-console :is(.dd-browse-artist,.dd-browse-bpm,.dd-bpm-unit,.dd-artist,.dd-remaining,.master-control label) { color: #e1ece8; }
-.room-console :is(.dd-browse-search,.dd-browser-head .dd-browse-filter,.dd-browse-controls button:not(.dd-browse-load),.dd-key,.dd-head-controls .dd-chip,.dd-tempo-steps button) {
-  color: #f0fcf7; background: #0d252c94; border-color: var(--glass-seam); text-shadow: var(--glass-print-shadow);
+.room-console :is(.dd-browse-artist,.dd-browse-bpm,.dd-bpm-unit,.dd-artist,.dd-remaining,.master-control label) { color: #e4f3f5; }
+.room-console :is(.dd-browse-search,.dd-browse-options,.dd-browse-controls button,.dd-key,.dd-head-controls .dd-chip,
+  .dd-tempo-steps button,.dd-pitch-range,.dd-loop-length button,.dd-loop-value,.dd-wheel-modes,.dd-ident,
+  .console-nav button,.console-tools button,.monitor-status button) {
+  background: var(--key-glass); border-color: transparent; box-shadow: none; color: var(--ink); text-shadow: var(--glass-print-shadow);
 }
-.room-console :is(.dd-browse-filter,.dd-pitch-range) option { color: #f0fcf7; background: #193032; }
-.room-console .dd-pitch {
-  background: linear-gradient(90deg,#d4f2ef1f,#14353c21 10% 77%,#c5e4e121);
-  border: 1px solid var(--glass-seam); border-radius: 5px; box-shadow: inset 0 1px 1px #effffc55, 0 2px 1px #12272b77;
-}
-.room-console .dd-pitch-range, .room-console .dd-wheel-modes {
-  background: #152d3485; border: 1px solid var(--glass-seam); box-shadow: 0 1px 0 #e7eddf24, inset 0 1px 2px #14292e77;
-}
-.room-console .dd-rail input {
-  background-image: linear-gradient(90deg,#676d67,#242b2b 19%,#03090a 38% 69%,#393e3a 86%,#959d8f);
-}
+.room-console .dd-browse-load, .room-console .dd-ident,
+.room-console .dd-wheel-modes [aria-pressed=true] { color: var(--dd-accent); }
+.room-console .dd-ident { border: 0; font-weight: 700; }
+.room-console .dd-wheel-modes button[aria-pressed=true] { background: rgba(var(--dd-channels), .1); box-shadow: inset 0 -1px currentColor; }
+.room-console :is(.dd-browse-filter,.dd-pitch-range) option { color: #effbff; background: #172735; }
+.room-console .dd-rail input { background-image: linear-gradient(90deg,#b2d4db7c,#15253892 40% 68%,#c9e8ef87); }
 .room-console :is(.dd-rail input,.gain-input)::-webkit-slider-thumb {
   background: var(--cap-metal); border: 1px solid #191f20; box-shadow: var(--cap-shadow);
 }
@@ -242,17 +217,11 @@ html[data-theme] body.room-console-home .room-colophon .topline {
   background: var(--cap-side); box-shadow: 1px 2px 2px #091013a8;
 }
 .room-console .dial-face::before {
-  inset: 3px; border: 1px solid #c9e8e078;
-  background:
-    radial-gradient(ellipse at 33% 20%,#f4ffffa6,transparent 28%),
-    linear-gradient(140deg,#c7e5e175,#46656952 48%,#263e43b3 83%);
-  box-shadow: inset 0 1px 1px #e4fff7b8, inset -1px -3px 2px #18353ec9,
-    1px 2px 1px #142c317d, 2px 4px 4px #080f185e;
+  inset: 3px; border: 1px solid #ceefff45;
+  background: radial-gradient(ellipse at 32% 16%,#efffff65,transparent 31%),linear-gradient(143deg,#aacfd14d,#203c5252 52%,#172b4270);
+  box-shadow: inset 0 1px #d2fbff63, inset -1px -2px 2px #172c424a;
 }
-.room-console .dial-face {
-  background: transparent;
-  box-shadow: inset 0 0 0 1px #2c4448b5, 0 1px #e1f8e440;
-}
+.room-console .dial-face { background: transparent; box-shadow: none; }
 .room-console .dial-face::after {
   content: ""; position: absolute; inset: -2px; pointer-events: none; border-radius: 50%;
   background: conic-gradient(from 220deg,var(--ch) 0deg var(--fill-arc,140deg),#b2c7c39c var(--fill-arc,140deg) 280deg,transparent 281deg);
@@ -262,85 +231,63 @@ html[data-theme] body.room-console-home .room-colophon .topline {
 .room-console :is(.dial-name,.vol-label,.dd-pitch-title,.dd-scale,.dd-pad-label,.cross-title) {
   color: #f1f7f2; text-shadow: var(--glass-print-shadow);
 }
-.room-console :is(.dd-pads,.cross-section) {
-  background: linear-gradient(180deg,#d0ece44d 0 1px,#14343a25 2px,#16343925 85%,#1d393c52);
+.room-console :is(.center-cross,.dd-sync,.dd-loop,.dd-pad):not([aria-pressed=true]) {
+  position: relative; color: #f2fbff; background: var(--key-glass); border-color: transparent;
+  box-shadow: var(--key-relief); text-shadow: var(--glass-print-shadow);
 }
-.room-console :is(.center-cross,.dd-sync,.dd-loop):not([aria-pressed="true"]) {
-  color: #f3fbf4; border-color: #c0dbd57a;
-  background: var(--key-glass); box-shadow: var(--key-relief); text-shadow: var(--glass-print-shadow);
-}
-.room-console .dd-pad {
-  position: relative;
-  border: 1px solid #a5c1bd88; border-radius: 5px;
-  background: var(--key-glass); box-shadow: var(--key-relief);
-  color: #f2faf4; text-shadow: var(--glass-print-shadow);
-}
-.room-console .dd-pad::before {
-  content: ""; position: absolute; inset: 4px auto auto 5px; width: 4px; height: 2px;
-  border-radius: 1px; pointer-events: none; background: #202725;
-}
-.room-console .dd-pad--set::before { background: var(--dd-accent); box-shadow: 0 0 3px rgba(var(--dd-channels), .65); }
-.room-console .dd-pad--set {
-  color: var(--dd-accent); border-color: rgba(var(--dd-channels), .56);
-  background: linear-gradient(170deg,rgba(var(--dd-channels),.4),#1732388a);
-  box-shadow: inset 0 -2px 0 rgba(var(--dd-channels), .77), 0 1px 2px #060c0db8;
-}
+.room-console .dd-pad.dd-pad--set { color: var(--dd-accent); box-shadow: inset 0 -2px var(--dd-accent); }
 .room-console .dj-deck h2 { text-transform: none; letter-spacing: -.035em; }
-/* An optically clear touch disc sits above the fluted edge of the jog. */
+/* The segmented optical encoder and its position light remain tactile through the face. */
 .room-console .dd-wheel-mount {
-  background: radial-gradient(closest-side, transparent 91%, #163b464d 94%, #102129bf 97%, #a1c6c1a6 98.3%, #183b448a 99%);
-  box-shadow: 0 -1px 1px #e0fff6bd, 0 2px 1px #bfd9d8b3, 0 4px #1c3b3f9e, 1px 5px 1px #12292cb3, 3px 8px 8px #09171963;
+  background: transparent; box-shadow: 0 1px 1px #d5f9ff5c, 0 3px 2px #11263854;
 }
 .room-console .dd-jog {
-  background:
-    radial-gradient(closest-side, transparent 87%, #e3fffc66 88%, #314c5094 89%, transparent 91% 96%, #e1f8ef80 97%, #273e4499 99%),
-    linear-gradient(134deg,#d6f5ee24,transparent 34% 70%,#688c9824);
-  border-color: #b8dedca1;
-  box-shadow: inset 0 2px 2px #d6fffa66, inset -1px -2px 2px #1b373bab, 0 2px 2px #10272b73;
+  background: radial-gradient(closest-side,#152a4126 68%,#182e422f 87%,#17293d48 94%,#d9f5fe35 97%,transparent 99%);
+  border-color: #d3f1ff5c; box-shadow: inset 0 1px #f4fffe73, inset 0 -2px #24304e51;
 }
 .room-console .dd-jog::before {
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background:
-    conic-gradient(from -40deg,#edfdfb8c,transparent 14%,#0d2a355c 31%,transparent 49%,#e1f6f180 66%,#152f3e4d 84%,#edfdfb8c),
-    repeating-conic-gradient(from 2deg,#17393eab 0deg 1.4deg,#def0ed9c 2deg,transparent 2.6deg 6deg);
-  mask-image: radial-gradient(closest-side,transparent 90%,#000 91% 96%,transparent 97%);
+  background: repeating-conic-gradient(from 2deg,#d6f4ffae 0deg .7deg,transparent 1.2deg 6deg);
+  mask-image: radial-gradient(closest-side,transparent 92%,#000 94% 97%,transparent 98%);
 }
 .room-console .dd-jog-face {
-  background: linear-gradient(128deg,transparent 12%,#efffff29 24%,#fff1 26%,#d5fffc04 40%,transparent 56%,#e0fdff0d 76%,transparent 80%);
-  border-color: #c7e7df8c;
-  box-shadow: inset 0 1px 1px #e4fffa99, inset -1px -2px 3px #1d46475e, 0 0 0 1px #28454b9c;
+  background: linear-gradient(127deg,transparent 14%,#daffff12 26%,transparent 44% 69%,#ddeaff10 77%,transparent 83%);
+  border-color: #d1edf350; box-shadow: inset 0 1px 1px #dafaff55;
 }
 .room-console .dd-jog-face::before {
-  inset: 0;
-  background: repeating-conic-gradient(from 9deg,#ecfffbd4 0deg .75deg,transparent 1deg 30deg);
-  mask-image: radial-gradient(closest-side,transparent 89%,#000 90% 95%,transparent 96%);
+  inset: 0; background: repeating-conic-gradient(from 9deg,#eafffac4 0deg .7deg,transparent 1deg 30deg);
+  mask-image: radial-gradient(closest-side,transparent 90%,#000 91% 95%,transparent 96%);
 }
-.room-console .dd-platter {
-  inset: 27%; border: 1px solid #bddbd991; background: transparent;
-  box-shadow: 0 0 0 1px #172b3380, 0 1px 1px 2px #a9c9ca66;
-}
+.room-console .dd-platter { inset: 26%; background: transparent; border: 1px solid #d6f2ff68; box-shadow: none; }
 .room-console .dd-platter::before {
   content: ""; position: absolute; inset: 0; border-radius: 50%;
-  background: repeating-conic-gradient(#effffad9 0deg .85deg,transparent 1.1deg 6deg);
-  mask-image: radial-gradient(closest-side,transparent 88%,#000 91% 97%,transparent 99%);
+  background: repeating-conic-gradient(#d9f3ffb3 0deg .85deg,transparent 1.1deg 12deg);
+  mask-image: radial-gradient(closest-side,transparent 91%,#000 93% 97%,transparent 99%);
 }
 .room-console .dd-jog-display {
-  inset: 31%; border-color: #314e548c;
-  background: linear-gradient(145deg,#17353d9e,#0a2228b3 72%,#3654598f);
-  box-shadow: inset 0 1px #defff780, inset 0 -2px 3px #132d36ad, 0 0 0 1px #daeee38c;
+  inset: 31%; border-color: #d5f3ff38;
+  background: radial-gradient(closest-side,#0e1c335a,#10263943 85%,#b8dbe71c); box-shadow: none;
 }
 .room-console .dd-btn:is(.dd-play,.dd-cue) {
-  background: radial-gradient(ellipse at 32% 10%,#edfffa60, transparent 43%), #0c242a81;
-  border-color: #acccc5bf;
-  box-shadow: 0 2px 2px #071c209c, inset 0 0 0 1px #14262a9c, inset 0 0 0 3px var(--lamp), inset 0 3px 4px #c6eee85c;
+  background: radial-gradient(ellipse at 34% 12%,#d5efff21,transparent 50%), #0c223126;
+  border-color: #c5e5ee5c; box-shadow: inset 0 0 0 2px var(--lamp), 0 1px 2px #141e3260;
   text-shadow: var(--glass-print-shadow);
 }
 .room-console .dd-btn:is(.dd-play,.dd-cue) svg { filter: drop-shadow(0 1px 1px #122528); }
-.room-console .status-bar {
-  background: linear-gradient(180deg,#1b373c4d,#172f3894);
-  border-top: 1px solid #a9b5b36e;
+.room-console .dd-play { --lamp: #78b1b6; }
+.room-console .dd-cue { --lamp: #b7a7cc; }
+.room-console .dd-playing .dd-play { --lamp: #b9ffea; color: #d4fff4; }
+.room-console :is(.dd-pads,.dd-browse-controls,.dd-wheel-modes,.controller-tabs,.cross-actions) > button {
+  position: relative; isolation: isolate; border-color: transparent; background: transparent;
 }
-
+.room-console :is(.dd-pads,.dd-browse-controls,.dd-wheel-modes,.controller-tabs,.cross-actions) > button::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  clip-path: polygon(15% 0,100% 0,85% 100%,0 100%);
+  background: linear-gradient(139deg,#e1f8ff25,#09233712 45%,#12314834);
+}
+.room-console :is(.dd-pads,.dd-browse-controls,.dd-wheel-modes,.controller-tabs,.cross-actions) > button:nth-child(even)::before {
+  background: linear-gradient(57deg,#a9c9f31c,#1d263e18 60%,#b3d4ec22);
+}
 @media (min-width: 1001px) {
   .room-console-top { height: clamp(44px,5.3dvh,82px); }
   .room-console .page-title {
@@ -355,7 +302,7 @@ html[data-theme] body.room-console-home .room-colophon .topline {
   }
   .room-console .controller-tabs, .room-console .quick-cross { display: none; }
   .room-console .dj-deck { display: grid; height: 100%; grid-template-rows: auto auto minmax(0,1fr) auto auto; }
-  .room-console .mixer-panel { box-shadow: -1px 0 #080d10a8, 1px 0 #080d10a8, inset 1px 0 #e2e9d924, inset -1px 0 #e2e9d91f; }
+
   .room-console .dd-hardware { min-height: 0; }
   .room-console .dd-wheel-column {
     display: grid; align-items: center; align-self: stretch; align-content: stretch; container-type: size;
@@ -378,12 +325,12 @@ html[data-theme] body.room-console-home .room-colophon .topline {
   .room-console .deck-bank:not([data-panel=a]) #deck-a,
   .room-console .deck-bank:not([data-panel=b]) #deck-b,
   .room-console .deck-bank:not([data-panel=mixer]) #mixer { display: none; }
-  .room-console .controller-tabs { background: #16343c45; display: grid; grid-template-columns: repeat(3,1fr); gap: 3px; }
+  .room-console .controller-tabs { background: transparent; display: grid; grid-template-columns: repeat(3,1fr); gap: 3px; }
   .room-console .controller-tabs button {
-    min-height: 33px; padding: 2px 6px; border: 1px solid #d1e3dc40; border-radius: 5px;
-    color: #e5e9e3; background: #17383b66; font: 600 12px var(--sans);
+    min-height: 33px; padding: 2px 6px; border: 1px solid transparent; border-radius: 5px;
+    color: var(--ink); background: var(--key-glass); text-shadow: var(--glass-print-shadow); font: 600 12px var(--sans);
   }
-  .room-console .controller-tabs button[aria-pressed=true] { color: var(--acid); background: #1e343285; border-color: #abce7e; }
+  .room-console .controller-tabs button[aria-pressed=true] { color: var(--acid); background: #a2e9ed13; box-shadow: inset 0 -1px currentColor; }
   .room-console .quick-cross { display: flex; align-items: center; min-height: 29px; gap: 7px; }
   .room-console .quick-cross input { min-width: 0; flex: 1; }
 }

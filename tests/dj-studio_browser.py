@@ -1,8 +1,12 @@
 """Exercise the browser studio against a local site server in a fresh Edge profile."""
 import io
+import hashlib
+import math
 import sys
 import wave
+from array import array
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from urllib.parse import urlparse
 
 from playwright.sync_api import sync_playwright
@@ -109,9 +113,21 @@ def check_deck_browser(page):
     assert a_list.get_by_role("option").count() == 0 and a.locator(".dd-browse-load").is_disabled()
     assert b_list.get_by_role("option").count() > 2
     search.fill("")
-    a.locator(".dd-zoom").click()
     wave = a.locator(".dd-wave")
+    assert a.locator(".dd-scope [role=slider], .dd-scope input[type=range]").count() == 1
+    wave.scroll_into_view_if_needed()
     size = wave.bounding_box()
+    y = size["y"] + size["height"] / 2
+    page.mouse.move(size["x"] + size["width"] * .15, y)
+    page.mouse.down()
+    page.mouse.move(size["x"] + size["width"] * .89, y, steps=5)
+    page.mouse.up()
+    page.wait_for_function("() => {const s = DJEngine.snapshot().A; return Math.abs(s.time/s.duration - .89) < .01}")
+    wave.press("Home")
+    wave.press("Shift+ArrowRight")
+    page.wait_for_function("() => {const s=DJEngine.snapshot().A; return Math.abs(s.time - 60 / s.baseBPM / 8) < .01}")
+    wave.press("Home")
+    a.locator(".dd-zoom").click()
     wave.click(position={"x": round(size["width"] * .75), "y": round(size["height"] / 2)})
     page.wait_for_function("() => {const s = DJEngine.snapshot().A; return Math.abs(s.time/s.duration - .375) < .01}")
     a.locator(".dd-pitch-range").select_option("16")
@@ -207,9 +223,93 @@ def check_touch_browser(browser, url):
     b.locator(".dd-browse-load").tap()
     assert b.get_by_role("listbox").is_visible()
     assert page.evaluate("DJEngine.snapshot().B.track.title") == selected
+    waveform = b.locator(".dd-wave")
+    waveform.scroll_into_view_if_needed()
+    size = waveform.bounding_box()
+    cdp = page.context.new_cdp_session(page)
+    for kind, pos in (("touchStart", .15), ("touchMove", .79), ("touchEnd", None)):
+        points = [] if pos is None else [{"x": size["x"] + size["width"] * pos,
+                                          "y": size["y"] + size["height"] / 2}]
+        cdp.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": points})
+    page.wait_for_function("() => {const s=DJEngine.snapshot().B; return Math.abs(s.time/s.duration - .79) < .02}")
     page.set_viewport_size({"width": 667, "height": 375})
     assert b.locator(".dd-wave").bounding_box()["height"] >= 22
     page.close()
+
+
+def check_file_drops(browser, url):
+    context = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = context.new_page()
+    page.goto(url, wait_until="domcontentloaded")
+    page.locator("#deck-b [role=option]").first.wait_for()
+    writes = []
+    context.on("request", lambda req: writes.append((req.method, req.url))
+               if req.url.startswith("http") and req.method not in {"GET", "HEAD", "OPTIONS"} else None)
+    cdp = context.new_cdp_session(page)
+
+    def drop_files(selector, paths):
+        area = page.locator(selector)
+        area.scroll_into_view_if_needed()
+        box = area.bounding_box()
+        drag = {"items": [], "files": [str(path) for path in paths], "dragOperationsMask": 1}
+        for kind in ("dragEnter", "dragOver", "drop"):
+            cdp.send("Input.dispatchDragEvent", {"type": kind, "x": box["x"] + box["width"] / 2,
+                     "y": box["y"] + box["height"] / 2, "data": drag})
+
+    with TemporaryDirectory() as folder:
+        paths = []
+        titles = ("Окна", "Медленный свет — Edit", "Над домом")
+        for i, title in enumerate(titles):
+            path = Path(folder) / f"Артист — {title}.wav"
+            paths.append(path)
+            with wave.open(str(path), "wb") as wav:
+                wav.setparams((1, 2, 11025, 0, "NONE", ""))
+                wav.writeframes(array("h", (int(8000 * math.sin(2 * math.pi * (220 + 110*i) * n / 11025))
+                                             for n in range(33075))).tobytes())
+        drop_files("#mixer", paths[:2])
+        drop_files("#deck-b .dd-browse-list", paths[2:])
+        page.wait_for_function("DJStorage.list().then(tracks => tracks.length === 3)")
+        page.locator("#deck-b [role=option]").filter(has_text="Над домом").wait_for(state="attached")
+        assert page.evaluate("[DJEngine.snapshot().A.track.title, DJEngine.snapshot().B.track.title]") == [
+            "Echoes Resurface", "High Stage Of Reality"]
+        # Read the exact original bytes after closing the tab (all object URLs are gone).
+        page.close()
+        page = context.new_page()
+        page.goto(url, wait_until="domcontentloaded")
+        deck = page.locator("#deck-b")
+        choose_collection(deck, "imports")
+        for path, title in zip(paths, titles):
+            deck.locator("[role=option]").filter(has_text=title).dblclick()
+            page.wait_for_function("title => DJEngine.snapshot().B.track.title === title", arg=title)
+            info = page.evaluate("""async () => {
+              const t = DJEngine.snapshot().B.track;
+              const bytes = await (await fetch(t.src)).arrayBuffer();
+              const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
+              return [t.artist, t.src.startsWith('blob:'), t.peaks.length, t.normalization.status,
+                      Array.from(digest, b => b.toString(16).padStart(2,'0')).join('')];
+            }""")
+            assert info[:4] == ["Артист", True, 8192, "measured"], info
+            assert info[-1] == hashlib.sha256(path.read_bytes()).hexdigest()
+        deck.locator(".dd-play").click()
+        page.wait_for_function("DJEngine.snapshot().B.time > .1 && DJEngine.snapshot().B.level > .01")
+        # Storage pressure can leave an import in memory. A second drop should
+        # persist that existing row once the browser can write again.
+        retry = Path(folder) / "Recovered.wav"
+        retry.write_bytes(import_fixture()["buffer"])
+        cdp = context.new_cdp_session(page)
+        page.evaluate("""() => {
+            const put = DJStorage.put;
+            DJStorage.put = async () => { DJStorage.put = put; return false; };
+        }""")
+        drop_files("#deck-a .dd-wave", [retry])
+        page.get_by_text("Recovered · Трек доступен до закрытия вкладки.", exact=False).wait_for()
+        assert page.evaluate("DJStorage.list().then(tracks => tracks.length)") == 3
+        page.locator("#dialog-close").click()
+        drop_files("#deck-a .dd-wave", [retry])
+        page.wait_for_function("DJStorage.list().then(tracks => tracks.length === 4)")
+        assert page.locator("#deck-a [role=option]").filter(has_text="Recovered").count() == 1
+        assert not writes, writes
+    context.close()
 
 
 def exercise(browser, url):
@@ -321,5 +421,6 @@ if __name__ == "__main__":
         check_deck_browser(browsing)
         browsing.close()
         check_touch_browser(browser, url)
+        check_file_drops(browser, url)
         browser.close()
     print("Playback, recording, imports, downloads, independent deck playlists, MIDI and responsive layout passed.")

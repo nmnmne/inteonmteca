@@ -88,6 +88,8 @@
   let loadedTracks,
     toastTimer,
     paintTimer,
+    lastRecordText,
+    lastAudioStatus,
     lastRecording = false;
   const collator = new Intl.Collator('ru', { sensitivity: 'base', numeric: true });
   function notice(msg) {
@@ -470,10 +472,18 @@
     $('#master-value').textContent = $('#master').value + '%';
     $('#record').classList.toggle('recording', s.recording);
     $('#record').setAttribute('aria-pressed', String(s.recording));
-    $('#record-text').textContent = s.recording ? 'Стоп · ' + fmt(s.recordingSeconds) : 'Запись микса';
-    $('#audio-status').textContent = s.sampleRate
+    const recordText = s.recording ? 'Стоп · ' + fmt(s.recordingSeconds) : 'Запись микса';
+    if (recordText !== lastRecordText) {
+      $('#record-text').textContent = recordText;
+      lastRecordText = recordText;
+    }
+    const audioStatus = s.sampleRate
       ? ({stereo: 'Стерео', headphones: 'Наушники · объём', '7.1.4': '7.1.4'}[s.outputLayout] || 'Стерео') + ' · ' + Number((s.sampleRate / 1000).toFixed(1)) + ' kHz'
       : 'Студия готова';
+    if (audioStatus !== lastAudioStatus) {
+      $('#audio-status').textContent = audioStatus;
+      lastAudioStatus = audioStatus;
+    }
     if (s.recording && !lastRecording) notice('Запись мастер-выхода началась');
     lastRecording = s.recording;
     if (s.A.playing || s.B.playing || s.A.scratching || s.B.scratching || s.recording)
@@ -689,44 +699,37 @@
       if (taps.length > 1) bpm.value = ((60000 * (taps.length - 1)) / (now - taps[0])).toFixed(1);
     };
   }
-  let importing = false;
-  async function importFiles(files, browser) {
-    if (importing || !files.length) return;
-    importing = true;
+  async function importBatch(files, browser) {
     const button = $('#import');
-    button.disabled = true;
     let added = 0,
       duplicates = 0;
     const problems = [];
-    for (const [i, file] of Array.from(files).entries()) {
+    for (const [i, file] of files.entries()) {
       button.textContent = 'Импорт ' + (i + 1) + '/' + files.length;
       try {
         const t = await window.DJImport.read(file);
-        const duplicate = tracks.find((x) => x.id === t.id);
-        if (duplicate) {
-          if (!duplicate.src) duplicate.src = t.src;
-          else URL.revokeObjectURL(t.src);
-          if (duplicate.normalization?.version !== t.normalization?.version) {
-            duplicate.normalization = t.normalization;
-            duplicate.stored = await window.DJStorage.put(duplicate, file);
-          }
-          duplicates++;
-          continue;
+        const saved = tracks.find((x) => x.id === t.id);
+        const track = saved || t;
+        if (!track.stored || track.normalization?.version !== t.normalization?.version) {
+          if (await window.DJStorage.put({ ...track, normalization: t.normalization }, file)) track.stored = true;
+          track.normalization = t.normalization;
         }
-        t.stored = await window.DJStorage.put(t, file);
-        if (!t.stored)
-          problems.push(t.title + ' · Трек доступен до закрытия вкладки. Браузер не сохранил файл.');
-        Object.assign(t, gridEdits[t.id]);
-        tracks.push(t);
-        added++;
-        if (t.analysisMessage) problems.push(t.title + ' · ' + t.analysisMessage);
+        if (!track.stored)
+          problems.push(track.title + ' · Трек доступен до закрытия вкладки. Браузер не сохранил файл.');
+        if (saved) {
+          if (!saved.src) saved.src = t.src;
+          else URL.revokeObjectURL(t.src);
+          duplicates++;
+        } else {
+          Object.assign(t, gridEdits[t.id]);
+          tracks.push(t);
+          added++;
+          if (t.analysisMessage) problems.push(t.title + ' · ' + t.analysisMessage);
+        }
       } catch (e) {
         problems.push(file.name + ' · ' + e.message);
       }
     }
-    importing = false;
-    button.disabled = false;
-    button.innerHTML = icon('plus', 14) + 'Импорт';
     if (added || duplicates) {
       browser.showImports();
       refreshPlaylists();
@@ -741,23 +744,25 @@
       );
     else notice(added ? 'Добавлено треков: ' + added : 'Эти треки уже в плейлисте');
   }
+  function importFiles(files, browser) {
+    if (!files.length) return;
+    // A second drop can arrive while the first file is being decoded or saved.
+    importQueue = importQueue.then(() => importBatch(files, browser))
+      .catch(() => notice('Не удалось завершить импорт аудио.'))
+      .finally(() => { $('#import').innerHTML = icon('plus', 14) + 'Импорт'; });
+  }
   for (const id of channels) {
     const host = $('#deck-' + id.toLowerCase());
     const deck = window.DJDecks.mount(host, id);
     mountDeckBrowser(deck, id);
     mountChannel(id);
     host.addEventListener('dragover', (e) => {
-      if (e.dataTransfer.types.includes('application/x-inteon-track') || e.dataTransfer.types.includes('Files')) {
+      if (e.dataTransfer.types.includes('application/x-inteon-track')) {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
       }
     });
     host.addEventListener('drop', (e) => {
-      if (e.dataTransfer.files.length) {
-        e.preventDefault();
-        void importFiles(Array.from(e.dataTransfer.files), deckBrowsers.get(id));
-        return;
-      }
       const key = e.dataTransfer.getData('application/x-inteon-track');
       if (key) {
         e.preventDefault();
@@ -768,6 +773,24 @@
       }
     });
   }
+  const studio = $('#studio');
+  studio.addEventListener('dragover', event => {
+    if (!event.dataTransfer.types.includes('Files')) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+    studio.dataset.fileDrag = 'true';
+  });
+  studio.addEventListener('dragleave', event => {
+    if (!studio.contains(event.relatedTarget)) delete studio.dataset.fileDrag;
+  });
+  studio.addEventListener('drop', event => {
+    delete studio.dataset.fileDrag;
+    const files = Array.from(event.dataTransfer.files);
+    if (!files.length) return;
+    event.preventDefault();
+    const side = event.target.closest('#deck-a, #deck-b')?.id.slice(-1).toUpperCase();
+    importFiles(files, deckBrowsers.get(side) || activeBrowser());
+  });
   for (const side of ['left', 'right']) $('#' + side + '-meter').innerHTML = '<b></b>'.repeat(24);
   window.addEventListener('dj-load', ({detail: {id}}) => {
     window.DJDecks.render(id, engine.snapshot()[id]);
@@ -833,7 +856,7 @@
   $('#import').onclick = () => { importBrowser = activeBrowser(); $('#import-files').click(); };
   $('#masters').onclick = () => openMasters(engine.snapshot()[activeBrowser().id].track);
   $('#import-files').onchange = event => {
-    void importFiles(Array.from(event.target.files), importBrowser || activeBrowser());
+    importFiles(Array.from(event.target.files), importBrowser || activeBrowser());
     event.target.value = '';
     importBrowser = null;
   };
@@ -888,7 +911,7 @@
   resolveLegacyView();
   refreshPlaylists();
   schedulePaint();
-  window.DJStorage.list().then((saved) => {
+  let importQueue = window.DJStorage.list().then((saved) => {
     for (const track of saved) {
       if (!tracks.some((t) => t.id === track.id))
         tracks.push(Object.assign(track, { stored: true }, gridEdits[track.id]));
