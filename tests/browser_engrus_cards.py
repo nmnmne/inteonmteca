@@ -9,7 +9,7 @@ def check(browser, url, width, height, touch):
     page = browser.new_page(viewport={"width": width, "height": height}, is_mobile=touch, has_touch=touch,
                             reduced_motion="reduce")
     page.goto(url, wait_until="domcontentloaded")
-    page.locator('[data-app="dj"][data-window-action="minimize"]:visible').click()
+    page.locator('[data-app="dj"][data-window-action="close"]:visible').click()
     launcher = page.locator('[data-launch="engrus"]')
     page.clock.install()
     launcher.click()
@@ -22,7 +22,7 @@ def check(browser, url, width, height, touch):
     page.clock.fast_forward(1400)
     page.locator('[data-app="engrus"][data-window-action="minimize"]').click()
     page.clock.fast_forward(9000)
-    launcher.click()
+    page.get_by_role("button", name="Развернуть Eng-Rus").click()
     assert count.text_content() == "1 / 48" and russian.is_hidden()
     page.clock.fast_forward(2200)
     assert russian.is_visible() and russian.text_content() == "Приятно познакомиться."

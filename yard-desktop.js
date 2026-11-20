@@ -24,14 +24,17 @@
     <span class="yard-system-name"><i aria-hidden="true"></i><span id="yard-view-title">Рабочий стол</span></span>
     <time id="yard-system-clock"></time>
     <button type="button" class="yard-source" popovertarget="yard-map-sources"
-      aria-label="Источники карты двора" title="Источники карты двора">© OpenStreetMap</button>
+      aria-label="Сведения о дворе и источники карты" title="Сведения о дворе">ⓘ</button>
   </header>
   <nav class="yard-app-dock" aria-label="Приложения">
     <button type="button" data-launch="dj" data-running="true" aria-controls="studio" aria-label="Открыть DJ-пульт">
       <span class="yard-app-icon yard-dj-icon" aria-hidden="true"><i></i></span><span>DJ-пульт</span></button>
     <button type="button" data-launch="engrus" data-running="false" aria-controls="yard-engrus-window" aria-label="Открыть Eng-Rus">
       <img class="yard-app-icon" src="assets/eng-rus-app.webp" alt="" width="46" height="46"><span>Eng-Rus</span></button>
-  </nav>`;
+  </nav>
+  <button type="button" class="yard-restore" hidden>
+    <span class="yard-restore-icon" aria-hidden="true"></span>Развернуть
+  </button>`;
   const cards = document.createElement('section');
   cards.id = 'yard-engrus-window';
   cards.setAttribute('aria-labelledby', 'yard-engrus-title');
@@ -44,6 +47,7 @@
   const appContent = cards.querySelector('#yard-engrus-content');
   const viewTitle = shell.querySelector('#yard-view-title');
   const clock = shell.querySelector('time');
+  const restoreButton = shell.querySelector('.yard-restore');
   const clockFormat = new Intl.DateTimeFormat('ru-RU', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'});
   const lastFocus = {full: studio.querySelector('#import'), compact: null, engrus: cards};
   let view = 'dj', djMode = 'full', compact, mounted = false, keyboard = false;
@@ -55,7 +59,7 @@
     if (document.hidden) return;
     const visibleClock = view === 'dj'
       ? (djMode === 'compact' ? compact?.querySelector('time[data-yard-clock]') : null)
-      : clock;
+      : restoreButton.hidden ? clock : null;
     if (!visibleClock) return;
     const now = new Date();
     visibleClock.dateTime = now.toISOString();
@@ -73,7 +77,7 @@
   }
 
   function wake() {
-    if (view === 'dj' || document.hidden) return;
+    if (view === 'dj' || !restoreButton.hidden || document.hidden) return;
     lastActivity = performance.now();
     delete shell.dataset.idle;
     if (!idleTimer) idleTimer = setTimeout(checkIdle, idleDelay);
@@ -102,8 +106,16 @@
     window.dispatchEvent(new CustomEvent('yard-app-visibility', {detail: {app, visible, action}}));
   }
 
-  function selectView(next) {
+  function selectView(next, minimizedApp) {
     view = next;
+    restoreButton.hidden = !minimizedApp;
+    if (minimizedApp) {
+      shell.dataset.minimized = minimizedApp;
+      restoreButton.setAttribute('aria-label', 'Развернуть ' + names[minimizedApp]);
+      restoreButton.setAttribute('aria-controls', minimizedApp === 'dj' && djMode === 'compact'
+        ? 'yard-dj-compact' : launchers[minimizedApp].getAttribute('aria-controls'));
+    } else delete shell.dataset.minimized;
+    delete shell.dataset.idle;
     body.dataset.yardWindow = next;
     studio.inert = next !== 'dj' || djMode === 'compact';
     if (compact) compact.hidden = next !== 'dj' || djMode !== 'compact';
@@ -122,9 +134,9 @@
     dismissOverlays();
     if (app === 'dj' && action === 'close') stopDJ();
     if (action === 'close') launchers[app].dataset.running = 'false';
-    selectView('desktop');
+    selectView('desktop', action === 'minimize' ? app : null);
     notify(app, false, action);
-    launchers[app].focus({preventScroll: true});
+    (action === 'minimize' ? restoreButton : launchers[app]).focus({preventScroll: true});
   }
 
   function openApp(app) {
@@ -167,6 +179,9 @@
     setDJMode('compact');
   }
 
+  restoreButton.addEventListener('click', () => {
+    if (shell.dataset.minimized) openApp(shell.dataset.minimized);
+  });
   document.addEventListener('click', event => {
     const button = event.target.closest?.('button[data-dj-mode], [data-window-action], .yard-app-dock [data-launch]');
     if (!button) return;

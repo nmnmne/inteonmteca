@@ -20,8 +20,13 @@ def check(browser, url, width, height, touch):
         return page.locator(f'.yard-app-dock [data-launch="{app}"]')
 
     compact = page.locator('#yard-dj-compact')
+    restore = page.locator('.yard-restore')
     assert compact.is_visible() and page.locator('#studio').is_hidden()
     assert page.locator('body').get_attribute('data-dj-mode') == 'compact'
+    assert 'OpenStreetMap' not in compact.locator('.compact-titlebar').inner_text()
+    compact.get_by_role('button', name='Сведения о дворе и источники карты').click()
+    assert page.locator('#yard-map-sources a[href*="openstreetmap.org/copyright"]').is_visible()
+    page.keyboard.press('Escape')
     if not touch:
         compact.locator('.compact-sound').click()
         page.locator('#midi-open').click()
@@ -52,7 +57,11 @@ def check(browser, url, width, height, touch):
     assert page.locator('#studio').is_hidden()
     for selector in ('.room-toolbar', '.room-colophon', '#logo-wrap', '.room-resident'):
         assert page.locator(selector).first.is_hidden(), selector
-    assert page.locator('[data-yard-layer]').is_visible() and launch('engrus').is_visible()
+    assert page.locator('[data-yard-layer]').is_visible() and launch('engrus').is_hidden()
+    assert page.locator('.yard-system-panel').is_hidden() and page.locator('.yard-app-dock').is_hidden()
+    assert restore.get_attribute('aria-label') == 'Развернуть DJ-пульт'
+    rect = restore.bounding_box()
+    assert rect and rect['width'] > 2 * rect['height'] and rect['y'] > height - 76, rect
     if not touch:
         page.wait_for_function('t => DJEngine.snapshot().A.time > t + .1', arg=position)
         assert page.evaluate('DJEngine.snapshot().B.playing')
@@ -60,12 +69,17 @@ def check(browser, url, width, height, touch):
     page.keyboard.press('ArrowLeft')
     assert page.evaluate('DJEngine.snapshot().A.playing') is (not touch)
     assert page.evaluate('DJEngine.snapshot().cross === .4')
+    page.clock.fast_forward(21000)
+    assert restore.is_visible()
+    restore.press('Enter')
+    assert compact.is_visible()
+    action('dj', 'close').click()
     launch('engrus').click()
     assert page.locator('#yard-engrus-window').is_visible() and page.locator('.engrus-english').inner_text()
     page.locator('.engrus-next').click()
     count = page.locator('.engrus-count').inner_text()
     action('engrus', 'minimize').click()
-    launch('engrus').click()
+    restore.click()
     assert page.locator('.engrus-count').inner_text() == count
     action('engrus', 'close').click()
     assert launch('engrus').get_attribute('data-running') == 'false'
@@ -73,7 +87,7 @@ def check(browser, url, width, height, touch):
     assert compact.is_visible()
     compact.locator('[data-dj-mode=full]').click()
     action('dj', 'minimize').click()
-    launch('dj').click()
+    restore.click()
     assert page.locator('#studio').is_visible()
     assert page.evaluate('window.desktopSmokePage && DJEngine.snapshot().A.tempo === 2 && DJEngine.snapshot().cross === .4')
     if not touch:
@@ -118,4 +132,5 @@ if __name__ == '__main__':
         check(browser, url, 1440, 900, False)
         check(browser, url, 390, 844, True)
         check(browser, url, 320, 640, True)
+        check(browser, url, 844, 390, True)
         browser.close()

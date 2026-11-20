@@ -1,4 +1,5 @@
 import { isWalkable } from './navigation.js';
+import { createCrowVisits } from './crow-visits.js';
 
 const count = 13;
 const chest = 0.20;
@@ -10,7 +11,7 @@ const distance = (a, b) => Math.hypot(b.x - a.x, b.z - a.z);
 
 // One social simulation for the first-person bird and its twelve neighbours.
 // The ordinary birds persist when they split off. No bird is spawned at a reunion.
-export function createCrowFlock(layout, openingView, { random = Math.random } = {}) {
+export function createCrowFlock(layout, openingView, { random = Math.random, residentVisits = false } = {}) {
   const range = (a, b) => a + (b - a) * random();
   const integer = (a, b) => Math.min(b, Math.floor(range(a, b + 1)));
   const birds = [];
@@ -65,6 +66,8 @@ export function createCrowFlock(layout, openingView, { random = Math.random } = 
       roamX: destination.x, roamZ: destination.z, roamAt: range(2.8, 6), cruise: 0,
       slotX: perch.x, slotZ: perch.z, formationSide: 0, formationForward: 0});
   }
+
+  const visits = residentVisits ? createCrowVisits(layout, birds, clearGround, random) : null;
 
   function shuffle(list) {
     for (let i = list.length - 1; i > 0; i--) {
@@ -263,7 +266,18 @@ export function createCrowFlock(layout, openingView, { random = Math.random } = 
     let assembled = 1;
     for (let i = 1; i < count; i++) {
       const b = birds[i];
-      if (!b.called) {
+      const perch = visits?.perches.get(b.id);
+      if (perch) {
+        if (visits.state.phase === 'sitting') {
+          // A settled guest stays put. Passing neighbours still steer around it.
+          b.vx = b.vz = b.vy = b.speed = b.airborne = b.bank = 0;
+          b.y += (chest - b.y) * Math.min(1, dt * 5);
+        } else steer(b, perch.x, chest, perch.z, dt, false);
+        if (b.called) b.inParty = b.y < .83 && Math.hypot(b.x - b.slotX, b.z - b.slotZ) < 1.75;
+        if (b.mode === 'perch') {
+          b.yaw += clamp(angleDelta(b.yaw, bearing(b, visits.state)), -1.6*dt, 1.6*dt);
+        }
+      } else if (!b.called) {
         if (time >= b.roamAt) chooseForage(b);
         steer(b, b.roamX, chest, b.roamZ, dt, false);
       } else if (gathering || (state.phase === 'landing' && leader.y < 3.2)) {
@@ -279,7 +293,12 @@ export function createCrowFlock(layout, openingView, { random = Math.random } = 
     if (gathering && assembled === state.targetSize && state.phase !== 'ready') {
       state.phase = 'ready'; readySince = time; state.searchYaw = null;
     } else if (gathering && assembled < state.targetSize) state.phase = 'gather';
+    if (visits) {
+      visits.update(dt, time, state, heading);
+      if (visits.state.kind) state.searchYaw = bearing(leader, visits.state);
+    }
   }
 
-  return {birds, state, update, canTakeOff: () => state.phase === 'ready' && time - readySince >= .7};
+  return {birds, state, visit:visits?.state, update,
+    canTakeOff: () => state.phase === 'ready' && !visits?.holdLeader() && time - readySince >= .7};
 }

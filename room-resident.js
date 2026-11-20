@@ -38,6 +38,18 @@
     return canvas;
   };
   window.inteonRoom = Object.freeze({
+    canVisitCourtyard() {
+      return !cinematic && !reduced.matches && !document.hidden && performance.now() >= reactionUntil
+        && !document.body.classList.contains('is-interlude');
+    },
+    setInCourtyard(active) {
+      if (inCourtyard === active) return;
+      if (active && !resident.hidden && resident.getClientRects().length) returnSpot = center();
+      inCourtyard = active;
+      resident.toggleAttribute('data-in-courtyard', active);
+      if (active) hide();
+      sync();
+    },
     drawMist(ctx, width, height, now, energy = 0) {
       mist ||= createMist();
       const dt = Math.min(80, mistLast ? now-mistLast : 0); mistLast=now;
@@ -75,6 +87,7 @@
   let reactionUntil = 0;
   let blocked = false, lastPointerWork = 0, lastEncounter = -60000;
   let cinematic = false;
+  let inCourtyard = false, returnSpot = null;
   let encounter = 0, hoverArmed = true, ignoreUntil = 0, chaseUntil = 0;
   const music = window.DJEngine?.visuals || document.getElementById("album-player");
   const musicPlaying = () => music && !music.paused && !music.ended;
@@ -391,12 +404,13 @@
   const sync = () => {
     armMidnight();
     if (cinematic) return;
-    const hidden = document.hidden || (!compactPlayerVisible() && !anchor.getBoundingClientRect().width)
+    const hidden = inCourtyard || document.hidden || (!compactPlayerVisible() && !anchor.getBoundingClientRect().width)
       || document.body.classList.contains('is-interlude');
     suspend(); chaseUntil=0; encounter=0; hoverArmed=true; resident.dataset.behavior="independent"; blocked = hidden; resident.hidden = hidden;
     if (hidden) return;
     refreshObstacles();
-    const startingPoint = nearestFree(home());
+    const startingPoint = nearestFree(returnSpot || home());
+    returnSpot = null;
     if (startingPoint) resident.style.transform = position(startingPoint);
     resident.hidden = !startingPoint;
     if (performance.now() < reactionUntil) {

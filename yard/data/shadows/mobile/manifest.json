@@ -439,7 +439,7 @@
     }
   ],
   "sourceHashes": {
-    "yard/ambient-scene.js": "a87c0648e3ffffae6b5d143d2eafa429adf2cc9390a9928b0273a2e47d1ba336",
+    "yard/ambient-scene.js": "8d16eecd587b26df7a6960357d36e9a8e9ef9c875f8cc833f4088445e9a1ab3f",
     "yard/auto-walk.js": "5d856e878c1535d6098e471330713f83ce6602e1315e51647f7ff0782d6aaccd",
     "yard/baked-lighting.js": "ef10f5f932da370dda697ab00e1f86075fa5ff4723777990dd19ec1720d10a6b",
     "yard/camera-optics.js": "5ee0eba6f728d241843651dff894cdd5d679f9b0977a0a53769894d8e1de4c7a",
@@ -448,8 +448,9 @@
     "yard/courtyard-details.js": "141072eeddae38c735cad8a51ec1b1513133f3099699a2d72c01f8546e82f0ca",
     "yard/courtyard-furniture.js": "88a48efc506892439745b3a4ffc0d6ff7e332774e61c07add414c2f7b2798951",
     "yard/courtyard-weather.js": "098970cc3f5aab3f3eb90cffa5daa8f2dbe475a1d078139de117d22527964249",
-    "yard/crow-flock.js": "f3145ac839d025d1f5af22ed7afb723b3f0d5fb8a359756787d3148b3ef5df4f",
+    "yard/crow-flock.js": "a534ddb2051e64f4a946f62ae12276835c6c18e300cd09b6a3392a6513726b01",
     "yard/crow-models.js": "c4da874fdbf6131d682733ce91ceaf7386ca30815304f1b697e11c3c1f4f3d83",
+    "yard/crow-visits.js": "01c46d8bc3f3e6cbde8bdc078912f56734f55d2d85f1a8946a2ea187dd67ae19",
     "yard/debug-pose.js": "f58b52de2f493b31e53d7c5fa63e6f29c65fd9881d96f51cef2c13d18dce805a",
     "yard/digital-boundary.js": "7bb89a6d9cb3ee1666fd63cc9d60ddab3266b3c1e91dc90c5bda9b3e6b35d0a6",
     "yard/entrance-lighting.js": "76992d5d7477821d9cf2a0cb49f984cd74a3ce55656ad0f103508accdea49456",
@@ -464,6 +465,7 @@
     "yard/materials.js": "38339d613c326dbee6145441527044a6f742b329e243c9037bc4fa96876820e6",
     "yard/models.js": "2eca95fdd6f4c7c51a7920951ad9450e25328ad81a73646d259fe2b2374dbaab",
     "yard/puddles.js": "8ce3c2afb9859a0ab6607809e07369295cd2a0f94e7d4c146b1d60b15a033af3",
+    "yard/resident-model.js": "c50258edfe66924eaddee538b4255587c7e056f76987102e29620b55ed9c9f57",
     "yard/road-details.js": "2938d875b6c2b7265eca0c0ebcaa0f16e490f43b5a51c6e1da2a2ac52c813103",
     "yard/scene.js": "3c0b5267ae4c071c470e0d18b1bd710f0fb692f93dbd555435b8395992c918a4",
     "yard/shadow-atlas.js": "5695f54f34e5bbcee954fcf0f6f37d276482e47d6dfcb7b366a9b140ed3634d8",

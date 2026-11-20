@@ -63,6 +63,8 @@ $syncArgs = @(
   "--include", "home-effects.js",
   "--include", "alternate-logo.css",
   "--include", "alternate-logo.js",
+  "--include", "courtyard-wordmark.css",
+  "--include", "courtyard-wordmark.js",
   "--include", "responsive-ui.css",
   "--include", "graphics-quality.js",
 

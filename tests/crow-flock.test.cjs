@@ -2,12 +2,12 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const layout = require('../yard/data/site-layout.json');
 
-async function createRoute(seed, aspect = 390 / 844) {
+async function createRoute(seed, aspect = 390 / 844, residentVisits = false) {
   const {createAutoWalk, ambientOpeningView} = await import('../yard/auto-walk.js');
   const {createCrowFlock} = await import('../yard/crow-flock.js');
   const random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
   const openingView = ambientOpeningView(layout, aspect);
-  const flock = createCrowFlock(layout, openingView, {random});
+  const flock = createCrowFlock(layout, openingView, {random, residentVisits});
   const walk = createAutoWalk(layout, {openingView, random, flock});
   return {walk, flock};
 }
@@ -90,6 +90,79 @@ test('flock decisions and poses agree at different display frame rates', async (
   }
   assert.deepEqual(a.flock.state, b.flock.state);
   assert.deepEqual(a.flock.birds, b.flock.birds);
+});
+
+test('the resident and existing crows take turns visiting a real perch, sit, then release the flock', async () => {
+  const {isWalkable, pointInRing} = await import('../yard/navigation.js');
+  const {walk, flock} = await createRoute(7, 390 / 844, true);
+  const {visit, birds, state} = flock, roster = [...birds];
+  const completed = [];
+  let previous = 'idle', origin, approach, sitting = 0, mission = 0;
+  for (let tick = 0; tick < 6000; tick++) {
+    walk.update(.1);
+    const partners = visit.birds.map(id => birds[id]);
+    assert.equal(birds.length, 13);
+    assert.ok(birds.every((b,i) => b === roster[i]));
+    assert.equal(visit.y, 0);
+    assert.ok(visit.amount >= 0 && visit.amount <= 1);
+    if (visit.phase !== 'idle') {
+      assert.ok(pointInRing(visit.x, visit.z, layout.walkable) && isWalkable(layout,visit.x,visit.z,.16));
+      assert.equal(new Set(visit.birds).size, partners.length);
+      assert.ok(partners.length > 0 && partners.every(b => b.id > 0));
+      assert.equal(flock.canTakeOff(), false);
+    }
+    if (visit.phase === 'approach' && previous === 'idle') {
+      approach = new Map(partners.map(b => [b.id,{x:b.x,z:b.z}]));
+      origin = {x:visit.x,z:visit.z};
+      sitting = 0;
+    }
+    if (visit.phase === 'sitting') {
+      const travel = Math.hypot(visit.x-origin.x, visit.z-origin.z);
+      const facing = Math.atan2(birds[0].x-visit.x,birds[0].z-visit.z);
+      assert.ok(Math.cos(visit.yaw-facing) > .78,'the camera crow sees the resident during its glance');
+      assert.equal(visit.amount, 1);
+      if (visit.kind === 'resident') {
+        assert.ok(travel > 1.3);
+        assert.ok(partners.every(b => Math.hypot(b.x-approach.get(b.id).x,b.z-approach.get(b.id).z)<.36));
+      } else {
+        assert.ok(travel < .001);
+        assert.ok(partners.every(b => Math.hypot(b.x-approach.get(b.id).x,b.z-approach.get(b.id).z)>2));
+      }
+      for (const b of partners) {
+        assert.equal(b.mode,'perch');
+        const gap = Math.hypot(b.x-visit.x,b.z-visit.z);
+        assert.ok(gap > .35 && gap < 1.3);
+      }
+      sitting += .1;
+    }
+    if (visit.phase === 'leaving' && previous === 'sitting') {
+      assert.ok(sitting >= 5.9 && sitting <= 10.1);
+      completed.push(visit.kind);
+      mission = state.missionCount;
+    }
+    if (completed.length >= 2 && state.missionCount > mission) break;
+    previous = visit.phase;
+  }
+  assert.deepEqual(completed,['resident','crows']);
+  assert.ok(state.missionCount > mission);
+  assert.equal(visit.phase,'idle');
+  assert.equal(visit.amount,0);
+  assert.equal(visit.kind,null);
+});
+
+test('losing a rendezvous site releases the visitor hold within five seconds', async () => {
+  const {createCrowVisits} = await import('../yard/crow-visits.js');
+  const birds = [{id:0,x:0,y:.42,z:0,mode:'walk',speed:1}];
+  const visits = createCrowVisits(layout, birds, () => false, () => .5);
+  const flock = {phase:'ready',landingCount:1};
+  visits.update(.1,1,flock,0);
+  assert.ok(visits.holdLeader());
+  flock.phase = 'gather';
+  visits.update(.1,6.1,flock,0);
+  assert.equal(visits.holdLeader(),false);
+  flock.phase = 'ready';
+  visits.update(.1,7,flock,0);
+  assert.equal(visits.holdLeader(),false);
 });
 
 test('a flying leader can lose its entire party, then bring all twelve neighbours on another mission', async () => {

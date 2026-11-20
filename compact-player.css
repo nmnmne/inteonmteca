@@ -28,7 +28,7 @@
   display: inline-grid; place-items: center; min-height: 32px; margin: 0; padding: 3px 5px;
   border: 0; background: transparent; color: #ede7e1; cursor: pointer;
 }
-.compact-titlebar .compact-credit { font: 500 10px/1 "Segoe UI",sans-serif; }
+.compact-titlebar .compact-credit { min-width: 32px; font: 500 16px/1 "Segoe UI",sans-serif; }
 .compact-titlebar .compact-sound { width: 32px; }
 .compact-display {
   inset: auto 0 max(12px,env(safe-area-inset-bottom)) 0; margin: 0 auto;

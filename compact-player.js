@@ -33,7 +33,7 @@
     <header class="compact-titlebar" data-resident-obstacle>
       <img class="compact-brand" src="assets/logo-wordmark.svg" alt="inteonmteca — DJ-пульт">
       <time data-yard-clock></time>
-      <button type="button" class="compact-credit" popovertarget="yard-map-sources" aria-label="Источники карты двора">© OpenStreetMap</button>
+      <button type="button" class="compact-credit" popovertarget="yard-map-sources" aria-label="Сведения о дворе и источники карты" title="Сведения о дворе">ⓘ</button>
       <button type="button" class="compact-sound" aria-label="Настройки звука" title="Настройки звука">${icon('sound')}</button>
       <div data-dj-window-tools></div>
     </header>
