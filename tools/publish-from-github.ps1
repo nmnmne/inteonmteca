@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
-if ($env:GITHUB_EVENT_NAME -ne 'workflow_dispatch' -or $env:GITHUB_REF -ne 'refs/heads/main' -or !$env:SITE_RELEASE_ACCOUNT) {
-  throw 'This publisher must run from main using the manual GitHub workflow.'
+if ($env:GITHUB_EVENT_NAME -notin @('push', 'workflow_dispatch') -or $env:GITHUB_REF -ne 'refs/heads/main' -or !$env:SITE_RELEASE_ACCOUNT) {
+  throw 'This publisher requires a push to main or a manual release from main and a configured release account.'
 }
 $current = Invoke-RestMethod "https://api.github.com/repos/$env:GITHUB_REPOSITORY/git/ref/heads/main" -Headers @{Authorization="Bearer $env:GH_TOKEN"}
 if ($current.object.sha -ne $env:GITHUB_SHA) { throw 'Main has changed. Start a new release for the current commit.' }
