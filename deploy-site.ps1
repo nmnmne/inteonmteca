@@ -50,7 +50,8 @@ if (-not $python -or -not (Test-Path -LiteralPath $libraryPreparer)) {
   throw "Python and tools\prepare_dj_library.py are required to prepare the music library."
 }
 if ($WebOnly) {
-  $catalogOptions = if ($env:GITHUB_ACTIONS -eq 'true') { @('--live') } else { @() }
+  $catalogOptions = @()
+  if ($env:GITHUB_ACTIONS -eq 'true') { $catalogOptions += '--live' }
   & $python.Source (Join-Path $root "tools/check-published-audio.py") @catalogOptions
   if ($LASTEXITCODE -ne 0) { throw "Published audio verification failed before upload." }
 } else {
