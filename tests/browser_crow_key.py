@@ -19,8 +19,7 @@ def check(browser, mobile):
         body="""export function createCrowStoryDeck() {
           return {next: () => ({opening:'knock',middle:['echo','lookout','relay'],ending:'gift'})};
         }"""))
-    fixed_courtyard_phase(page)
-    page.add_init_script("Date.now = () => Date.parse('2026-06-21T06:04:00Z') + performance.now()")
+    fixed_courtyard_phase(page, "2026-06-21T11:04:00")
     page.goto(BASE+"/",wait_until="domcontentloaded")
     page.wait_for_function("window.crowQA && document.body.dataset.yardBackdrop==='live'",timeout=60000)
     page.evaluate(OBSERVE)
