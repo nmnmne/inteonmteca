@@ -1,4 +1,5 @@
 import * as THREE from './vendor/three.module.js';
+import { CROW_WALL_CONTACT_M } from './crow-wall-contact.js';
 
 const count = 12; // The thirteenth bird carries the camera.
 const clamp = (n, low, high) => Math.max(low, Math.min(high, n));
@@ -186,7 +187,66 @@ void poseCrow(inout vec3 p, inout vec3 n){
 }
 `;
 
-export function createCrowModels() {
+function addWallContactShader(shader, wallContact, clock) {
+  shader.uniforms.crowEdges = {value:wallContact.edges};
+  shader.uniforms.crowHouses = {value:wallContact.buildings};
+  shader.uniforms.crowContactTime = clock;
+  const varyings = `flat varying vec2 crowHouseIds;
+    varying vec3 crowWorld;
+    varying vec2 featherPanel;
+  `;
+  shader.vertexShader = 'attribute vec2 crowWallIds;\n'+varyings+shader.vertexShader.replace(
+    '#include <project_vertex>', `#include <project_vertex>
+    crowHouseIds = crowWallIds;
+    crowWorld = (modelMatrix * instanceMatrix * vec4(transformed,1.)).xyz;
+    featherPanel = position.xz + position.y * vec2(.43,.91);`);
+
+  shader.fragmentShader = varyings+`
+    uniform vec4 crowEdges[${wallContact.edges.length / 4}];
+    uniform vec4 crowHouses[${wallContact.buildings.length / 4}];
+    uniform float crowContactTime;
+    // Signed distance to the extruded footprint, including re-entrant corners and roof edges.
+    float distanceToHouse(float candidate) {
+      if (candidate == -2.) return -2.;
+      if (candidate < 0.) return 2.;
+      vec4 house = crowHouses[int(candidate)];
+      bool inside = false;
+      float nearestSq = 1e12;
+      for (int i=0; i<${wallContact.maxEdges}; i++) {
+        if (i >= int(house.y)) break;
+        vec4 edge = crowEdges[int(house.x)+i];
+        vec2 ab = edge.zw-edge.xy, ap = crowWorld.xz-edge.xy;
+        vec2 offset = ap-ab*clamp(dot(ap,ab)/max(dot(ab,ab),1e-10),0.,1.);
+        nearestSq = min(nearestSq, dot(offset,offset));
+        if ((edge.y > crowWorld.z) != (edge.w > crowWorld.z)) {
+          if ((ap.x*ab.y - ap.y*ab.x)*sign(ab.y) < 0.) inside = !inside;
+        }
+      }
+      vec2 d = vec2((inside ? -1. : 1.)*sqrt(nearestSq), max(house.z-crowWorld.y,crowWorld.y-house.w));
+      return length(max(d,0.)) + min(max(d.x,d.y),0.);
+    }
+    vec3 holographicFeathers(vec3 physical) {
+      if (all(equal(crowHouseIds,vec2(-1.)))) return physical;
+      float distanceM = min(distanceToHouse(crowHouseIds.x),distanceToHouse(crowHouseIds.y));
+      float depth = ${CROW_WALL_CONTACT_M} - distanceM;
+      float aa = clamp(fwidth(depth)*.65, .001, .009);
+      vec2 uv = featherPanel*vec2(10.,14.);
+      vec2 pixel = max(fwidth(uv),vec2(.002));
+      vec2 grid = 1.-smoothstep(vec2(.034),.034+pixel*.7,abs(fract(uv+.5)-.5));
+      grid *= 1.-smoothstep(vec2(.35),vec2(1.15),pixel);
+      vec3 panel = vec3(.016,.091,.14);
+      vec3 trace = mix(vec3(.07,.65,.61),vec3(.21,.30,.79),smoothstep(-.18,.26,featherPanel.y));
+      float packet = abs(fract(dot(featherPanel,vec2(1.85,1.2)) - crowContactTime*.36) - .5);
+      trace = mix(trace,vec3(.48,.96,.87),.42*(1.-smoothstep(.015,.16,packet)));
+      vec3 hologram = mix(panel,trace,max(grid.x,grid.y));
+      float seam = 1.-smoothstep(.008,.012+aa,depth);
+      return mix(physical,mix(hologram,vec3(.66,1.30,1.12),seam),smoothstep(0.,aa,depth));
+    }
+    `+shader.fragmentShader.replace('#include <opaque_fragment>',
+      'outgoingLight = holographicFeathers(outgoingLight);\n#include <opaque_fragment>');
+}
+
+export function createCrowModels(wallContact = null) {
   const group=new THREE.Group();
   group.name='crow-flock';
   const geometry=plumageGeometry();
@@ -194,6 +254,11 @@ export function createCrowModels() {
   const strides=new THREE.InstancedBufferAttribute(new Float32Array(3*count),3).setUsage(THREE.DynamicDrawUsage);
   geometry.setAttribute('crowMotion',motions);
   geometry.setAttribute('crowStride',strides);
+  const wallIds = wallContact?.buildings.length
+    ? new THREE.InstancedBufferAttribute(new Float32Array(2*count).fill(-1),2).setUsage(THREE.DynamicDrawUsage)
+    : null;
+  if (wallIds) geometry.setAttribute('crowWallIds',wallIds);
+  const contactClock = {value:0};
   const lowLight={value:new THREE.Vector2()};
   const plumage=new THREE.MeshPhongMaterial({vertexColors:true,side:THREE.DoubleSide,shininess:16,specular:0x29343c});
   plumage.onBeforeCompile=shader=>{
@@ -212,7 +277,11 @@ export function createCrowModels() {
         vec3 moon = vec3(.62,.80,1.05)*(.31+1.44*sheen)*crowLowLight.x;
         vec3 virtualSky = vec3(.67,1.60,1.82)*(.38+2.70*sheen)*crowLowLight.y;
         totalEmissiveRadiance += vColor.rgb*(vec3(.14)+moon+virtualSky);`);
+    if (wallIds) addWallContactShader(shader,wallContact,contactClock);
   };
+  plumage.customProgramCacheKey = () => wallIds
+    ? 'crow-wall-'+wallContact.edges.length+'-'+wallContact.buildings.length+'-'+wallContact.maxEdges
+    : 'crow-plumage';
   const birds=new THREE.InstancedMesh(geometry,plumage,count);
   birds.name='crow-plumage';
   birds.receiveShadow=true;
@@ -257,6 +326,7 @@ export function createCrowModels() {
       strides.setXYZ(i,gait,glance+(prank?.glance || 0),prank?.dip || 0);
       const height=bird.y+(prank?.hop || 0);
       transform.position.set(bird.x,height+Math.abs(gait)*.012*(1-air),bird.z);
+      if (wallIds) wallContact.resolve(bird.x,transform.position.y,bird.z,wallIds.array,2*i);
       transform.rotation.set(.015*Math.sin(bird.wingPhase)*air,-bird.yaw,bird.bank,'YXZ');
       transform.scale.setScalar(.97+.06*((i*7)%11)/10);
       transform.updateMatrix(); birds.setMatrixAt(i,transform.matrix);
@@ -268,6 +338,10 @@ export function createCrowModels() {
     }
     initialized=true;
     motions.needsUpdate=strides.needsUpdate=birds.instanceMatrix.needsUpdate=shadows.instanceMatrix.needsUpdate=true;
+    if (wallIds) {
+      wallIds.needsUpdate=true;
+      contactClock.value = (contactClock.value+Math.max(0,dt))%1000;
+    }
     const dusk=1-clamp(daylight,0,1), wire=clamp(digital,0,1);
     lowLight.value.set(dusk,wire);
     shadowsMaterial.uniforms.strength.value=(.15+.19*(1-dusk))*(1-wire);

@@ -33,7 +33,7 @@
     slot = null;
     stage.hidden = true;
     delete document.body.dataset.courtyardWordmark;
-    schedule(pause(76000, 128000));
+    schedule(pause(32000, 58000));
   }
   function present() {
     const active = effects?.active;
@@ -42,7 +42,7 @@
       || document.body.dataset.yardWindow === 'engrus'
       || document.querySelector('dialog[open], [popover]:popover-open, .room-resident[data-in-courtyard]')
       || (active && !['alternate-logo','recursion','mobile-scatter'].includes(active))) {
-      schedule(pause(8000,15000));
+      schedule(pause(5000, 9000));
       return;
     }
     slot = document.createComment('wordmark home');
@@ -76,7 +76,7 @@
     if (resident.hasAttribute('data-in-courtyard')) restore();
   }).observe(resident,{attributes:true,attributeFilter:['data-in-courtyard']});
   function stop() { restore(); clearTimeout(next); next = 0; }
-  function resume() { stop(); schedule(pause(26000,43000)); }
+  function resume() { stop(); schedule(pause(14000, 24000)); }
   if (shell) new MutationObserver(() => {
     if (courtyardOnly()) stop();
     else if (!next) resume();

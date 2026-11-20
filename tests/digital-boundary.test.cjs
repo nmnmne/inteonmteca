@@ -40,16 +40,21 @@ test('a backdrop walk reveals the digital yard through both facades and restores
  };
  const current = getSurfaceMix('house-46-1'), other = getSurfaceMix('house-26');
  const [a,b,c,d] = layout.buildings.find(house => house.id==='house-46-1').footprint;
- const middle = (p,q) => [(p[0]+q[0])/2, (p[1]+q[1])/2];
- const entry = middle(a,b), exit = middle(c,d);
+ // The physical facade planes sit 2 cm to the left of the mapped edges.
+ const wallCentre = (p,q) => {
+   const dx=q[0]-p[0], dz=q[1]-p[1], length=Math.hypot(dx,dz);
+   return [(p[0]+q[0])/2-.02*dz/length,(p[1]+q[1])/2+.02*dx/length];
+ };
+ const entry = wallCentre(a,b), exit = wallCentre(c,d);
  const dx = exit[0]-entry[0], dz = exit[1]-entry[1], width = Math.hypot(dx,dz);
  const walkTo = metres => {
    effect.update(entry[0]+metres*dx/width, entry[1]+metres*dz/width);
    return scene.userData.virtuality;
  };
  assert.equal(walkTo(-2),0);
- assert.ok(walkTo(-.6)>0 && scene.userData.virtuality<1);
- for (const metre of [0, width/2, width]) {
+ assert.equal(walkTo(-.11),0);
+ assert.ok(walkTo(-.05)>0 && scene.userData.virtuality<1);
+ for (const metre of [.001, width/2, width-.001]) {
    assert.equal(walkTo(metre),1);
    assert.equal(detail.visible,false);
    assert.equal(proxies.visible,true);
@@ -57,7 +62,8 @@ test('a backdrop walk reveals the digital yard through both facades and restores
    assert.equal(other.value,1);
    assert.ok(scene.getObjectByName('digital-ground').material.opacity>0);
  }
- assert.ok(walkTo(width+.6)>0 && scene.userData.virtuality<1);
+ assert.ok(walkTo(width+.05)>0 && scene.userData.virtuality<1);
+ assert.equal(walkTo(width+.11),0);
  assert.equal(walkTo(width+2),0);
  assert.equal(proxies.visible,false);
  assert.equal(detail.visible,true);
@@ -187,6 +193,10 @@ test('a flight above a roof does not trigger a facade crossing', async () => {
   const z = b.footprint.reduce((sum,p) => sum+p[1],0) / b.footprint.length;
   effect.update(x,z,b.heightM+3);
   assert.equal(scene.userData.virtuality,0);
+ effect.update(x,z,b.heightM+.16);
+ assert.equal(scene.userData.virtuality,0);
+ effect.update(x,z,b.heightM+.10);
+ assert.ok(Math.abs(scene.userData.virtuality-.5)<.001);
   effect.update(x,z,b.heightM-0.5);
   assert.equal(scene.userData.virtuality,1);
 });

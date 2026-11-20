@@ -1,6 +1,7 @@
 import * as THREE from './vendor/three.module.js';
 import { pointInRing, distanceToSegment } from './navigation.js';
 import { createCityHologram } from './city-hologram.js';
+import { createCrowWallContact, CROW_WALL_CONTACT_M } from './crow-wall-contact.js';
 const smooth = (x,a,b) => THREE.MathUtils.smootherstep(x,a,b);
 const signedDistance = (x,z,ring) => {
   let nearest = Infinity;
@@ -10,9 +11,6 @@ const signedDistance = (x,z,ring) => {
   }
   return pointInRing(x,z,ring) ? -nearest : nearest;
 };
-// Fade within a stride of the facade so the camera can see through it before
-// its near plane clips the wall. Concave courtyards stay in their normal state.
-const facadeFadeM = 1;
 function animateWire(material, clock) {
   material.onBeforeCompile = shader => {
     shader.uniforms.wireSeconds = clock;
@@ -32,12 +30,6 @@ function animateWire(material, clock) {
   };
   material.customProgramCacheKey = () => 'city-wire-pulses-1';
 }
-function facadeCrossing(x, z, house) {
-  const {min, max} = house.bounds;
-  if (x < min.x - facadeFadeM || x > max.x + facadeFadeM ||
-      z < min.z - facadeFadeM || z > max.z + facadeFadeM) return 0;
-  return 1 - smooth(signedDistance(x,z,house.footprint), .1, facadeFadeM);
-}
 export function virtualAmount(layout,x,z,edge=signedDistance(x,z,layout.walkable)) {
   const config=layout.virtualBoundary, ring=config?.noticeableRing || layout.walkable;
   const d=ring===layout.walkable ? edge : signedDistance(x,z,ring);
@@ -48,6 +40,8 @@ export function virtualAmount(layout,x,z,edge=signedDistance(x,z,layout.walkable
 export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{ passThroughBuildings = false } = {}) {
   const cx=39,cz=-2.5, span=700, outerDomeScale=1.65;
   const city = createCityHologram(scene, layout.walkable);
+  const wallContact = passThroughBuildings ? createCrowWallContact(layout) : null;
+  let facadeDistance = Infinity;
   const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
   const clock = {value:0};
   let animated = false;
@@ -81,8 +75,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
     const material=new THREE.MeshBasicMaterial({color:0x345e65,fog:false,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});
     const surfaceMix={value:0};
     patch(material,surfaceMix,true);
-    geometry.computeBoundingBox();
-    proxies.push({footprint:b.footprint, bounds:geometry.boundingBox, surfaceMix, crossing:0});
+    proxies.push({surfaceMix, crossing:0});
     const mesh=new THREE.Mesh(geometry,material);mesh.name=`digital-${b.id}`;mesh.userData.digitalProxy=true;mesh.userData.bakedShadowCaster=false;low.add(mesh);
     const lines=new THREE.LineSegments(new THREE.EdgesGeometry(geometry,20),new THREE.LineBasicMaterial({color:0x9ff7df,transparent:true,opacity:0,fog:false}));lines.userData.bakedShadowCaster=false;low.add(lines);
     animateWire(lines.material, clock);
@@ -104,6 +97,8 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
   }
   let previous=-1;
   return {
+    wallContact,
+    get facadeDistance() { return facadeDistance; },
     setSky(skyColor, fogColor) {
       baseSky.set(skyColor);
       baseFog.set(fogColor);
@@ -148,9 +143,13 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
       }
       behindCity = sparse;
       let amount=Math.max(borderAmount,backstage);
-      if (passThroughBuildings) {
-        for (const house of proxies) {
-          house.crossing = facadeCrossing(x,z,house) * (1 - smooth(y,house.bounds.max.y,house.bounds.max.y+1));
+      if (wallContact) {
+        facadeDistance = Infinity;
+        for (let i=0; i<proxies.length; i++) {
+          const house = proxies[i];
+          const distance = wallContact.distanceToHouse(i,x,y,z,.20);
+          facadeDistance = Math.min(facadeDistance,distance);
+          house.crossing = 1 - smooth(distance,0,CROW_WALL_CONTACT_M);
           amount = Math.max(amount, house.crossing);
         }
       }

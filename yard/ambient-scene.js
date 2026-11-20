@@ -120,13 +120,16 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
         lastDraw = now;
         nextDraw = now + frameMs - (nextDraw ? (now - nextDraw) % frameMs : 0);
         const pose = walk.update(dt);
-        if (camera.fov !== pose.fov) {
-          camera.fov = pose.fov;
-          camera.updateProjectionMatrix();
-        }
         camera.position.set(pose.x, reducedMotion.matches ? pose.y - pose.eyeOffset : pose.y, pose.z);
         camera.rotation.set(pose.pitch, -pose.yaw, reducedMotion.matches ? 0 : pose.roll, 'YXZ');
         yard.edgeEffect.update(pose.x, pose.z, camera.position.y, now / 1000);
+        // Keep the facade in view through the last ten centimetres of the crossing.
+        const near = Math.abs(yard.edgeEffect.facadeDistance) < .20 ? .025 : .1;
+        if (camera.fov !== pose.fov || camera.near !== near) {
+          camera.fov = pose.fov;
+          camera.near = near;
+          camera.updateProjectionMatrix();
+        }
         solar.update(Date.now(), camera);
         crowModels.update(flock.birds, dt, yard.scene.userData.virtuality, yard.scene.userData.solarLighting.daylight);
         if (residentModel) {
@@ -181,7 +184,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     });
     solar = createSolarLighting(renderer, yard, layout, {sampleSun:courtyardSunForLocation});
     solar.update(Date.now(), camera);
-    crowModels = createCrowModels();
+    crowModels = createCrowModels(yard.edgeEffect.wallContact);
     crowModels.group.userData.visibleInBackstage = true;
     yard.scene.add(crowModels.group);
     if (residentVisits) {
