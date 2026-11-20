@@ -75,12 +75,12 @@ test('one gesture starts ambience, music gets beat-aligned crow replies, and hid
   const {context}=scene;
   const masterBus=nodes.find(n=>n.kind==='gain' && n.outputs.includes(context.destination));
   assert.equal(context.state,'running');
-  assert.equal(sources.filter(s=>s.loop).length,1);
+  assert.equal(sources.filter(s=>s.loop).length,2);
   assert.ok(sources[0].buffer.getChannelData(0).some(x=>x!==0));
   const initialVolume=masterBus.gain.value;
   document.dispatchEvent(new Event('keydown'));
-  assert.equal(sources.filter(s=>s.loop).length,1);
-  scene.step(2); assert.ok(sources.length>=2);
+  assert.equal(sources.filter(s=>s.loop).length,2);
+  scene.step(2); assert.ok(sources.some(s=>!s.loop));
   scene.setPlaying(true);
   for (const time of [17,32,47]) scene.step(time);
   assert.ok(masterBus.gain.value>0 && masterBus.gain.value<initialVolume);
@@ -95,8 +95,9 @@ test('one gesture starts ambience, music gets beat-aligned crow replies, and hid
   assert.equal(context.state,'suspended');
   document.hidden=false;document.dispatchEvent(new Event('visibilitychange'));await new Promise(setImmediate);
   assert.equal(context.state,'running');
-  assert.equal(sources.filter(s=>s.loop).length,1);
-  yard.dispose(); assert.equal(context.state,'closed'); assert.equal(scene.interval,null); assert.ok(sources[0].stopped);
+  assert.equal(sources.filter(s=>s.loop).length,2);
+  yard.dispose(); assert.equal(context.state,'closed'); assert.equal(scene.interval,null);
+  assert.ok(sources.filter(s=>s.loop).every(s=>s.stopped));
 });
 
 // Follow actual connections. Feedback may contain a cycle.
@@ -117,9 +118,13 @@ test('wind swells from lulls and only the wind feeds the echo and reverb returns
   await scene.start();
   const {nodes,context,music}=scene;
   const {destination}=context;
-  const air=scene.sources.find(node=>node.loop);
+  const air=scene.sources.find(node=>node.loop && node.outputs.some(n=>n.type==='bandpass'));
   const wind=air.outputs.find(node=>node.type==='bandpass');
-  const rain=air.outputs.find(node=>node.type==='highpass');
+  const rainfall=scene.sources.find(node=>node.loop && node!==air);
+  const rain=rainfall.outputs.find(node=>node.type==='highpass');
+  const grain=air.buffer.getChannelData(0), rainSamples=rainfall.buffer.getChannelData(0);
+  assert.equal(new Set(grain).size,16);
+  assert.ok(new Set(rainSamples.subarray(0,512)).size>480);
   const lowCut=wind.outputs.find(node=>node.type==='highpass');
   assert.ok(lowCut && lowCut.frequency.value>=300, 'all wind and its reflections lose the low end');
   const windGain=lowCut.outputs.find(node=>node.kind==='gain');
@@ -148,10 +153,14 @@ test('wind swells from lulls and only the wind feeds the echo and reverb returns
     assert.equal(reaches(music,fx) || reaches(fx,music),false, 'music stays on its own audio path');
   }
   const gain=[];
+  const frequencies=[];
   for (let t=0;t<=180;t+=.25) {
     scene.step(t);
     gain.push(windGain.gain.value);
+    frequencies.push(wind.frequency.value);
   }
+  assert.ok(frequencies.every(hz=>hz>500 && hz<2000));
+  assert.ok(Math.max(...frequencies)-Math.min(...frequencies)>300);
   const quiet=Math.min(...gain), gust=Math.max(...gain);
   assert.ok(gust>0 && quiet<gust*.25, 'calm wind recedes between gusts');
   assert.ok(gain.some((value,i)=>i>0 && value>quiet*1.2 && value<gust*.85 && value>gain[i-1]),

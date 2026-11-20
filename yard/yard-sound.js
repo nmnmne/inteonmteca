@@ -56,15 +56,24 @@ function makeAmbience(context) {
   bus.gain.value = 0;
   bus.connect(context.destination);
   const noise = context.createBuffer(2, 64000, 16000);
+  const grain = context.createBuffer(2, noise.length, noise.sampleRate);
   for (let side = 0; side < 2; side++) {
     const samples = noise.getChannelData(side);
     for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
+    // A four-bit sample-and-hold clock gives the wind its grain. Rain keeps the full-band noise.
+    const stepped = grain.getChannelData(side);
+    for (let i = 0; i < samples.length;) {
+      const hold = 3 + Math.floor((samples[(i+1) % samples.length] + 1) * 2);
+      const level = Math.round((samples[i] + 1) * 7.5) / 7.5 - 1;
+      stepped.fill(level, i, i + hold);
+      i += hold;
+    }
   }
-  const air = context.createBufferSource();
-  air.buffer = noise;
-  air.loop = true;
+  const air = context.createBufferSource(), rainfall = context.createBufferSource();
+  air.buffer = grain; rainfall.buffer = noise;
+  air.loop = rainfall.loop = true;
   const wind = context.createBiquadFilter(), rain = context.createBiquadFilter();
-  wind.type = 'bandpass'; wind.Q.value = .85;
+  wind.type = 'bandpass'; wind.Q.value = 1.4;
   const windLowCut = context.createBiquadFilter();
   windLowCut.type = 'highpass';
   windLowCut.frequency.value = 390;
@@ -73,9 +82,10 @@ function makeAmbience(context) {
   const windGain = context.createGain(), rainGain = context.createGain();
   windGain.gain.value = rainGain.gain.value = 0;
   air.connect(wind).connect(windLowCut).connect(windGain).connect(bus);
-  air.connect(rain).connect(rainGain).connect(bus);
+  rainfall.connect(rain).connect(rainGain).connect(bus);
   addWindReflections(context, windGain, bus);
   air.start();
+  rainfall.start();
   const calls = [0,1,2].map(i => makeCall(context, i));
   const reverse = context.createBuffer(1, calls[2].length, calls[2].sampleRate);
   reverse.getChannelData(0).set(calls[2].getChannelData(0));
@@ -109,8 +119,12 @@ function makeAmbience(context) {
     update(weather, master, playing, bass) {
       const t = context.currentTime, gust = windEnvelope(t);
       bus.gain.setTargetAtTime(master * (playing ? .48 : .95), t, .12);
-      wind.frequency.setTargetAtTime(410 + gust * (260 + weather.autumn * 330 + weather.spring * 170 + bass * 95), t, .28);
-      windGain.gain.setTargetAtTime(.005 + gust * (.046 + .03 * weather.autumn + .014 * weather.snow), t, .18);
+      // Sweep the resonance with cot(angle), staying clear of its poles even at a gust peak.
+      const angle = .85 - .48 * Math.cos(t * .79 + .32 * Math.sin(t * .37));
+      const cotangent = 1 / Math.tan(angle);
+      const sweep = 125 + gust * (230 + 90 * weather.autumn + 45 * weather.spring + bass * 45);
+      wind.frequency.setTargetAtTime(500 + sweep * cotangent, t, .16);
+      windGain.gain.setTargetAtTime(.0035 + gust * (.032 + .019 * weather.autumn + .01 * weather.snow), t, .18);
       rainGain.gain.setTargetAtTime(.001 + .035 * weather.rain + .004 * weather.summer, t, .5);
     },
     flockCall(index, pan, volume, delay, beat, magical) {
@@ -123,7 +137,7 @@ function makeAmbience(context) {
         call(clip, t + .42 + Math.random() * .17, .91, volume * .79, pan);
       }
     },
-    stop() { air.stop(); air.disconnect(); bus.disconnect(); },
+    stop() { air.stop(); rainfall.stop(); air.disconnect(); rainfall.disconnect(); bus.disconnect(); },
   };
 }
 
