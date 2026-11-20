@@ -21,9 +21,9 @@ export function createVisitClock(startEpochMs) {
   return {
     startEpochMs,
     startTimeMs:timeOfDay(startEpochMs - offset * minuteMs - firstLap),
-    // Gain forty civil minutes across the first rotation. If the device's
-    // time zone changes its UTC offset during that lap, meet the new clock.
-    firstAdvanceMs:dayMs + 2 * firstLap + (offset - syncOffset) * minuteMs,
+    // Travel backward to the device's civil time at the end of the first lap,
+    // including any daylight-saving transition between entry and that instant.
+    firstAdvanceMs:-dayMs + 2 * firstLap + (offset - syncOffset) * minuteMs,
   };
 }
 
@@ -32,7 +32,11 @@ function readVisit() {
     const visit = JSON.parse(window.sessionStorage.getItem(visitKey));
     if (visit && Number.isSafeInteger(visit.startEpochMs) &&
         Number.isInteger(visit.startTimeMs) && visit.startTimeMs >= 0 && visit.startTimeMs < dayMs &&
-        Number.isInteger(visit.firstAdvanceMs) && visit.firstAdvanceMs > 0 && visit.firstAdvanceMs < 3 * dayMs) return visit;
+        Number.isInteger(visit.firstAdvanceMs)) {
+      // Open tabs may still carry the previous forward rotation under this key.
+      if (visit.firstAdvanceMs > 0) visit.firstAdvanceMs -= 2 * dayMs;
+      if (visit.firstAdvanceMs < 0 && visit.firstAdvanceMs > -3 * dayMs) return visit;
+    }
   } catch { /* A document can run the clock without storage. */ }
   return null;
 }
@@ -52,23 +56,37 @@ if (typeof window !== 'undefined') {
   visitClock = createVisitClock(Date.now());
 }
 
-export function courtyardClockTime(epochMs, visit=visitClock) {
+function courtyardTimeline(epochMs, visit) {
   const elapsed = Math.max(0, epochMs - visit.startEpochMs);
   if (elapsed < firstLap) {
-    return timeOfDay(visit.startTimeMs + visit.firstAdvanceMs * (elapsed / firstLap));
+    return visit.startTimeMs + visit.firstAdvanceMs * (elapsed / firstLap);
   }
   // Once synchronized, whole rotations return to the same civil time.
   // Absolute elapsed time also accounts for time spent in a background tab.
-  let within = (elapsed - firstLap) % repeatMs;
+  const sinceSync = elapsed - firstLap;
+  let wholeLaps = Math.floor(sinceSync / repeatMs) * 3;
+  let within = sinceSync % repeatMs;
   let lap = secondLap;
   if (within >= secondLap + thirdLap) {
+    wholeLaps += 2;
     within -= secondLap + thirdLap;
     lap = firstLap;
   } else if (within >= secondLap) {
+    wholeLaps++;
     within -= secondLap;
     lap = thirdLap;
   }
-  return timeOfDay(visit.startTimeMs + visit.firstAdvanceMs + dayMs * (within / lap));
+  return visit.startTimeMs + visit.firstAdvanceMs - dayMs * (wholeLaps + within / lap);
+}
+
+export function courtyardClockTime(epochMs, visit=visitClock) {
+  return timeOfDay(courtyardTimeline(epochMs, visit));
+}
+
+// Shaders use seconds at the normal 20-minute rotation speed. Keep full laps
+// in this phase so ripples, clouds and rain never jump when midnight passes.
+export function courtyardEffectSeconds(epochMs, visit=visitClock) {
+  return courtyardTimeline(epochMs, visit) / (dayMs / firstLap * 1000);
 }
 
 function smooth(value, low, high) {

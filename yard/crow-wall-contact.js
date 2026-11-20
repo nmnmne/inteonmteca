@@ -51,17 +51,19 @@ export function createCrowWallContact(layout) {
     return Math.sqrt(nearestSq)*(inside ? -1 : 1);
   }
 
-  function distanceToHouse(id,x,y,z,maxDistance=Infinity) {
+  function distanceToHouse(id,x,y,z,maxDistance=Infinity,profile=null) {
     const box = bounds[id], meta = id*4;
     if (!box || x < box.minX-maxDistance || x > box.maxX+maxDistance ||
         z < box.minZ-maxDistance || z > box.maxZ+maxDistance) return Infinity;
     const deck = buildings[meta+3], rimTop = parapets[id*2+1];
     if (y > Math.max(deck,rimTop)+maxDistance || -y > maxDistance) return Infinity;
     const count = buildings[meta+1], horizontal = ringDistance(buildings[meta],count,x,z);
+    if (profile) { profile.horizontal=horizontal; profile.top=deck; }
     const floor = buildings[meta+2]-y;
     let d = extrusionDistance(horizontal,Math.max(floor,y-deck));
     if (rimTop && (y>deck || y-deck > Math.max(horizontal,floor))) {
       const inner = ringDistance(parapets[id*2],count,x,z);
+      if (profile && horizontal<=0 && inner>=0) profile.top=rimTop;
       d = Math.min(d,extrusionDistance(Math.max(horizontal,-inner), Math.max(floor,y-rimTop)));
     }
     return d > maxDistance ? Infinity : d;

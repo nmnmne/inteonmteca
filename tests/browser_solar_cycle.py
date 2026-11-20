@@ -100,11 +100,11 @@ def exercise(browser, mobile):
     page.on("request", lambda req: shadow_downloads.append(req.url) if "/data/shadows/" in req.url else None)
     page.route("**/yard/auto-walk.js*", expose_walker)
     # At the equinox the sun crosses the southern meridian near 08:42 UTC in Oral.
-    noon_at = MIDNIGHT + (8 * 60 + 42) * SOLAR_HOUR // 60
-    dawn_at = noon_at - 6 * SOLAR_HOUR
-    evening_at = noon_at + 6 * SOLAR_HOUR
-    night_at = noon_at + 12 * SOLAR_HOUR
-    morning_at = MIDNIGHT + 4 * SOLAR_HOUR
+    noon_at = MIDNIGHT + (24 * 60 - 8 * 60 - 42) * SOLAR_HOUR // 60
+    dawn_at = noon_at + 6 * SOLAR_HOUR
+    evening_at = noon_at - 6 * SOLAR_HOUR
+    night_at = noon_at - 12 * SOLAR_HOUR
+    morning_at = MIDNIGHT + (24 - 4) * SOLAR_HOUR
     page.add_init_script(f"window.qaTime={ENTRY}; Date.now = () => window.qaTime;")
     page.goto(BASE + "/#studio", wait_until="domcontentloaded")
     page.wait_for_selector('body[data-yard-backdrop="live"]', timeout=90000)
@@ -122,8 +122,8 @@ def exercise(browser, mobile):
     # position advances, while intervening frames reuse the previous depth map.
     moving = [capture(page, noon_at + step*125//2) for step in range(1, 33)]
     depth_passes = moving[-1]["updates"] - noon["updates"]
-    assert 1 <= depth_passes <= 16 and moving[-1]["x"] < noon["x"] - .007, (depth_passes, moving[-1])
-    afternoon = capture(page, MIDNIGHT + (13 * 60 + 20) * SOLAR_HOUR // 60)
+    assert 1 <= depth_passes <= 16 and moving[-1]["x"] > noon["x"] + .007, (depth_passes, moving[-1])
+    afternoon = capture(page, MIDNIGHT + (24 * 60 - 13 * 60 - 20) * SOLAR_HOUR // 60)
     dusk = capture(page, evening_at)
     assert abs(dawn["elevation"]) < 1 and dawn["x"] > .95, dawn
     assert noon["elevation"] > 37 and afternoon["x"] < -.9, (noon, afternoon)

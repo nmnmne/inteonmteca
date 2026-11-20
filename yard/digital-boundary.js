@@ -5,7 +5,8 @@ import { createCrowWallContact } from './crow-wall-contact.js';
 import { entryPulseShader } from './entry-pulse.js';
 import { createHouseBackstage } from './house-backstage.js';
 
-const HOUSE_FADE_METRES = 1.25;
+const approachMetres = 6, interiorMetres = 3, roofFadeMetres = 1.25;
+const entryWaveSeconds = 4.8;
 const smooth = (x,a,b) => THREE.MathUtils.smootherstep(x,a,b);
 const signedDistance = (x,z,ring) => {
   let nearest = Infinity;
@@ -56,7 +57,8 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
   const city = createCityHologram(scene, layout.walkable, entryPulse);
   let sampled = false, inBackstage = false, pulseStarted = -Infinity;
   const wallContact = passThroughBuildings ? createCrowWallContact(layout) : null;
-  let facadeDistance = Infinity;
+  let facadeDistance = Infinity, passagePace = 1;
+  const profile = {horizontal:0,top:0};
   const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
   const clock = {value:0};
   let animated = false;
@@ -106,6 +108,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
   // prior visibility state so a return restores the same courtyard and LOD.
   const virtualObjects = new Set([city.root, low, grid, galleries, ...domes]);
   const concealed = new Set();
+  let neighbours;
   let behindCity = false, lastChildCount = 0;
   function concealStreet() {
     for (const object of scene.children) {
@@ -118,7 +121,9 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
   let previous=-1, previousMix=-1;
   return {
     wallContact,
+    setNeighbours(mesh) { neighbours = mesh; },
     get facadeDistance() { return facadeDistance; },
+    get passagePace() { return passagePace; },
     setSky(skyColor, fogColor) {
       baseSky.set(skyColor);
       baseFog.set(fogColor);
@@ -151,7 +156,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
       const edge = signedDistance(x,z,layout.walkable);
       const borderAmount = virtualAmount(layout,x,z,edge);
       const reveal = Math.max(smooth(edge,-44,-4), smooth(borderAmount,.12,.4));
-      const backstage = smooth(edge,16,18);
+      const backstage = smooth(edge,10,18);
       clock.value = reducedMotion?.matches ? 0 : timeSeconds;
       city.update(reveal, backstage, clock.value);
       const sparse = backstage === 1;
@@ -162,6 +167,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
         previous = -1;
       }
       behindCity = sparse;
+      if (neighbours) neighbours.visible = edge <= 0;
       let amount=Math.max(borderAmount,backstage);
       let entered = !inBackstage && sparse;
       if (sparse) inBackstage = true;
@@ -171,20 +177,33 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
         facadeDistance = Infinity;
         for (let i=0; i<proxies.length; i++) {
           const house = proxies[i];
-          const distance = wallContact.distanceToHouse(i,x,y,z,HOUSE_FADE_METRES);
+          const distance = wallContact.distanceToHouse(i,x,y,z,approachMetres,profile);
           if (!house.inside && distance <= 0) {
             house.inside = true;
             entered = true;
           } else if (distance > .15) house.inside = false;
           facadeDistance = Math.min(facadeDistance,distance);
-          // Blend over 2.5 surveyed metres instead of swapping scenes at the wall.
-          house.crossing = 1 - smooth(distance,-HOUSE_FADE_METRES,HOUSE_FADE_METRES);
+          // Meet halfway at the surveyed wall. The approach starts from farther
+          // away, while narrow homes and ground-level flights still reach full detail.
+          let crossing = 0;
+          if (Number.isFinite(distance)) {
+            const fromStreet = Math.max(0,1-profile.horizontal/approachMetres);
+            const fromRoom = Math.max(0,1+profile.horizontal/interiorMetres);
+            const lateral = smooth(fromStreet/(fromStreet+fromRoom),0,1);
+            const vertical = 1-smooth(y-profile.top,-roofFadeMetres,roofFadeMetres);
+            crossing = lateral*vertical*smooth(y,-roofFadeMetres,0);
+          }
+          house.crossing = crossing;
+          house.gallery.material.depthWrite = crossing >= .999;
           house.gallery.material.uniforms.fade.value = house.crossing;
           house.gallery.visible = house.crossing > .001;
           roomFade = Math.max(roomFade,house.crossing);
           amount = Math.max(amount, house.crossing);
         }
       }
+      // Ease the camera down on either side of a threshold and release it
+      // again deep inside. The wall midpoint has a flat speed curve both ways.
+      passagePace = reducedMotion?.matches ? 1 : 1 - .53*Math.sin(Math.PI*roomFade)**2;
       if (reducedMotion?.matches) pulseStarted = -Infinity;
       else if (sampled && entered) {
         entryPulse.value.set(x, y, z, 0);
@@ -192,7 +211,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
         pulseStarted = timeSeconds;
       }
       sampled = true;
-      const progress = (timeSeconds - pulseStarted) / 2.2;
+      const progress = (timeSeconds - pulseStarted) / entryWaveSeconds;
       entryPulse.value.w = progress >= 0 && progress < 1 ? progress : -1;
       const radius=Math.hypot((x-cx)/220,(z-cz)/240), outer=smooth(radius,.92,1.25);
       animated = entryPulse.value.w >= 0 || amount > .001 || reveal > .001 || outer > .001;

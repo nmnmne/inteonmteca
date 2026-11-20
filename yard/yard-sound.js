@@ -1,4 +1,5 @@
 import {sampleWeather} from './weather-field.js';
+import {courtyardEffectSeconds} from './solar-clock.js';
 
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 const initialView = {x: 39, z: -2.5, yaw: 0};
@@ -115,30 +116,28 @@ function makeAmbience(context) {
   reverse.getChannelData(0).set(calls[2].getChannelData(0));
   reverse.getChannelData(0).reverse();
 
-  let gustStart = context.currentTime + 1 + Math.random() * 1.8;
-  let gustLength = 3 + Math.random() * 2, gustStrength = .8;
-  let gustX, gustZ, heading;
+  let gustId, gustX, gustZ;
   const callsInFlight = new Set();
-  function windEnvelope(t, listener) {
-    if (t >= gustStart + gustLength) {
-      gustStart = t + 3.5 + Math.random() * 6;
-      gustLength = 2.8 + Math.random() * 2.8;
-      gustStrength = .62 + Math.random() * .38;
-      gustX = undefined;
-    }
-    if (gustX === undefined) {
+  function windEnvelope(phase, listener) {
+    const id = Math.floor(phase / 12);
+    if (id !== gustId) {
+      gustId = id;
       gustX = listener.x;
       gustZ = listener.z;
-      heading = .65 + .55 * Math.sin(gustStart * .24);
     }
+    // Derive the envelope from the courtyard phase so a gust can retrace its path.
+    const gustStart = id * 12 + 2.7 + 1.5 * Math.sin(id * 2.41);
+    const gustLength = 4.2 + 1.2 * Math.cos(id * 1.73);
+    const gustStrength = .81 + .19 * Math.sin(id * 1.29);
+    const heading = .65 + .55 * Math.sin(id * 2.39);
     // A gust travels past its starting point in the world, independent of camera turns.
-    const along = (clamp((t - gustStart) / gustLength, 0, 1) - .5) * 40;
+    const along = (clamp((phase - gustStart) / gustLength, 0, 1) - .5) * 40;
     const c = Math.cos(heading), s = Math.sin(heading);
     const dx = gustX + along*c - 8*s - listener.x, dz = gustZ + along*s + 8*c - listener.z;
     const distance = Math.hypot(dx, dz);
-    windPan?.pan.setTargetAtTime(listenerPan(dx, dz, listener.yaw, distance), t, .13);
-    if (t <= gustStart) return 0;
-    return gustStrength * Math.sin(Math.PI * (t - gustStart) / gustLength) ** 2 / Math.max(1, distance / 30);
+    windPan?.pan.setTargetAtTime(listenerPan(dx, dz, listener.yaw, distance), context.currentTime, .13);
+    if (phase <= gustStart || phase >= gustStart + gustLength) return 0;
+    return gustStrength * Math.sin(Math.PI * (phase - gustStart) / gustLength) ** 2 / Math.max(1, distance / 30);
   }
 
   function call(clip, when, rate, point, level, listener) {
@@ -170,8 +169,8 @@ function makeAmbience(context) {
     source.start(when);
   }
   return {
-    update(weather, master, playing, bass, listener) {
-      const t = context.currentTime, gust = windEnvelope(t, listener);
+    update(weather, master, playing, bass, listener, phase) {
+      const t = context.currentTime, gust = windEnvelope(phase, listener);
       if (outputChannels !== context.destination.maxChannelCount) {
         outputChannels = context.destination.maxChannelCount;
         routeFrontPair(context.destination);
@@ -179,7 +178,7 @@ function makeAmbience(context) {
       callsInFlight.forEach(position => position(listener));
       bus.gain.setTargetAtTime(master * (playing ? .48 : .95), t, .12);
       // Sweep the resonance with cot(angle), staying clear of its poles even at a gust peak.
-      const angle = .85 - .48 * Math.cos(t * .79 + .32 * Math.sin(t * .37));
+      const angle = .85 - .48 * Math.cos(phase * .79 + .32 * Math.sin(phase * .37));
       const cotangent = 1 / Math.tan(angle);
       const sweep = 125 + gust * (230 + 90 * weather.autumn + 45 * weather.spring + bass * 45);
       wind.frequency.setTargetAtTime(500 + sweep * cotangent, t, .16);
@@ -229,9 +228,10 @@ export function createYardSound(view = () => initialView) {
     const bands = window.inteonAudioBands?.read();
     const playing = Boolean(bands?.playing || (engine ? !engine.visuals.paused : media && !media.paused && !media.ended));
     const master = masterControl ? Number(masterControl.value) / 100 : (media?.muted ? 0 : media?.volume ?? 1);
-    const weather = sampleWeather(location.x, location.z, performance.now() / 1000);
+    const phase = courtyardEffectSeconds(Date.now());
+    const weather = sampleWeather(location.x, location.z, motion.matches ? 0 : phase);
     const bass = bands?.bass || 0, now = context.currentTime;
-    graph.update(weather, clamp(master, 0, 1), playing, bass, location);
+    graph.update(weather, clamp(master, 0, 1), playing, bass, location, phase);
     const accent = bass > .42 && bass - lastBass > .12;
     lastBass = bass;
     if (!master || now < nextCall || (playing && !accent && now < nextCall + 1.1)) return;

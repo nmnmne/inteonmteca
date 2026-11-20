@@ -9,6 +9,7 @@ import { createBoundaryMusic } from "./boundary-music.js";
 import { createLightingCycle, addBakedLighting } from "./baked-lighting.js";
 import { createLightingTransition } from "./lighting-transition.js?v=black-outer-dome-20261031";
 import { addPuddles } from "./puddles.js";
+import { courtyardEffectSeconds } from "./solar-clock.js";
 
 const portalPreview = new URLSearchParams(location.search).has('portal-preview');
 const fallback = document.querySelector("#file-fallback");
@@ -293,8 +294,9 @@ if (location.protocol === "file:") {
       renderRevision += 1;
     }
     if (!returnPose && !document.hidden && !renderer.getContext().isContextLost() && dirty) {
-      updateWater(now / 1000);
-      if (scene.userData.grassWind) scene.userData.grassWind.value = now / 1000;
+      const weatherSeconds = reducedMotion.matches ? 0 : courtyardEffectSeconds(Date.now());
+      updateWater(weatherSeconds);
+      if (scene.userData.grassWind) scene.userData.grassWind.value = weatherSeconds;
       const roostDelta = animateRoost && lastRoostDraw !== null ? Math.min(.15, (now-lastRoostDraw)/1000) : 0;
       lastRoostDraw = animateRoost ? now : null;
       renderScene(roostDelta);

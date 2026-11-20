@@ -49,10 +49,10 @@ function fixture(channels = 2) {
     cross:-1, A:{playing,bpm:120,baseBPM:120,time:32.75,track:{offset:0}}, B:{playing:false},
   })};
   const code=readFileSync(join(__dirname,'../yard/yard-sound.js'),'utf8')
-    .replace(/^import .*?;$/m,'').replace('export function createYardSound','function createYardSound');
+    .replace(/^import .*?;$/gm,'').replace('export function createYardSound','function createYardSound');
   const bird={id:1,x:2,z:1};
   const scope=vm.createContext({window,document,navigator:{},Math,Float32Array,
-    performance:{now:()=>time*1000},
+    Date:{now:()=>time*1000}, courtyardEffectSeconds:ms=>-ms/1000,
     sampleWeather:()=>({rain:1,snow:0,autumn:0,summer:0,spring:0}),
   });
   vm.runInContext(code,scope);

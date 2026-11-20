@@ -7,6 +7,7 @@ import { addHouseRelief } from "./house14-relief.js?v=refinement-20261009-2";
 import { addTowerReference } from './tower-reference.js?v=20261009-2';
 import { facadeNormal } from "./facade-frame.js";
 import { addRoof, createRoofPerches } from "./roof-geometry.js";
+import {addNeighbourCourtyards} from './neighbour-courtyards.js';
 import { addRoofWetness } from "./roof-wetness.js";
 import { createYardMaterials } from "./materials.js";
 import { facadeSpec, openingsForFacade } from "./models.js?v=refinement-20261009-2";
@@ -454,6 +455,8 @@ export function createYardScene(layout, fixedSun = fixedSunForLayout(layout), {
   );
   scene.add(sun);
 
+  const neighbours = addNeighbourCourtyards(scene,layout,ground);
+  edgeEffect.setNeighbours(neighbours);
   batchStaticDecoration(scene, solids);
   const roofPigeons = createRoofPigeons(createRoofPerches(layout));
   scene.add(roofPigeons.group);

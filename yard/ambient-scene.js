@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three.module.js';
 import { createYardScene } from './scene.js?v=ural-courtyard-1';
-import { courtyardSunForLocation, solarLighting } from './solar-clock.js';
+import { courtyardEffectSeconds, courtyardSunForLocation, solarLighting } from './solar-clock.js';
 import { ambientOpeningView, createAutoWalk } from './auto-walk.js?v=crow-flock-1';
 import { createCrowFlock } from './crow-flock.js';
 import { createCrowStoryDeck } from './crow-story-deck.js';
@@ -115,25 +115,27 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
         const dt = lastDraw === null ? 0 : Math.min((now - lastDraw) / 1000, 0.15);
         lastDraw = now;
         nextDraw = now + frameMs - (nextDraw ? (now - nextDraw) % frameMs : 0);
-        const pose = walk.update(dt);
+        const pose = walk.update(dt * yard.edgeEffect.passagePace);
         camera.position.set(pose.x, reducedMotion.matches ? pose.y - pose.eyeOffset : pose.y, pose.z);
         camera.rotation.set(pose.pitch, -pose.yaw, reducedMotion.matches ? 0 : pose.roll, 'YXZ');
         yard.edgeEffect.update(pose.x, pose.z, camera.position.y, now / 1000);
         // Keep the facade in view through the last ten centimetres of the crossing.
-        const near = Math.abs(yard.edgeEffect.facadeDistance) < .20 ? .025 : .1;
+        const near = .025 + .075 * THREE.MathUtils.smootherstep(Math.abs(yard.edgeEffect.facadeDistance), .10, .65);
         if (camera.fov !== pose.fov || camera.near !== near) {
           camera.fov = pose.fov;
           camera.near = near;
           camera.updateProjectionMatrix();
         }
-        solar.update(Date.now(), camera);
+        const epoch = Date.now();
+        const weatherSeconds = reducedMotion.matches ? 0 : courtyardEffectSeconds(epoch);
+        solar.update(epoch, camera);
         if (yard.roofPigeons.group.visible) yard.roofPigeons.update(reducedMotion.matches ? 0 : dt, camera);
         crowModels.update(flock.allBirds, dt, yard.scene.userData.virtuality, yard.scene.userData.solarLighting.daylight,
           reducedMotion.matches ? null : flock.keyStory, reducedMotion.matches ? null : flock.beacons);
         resident?.update(flock.visit, camera, yard.scene.userData.solarLighting.daylight,
           yard.scene.userData.virtuality, reducedMotion.matches ? 0 : dt);
-        ripplePuddles(now / 1000);
-        if (yard.scene.userData.grassWind) yard.scene.userData.grassWind.value = now / 1000;
+        ripplePuddles(weatherSeconds);
+        if (yard.scene.userData.grassWind) yard.scene.userData.grassWind.value = weatherSeconds;
         yard.scene.userData.updateLandscapingDetail?.(camera.position,graphicsLevel);
         optics.render(yard.scene,camera,dt,graphicsLevel,reducedMotion.matches);
         onFrame?.(canvas, now, pose, flock);

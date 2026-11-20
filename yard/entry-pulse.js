@@ -3,11 +3,12 @@ export const entryPulseShader = `
   uniform vec4 entryPulse;
   float entryWave(vec3 world, out float behind) {
     if (entryPulse.w < 0.0) { behind = 0.0; return 0.0; }
-    behind = 118.0 * entryPulse.w - distance(world, entryPulse.xyz);
-    float crest = 1.0 - smoothstep(0.0, 3.5, abs(behind));
+    float opening = mix(0.64, 1.0, smoothstep(0.0, 0.32, entryPulse.w));
+    behind = 118.0 * entryPulse.w * opening - distance(world, entryPulse.xyz);
+    float crest = 1.0 - smoothstep(0.0, 4.8, abs(behind));
     float wake = smoothstep(0.0, 4.0, behind) * (1.0 - smoothstep(5.0, 17.0, behind));
-    float echo = 1.0 - smoothstep(0.0, 2.5, abs(behind - 19.0));
-    float fade = smoothstep(0.0, 0.035, entryPulse.w) * (1.0 - smoothstep(0.70, 1.0, entryPulse.w));
+    float echo = 1.0 - smoothstep(0.0, 3.8, abs(behind - 19.0));
+    float fade = smoothstep(0.0, 0.055, entryPulse.w) * (1.0 - smoothstep(0.70, 1.0, entryPulse.w));
     return max(crest, max(wake * 0.53, echo * 0.62)) * fade;
   }
   vec3 applyEntryPulse(vec3 base, vec3 world, out float energy) {
