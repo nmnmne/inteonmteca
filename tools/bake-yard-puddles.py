@@ -141,7 +141,7 @@ def main(posters_only):
                 const rig = createSolarLighting(renderer, yard, layout, {mapSize: 2048});
                 rig.refreshGeometry();
                 let ripple;
-                const crows = createCrowModels();
+                let crows;
                 window.capturePoster = async ({width, height, isoTime}) => {
                     time = Date.parse(isoTime);
                     if (!yard.scene.getObjectByName('courtyard-puddles')) {
@@ -171,7 +171,8 @@ def main(posters_only):
                     let seed = 14;
                     const random = () => ((seed = (Math.imul(seed,1664525) + 1013904223) >>> 0) / 4294967296);
                     const flock = createCrowFlock(layout, pose, {random});
-                    crows.update(flock.birds, 0, 0, yard.scene.userData.solarLighting.daylight);
+                    crows ??= createCrowModels(null, flock.allBirds.length - 1);
+                    crows.update(flock.allBirds, 0, 0, yard.scene.userData.solarLighting.daylight);
                     yard.scene.add(crows.group);
                     renderer.setSize(width, height, false);
                     renderer.render(yard.scene, camera);

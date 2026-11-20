@@ -17,7 +17,7 @@ export function createCrowPranks(birds, clearGround, random) {
   const draw = random || (() => (seed = (Math.imul(seed,1664525) + 1013904223) >>> 0) / 4294967296);
   let nextAt = 1 + draw()*2, since = 0, actor, partner, exit, lastActor = null;
   let occupied;
-  const eligible = (b, gathering, perches) => (!b.called || (gathering && b.inParty))
+  const eligible = (b, gathering, perches) => !b.senior && (!b.called || (gathering && b.inParty))
     && b.airborne < .17 && !perches?.has(b.id) && !occupied?.has(b.id);
   const withinSlot = (b, spot) => !b.called || Math.hypot(spot.x-b.slotX,spot.z-b.slotZ)<1.55;
 

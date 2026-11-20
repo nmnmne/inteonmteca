@@ -38,15 +38,26 @@ OBSERVE = """async () => {
     qa.frame = {renderer, scene, camera, group, plumage:group.getObjectByName('crow-plumage')};
     qa.frames++;
   };
-  qa.measure = () => {
+  qa.measure = (ids = []) => {
     const {renderer, scene, camera, plumage} = qa.frame;
     const width = Math.min(720, renderer.domElement.width);
     const height = Math.round(width / camera.aspect);
     const target = new T.WebGLRenderTarget(width, height);
     const previousTarget = renderer.getRenderTarget(), previousVisible = plumage.visible;
     const time = performance.now(), clock = Object.getOwnPropertyDescriptor(performance, 'now');
+    const transforms = ids.map(id => {
+      const matrix = new T.Matrix4();
+      plumage.getMatrixAt(id-1, matrix);
+      return [id-1, matrix];
+    });
+    const hidden = new T.Matrix4().makeScale(0, 0, 0);
+    function showBirds(show) {
+      if (!transforms.length) { plumage.visible = show; return; }
+      for (const [index,matrix] of transforms) plumage.setMatrixAt(index, show ? matrix : hidden);
+      plumage.instanceMatrix.needsUpdate = true;
+    }
     function pixels(show) {
-      plumage.visible = show;
+      showBirds(show);
       renderer.render(scene, camera);
       const rgba = new Uint8Array(width * height * 4);
       renderer.readRenderTargetPixels(target, 0, 0, width, height, rgba);
@@ -56,7 +67,8 @@ OBSERVE = """async () => {
       Object.defineProperty(performance,'now',{configurable:true,value:()=>time});
       renderer.setRenderTarget(target);
       const bare = pixels(false), birds = pixels(true), again = pixels(false);
-      const bottom = document.querySelector('.compact-display').getBoundingClientRect().top / innerHeight;
+      const panel = document.querySelector('.compact-display')?.getBoundingClientRect();
+      const bottom = panel?.height ? panel.top / innerHeight : 1;
       let ink = 0;
       for (let y=Math.ceil((1-bottom)*height); y<height; y++) {
         for (let x=0; x<width; x++) {
@@ -67,7 +79,8 @@ OBSERVE = """async () => {
           }
         }
       }
-      const members=qa.flock.birds, matrix=new T.Matrix4(), at=new T.Vector3();
+      showBirds(true);
+      const members=qa.flock.allBirds, matrix=new T.Matrix4(), at=new T.Vector3();
       const positionsMatch=members.slice(1).every((bird,i)=>{
         plumage.getMatrixAt(i,matrix); at.setFromMatrixPosition(matrix);
         return Math.hypot(at.x-bird.x,at.z-bird.z)<.01;
@@ -77,7 +90,7 @@ OBSERVE = """async () => {
               virtual:scene.userData.virtuality, camera:[camera.position.x,camera.position.z]};
     } finally {
       if (clock) Object.defineProperty(performance,'now',clock); else delete performance.now;
-      plumage.visible=previousVisible; renderer.setRenderTarget(previousTarget); target.dispose();
+      showBirds(true); plumage.visible=previousVisible; renderer.setRenderTarget(previousTarget); target.dispose();
     }
   };
   qa.trace = {solo:false, joined:false, phases:[], landings:[], missions:[]};
@@ -160,7 +173,7 @@ def check(browser, mobile):
     page.evaluate(OBSERVE)
     page.wait_for_function("window.crowQA?.frame?.plumage", timeout=40000)
     first = page.evaluate("crowQA.measure()")
-    assert first["ids"] == list(range(13)) and first["instances"] == 12, first
+    assert first["ids"] == list(range(19)) and first["instances"] == 18, first
     assert first["pov"] < .001 and first["positionsMatch"], first
     assert first["ink"] >= 8, first
 

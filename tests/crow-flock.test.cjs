@@ -89,7 +89,56 @@ test('flock decisions and poses agree at different display frame rates', async (
     for (let j = 0; j < 4; j++) b.walk.update(1 / 60);
   }
   assert.deepEqual(a.flock.state, b.flock.state);
-  assert.deepEqual(a.flock.birds, b.flock.birds);
+  assert.deepEqual(a.flock.allBirds, b.flock.allBirds);
+  assert.deepEqual(a.flock.dispute, b.flock.dispute);
+});
+
+test('neighbouring flocks yield to a flying home elder and the same challengers keep the peace afterwards', async () => {
+  const {walk, flock} = await createRoute(7, 390 / 844, true);
+  const {allBirds, birds, dispute} = flock;
+  assert.deepEqual(allBirds.slice(0, 13), birds);
+  assert.deepEqual(allBirds.slice(13).map(b => b.flockId), [1, 1, 1, 2, 2, 2]);
+  const original = [...allBirds], sites = [], quiet = new Map();
+  let previous = 'idle', arrival, sawDisplay = false, sawSeparation = false;
+  for (let i = 0; i < 6500 && dispute.count < 3; i++) {
+    walk.update(.1);
+    const {phase, actors, elders} = dispute;
+    if (phase === 'idle') {
+      assert.ok(allBirds.every(b => !b.encounterPose));
+      previous = phase;
+      continue;
+    }
+    const [left, right] = actors.map(id => allBirds[id]);
+    const senior = allBirds[elders[0]];
+    const gap = Math.hypot(left.x - right.x, left.z - right.z);
+    assert.equal(left.flockId, 1);
+    assert.equal(right.flockId, 2);
+    assert.ok(senior.senior && senior === birds[senior.id] && senior.id > 0);
+    assert.equal(flock.canTakeOff(), false);
+    if (phase === 'approach' && previous === 'idle') {
+      for (const id of actors) assert.ok((quiet.get(id) || 0) <= birds[0].elapsed);
+    }
+    if (phase === 'challenge') {
+      assert.ok(left.y < .6 && right.y < .6 && gap < 2.5);
+      sawDisplay ||= left.encounterPose.wings > .36 || right.encounterPose.wings > .36;
+    }
+    if (phase === 'intervention' && previous !== phase) arrival = {x:senior.x, z:senior.z};
+    if (phase === 'scatter' && previous === 'intervention') {
+      assert.ok(senior.y > .64 && Math.hypot(senior.x - dispute.x, senior.z - dispute.z) < 1.45);
+      assert.ok(Math.hypot(senior.x - arrival.x, senior.z - arrival.z) > 1.25);
+      if (sites.length) assert.ok(Math.hypot(sites.at(-1).x - dispute.x, sites.at(-1).z - dispute.z) >= 4);
+      sites.push({x:dispute.x, z:dispute.z});
+      for (const actor of [left, right]) {
+        assert.ok(actor.quietUntil > birds[0].elapsed + 56);
+        quiet.set(actor.id, actor.quietUntil);
+      }
+    }
+    if (phase === 'scatter' && gap > 6) sawSeparation = true;
+    previous = phase;
+  }
+  assert.equal(dispute.count, 3);
+  assert.ok(sawDisplay && sawSeparation);
+  assert.ok(allBirds.every((b, i) => b === original[i]));
 });
 
 test('one wingmate leaves with the leader while another waits twenty seconds at the same perch', async () => {

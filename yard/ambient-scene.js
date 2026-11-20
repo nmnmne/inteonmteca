@@ -135,7 +135,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
         }
         solar.update(Date.now(), camera);
         if (yard.roofPigeons.group.visible) yard.roofPigeons.update(reducedMotion.matches ? 0 : dt, camera);
-        crowModels.update(flock.birds, dt, yard.scene.userData.virtuality, yard.scene.userData.solarLighting.daylight,
+        crowModels.update(flock.allBirds, dt, yard.scene.userData.virtuality, yard.scene.userData.solarLighting.daylight,
           reducedMotion.matches ? null : flock.keyStory);
         if (residentModel) {
           const virtuality = yard.scene.userData.virtuality;
@@ -184,6 +184,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     const openingView = ambientOpeningView(layout, aspect);
     const residentVisits = Boolean(document.querySelector('.room-presence'));
     flock = createCrowFlock(layout, openingView, {residentVisits,
+      crowTrees:() => !reducedMotion.matches && (yard?.scene.userData.virtuality || 0)<.12 && yard?.scene.userData.crowTrees,
       allowKeyStory:() => !reducedMotion.matches && (yard?.scene.userData.virtuality || 0)<.12});
     walk = createAutoWalk(layout, { openingView, flock });
     const lighting = solarLighting(courtyardSunForLocation(layout.origin, Date.now()));
@@ -192,7 +193,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     });
     solar = createSolarLighting(renderer, yard, layout, {sampleSun:courtyardSunForLocation});
     solar.update(Date.now(), camera);
-    crowModels = createCrowModels(yard.edgeEffect.wallContact);
+    crowModels = createCrowModels(yard.edgeEffect.wallContact, flock.allBirds.length - 1);
     crowModels.group.userData.visibleInBackstage = true;
     yard.scene.add(crowModels.group);
     if (residentVisits) {

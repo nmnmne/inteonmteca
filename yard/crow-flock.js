@@ -2,6 +2,7 @@ import { isWalkable } from './navigation.js';
 import { createCrowVisits } from './crow-visits.js';
 import { createCrowPranks } from './crow-pranks.js';
 import { createCrowKeyStory } from './crow-key-story.js';
+import { createCrowDisputes } from './crow-disputes.js';
 
 const count = 13;
 const chest = 0.20;
@@ -73,6 +74,9 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
   const visits = residentVisits ? createCrowVisits(layout, birds, clearGround, random) : null;
   const pranks = createCrowPranks(birds, clearGround);
   const keyStory = allowKeyStory ? createCrowKeyStory(layout,birds,clearGround,allowKeyStory) : null;
+  const disputes = createCrowDisputes(layout, birds, groundNear, clearGround, relative);
+  const allBirds = [...birds, ...disputes.guests];
+  const occupied = {has:id => keyStory?.targets.has(id) || disputes.reserved(birds[id])};
 
   function shuffle(list) {
     for (let i = list.length - 1; i > 0; i--) {
@@ -94,7 +98,9 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     state.targetSize = state.landingCount === 1 ? integer(3, 6) : integer(2, count);
     state.partySize = 1;
     const pool = shuffle(birds.slice(1));
-    state.seniorCount = integer(1, 5);
+    // The camera bird can send out at least one other elder. Two experienced
+    // neighbours are on hand at the first gathering while recruits trickle in.
+    state.seniorCount = integer(state.landingCount === 1 ? 3 : 2, 5);
     for (let i = 0; i < pool.length; i++) pool[i].senior = i < state.seniorCount - 1;
     const elders = pool.filter(b => b.senior);
     // Each elder may take neighbours along on its own foraging trips.
@@ -193,7 +199,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     for (let i = 1; i < count; i++) {
       const b = birds[i];
       if (b.called) { called++; continue; }
-      if (time < b.breakUntil) continue;
+      if (time < b.breakUntil || disputes.reserved(b)) continue;
       const d = distance(leader, b);
       if (d < nearestDistance) { nearest = b; nearestDistance = d; }
     }
@@ -237,7 +243,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     const pursuit = Math.min(1.7, limit / Math.max(.01, d));
     let vx = dx * pursuit + (escort ? leader.vx : 0), vz = dz * pursuit + (escort ? leader.vz : 0);
     // Separation at close range keeps neighbouring silhouettes and feet distinct.
-    for (const other of birds) {
+    for (const other of allBirds) {
       if (other === b) continue;
       const sx = b.x - other.x, sz = b.z - other.z, sy = b.y - other.y;
       const safe = other.id ? .85 : 1.45, sq = sx*sx + sz*sz;
@@ -283,6 +289,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
   function update(dt, pose) {
     if (!(dt > 0) || !Number.isFinite(dt)) return;
     time += dt;
+    leader.elapsed = time;
     const previous = leader.mode;
     leader.vx = (pose.x - leader.x) / dt; leader.vz = (pose.z - leader.z) / dt;
     leader.speed = Math.hypot(leader.vx, leader.vz);
@@ -299,16 +306,24 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
       if (Math.hypot(leader.x - slotsX, leader.z - slotsZ) > .85 || Math.abs(angleDelta(slotsYaw, heading)) > .19) refreshGroundSlots();
     }
     if (state.phase === 'mission' && time >= splitAt) breakFormation();
-    if (!keyStory?.targets.size) visits?.update(dt, time, state, heading);
-    keyStory?.update(dt,time,state,visits?.holdLeader());
-    pranks.update(dt, time, state.phase, visits?.perches, keyStory?.targets);
+    // Finish the visible encounter before staging a second scene at this perch.
+    const encounterWasActive = disputes.state.phase !== 'idle';
+    if (!encounterWasActive) {
+      if (!keyStory?.targets.size) visits?.update(dt, time, state, heading);
+      keyStory?.update(dt,time,state,visits?.holdLeader());
+    }
+    // Active visits and key scenes keep ownership of the camera and their birds.
+    disputes.update(dt, time, visits?.holdLeader() || keyStory?.targets.size);
+    if (encounterWasActive && disputes.state.phase === 'idle') readySince = time;
+    pranks.update(dt, time, state.phase, visits?.perches, occupied);
     const sinHeading = Math.sin(heading), cosHeading = Math.cos(heading);
     let assembled = 1;
-    for (let i = 1; i < count; i++) {
-      const b = birds[i];
+    for (let i = 1; i < allBirds.length; i++) {
+      const b = allBirds[i];
       const perch = visits?.perches.get(b.id);
       const storyTarget = keyStory?.targets.get(b.id);
       const prankTarget = pranks.targets.get(b.id);
+      const encounterTarget = disputes.targets.get(b.id);
       if (perch) {
         if (visits.state.phase === 'sitting') {
           // A settled guest stays put. Passing neighbours still steer around it.
@@ -320,6 +335,10 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
         }
       } else if (storyTarget) {
         steer(b,storyTarget.x,chest,storyTarget.z,dt,false);
+      } else if (encounterTarget) {
+        steer(b, encounterTarget.x, encounterTarget.y, encounterTarget.z, dt, false);
+      } else if (b.flockId) {
+        steer(b, b.roamX, chest, b.roamZ, dt, false);
       } else if (prankTarget) {
         steer(b, prankTarget.x, chest, prankTarget.z, dt, false);
       } else if (time < b.breakUntil) {
@@ -346,12 +365,14 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     } else if (gathering && assembled < state.targetSize) state.phase = 'gather';
     if (keyStory?.targets.size) state.searchYaw = bearing(leader,keyStory.state);
     else if (visits?.state.kind) state.searchYaw = bearing(leader, visits.state);
+    else if (gathering && disputes.state.phase !== 'idle') state.searchYaw = bearing(leader, disputes.state);
     else if (gathering && pranks.state.actorId !== null) {
       const actor = birds[pranks.state.actorId], look = bearing(leader, actor);
       if (distance(leader, actor) < 12 && Math.abs(angleDelta(leader.yaw, look)) < 1.35) state.searchYaw = look;
     }
   }
 
-  return {birds, state, visit:visits?.state, prank:pranks.state, keyStory:keyStory?.state, update,
-    canTakeOff: () => state.phase === 'ready' && !visits?.holdLeader() && !keyStory?.targets.size && time - readySince >= .7};
+  return {birds, allBirds, state, visit:visits?.state, prank:pranks.state, keyStory:keyStory?.state, dispute:disputes.state, update,
+    canTakeOff: () => state.phase === 'ready' && !visits?.holdLeader() && !keyStory?.targets.size
+      && disputes.state.phase === 'idle' && time - readySince >= .7};
 }
