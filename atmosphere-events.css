@@ -3,48 +3,6 @@
 .room-resident.is-detonating .resident-mist { inset: -38px; opacity: .9; filter: blur(12px); background: radial-gradient(ellipse, rgba(var(--theme-accent-rgb), .22), transparent 68%); }
 .room-resident.is-detonating .resident-body { animation: resident-listen 3.8s ease-in-out infinite; }
 
-.sky-clouds {
-  --cloud-width: clamp(275px, 43vw, 830px);
-  position: fixed; inset: 0 0 auto; height: min(48vh, 500px); overflow: hidden;
-  z-index: 1; pointer-events: none; user-select: none;
-  animation: sky-cloud-passage 80s ease-in-out both;
-}
-.sky-clouds img {
-  --drift: 16vw;
-  position: absolute; left: 20%; top: 2%; width: var(--cloud-width); height: auto;
-  animation: cotton-cloud-drift linear both;
-  animation-duration: inherit; animation-delay: inherit;
-}
-.sky-clouds img:nth-child(2) {
-  --drift: 10vw;
-  left: 3%; top: 36%; width: calc(var(--cloud-width) * .62);
-  scale: -1 .85; opacity: .65;
-}
-.sky-clouds img:nth-child(3) {
-  --drift: 7vw;
-  left: 78%; top: 8%; width: calc(var(--cloud-width) * .43);
-  scale: 1 .74; opacity: .55;
-}
-.room-console-home .sky-clouds {
-  --cloud-width: clamp(260px, 42vw, 760px);
-  height: var(--room-mast);
-}
-.room-console-home .sky-clouds img:first-child { left: 58%; top: -8%; }
-.room-console-home .sky-clouds img:nth-child(2) { left: 25%; top: 22%; }
-.room-console-home .sky-clouds img:nth-child(3) { left: 5%; }
-@media (max-width: 800px) {
-  .sky-clouds img:first-child { left: 3%; top: 10%; }
-  .room-console-home .sky-clouds img:first-child { left: 35%; }
-  .room-console-home .sky-clouds img:nth-child(2) { left: 76%; top: 42%; }
-}
-@keyframes cotton-cloud-drift {
-  from { translate: calc(-.5 * var(--drift)) 0; }
-  to { translate: var(--drift) -5%; }
-}
-@keyframes sky-cloud-passage {
-  0%, 100% { opacity: 0; }
-  12%, 65% { opacity: .78; }
-}
 .scene-curtain { position: fixed; inset: 0; z-index: 1; background: #000; pointer-events: none; opacity: 0; transition: opacity 2.8s ease; }
 body.is-interlude .scene-curtain { opacity: 1; }
 body.is-interlude.scene-dawn .scene-curtain { opacity: 0; transition-duration: 12s; }
@@ -85,4 +43,4 @@ body.is-interlude .transport-seek-field::before { background: linear-gradient(to
 body.is-interlude .transport-progress::-webkit-slider-thumb { background: #e6edcf; }
 body.is-interlude .transport-progress::-moz-range-thumb { background: #e6edcf; }
 body.is-interlude.scene-dawn .room-resident { pointer-events: none; }
-@media (prefers-reduced-motion: reduce) { .sky-clouds, .scene-curtain, .scene-digits { display: none; } }
+@media (prefers-reduced-motion: reduce) { .scene-curtain, .scene-digits { display: none; } }

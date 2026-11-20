@@ -6,13 +6,12 @@
   const readLevel = () => Math.max(1, Math.min(10, Math.round(Number(root.dataset.graphicsLevel) || (root.dataset.animationQuality === 'low' ? 4 : 8))));
   const read = key => { try { return Number(sessionStorage.getItem(key)) || 0; } catch { return 0; } };
   const write = (key, value) => { try { sessionStorage.setItem(key, String(value)); } catch {} };
-  let interludeAt = read('inteon-interlude-next'), cloudAt = read('inteon-cloud-next') || Date.now() + 260000;
-  let curtain, digits, cloud, cloudTimer, poll, sceneTheme=null;
+  let interludeAt = read('inteon-interlude-next');
+  let curtain, digits, poll, sceneTheme=null;
   const timers = new Set();
   const later = (fn, delay) => { const id = setTimeout(() => { timers.delete(id); fn(); }, delay); timers.add(id); };
   const publish = () => {
     body.dataset.interludeNextAt = String(interludeAt);
-    body.dataset.cloudNextAt = String(cloudAt);
   };
   const stopInterlude = () => {
     timers.forEach(clearTimeout); timers.clear();
@@ -77,23 +76,6 @@
       },rebuiltAt+2500);
     }, preview ? 300 : 1200);
   };
-  const stopCloud = () => { clearTimeout(cloudTimer); cloud?.remove(); cloud = null; };
-  const startCloud = (preview = false) => {
-    if (cloud || document.hidden || reduced.matches) return;
-    cloudAt = Date.now() + 260000; write('inteon-cloud-next', cloudAt); publish();
-    cloud = document.createElement('div'); cloud.className = 'sky-clouds'; cloud.setAttribute('aria-hidden', 'true');
-    const level = readLevel(), cloudCount = 1 + Math.round(2 * (level - 1) / 9);
-    cloud.dataset.graphicsLevel = String(level);
-    for (let i = 0; i < cloudCount; i++) {
-      const tuft = new Image();
-      tuft.alt = '';
-      tuft.src = 'assets/cotton-cloud.webp';
-      cloud.append(tuft);
-    }
-    body.append(cloud);
-    if (preview) { cloud.style.animationDuration = '16s'; cloud.style.animationDelay = '-4s'; }
-    cloudTimer = setTimeout(stopCloud, preview ? 12000 : 80000);
-  };
   const planFirst = () => {
     if (!interludeAt && !music?.paused) {
       interludeAt = Date.now() + 120000 + Math.random() * 120000;
@@ -105,7 +87,6 @@
       const panelOpen = [...document.querySelectorAll('#chat-panel:not(.chat-inline),#theme-panel,#auth-panel')].some(el => !el.hidden);
       const busy = window.inteonHomeEffects?.ambientBlocked || body.classList.contains('is-interlude') || body.classList.contains('storm-priming') || document.querySelector('.logo-storm');
       if (!busy && !panelOpen && !music?.paused && interludeAt && Date.now() >= interludeAt) startInterlude();
-      if (!cloud && Date.now() >= cloudAt) startCloud();
     }
     poll = setTimeout(tick, 1000);
   };
@@ -115,7 +96,7 @@
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && curtain) stopInterlude(); });
   const suspend = () => {
     if (document.hidden || reduced.matches || window.inteonHomeEffects?.suspended) {
-      if (curtain) stopInterlude(); stopCloud();
+      if (curtain) stopInterlude();
     }
   };
   document.addEventListener('visibilitychange', suspend);
@@ -124,10 +105,9 @@
   window.addEventListener('pagehide', () => { clearTimeout(poll); suspend(); });
   window.addEventListener('pageshow', event => { if (event.persisted) { clearTimeout(poll); tick(); } });
   window.inteonAtmosphere = {
-    stop: () => { stopInterlude(); stopCloud(); },
+    stop: stopInterlude,
     stopScene: stopInterlude,
     replayScene: (options = {}) => { stopInterlude(); if (!reduced.matches) startInterlude(options.preview === true); },
-    replayCloud: (options = {}) => { stopCloud(); if (!reduced.matches) startCloud(options.preview === true); },
   };
   planFirst(); publish(); tick();
 })();

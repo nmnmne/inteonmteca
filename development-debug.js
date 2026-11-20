@@ -213,7 +213,6 @@ window.inteonDebugReady = (async () => {
     ['Растворение', () => { if (compact.matches) { window.inteonMobileLogo?.run('dissolve'); return; } window.inteonLogoAcid?.run({preview:true})?.then(() => { renderLogoMatrix(true); logoCycleTimeout = scheduleLogo(runLogoCycle, 5000); }); }],
     ['Разлёт и гроза', () => window.inteonLogoStorm?.replay()],
     ['Смена сцен', () => window.inteonAtmosphere?.replayScene({preview:true})],
-    ['Облака', () => { window.inteonAtmosphere?.replayCloud({preview:true}); }],
     ['Рекурсия', () => { if (compact.matches) window.inteonMobileLogo?.run('recursion'); else window.inteonLogoMaterials?.run('recursion'); }],
   ];
   // Scatter, dissolve and recursion have compact implementations. Only the
@@ -223,7 +222,7 @@ window.inteonDebugReady = (async () => {
   entries.forEach(([label, play]) => {
     const entry = document.createElement('button'); entry.type = 'button'; entry.textContent = label;
     effectEntries.push({entry, label});
-    entry.addEventListener('click', async () => { if (entry.disabled) return; if (label !== 'Облака') await resetEffects(); menu.querySelectorAll('button').forEach(b => b.removeAttribute('aria-current')); entry.setAttribute('aria-current','true'); play(); }); menu.append(entry);
+    entry.addEventListener('click', async () => { if (entry.disabled) return; await resetEffects(); menu.querySelectorAll('button').forEach(b => b.removeAttribute('aria-current')); entry.setAttribute('aria-current','true'); play(); }); menu.append(entry);
   });
   const syncEffectAvailability = () => effectEntries.forEach(({entry, label}) => {
     entry.disabled = compact.matches && desktopOnly.has(label);

@@ -96,13 +96,13 @@
     sync();
     if (suspended) return;
     const now = performance.now();
-    const limits = {theme: 6000, acid: 16000, storm: 90000, interlude: 65000, cloud: 85000, 'mobile-scatter': 6000, recursion: 8000};
+    const limits = {theme: 6000, acid: 16000, storm: 90000, interlude: 65000, 'mobile-scatter': 6000, recursion: 8000};
     const claimedElapsed = logoScenes.has(active) ? ambientNow(now) - claimedMotionAt : now - claimedAt;
     if (active && claimedElapsed > (limits[active] || 90000)) {
       const stale = active;
       if (stale === 'acid') window.inteonLogoAcid?.stop();
       else if (stale === 'storm') window.inteonLogoStorm?.stop();
-      else if (stale === 'interlude' || stale === 'cloud') window.inteonAtmosphere?.stop();
+      else if (stale === 'interlude') window.inteonAtmosphere?.stop();
       else if (stale === 'theme') window.inteonThemeMorph?.finish();
       else if (stale === 'mobile-scatter') window.inteonMobileLogo?.stop();
       else if (stale === 'recursion') window.inteonLogoMaterials?.stop();

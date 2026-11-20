@@ -35,13 +35,13 @@
 
 body.room-console-home:is([data-yard-window=desktop],[data-yard-window=engrus]) > :not(
   [data-yard-layer], #yard-desktop-shell, #yard-engrus-window, #yard-map-sources,
-  .sky-clouds, .pointer-fluid, .pointer-ring, script, style, link
+  .pointer-fluid, .pointer-ring, script, style, link
 ) { display: none !important; }
 body.room-console-home:is([data-yard-window=desktop],[data-yard-window=engrus])::before,
 body.room-console-home:is([data-yard-window=desktop],[data-yard-window=engrus])::after { content: none; }
 body.room-console-home[data-yard-window=dj][data-dj-mode=compact] > :not(
   [data-yard-layer], #yard-dj-compact, dialog[open], [popover]:popover-open, #notice,
-  .room-resident, .resident-speech, .sky-clouds, .pointer-fluid, .pointer-ring, script, style, link
+  .room-resident, .resident-speech, .pointer-fluid, .pointer-ring, script, style, link
 ) { display: none !important; }
 body.room-console-home[data-yard-window=dj][data-dj-mode=compact]::before,
 body.room-console-home[data-yard-window=dj][data-dj-mode=compact]::after { content: none; }

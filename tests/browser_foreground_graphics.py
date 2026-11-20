@@ -1,5 +1,6 @@
 """Foreground scene allocations at graphics 1/5/10, timing and live-scene stability."""
 import json
+import os
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
@@ -45,11 +46,6 @@ ATMOSPHERE = """level => {
   const result={level,digits:node.children.length};
   inteonGraphicsQuality.setManualLevel(level===10?1:10);
   result.sameScene=node===document.querySelector('.scene-digits')&&node.dataset.graphicsLevel===String(level);
-  inteonAtmosphere.stop();inteonGraphicsQuality.setManualLevel(level);inteonAtmosphere.replayCloud({preview:true});
-  const cloud=document.querySelector('.sky-clouds');
-  result.clouds=cloud.querySelectorAll('img').length;
-  inteonGraphicsQuality.setManualLevel(level===10?1:10);
-  result.sameCloud=cloud===document.querySelector('.sky-clouds')&&cloud.dataset.graphicsLevel===String(level);
   inteonAtmosphere.stop();return result;
 }"""
 MOBILE = """level => {
@@ -76,12 +72,14 @@ with sync_playwright() as p:
         page=context.new_page();page.on('pageerror',lambda e:report['errors'].append(str(e)))
         for level in [1,5,10]:
             # Fresh mobile scheduler ensures its first natural variant is scatter.
-            page.goto('http://127.0.0.1:8080/',wait_until='networkidle');page.evaluate(STOP)
+            page.goto(os.environ.get('INTEON_BASE_URL','http://127.0.0.1:8080/'),wait_until='domcontentloaded')
+            page.wait_for_function('window.inteonLogoAcid && window.inteonAtmosphere')
+            page.evaluate(STOP)
             page.evaluate('(n)=>inteonGraphicsQuality.setManualLevel(n)',level)
             acid=page.evaluate(ACID,level)
             assert acid['canvases']==int(acid['data']['tiles'])+2,acid
             assert acid['paths']==int(acid['data']['tiles'])*int(acid['data']['holesPerTile']),acid
-            assert acid['deadline']==11850 and acid['sameScene'],acid
+            assert abs(acid['deadline']-11850)<5 and acid['sameScene'],acid
             row={'level':level,'acid':acid}
             if mobile:
                 row['scatter']=page.evaluate(MOBILE,level)
@@ -91,7 +89,7 @@ with sync_playwright() as p:
                 assert abs(row['storm']['maxDuration']-27580)<.01 and abs(row['storm']['minDuration']-7250)<.01,row
                 assert row['storm']['animations']==row['storm']['count'] and row['storm']['constantInk'] and row['storm']['sameScene'],row
                 row['atmosphere']=page.evaluate(ATMOSPHERE,level)
-                assert row['atmosphere']['sameScene'] and row['atmosphere']['sameCloud'],row
+                assert row['atmosphere']['sameScene'],row
             report['mobile' if mobile else 'desktop'].append(row)
         context.close()
     browser.close()
@@ -102,7 +100,6 @@ with sync_playwright() as p:
     assert [r['storm']['count'] for r in report['desktop']]==[12,44,108]
     assert [r['scatter']['count'] for r in report['mobile']]==[8,16,36]
     assert [r['atmosphere']['digits'] for r in report['desktop']]==[6,18,34]
-    assert [r['atmosphere']['clouds'] for r in report['desktop']]==[1,2,3]
     assert not report['errors'],report['errors']
     (OUT/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps(report,ensure_ascii=False),flush=True)

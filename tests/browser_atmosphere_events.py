@@ -1,19 +1,56 @@
 """Verify rare effects with an accelerated scheduling clock and real rendered transitions."""
 import json
+import os
 import sys
 import tempfile
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 OUT=Path(tempfile.mkdtemp(prefix='inteon-atmosphere-qa-'))
+BASE=os.environ.get('INTEON_BASE_URL','http://127.0.0.1:8080').rstrip('/')
 with sync_playwright() as p:
     browser=p.chromium.launch(channel='msedge',headless=True)
     mobile='--mobile' in sys.argv
     page=browser.new_page(viewport={'width':390 if mobile else 1440,'height':844 if mobile else 900},is_mobile=mobile,has_touch=mobile)
     errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+    page.add_init_script("""sessionStorage.setItem('inteon-storm-last',String(Date.now()));
+        sessionStorage.setItem('inteon-cloud-next',String(Date.now()+500));
+        localStorage.setItem('inteonmteca-theme-duration','604800000');""")
+    page.goto(BASE+'/',wait_until='domcontentloaded')
+    page.wait_for_selector('body[data-yard-backdrop=live]', state='attached', timeout=60000)
+    page.evaluate("""async () => {
+        const {Scene}=await import('/yard/vendor/three.module.js');
+        const previous=Scene.prototype.onAfterRender;
+        Scene.prototype.onAfterRender=function(renderer,scene,camera,...args) {
+            previous.call(this,renderer,scene,camera,...args);
+            const banks=scene.getObjectByName('courtyard-cloud-banks');
+            if (renderer.domElement.closest('[data-yard-layer]') && banks?.isInstancedMesh &&
+                banks.visible && banks.material.map.image?.width && banks.count>0) {
+                window.renderedCourtyardClouds=banks.count;
+                Scene.prototype.onAfterRender=previous;
+            }
+        };
+    }""")
+    page.wait_for_function('window.renderedCourtyardClouds > 0')
+    page.clock.install()
+    page.clock.fast_forward(1500)
+    page.clock.fast_forward(260000)
+    assert page.locator('.sky-clouds').count()==0
+    assert page.evaluate("typeof inteonAtmosphere.replayCloud === 'undefined'")
+    assert page.locator('body').get_attribute('data-cloud-next-at') is None
+    if mobile:
+        assert not errors,errors
+        print('Mobile courtyard clouds render and the screen overlay stays absent.')
+        browser.close()
+        sys.exit()
+
+    # The original listening room still uses the album transport and its ambient schedule.
+    page.close()
+    page=browser.new_page(viewport={'width':1440,'height':900})
+    page.on('pageerror',lambda e:errors.append(str(e)))
     page.clock.install()
     page.add_init_script("sessionStorage.setItem('inteon-storm-last',String(Date.now()));localStorage.setItem('inteonmteca-theme-duration','604800000')")
-    page.goto('http://127.0.0.1:8080/',wait_until='domcontentloaded')
+    page.goto(BASE+'/listening-room.html',wait_until='domcontentloaded')
     page.wait_for_timeout(900)
     index=page.locator('.track-select').evaluate_all("es=>es.findIndex(e=>{let r=e.getBoundingClientRect(),v=e.closest('.track-list').getBoundingClientRect();return r.top>=v.top&&r.bottom<=v.bottom})")
     page.locator('.track-select').nth(index).click()
@@ -24,10 +61,9 @@ with sync_playwright() as p:
         print(page.evaluate("()=>{const a=document.querySelector('#album-player');return {paused:a.paused,ready:a.readyState,network:a.networkState,src:a.currentSrc,error:a.error?.message,interlude:document.body.dataset.interludeNextAt,storm:document.body.dataset.stormNextAt}}"))
         print(errors)
         raise
-    plan=page.evaluate("()=>({first:Number(document.body.dataset.interludeNextAt)-Date.now(),storm:Number(document.body.dataset.stormNextAt)-Date.now(),cloud:Number(document.body.dataset.cloudNextAt)-Date.now()})")
+    plan=page.evaluate("()=>({first:Number(document.body.dataset.interludeNextAt)-Date.now(),storm:Number(document.body.dataset.stormNextAt)-Date.now()})")
     assert 119000<=plan['first']<=240000,plan
     assert 295000<=plan['storm']<=300000,plan
-    assert 255000<=plan['cloud']<=260000,plan
     assert page.locator('.logo-storm').count()==0
     page.clock.fast_forward(int(plan['first'])+1200)
     page.wait_for_function("document.body.dataset.interludePhase==='dark'")
@@ -38,7 +74,7 @@ with sync_playwright() as p:
         heading:getComputedStyle(document.querySelector('.listening-intro')).opacity,
         controls:getComputedStyle(document.querySelector('#immersive-play')).opacity,
         progress:getComputedStyle(document.querySelector('.transport-seek-field')).opacity,
-        tracks:[...document.querySelectorAll('.track-item')].map(e=>getComputedStyle(e).opacity)})""")
+        tracks:[...document.querySelectorAll('.track-item:not(.scene-peek-track)')].map(e=>getComputedStyle(e).opacity)})""")
     assert float(dark['curtain'])>.95 and float(dark['heading'])<.05 and float(dark['controls'])<.05,dark
     assert float(dark['progress'])==1 and all(float(x)<.05 for x in dark['tracks']),dark
     page.screenshot(path=str(OUT/'dark-digits-progress.png'))
@@ -46,15 +82,6 @@ with sync_playwright() as p:
     page.clock.fast_forward(58000)
     page.wait_for_function("document.body.dataset.interludePhase==='idle'")
     assert page.locator('.scene-curtain').count()==0
-    if not page.locator('.sky-clouds').count():
-        delta=page.evaluate('Number(document.body.dataset.cloudNextAt)-Date.now()')
-        page.clock.fast_forward(max(1,int(delta)+1200))
-    page.wait_for_selector('.sky-clouds',state='attached')
-    page.evaluate("document.querySelector('.sky-clouds').getAnimations()[0].currentTime=40000")
-    page.screenshot(path=str(OUT/'clouds.png'))
-    assert float(page.locator('.sky-clouds').evaluate('e=>getComputedStyle(e).opacity'))>.1
-    assert page.evaluate('Number(document.body.dataset.cloudNextAt)-Date.now()>200000')
-    page.clock.fast_forward(81000)
     assert page.locator('.sky-clouds').count()==0
     page.evaluate("document.querySelector('#album-player').pause()")
     assert not errors,errors
