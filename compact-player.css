@@ -20,14 +20,6 @@
   display: grid; grid-template: "decks song transport" auto "wave wave wave" auto "utilities utilities utilities" auto / auto minmax(0,1fr) auto;
   align-items: center; gap: 4px 14px; padding: 8px 12px 5px; border-radius: 16px;
 }
-.yard-dj-compact[data-faded] .compact-display::after {
-  content: ""; position: absolute; inset: 0; z-index: 10; cursor: pointer;
-}
-.yard-dj-compact[data-faded]::after {
-  content: ""; position: fixed; z-index: 36; left: 50%; bottom: max(16px,env(safe-area-inset-bottom));
-  width: 32px; height: 3px; translate: -50% 0; border-radius: 3px;
-  background: #e3ded78c; box-shadow: 0 1px 3px #14131880; pointer-events: none;
-}
 .compact-utilities { grid-area: utilities; display: flex; align-items: center; gap: 4px; }
 .compact-brand { width: 77px; height: 21px; object-fit: contain; }
 .compact-utilities time { margin: 0 auto 0 8px; color: #ded9d2; font: 11px/1 var(--dd-mono); }
@@ -124,4 +116,28 @@
 @media (max-height: 480px) and (orientation:landscape) {
   .compact-display { width: min(700px,calc(100% - 22px)); padding-block: 4px; gap: 3px 10px; bottom: max(4px,env(safe-area-inset-bottom)); }
   .compact-wave .dd-wave { height: 30px; }
+}
+
+/* The transparent layout preserves the original tap area when fully hidden. */
+.compact-display .compact-recall { display: none; }
+#yard-dj-compact[data-ultra] .compact-display {
+  border-color: transparent; background: none; box-shadow: none; pointer-events: none;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+.yard-dj-compact[data-ultra] .compact-display > :not(.compact-recall) { visibility: hidden; }
+.yard-dj-compact[data-ultra] .compact-recall {
+  position: absolute; left: 50%; bottom: 0; translate: -50% 0;
+  display: flex; align-items: center; justify-content: center; gap: 9px; pointer-events: auto;
+  max-width: min(90%, 240px); height: 40px; padding: 0 14px; border-radius: 22px;
+  color: #f6eee4; background: #25272bcf; border: 1px solid #ece6da38;
+  font: 600 13px/1.2 "Segoe UI",sans-serif;
+}
+.compact-recall span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.compact-recall svg { flex: none; width: 13px; height: 13px; rotate: 180deg; }
+.yard-dj-compact[data-faded] .compact-recall {
+  inset: 0; translate: none; width: 100%; max-width: none; height: 100%; opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .yard-dj-compact[data-ultra]:not([data-faded]) .compact-recall { animation: compact-recall-in .2s ease-out; }
+  @keyframes compact-recall-in { from { opacity: 0; } to { opacity: 1; } }
 }

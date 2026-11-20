@@ -1,4 +1,4 @@
-"""Exercise the compact player's one-minute fade using virtual time and real input."""
+"""Check the compact player's two idle stages with a virtual clock and real input."""
 import os
 import sys
 
@@ -47,24 +47,30 @@ def check(browser, url, width, height, touch):
         box = control.bounding_box()
         point(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
 
+    recall = compact.get_by_role("button", name="Развернуть плеер")
     assert_level(a, 1)
     press(a)
-    advance(15_000)
-    assert_level(a, .75)
+    b_box = b.bounding_box()
+    advance(9_000)
+    assert a.is_visible() and not recall.is_visible()
     point(width / 2, height / 4)
-    advance(15_000)
-    assert_level(a, .5)
+    advance(1_100)
+    assert recall.is_visible() and not a.is_visible()
+    assert_level(recall, 1)
+    assert recall.bounding_box()["width"] < 245
+    assert recall.locator("span").inner_text().strip()
+    press(recall)
+    assert a.is_visible() and a.get_attribute("aria-pressed") == "true"
+    advance(10_100)
+    assert_level(recall, 1)
+    advance(19_000)
+    assert_level(recall, 1)
+    advance(1_200)
+    assert_level(recall, 0)
 
-    press(a)
-    assert_level(a, 1)
-    advance(45_000)
-    assert_level(a, .25)
-    advance(15_100)
-    assert_level(a, 0)
-
-    # Tap exactly where deck B was drawn, allowing the wake surface to intercept it.
-    press(b)
-    assert_level(b, 1)
+    # The first tap in the original dock wakes it without activating deck B.
+    point(b_box["x"] + b_box["width"] / 2, b_box["y"] + b_box["height"] / 2)
+    assert b.is_visible()
     assert a.get_attribute("aria-pressed") == "true"
     assert b.get_attribute("aria-pressed") == "false"
     press(b)
@@ -73,19 +79,21 @@ def check(browser, url, width, height, touch):
     picker = compact.locator("#compact-picker")
     press(compact.locator("#compact-track-select"))
     picker.wait_for()
-    advance(61_000)
+    advance(31_000)
     assert_level(b, 1)
     assert picker.is_visible()
+    picker.evaluate("""el => el.addEventListener('toggle', () => { window.qaPickerClosed = true; }, {once:true})""")
     page.keyboard.press("Escape")
     picker.wait_for(state="hidden")
-    page.clock.run_for(35)  # Dispatch the native popover toggle before advancing the clock.
-    advance(15_000)
-    assert_level(b, .75)
+    page.wait_for_function("window.qaPickerClosed === true")
+    advance(10_100)
+    assert recall.is_visible() and not b.is_visible()
+    press(recall)
 
     press(compact.get_by_role("button", name="Настройки звука"))
     dialog = page.locator("#dialog")
     dialog.wait_for()
-    advance(61_000)
+    advance(31_000)
     assert_level(b, 1)
     assert dialog.is_visible()
     press(dialog.locator("#dialog-close"))
@@ -94,20 +102,22 @@ def check(browser, url, width, height, touch):
     press(compact.locator("[data-dj-mode=full]"))
     studio = page.locator("#studio")
     studio.wait_for()
-    advance(61_000)
+    advance(31_000)
     assert_level(studio, 1)
     press(studio.locator("[data-dj-mode=compact]"))
     b.wait_for()
     assert_level(b, 1)
     assert b.get_attribute("aria-pressed") == "true"
-    advance(61_000)
-    assert_level(b, 0)
+    advance(31_000)
+    assert_level(recall, 0)
+    recall.focus()
+    assert compact.locator("#compact-track-select").evaluate("el => document.activeElement === el")
     a.focus()
     assert_level(a, 1)
     page.keyboard.press("Enter")
     assert a.get_attribute("aria-pressed") == "true"
     page.close()
-    print(f"{width} × {height}: fade, pointer and keyboard wake, open panels and Full mode passed", flush=True)
+    print(f"{width} × {height}: 10s ultra, 30s invisible, pointer and keyboard wake, open panels and Full mode passed", flush=True)
 
 
 if __name__ == "__main__":

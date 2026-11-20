@@ -55,6 +55,7 @@
         <button type="button" class="compact-fullscreen"></button>
         <div data-dj-window-tools></div>
       </div>
+      <button type="button" class="compact-recall" aria-label="Развернуть плеер"><span></span>${icon('down')}</button>
       <input class="compact-import" type="file" accept="audio/*,.flac,.wav,.mp3,.m4a,.ogg,.wv" multiple hidden>
     </div>
     <div id="compact-picker" popover data-resident-obstacle aria-label="Плейлист активной деки">
@@ -75,26 +76,26 @@
   let side = 'A', importSide = 'A';
   const active = () => document.body.dataset.yardWindow === 'dj' && document.body.dataset.djMode === 'compact';
 
-  const fadeDuration = 60_000;
-  const fadeStep = fadeDuration / 256;
+  const ultraAfter = 10_000, hiddenAfter = ultraAfter + 20_000;
+  const recall = find('.compact-recall'), recallTitle = recall.querySelector('span');
   const settings = document.getElementById('dialog');
-  let fadeEnd = 0, fadeTimer = 0, openPanel = null;
+  let lastActivity = 0, idleTimer = 0, openPanel = null, heldPointer = null;
 
-  function drawFade() {
-    clearTimeout(fadeTimer);
-    if (!active() || openPanel || document.hidden) return;
-    const remaining = Math.max(0, fadeEnd - performance.now());
-    display.style.opacity = String(remaining / fadeDuration);
-    root.toggleAttribute('data-faded', remaining === 0);
-    // Each step is smaller than one level of 8-bit alpha. No frame loop is needed.
-    if (remaining) fadeTimer = setTimeout(drawFade, Math.min(fadeStep, remaining));
+  function drawIdle() {
+    clearTimeout(idleTimer);
+    if (!active() || document.hidden) return;
+    const held = openPanel || heldPointer !== null;
+    const elapsed = held ? 0 : performance.now() - lastActivity;
+    const ultra = elapsed >= ultraAfter, invisible = elapsed >= hiddenAfter;
+    root.toggleAttribute('data-ultra', ultra);
+    root.toggleAttribute('data-faded', invisible);
+    display.toggleAttribute('data-resident-obstacle', !ultra);
+    recall.toggleAttribute('data-resident-obstacle', ultra && !invisible);
+    if (!held && !invisible) idleTimer = setTimeout(drawIdle, (ultra ? hiddenAfter : ultraAfter) - elapsed);
   }
   function wakeDisplay() {
-    clearTimeout(fadeTimer);
-    fadeEnd = performance.now() + fadeDuration;
-    display.style.opacity = '1';
-    root.removeAttribute('data-faded');
-    if (active() && !openPanel && !document.hidden) fadeTimer = setTimeout(drawFade, fadeStep);
+    lastActivity = performance.now();
+    drawIdle();
   }
   function holdFor(panel, opened) {
     if (opened && active()) openPanel = panel;
@@ -102,24 +103,45 @@
     else return;
     wakeDisplay();
   }
-  function handlePress(event) {
-    const expired = !openPanel && performance.now() >= fadeEnd;
-    if (expired && (event.type === 'pointerdown' || event.detail > 0)) {
+  root.addEventListener('pointerdown', event => {
+    if (root.hasAttribute('data-ultra')) {
+      // Keep the wake button under the pointer until the matching click.
       event.preventDefault();
-      event.stopImmediatePropagation();
-      // Keep the transparent surface over the buttons until this tap's click.
-      if (event.type === 'pointerdown') { drawFade(); return; }
+      return;
     }
+    heldPointer = event.pointerId;
+    wakeDisplay();
+  }, true);
+  function releasePointer(event) {
+    if (heldPointer !== event.pointerId) return;
+    heldPointer = null;
     wakeDisplay();
   }
-  root.addEventListener('pointerdown', handlePress, true);
-  root.addEventListener('click', handlePress, true);
-  for (const type of ['focusin', 'keydown', 'drop']) root.addEventListener(type, wakeDisplay, true);
+  window.addEventListener('pointerup', releasePointer, true);
+  window.addEventListener('pointercancel', releasePointer, true);
+  root.addEventListener('click', event => {
+    if (root.hasAttribute('data-ultra') || event.target.closest('.compact-recall')) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+    wakeDisplay();
+  }, true);
+  root.addEventListener('focusin', event => {
+    wakeDisplay();
+    if (event.target === recall) select.focus({preventScroll:true});
+  });
+  for (const type of ['keydown', 'drop']) root.addEventListener(type, wakeDisplay, true);
+  for (const type of ['pointermove', 'wheel']) root.addEventListener(type, () => {
+    if (!root.hasAttribute('data-ultra')) wakeDisplay();
+  }, {passive:true});
   for (const panel of [picker, document.getElementById('yard-map-sources')]) {
     panel?.addEventListener('toggle', () => holdFor(panel, panel.matches(':popover-open')));
   }
   settings?.addEventListener('close', () => holdFor(settings, false));
-  document.addEventListener('visibilitychange', drawFade);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) heldPointer = null;
+    drawIdle();
+  });
 
   const mix = window.DJCompactMix.create(engine, library, {
     onDeckChange: activate,
@@ -131,7 +153,10 @@
     const state = engine.snapshot()[side];
     const song = state.track?.title || 'Выбрать трек';
     const performer = state.track?.artist || '';
-    if (title.textContent !== song) title.textContent = song;
+    if (title.textContent !== song) {
+      title.textContent = song;
+      recallTitle.textContent = state.track?.title || 'Плеер';
+    }
     if (artist.textContent !== performer) artist.textContent = performer;
     select.setAttribute('aria-label', 'Выбрать трек для деки ' + side + '. ' + song);
     play.disabled = !state.track;
