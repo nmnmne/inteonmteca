@@ -5,9 +5,9 @@ const pulse = (age, start, length) => Math.sin(Math.PI * clamp((age - start) / l
 
 // The leader is the camera. A wingmate must see that camera turn towards it,
 // catch its eye, and answer the steady gaze before another bird is addressed.
-export function createCrowRollCall(birds, random = Math.random) {
+export function createCrowRollCall(birds, random = Math.random, greeting = {recipientId:null}) {
   const leader = birds[0];
-  const state = {phase:'idle', targetId:null, answered:[], held:0, yaw:0, pitch:0, nodOffset:0, nodRecipientId:null};
+  const state = {phase:'idle', targetId:null, answered:[], held:0, yaw:0, pitch:0, nodOffset:0, nodRecipientId:greeting.recipientId};
   let target = null, age = 0, landing = 0;
   let chosenTurn = null, nodding = false;
 
@@ -74,7 +74,7 @@ export function createCrowRollCall(birds, random = Math.random) {
           // Draw a slot among actual responders once. Only a mutual look spends the nod.
           chosenTurn ??= Math.floor(random() * Math.max(1,targetSize-1));
           if (state.answered.length === chosenTurn) {
-            state.nodRecipientId = bird.id;
+            state.nodRecipientId = greeting.recipientId = bird.id;
             nodding = true;
           }
         }

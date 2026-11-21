@@ -12,6 +12,8 @@ import { createSolarLighting } from './solar-lighting.js';
 import { createCameraOptics } from './camera-optics.js';
 
 const layoutURL = new URL('./data/site-layout.json?v=zhdanova-entrances-20261120', import.meta.url);
+// A WebGL restart can rebuild the flock within the same page visit.
+const cameraGreeting = {recipientId:null};
 
 function releaseScene(scene) {
   const resources = new Set();
@@ -175,7 +177,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     const allowCrowSignals = () => !reducedMotion.matches && (yard?.scene.userData.virtuality || 0)<.12;
     let storyStorage;
     try { storyStorage = window.localStorage; } catch { /* Stories can still play in this tab. */ }
-    flock = createCrowFlock(layout, openingView, {residentVisits, storyDeck:createCrowStoryDeck(Math.random, storyStorage),
+    flock = createCrowFlock(layout, openingView, {residentVisits, cameraGreeting, storyDeck:createCrowStoryDeck(Math.random, storyStorage),
       crowTrees:() => allowCrowSignals() && yard?.scene.userData.crowTrees,
       allowKeyStory:allowCrowSignals, allowBeacons:allowCrowSignals});
     walk = createAutoWalk(layout, { openingView, flock });

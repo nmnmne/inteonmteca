@@ -19,7 +19,7 @@ const distance = (a, b) => Math.hypot(b.x - a.x, b.z - a.z);
 
 // One social simulation for the first-person bird and its twelve neighbours.
 // The ordinary birds persist when they split off. No bird is spawned at a reunion.
-export function createCrowFlock(layout, openingView, { random = Math.random, residentVisits = false, allowKeyStory, storyDeck, crowTrees, allowBeacons = () => true } = {}) {
+export function createCrowFlock(layout, openingView, { random = Math.random, residentVisits = false, allowKeyStory, storyDeck, crowTrees, allowBeacons = () => true, cameraGreeting } = {}) {
   const range = (a, b) => a + (b - a) * random();
   const integer = (a, b) => Math.min(b, Math.floor(range(a, b + 1)));
   const birds = [];
@@ -96,7 +96,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
   // A bird's starting wing phase varies uniformly on every visit. This draw
   // uses it without consuming the random sequence that drives flock missions.
   const nodDraw = birds[2].wingPhase / turn;
-  const rollCall = createCrowRollCall(birds, () => nodDraw);
+  const rollCall = createCrowRollCall(birds, () => nodDraw, cameraGreeting);
   const onStage = id => id === rollCall.state.targetId || keyStory?.targets.has(id) || disputes.reserved(birds[id]);
   const busyForPranks = {has: id => onStage(id) || beacons.current?.sender.id === id || beacons.current?.recipient.id === id};
   const treePrank = createCrowTreePrank(birds, crowTrees);

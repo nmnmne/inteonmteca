@@ -39,9 +39,11 @@ test('only one randomly selected partner gets one camera nod across multiple gat
     const leader = {id:0,x:0,y:.42,z:0,yaw:0,pitch:0};
     const birds = [leader,...[-1,0,1].map((x,i)=>({id:i+1,x,y:.2,z:-4,slot:i,
       yaw:0,airborne:0,called:true,inParty:true}))];
-    const call=createCrowRollCall(birds,()=>draw);
+    const visit = {recipientId:null};
+    let call=createCrowRollCall(birds,()=>draw,visit);
     let pulses=0, previous=false;
     for (let meeting=0;meeting<3;meeting++) {
+      if (meeting === 2) call=createCrowRollCall(birds,()=>1-draw,visit);
       call.reset();
       for (let i=0;i<3000 && call.state.phase!=='done';i++) {
         const s=call.state;
