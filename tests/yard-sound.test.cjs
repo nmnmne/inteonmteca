@@ -33,6 +33,7 @@ function fixture(channels = 2, random = Math.random) {
     async suspend() { this.state='suspended'; }
     async close() { this.state='closed'; }
     createGain() { return node('gain',{gain:parameter(1)}); }
+    createAnalyser() { return node('analyser', {rms:0, getFloatTimeDomainData(out) { out.fill(this.rms); }}); }
     createStereoPanner() { return node('panner',{pan:parameter()}); }
     createBiquadFilter() { return node('filter',{frequency:parameter(),Q:parameter()}); }
     createDelay() { return node('delay',{delayTime:parameter()}); }
@@ -52,7 +53,7 @@ function fixture(channels = 2, random = Math.random) {
     cross:-1, A:{playing,bpm:120,baseBPM:120,time:32.75,track:{offset:0}}, B:{playing:false},
   })};
   const code=readFileSync(join(__dirname,'../yard/yard-sound.js'),'utf8')
-    .replace(/^import .*?;$/gm,'').replace('export function createYardSound','function createYardSound');
+    .replace(/^import .*?;$/gm,'').replaceAll('export function ', 'function ');
   const bird={id:1,x:2,z:1};
   const scope=vm.createContext({window,document,navigator:{},Math:Object.assign(Object.create(Math), {random}),Float32Array,crowPersonality,
     Date:{now:()=>time*1000}, courtyardEffectSeconds:ms=>-ms/1000,
@@ -63,6 +64,7 @@ function fixture(channels = 2, random = Math.random) {
   const yard=scope.createYardSound(()=>listener);
   return {
     document, nodes, sources, master, music, bird, listener, yard,
+    voiceEnvelope:scope.audibleCrowEnvelope,
     get context() { return context; },
     get interval() { return interval; },
     setPlaying(value) { playing = value; },
@@ -277,4 +279,27 @@ test('a neighbour answers in its own voice and from its own position, including 
   assert.deepEqual(magical[1].buffer.getChannelData(0), answer.buffer.getChannelData(0).slice().reverse());
   assert.equal(other.musicReplyAt, scene.listener.elapsed + .25 + .75);
   scene.yard.dispose();
+});
+
+
+test('the orb hears only spatialised calls and chuckles at the actual master level', async () => {
+  const scene = fixture(2, () => .5);
+  await scene.start();
+  const meter = scene.nodes.find(node => node.kind === 'analyser');
+  meter.rms = .04;
+  assert.equal(scene.voiceEnvelope(), 0);
+  assert.ok(scene.sources.filter(node => node.loop).every(source => !reaches(source, meter)));
+  scene.step(2);
+  assert.ok(scene.sources.filter(node => !node.loop).every(source => reaches(source, meter)));
+  const voiced = scene.voiceEnvelope();
+  assert.ok(voiced > .15 && voiced < 1);
+  scene.bird.laughAt = 2.1;
+  scene.step(2.15);
+  assert.ok(reaches(scene.sources.at(-1), meter));
+  scene.master.value = '30'; scene.step(2.31);
+  assert.ok(scene.voiceEnvelope() > 0 && scene.voiceEnvelope() < voiced);
+  scene.master.value = '0'; scene.step(2.47);
+  assert.equal(scene.voiceEnvelope(), 0);
+  scene.yard.dispose();
+  assert.equal(scene.voiceEnvelope(), 0);
 });

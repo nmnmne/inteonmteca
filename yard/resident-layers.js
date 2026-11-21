@@ -1,11 +1,13 @@
 import * as THREE from './vendor/three.module.js';
 import { createResidentModel } from './resident-model.js';
 import { createResidentOrb } from './resident-orb.js';
+import { createResidentOrbTrail } from './resident-orb-trail.js';
 
 export function createResidentLayers(scene, canvas) {
   const model = createResidentModel();
   const orb = createResidentOrb();
-  scene.add(model.group, orb.mesh);
+  const trail = createResidentOrbTrail();
+  scene.add(model.group, trail.mesh, orb.mesh);
   const center = new THREE.Vector3(), perch = new THREE.Vector3(), offset = new THREE.Vector3();
   const projected = new THREE.Vector3(), lastScreen = new THREE.Vector2();
   const anchor = new THREE.Vector2(), target = new THREE.Vector3();
@@ -32,7 +34,7 @@ export function createResidentLayers(scene, canvas) {
 
   function update(visit, camera, daylight, virtuality, dt) {
     const room = window.inteonRoom;
-    if (!room) return;
+    if (!room) { trail.clear(); return; }
     // Hysteresis avoids swapping bodies on every frame of a grazing flight.
     const backstage = virtuality >= (layer === 'backstage' ? .45 : .50);
     model.group.scale.setScalar(1);
@@ -41,6 +43,8 @@ export function createResidentLayers(scene, canvas) {
     const visiting = model.group.visible;
     model.group.visible = visiting && !backstage;
     orb.mesh.visible = backstage;
+    if (!backstage) trail.clear();
+    let repositioned = false;
     const next = backstage ? 'backstage' : visiting ? 'courtyard' : 'room';
     if (next === 'room') {
       returnToRoom();
@@ -101,10 +105,13 @@ export function createResidentLayers(scene, canvas) {
       floatTime += dt;
       atDepth(camera, anchor.x + .024 * Math.sin(floatTime * .48),
         anchor.y + .025 * Math.sin(floatTime * .66), depth, target);
-      if (center.distanceToSquared(target) > 16) center.copy(target);
+      if (center.distanceToSquared(target) > 16) { center.copy(target); repositioned=true; }
       else center.lerp(target, 1 - Math.exp(-4.5 * dt));
     }
-    if (backstage) orb.update(virtuality, center, dt);
+    if (backstage) {
+      orb.update(virtuality, center, dt);
+      trail.update(orb.mesh.position, virtuality, repositioned || layer !== 'backstage');
+    }
 
     // Remember the last displayed pixel before the camera moves again. In
     // particular a cut, resize or teardown must not project through a new pose.
@@ -122,5 +129,6 @@ export function createResidentLayers(scene, canvas) {
     returnToRoom();
     model.dispose();
     orb.dispose();
+    trail.dispose();
   }};
 }

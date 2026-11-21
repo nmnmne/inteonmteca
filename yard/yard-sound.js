@@ -83,6 +83,11 @@ function addWindReflections(context, windGain, bus) {
   windGain.connect(reverb).connect(wet).connect(bus);
 }
 
+let activeCrowMeter;
+export function audibleCrowEnvelope() {
+  return activeCrowMeter?.() || 0;
+}
+
 function makeAmbience(context) {
   const bus = context.createGain();
   bus.channelCount = 2;
@@ -145,6 +150,21 @@ function makeAmbience(context) {
 
   let gustId, gustX, gustZ;
   const callsInFlight = new Set();
+  // This pass-through contains only spatialised crow voices. Gusts, rain and
+  // music never enter it, even when they play through the same speaker pair.
+  const crowMeter = context.createAnalyser();
+  crowMeter.fftSize = 512;
+  crowMeter.connect(bus);
+  const crowSamples = new Float32Array(crowMeter.fftSize);
+  function readCrowMeter() {
+    if (context.state !== 'running' || !callsInFlight.size) return 0;
+    crowMeter.getFloatTimeDomainData(crowSamples);
+    let sum = 0;
+    for (const sample of crowSamples) sum += sample * sample;
+    const rms = Math.sqrt(sum / crowSamples.length) * bus.gain.value;
+    return 1 - Math.exp(-22 * rms);
+  }
+  activeCrowMeter = readCrowMeter;
   function windEnvelope(phase, listener) {
     const id = Math.floor(phase / 12);
     if (id !== gustId) {
@@ -172,8 +192,8 @@ function makeAmbience(context) {
     source.buffer = clip;
     source.playbackRate.value = rate;
     const panner = context.createStereoPanner?.();
-    if (panner) gain.connect(panner).connect(bus);
-    else gain.connect(bus);
+    if (panner) gain.connect(panner).connect(crowMeter);
+    else gain.connect(crowMeter);
     function position(view, immediate = false) {
       const dx = point.x - view.x, dz = point.z - view.z, distance = Math.hypot(dx, dz);
       const volume = level * .32 / (1 + distance / 31);
@@ -253,7 +273,11 @@ function makeAmbience(context) {
       }
       return null;
     },
-    stop() { callsInFlight.clear(); air.stop(); rainfall.stop(); air.disconnect(); rainfall.disconnect(); bus.disconnect(); },
+    stop() {
+      if (activeCrowMeter === readCrowMeter) activeCrowMeter = null;
+      callsInFlight.clear(); crowMeter.disconnect();
+      air.stop(); rainfall.stop(); air.disconnect(); rainfall.disconnect(); bus.disconnect();
+    },
   };
 }
 
