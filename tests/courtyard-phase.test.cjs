@@ -50,9 +50,9 @@ test('entry uses local wall time minus twenty minutes, including fractional time
         const start = new Date(2026, 2, 20, hour, hour === 23 ? 55 : 5, 37, 123).getTime();
         const page = open(tabStorage(), start);
         assert.equal(page.time(start), wrap(localTime(start) - 20 * minute));
-        assert.equal(page.time(start + 2.5 * minute), wrap(localTime(start) - 20 * minute - 352.5 * minute));
-        assert.equal(page.time(start + 5 * minute), wrap(localTime(start) + day / 2 - 5 * minute));
-        assert.equal(page.time(start + 10 * minute), localTime(start + 10 * minute));
+        assert.equal(page.time(start + 1.25 * minute), wrap(localTime(start) - 20 * minute - 353.75 * minute));
+        assert.equal(page.time(start + 2.5 * minute), wrap(localTime(start) + day / 2 - 7.5 * minute));
+        assert.equal(page.time(start + 5 * minute), localTime(start + 5 * minute));
       }
     }
   } finally {
@@ -60,12 +60,12 @@ test('entry uses local wall time minus twenty minutes, including fractional time
   }
 });
 
-test('each full turn after the first lasts five, two and a half, then ten minutes and repeats during tab suspension', () => {
+test('each full turn after the first lasts 2.5, 1.25, then 5 minutes and repeats during tab suspension', () => {
   const start = Date.UTC(2026, 6, 7, 9, 12, 13, 14);
   const page = open(tabStorage(), start);
-  const sync = localTime(start + 10 * minute);
-  let boundary = start + 10 * minute;
-  for (const duration of [5, 2.5, 10, 5, 2.5, 10]) {
+  const sync = localTime(start + 5 * minute);
+  let boundary = start + 5 * minute;
+  for (const duration of [2.5, 1.25, 5, 2.5, 1.25, 5]) {
     assert.equal(page.time(boundary), sync);
     for (const fraction of [.25, .5, .75]) {
       assert.equal(page.time(boundary + fraction * duration * minute), wrap(sync - fraction * day));
@@ -74,21 +74,21 @@ test('each full turn after the first lasts five, two and a half, then ten minute
     const before = page.time(boundary - 1);
     assert.ok(Math.abs(wrap(before - page.time(boundary)) - day / (duration * minute)) < .001);
   }
-  assert.equal(page.time(boundary + (17.5 * 200 + 1.25) * minute), wrap(sync - day / 4));
+  assert.equal(page.time(boundary + (8.75 * 200 + .625) * minute), wrap(sync - day / 4));
 });
 
 test('the first rendezvous follows the local hour when daylight saving changes', () => {
   const oldZone = process.env.TZ;
   process.env.TZ = 'Europe/Berlin';
   try {
-    for (const start of [Date.parse('2026-03-29T00:55Z'), Date.parse('2026-10-25T00:55Z')]) {
+    for (const start of [Date.parse('2026-03-29T00:58Z'), Date.parse('2026-10-25T00:58Z')]) {
       const page = open(tabStorage(), start);
       assert.equal(page.time(start), wrap(localTime(start) - 20 * minute));
-      assert.equal(page.time(start + 10 * minute), localTime(start + 10 * minute));
-      // The actual change of offset occurs at minute five. The simulated sun must keep moving backwards.
-      const change = start + 5 * minute;
+      assert.equal(page.time(start + 5 * minute), localTime(start + 5 * minute));
+      // The actual change of offset occurs at minute two. The simulated sun must keep moving backwards.
+      const change = start + 2 * minute;
       const advance = wrap(page.time(change - 1) - page.time(change + 1));
-      assert.ok(advance > 0 && advance < 320);
+      assert.ok(advance > 0 && advance < 640);
     }
   } finally {
     if (oldZone === undefined) delete process.env.TZ; else process.env.TZ = oldZone;
@@ -133,7 +133,7 @@ test('unavailable or corrupt storage falls back to a fresh continuous local visi
     const page = open(storage, start, {from:site+'/'});
     assert.equal(page.time(start), wrap(localTime(start) - 20 * minute));
     page.restore();
-    assert.equal(page.time(start + 10 * minute), localTime(start + 10 * minute));
+    assert.equal(page.time(start + 5 * minute), localTime(start + 5 * minute));
   }
 });
 
@@ -143,7 +143,7 @@ test('effects run backward continuously across midnight and every lap boundary',
   const normal = 72_000;
   let elapsed = 0, phase = page.effects(start);
   assert.equal(phase, wrap(localTime(start) - 20 * minute) / normal);
-  for (const [duration, retreat] of [[10, day - 30 * minute], [5, day], [2.5, day], [10, day], [5, day]]) {
+  for (const [duration, retreat] of [[5, day - 25 * minute], [2.5, day], [1.25, day], [5, day], [2.5, day]]) {
     for (const fraction of [.001, .5, .999, 1]) {
       const at = start + (elapsed + duration * fraction) * minute;
       assert.ok(Math.abs(page.effects(at) - (phase - fraction * retreat / normal)) < 1e-8);
@@ -157,12 +157,12 @@ test('effects run backward continuously across midnight and every lap boundary',
 test('earlier forward and reverse visits keep their start and use the new first sync', () => {
   const start = Date.UTC(2026, 3, 12), storage = tabStorage(), at = start + 4 * minute;
   const fresh = open(tabStorage(), start);
-  for (const firstAdvanceMs of [day + 40 * minute, -day + 40 * minute]) {
+  for (const [firstLapMs, firstAdvanceMs] of [[undefined,day+40*minute], [undefined,-day+40*minute], [10*minute,-day+30*minute]]) {
     storage.setItem('inteon.courtyard.visit-clock-v2', JSON.stringify({
-      startEpochMs:start, startTimeMs:fresh.time(start), firstAdvanceMs,
+      startEpochMs:start, startTimeMs:fresh.time(start), firstLapMs, firstAdvanceMs,
     }));
     const upgraded = open(storage, at, {from:site+'/'});
-    for (const minuteOffset of [0,4,10,15,17.5,25,41]) {
+    for (const minuteOffset of [0,4,5,7.5,8.75,13.75,41]) {
       const epoch = start + minuteOffset * minute;
       assert.equal(upgraded.effects(epoch),fresh.effects(epoch));
     }

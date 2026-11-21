@@ -2,9 +2,9 @@ const radians = Math.PI / 180;
 const minuteMs = 60000;
 const dayMs = 24 * 60 * minuteMs;
 const entryLag = 20 * minuteMs;
-const firstLap = 10 * minuteMs;
-const secondLap = 5 * minuteMs;
-const thirdLap = 2.5 * minuteMs;
+const firstLap = 5 * minuteMs;
+const secondLap = firstLap / 2;
+const thirdLap = secondLap / 2;
 const effectSecondMs = 72000; // One shader second represents 72 simulated seconds.
 const repeatMs = secondLap + thirdLap + firstLap;
 const visitKey = 'inteon.courtyard.visit-clock-v2';
@@ -36,8 +36,8 @@ function readVisit() {
     if (visit && Number.isSafeInteger(visit.startEpochMs) &&
         Number.isInteger(visit.startTimeMs) && visit.startTimeMs >= 0 && visit.startTimeMs < dayMs &&
         Number.isInteger(visit.firstAdvanceMs) && Math.abs(visit.firstAdvanceMs) < 3 * dayMs) {
-      // Older visits used a twenty-minute first lap. Preserve the original
-      // entrance, calculating the time-zone offset for its new rendezvous.
+      // Older visits retain their original entrance. Recalculate the
+      // time-zone offset for the new rendezvous.
       if (visit.firstLapMs !== firstLap) {
         const updated = createVisitClock(visit.startEpochMs);
         visit.firstAdvanceMs = updated.firstAdvanceMs;

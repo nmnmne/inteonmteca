@@ -1,4 +1,4 @@
-"""Render the ten-minute rotation and follow its transition to the next five-minute day."""
+"""Render the five-minute rotation and follow its transition to the next 2.5-minute day."""
 import os
 from datetime import datetime, timezone
 
@@ -7,12 +7,12 @@ from playwright.sync_api import sync_playwright
 from browser_ambient_route import expose_walker
 
 BASE = os.environ.get("INTEON_BASE_URL", "http://127.0.0.1:8080").rstrip("/")
-# In a UTC browser this visit opens at 04:30 civil time. After its initial
-# synchronization and the 5- and 2.5-minute laps, the 10-minute lap starts at
+# In a UTC browser this visit opens at 04:35 civil time. After its initial
+# synchronization and the 2.5- and 1.25-minute laps, the 5-minute lap starts at
 # 05:00 in Oral, equivalent to midnight UTC for the solar calculation.
-ENTRY = int(datetime(2026, 3, 20, 4, 50, tzinfo=timezone.utc).timestamp() * 1000)
-MIDNIGHT = ENTRY + 17 * 60_000 + 30_000
-SOLAR_HOUR = 25_000  # One simulated hour in real milliseconds.
+ENTRY = int(datetime(2026, 3, 20, 4, 55, tzinfo=timezone.utc).timestamp() * 1000)
+MIDNIGHT = ENTRY + 8 * 60_000 + 45_000
+SOLAR_HOUR = 12_500  # One simulated hour in real milliseconds.
 
 
 def observe(page):
@@ -142,7 +142,7 @@ def exercise(browser, mobile):
     night = capture(page, night_at)
     assert night["night"] == 1 and night["intensity"] == 0 and night["updates"] == dusk["updates"], night
     assert 2 < night["brightness"] < noon["brightness"]*.7, (noon, night)
-    next_lap = MIDNIGHT + 10 * 60_000
+    next_lap = MIDNIGHT + 5 * 60_000
     next_dawn = capture(page, next_lap + (dawn_at - MIDNIGHT) // 2)
     next_noon = capture(page, next_lap + (noon_at - MIDNIGHT) // 2)
     for original, next_day in ((dawn, next_dawn), (noon, next_noon)):
