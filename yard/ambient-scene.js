@@ -124,15 +124,18 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     if (document.hidden || lifetime.signal.aborted) return;
     if (now >= nextDraw) {
       try {
-        const dt = lastDraw === null ? 0 : Math.min((now - lastDraw) / 1000, 0.15);
+        const elapsed = lastDraw === null ? 0 : (now - lastDraw) / 1000;
+        const dt = Math.min(elapsed, .15);
         lastDraw = now;
         nextDraw = now + frameMs - (nextDraw ? (now - nextDraw) % frameMs : 0);
         // The entry wave and the camera stop share visible scene time. An
         // inactive tab resumes at the same point in the wave and the route.
         const holdUntil = yard.edgeEffect.cameraHoldUntil ?? -Infinity;
-        const held = Math.max(0, Math.min(dt, holdUntil - visibleSeconds));
-        visibleSeconds += dt;
-        const pose = walk.update((dt - held) * yard.edgeEffect.passagePace, held);
+        visibleSeconds += elapsed;
+        // Cap route integration after a missed frame, while the entry effect
+        // finishes on its visible-time deadline even on a slow display.
+        const moving = Math.min(dt, Math.max(0, visibleSeconds - holdUntil));
+        const pose = walk.update(moving * yard.edgeEffect.passagePace, dt - moving);
         camera.position.set(pose.x, pose.y, pose.z);
         camera.rotation.set(pose.pitch, -pose.yaw, reducedMotion.matches ? 0 : pose.roll, 'YXZ');
         yard.edgeEffect.update(pose.x, pose.z, camera.position.y, visibleSeconds);

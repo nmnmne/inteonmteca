@@ -7,7 +7,7 @@ import { createHouseSections } from './house-sections.js';
 import { createHouseBackstage } from './house-backstage.js';
 
 const approachMetres = 6, interiorMetres = 3, roofFadeMetres = 1.25;
-const entryWaveSeconds = 4.8;
+const houseEntrySeconds = .2, cityEntrySeconds = 4.8;
 const entryPreview = .24;
 const smooth = (x,a,b) => THREE.MathUtils.smootherstep(x,a,b);
 const signedDistance = (x,z,ring) => {
@@ -57,7 +57,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
   const entryPulse = { value: new THREE.Vector4(0, 0, 0, -1) };
   const pulseStrength = {value:1};
   const city = createCityHologram(scene, layout.walkable, entryPulse);
-  let sampled = false, inBackstage = false, pulseStarted = -Infinity;
+  let sampled = false, inBackstage = false, pulseStarted = -Infinity, pulseSeconds = houseEntrySeconds;
   const wallContact = passThroughBuildings ? createCrowWallContact(layout) : null;
   let facadeDistance = Infinity, passagePace = 1;
   let drawingHouse = null, holdUntil = -Infinity;
@@ -191,7 +191,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
             house.revealedFromInside = true;
             entered = true;
             if (sampled && !reducedMotion?.matches && !sparse) {
-              holdUntil = timeSeconds + entryWaveSeconds;
+              holdUntil = timeSeconds + houseEntrySeconds;
               drawingHouse = {house, deepest:0, pace:passagePace};
             }
           } else if (distance > .15) house.inside = false;
@@ -215,7 +215,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
           house.entryDraw.value = preview ? 0 : 1;
           if (preview) crossing *= entryPreview;
           if (drawing) {
-            const progress = THREE.MathUtils.clamp(1-(holdUntil-timeSeconds)/entryWaveSeconds,0,1);
+            const progress = THREE.MathUtils.clamp(1-(holdUntil-timeSeconds)/houseEntrySeconds,0,1);
             const depth = Number.isFinite(distance) ? Math.max(0,Math.min(-profile.horizontal,profile.top-y)) : 0;
             drawingHouse.deepest = Math.max(drawingHouse.deepest,depth);
             if (distance>0 || (progress>=1 && crossing>=.999 && interior>=.999)) {
@@ -252,10 +252,11 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
         entryPulse.value.set(x, y, z, 0);
         pulseStrength.value = sparse ? 1 : .20;
         pulseStarted = timeSeconds;
+        pulseSeconds = sparse ? cityEntrySeconds : houseEntrySeconds;
       }
       sampled = true;
-      const progress = (timeSeconds - pulseStarted) / entryWaveSeconds;
-      entryPulse.value.w = progress >= 0 && progress < 1 ? progress : -1;
+      entryPulse.value.w = timeSeconds >= pulseStarted && timeSeconds < pulseStarted + pulseSeconds
+        ? (timeSeconds - pulseStarted) / pulseSeconds : -1;
       const radius=Math.hypot((x-cx)/220,(z-cz)/240), outer=smooth(radius,.92,1.25);
       animated = entryPulse.value.w >= 0 || amount > .001 || reveal > .001 || outer > .001;
       const outsideOuterDome=radius>=outerDomeScale;

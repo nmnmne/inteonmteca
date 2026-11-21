@@ -28,18 +28,18 @@ test('a facade hold freezes the first-person route and advances the flock at its
   const atDoor = {...walk.pose}, entryCalls = flock.updates;
   assert.deepEqual(atDoor, reference.pose);
 
-  for (let i=0; i<143; i++) {
+  for (let i=0; i<5; i++) {
     walk.update(0, 1/30);
     assert.deepEqual(walk.pose, atDoor);
     assert.deepEqual(flock.lastPose, atDoor);
   }
   // One render interval straddles the end of the hold. Preserve the live
   // fraction at the current passage speed, including the existing route remainder.
-  const remaining = 4.8 - 143/30;
+  const remaining = .2 - 5/30;
   const firstMoving = (.075 - remaining) * .54;
   walk.update(firstMoving, remaining);
   reference.update(firstMoving);
-  assert.ok(flock.updates - entryCalls >= 288, 'all 4.8 seconds reached the world');
+  assert.ok(flock.updates - entryCalls >= 12, 'all 200 milliseconds reached the world');
   assert.deepEqual(walk.pose, reference.pose);
   assert.notDeepEqual(walk.pose, atDoor);
   for (let i=0; i<240; i++) {
