@@ -7,10 +7,18 @@ function galleryGeometry(house) {
   const ring = house.footprint;
   const floors = house.floors || Math.max(1,Math.round(house.heightM / 2.8));
   const storey = house.heightM / floors;
-  const positions = [], uvs = [], kinds = [];
-  function face(vertices, coords, kind) {
+  const positions = [], uvs = [], kinds = [], outlines = [];
+  function face(vertices, coords, kind, perimeter) {
     const order = vertices.length === 3 ? [0,1,2] : [0,1,2,0,2,3];
-    for (const i of order) { positions.push(...vertices[i]); uvs.push(...coords[i]); kinds.push(kind); }
+    const boundary=(a,b)=>perimeter ? perimeter(a,b) : Math.abs(a-b)===1 || Math.abs(a-b)===vertices.length-1;
+    for (let t=0;t<order.length;t+=3) {
+      const [a,b,c]=order.slice(t,t+3), edges=[boundary(b,c),boundary(c,a),boundary(a,b)];
+      for (let k=0;k<3;k++) {
+        const i=order[t+k];
+        positions.push(...vertices[i]); uvs.push(...coords[i]); kinds.push(kind);
+        for (let e=0;e<3;e++) outlines.push(!edges[e] || k===e ? 1 : 0);
+      }
+    }
   }
 
   const origin = ring[0];
@@ -26,7 +34,10 @@ function galleryGeometry(house) {
   const triangles = THREE.ShapeUtils.triangulateShape(contour,[]);
   for(let f=0;f<=floors;f++) {
     const y=f === 0 ? .085 : f*storey-.045;
-    for(const tri of triangles) face(tri.map(i=>[ring[i][0],y,ring[i][1]]),tri.map(i=>local[i]),0);
+    for(const tri of triangles) {
+      const perimeter=(a,b)=>Math.abs(tri[a]-tri[b])===1 || Math.abs(tri[a]-tri[b])===ring.length-1;
+      face(tri.map(i=>[ring[i][0],y,ring[i][1]]),tri.map(i=>local[i]),0,perimeter);
+    }
   }
   for(let i=0;i<ring.length;i++) {
     const a=ring[i], b=ring[(i+1)%ring.length], span=Math.hypot(a[0]-b[0],a[1]-b[1]);
@@ -68,24 +79,25 @@ function galleryGeometry(house) {
   geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
   geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
   geo.setAttribute('surfaceKind',new THREE.Float32BufferAttribute(kinds,1));
+  geo.setAttribute('edgeBary',new THREE.Uint8BufferAttribute(outlines,3));
   return geo;
 }
 
-export function createHouseBackstage(house, clock, entryPulse) {
+export function createHouseBackstage(house, clock, entryPulse, entryDraw={value:1}) {
   const fade={value:0};
   const material=new THREE.ShaderMaterial({
     side:THREE.DoubleSide,transparent:true,forceSinglePass:true,
-    uniforms:{fade,seconds:clock,entryPulse,storey:{value:house.heightM/(house.floors || Math.max(1,Math.round(house.heightM/2.8)))}},
+    uniforms:{fade,seconds:clock,entryPulse,entryDraw,storey:{value:house.heightM/(house.floors || Math.max(1,Math.round(house.heightM/2.8)))}},
     vertexShader:`
-      attribute float surfaceKind;
-      varying float surface; varying vec2 metres; varying vec3 world;
+      attribute float surfaceKind; attribute vec3 edgeBary;
+      varying float surface; varying vec2 metres; varying vec3 world, perimeter;
       void main() {
-        surface=surfaceKind; metres=uv; world=(modelMatrix*vec4(position,1.)).xyz;
+        surface=surfaceKind; metres=uv; perimeter=edgeBary; world=(modelMatrix*vec4(position,1.)).xyz;
         gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);
       }`,
     fragmentShader:`
-      varying float surface; varying vec2 metres; varying vec3 world;
-      uniform float fade,seconds,storey;
+      varying float surface; varying vec2 metres; varying vec3 world, perimeter;
+      uniform float fade,seconds,storey,entryDraw;
       ${entryPulseShader}
       float stripe(float x,float period,float width) {
         float d=abs(fract(x/period+.5)-.5)*period;
@@ -96,7 +108,7 @@ export function createHouseBackstage(house, clock, entryPulse) {
         // Broad reflected light keeps the floor and the joists readable between pulses.
         float bounce=.5+.5*cos(metres.x*.42+metres.y*.27);
         vec3 ink=mix(vec3(.037,.051,.066),vec3(.057,.074,.083),bounce);
-        float route=0.;
+        float route=0., apertureRim=0.;
         if(surface<.5){
           float joints=max(stripe(metres.x,5.4,.055),stripe(metres.y,2.7,.055));
           ink+=vec3(.012,.016,.018)*joints;
@@ -106,6 +118,7 @@ export function createHouseBackstage(house, clock, entryPulse) {
           vec2 rim=abs(panel)-vec2(.25,.165);
           float opening=length(max(rim,0.))+min(max(rim.x,rim.y),0.)-.04;
           if(opening<0.) discard;
+          if(entryDraw<1.) apertureRim=1.-smoothstep(0.,max(.008,1.4*fwidth(opening)),opening);
           ink+=vec3(.035,.048,.052)*(1.-smoothstep(0.,.074,opening));
           ink+=vec3(.009,.012,.014)*stripe(metres.y,.38,.036);
           route=stripe(metres.y-.33,storey,.11);
@@ -121,7 +134,25 @@ export function createHouseBackstage(house, clock, entryPulse) {
         float wave=entryWave(world,behind);
         vec3 sheen=mix(vec3(.062,.108,.115),vec3(.112,.079,.134),smoothstep(1.,15.,behind));
         ink+=sheen*wave*(.62+.38*route);
-        gl_FragColor=vec4(ink,fade);
+        float alpha=fade;
+        if(entryDraw<1.){
+          // Real polygon edges only. Internal quad and floor diagonals carry
+          // constant barycentric components and never enter the outline.
+          vec3 px=perimeter/max(fwidth(perimeter),vec3(.00001));
+          float edge=1.-smoothstep(.20,1.65,min(min(px.x,px.y),px.z));
+          float distanceM=distance(world,entryPulse.xyz);
+          float reach=distanceM/(distanceM+8.);
+          float start=max(0.,.44*reach-.13)+(surface<.5 ? .00 : surface<1.5 ? .05 : .10);
+          float outline=edge*smoothstep(start,start+.055,entryDraw);
+          outline=max(outline,apertureRim*smoothstep(start+.09,start+.145,entryDraw));
+          float fill=smoothstep(.48+.15*reach,.83+.15*reach,entryDraw);
+          float head=1.-smoothstep(start+.05,start+.17,entryDraw);
+          vec3 chalk=mix(vec3(.21,.32,.34),vec3(.37,.29,.22),step(1.5,surface));
+          ink=mix(ink,chalk*(1.+.35*head),outline*(1.-fill));
+          alpha*=fill+(1.-fill)*outline;
+          if(alpha<.002) discard;
+        }
+        gl_FragColor=vec4(ink,alpha);
         #include <colorspace_fragment>
       }`
   });

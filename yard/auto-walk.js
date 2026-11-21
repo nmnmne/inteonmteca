@@ -157,7 +157,7 @@ export function createAutoWalk(layout, { random = Math.random, openingView = lay
   const openingFov = openingView.fov ?? 64;
   const pose = { ...openingView, y: layout.movement.eyeM, roll: 0, eyeOffset: 0, wingPhase:0, fov: openingFov, mode: 'land' };
   const step = 1 / 60;
-  let metres = 0, elapsed = 0, turnRate = 0, remainder = 0;
+  let metres = 0, elapsed = 0, turnRate = 0, remainder = 0, heldFlockRemainder = 0;
   let phaseTime = 0, duration = 1.45, glides = 0, touchdowns = 0;
   let height = pose.y, fromHeight = height, toHeight = groundEyeM;
   let speed = 1.9, fromSpeed = speed, toSpeed = 1.04, airspeed = 0;
@@ -282,7 +282,16 @@ export function createAutoWalk(layout, { random = Math.random, openingView = lay
     pose.fov = openingFov + (64 - openingFov) * ease(clamp((elapsed - 2) / 5, 0, 1));
     flock?.update(step, pose);
   }
-  return { pose, update(dt) {
+  return { pose, update(dt, heldSeconds = 0) {
+    // While the observer holds still at a facade, the rest of the flock
+    // keeps its own fixed steps. None of that time reaches the route.
+    if (flock && Number.isFinite(heldSeconds) && heldSeconds > 0) {
+      heldFlockRemainder += heldSeconds;
+      while (heldFlockRemainder >= step - 1e-10) {
+        heldFlockRemainder -= step;
+        flock.update(step, pose);
+      }
+    }
     if (Number.isFinite(dt) && dt > 0) remainder += dt;
     while (remainder >= step - 1e-10) {
       remainder -= step;

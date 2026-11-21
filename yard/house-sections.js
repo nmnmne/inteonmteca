@@ -55,7 +55,7 @@ export function mapHouseSections(house) {
 // sections need a live mesh. New slots enter at zero opacity on both axes.
 export function createHouseSections() {
   const maps=new WeakMap(), slots=[];
-  return function update(gallery,house,x,y,z,visibility,seconds) {
+  return function update(gallery,house,x,y,z,visibility,seconds,entryDraw=1) {
     const wanted=[];
     if (gallery && visibility>.001) {
       let sites=maps.get(house);
@@ -101,8 +101,8 @@ export function createHouseSections() {
       const phase=across*.25+along*.105+(y/height-f-.5)*.56;
       const w=.92*Math.sin(phase+.15*Math.sin(seconds*.17+f));
       const rotation=.24*Math.sin(phase*.62+seconds*.09);
-      slot.section.update(w,rotation,alpha);
-      slot.model.update(w,rotation,alpha);
+      slot.section.update(w,rotation,alpha,entryDraw);
+      slot.model.update(w,rotation,alpha*smooth((entryDraw-.48)/.48));
     }
   };
 }

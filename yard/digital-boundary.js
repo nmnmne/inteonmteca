@@ -8,6 +8,7 @@ import { createHouseBackstage } from './house-backstage.js';
 
 const approachMetres = 6, interiorMetres = 3, roofFadeMetres = 1.25;
 const entryWaveSeconds = 4.8;
+const entryPreview = .24;
 const smooth = (x,a,b) => THREE.MathUtils.smootherstep(x,a,b);
 const signedDistance = (x,z,ring) => {
   let nearest = Infinity;
@@ -59,6 +60,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
   let sampled = false, inBackstage = false, pulseStarted = -Infinity;
   const wallContact = passThroughBuildings ? createCrowWallContact(layout) : null;
   let facadeDistance = Infinity, passagePace = 1;
+  let drawingHouse = null, holdUntil = -Infinity;
   const profile = {horizontal:0,top:0};
   const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
   const clock = {value:0};
@@ -97,12 +99,13 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
     const surfaceMix={value:0};
     patch(material,surfaceMix,true);
     animateDigitalMaterial(material, clock, entryPulse, pulseStrength, false);
-    const gallery = wallContact && createHouseBackstage(b,clock,entryPulse);
+    const entryDraw = {value:1};
+    const gallery = wallContact && createHouseBackstage(b,clock,entryPulse,entryDraw);
     if (gallery) galleries.add(gallery);
     const mesh=new THREE.Mesh(geometry,material);mesh.name=`digital-${b.id}`;mesh.userData.digitalProxy=true;mesh.userData.bakedShadowCaster=false;low.add(mesh);
     const lines=new THREE.LineSegments(new THREE.EdgesGeometry(geometry,20),new THREE.LineBasicMaterial({color:0x9ff7df,transparent:true,opacity:0,fog:false}));lines.userData.bakedShadowCaster=false;low.add(lines);
     animateDigitalMaterial(lines.material, clock, entryPulse, pulseStrength, true);
-    proxies.push({surfaceMix, crossing:0, inside:false, gallery, lines});
+    proxies.push({surfaceMix, crossing:0, inside:false, revealedFromInside:false, entryDraw, gallery, lines});
   }
   low.visible=false;
   const baseSky=new THREE.Color(sun.skyColor),baseFog=new THREE.Color(sun.fogColor),dark=new THREE.Color(0x07121b);
@@ -126,6 +129,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
     setNeighbours(mesh) { neighbours = mesh; },
     get facadeDistance() { return facadeDistance; },
     get passagePace() { return passagePace; },
+    get cameraHoldUntil() { return reducedMotion?.matches ? -Infinity : holdUntil; },
     setSky(skyColor, fogColor) {
       baseSky.set(skyColor);
       baseFog.set(fogColor);
@@ -174,7 +178,8 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
       let entered = !inBackstage && sparse;
       if (sparse) inBackstage = true;
       else if (edge < 16) inBackstage = false;
-      let roomFade = 0;
+      let roomFade = 0, physicalFade = 0;
+      if (reducedMotion?.matches) { drawingHouse=null;holdUntil=-Infinity; }
       if (wallContact) {
         facadeDistance = Infinity;
         let sectionHouse=-1, sectionAlpha=0;
@@ -183,8 +188,14 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
           const distance = wallContact.distanceToHouse(i,x,y,z,approachMetres,profile);
           if (!house.inside && distance <= 0) {
             house.inside = true;
+            house.revealedFromInside = true;
             entered = true;
+            if (sampled && !reducedMotion?.matches && !sparse) {
+              holdUntil = timeSeconds + entryWaveSeconds;
+              drawingHouse = {house, deepest:0, pace:passagePace};
+            }
           } else if (distance > .15) house.inside = false;
+          if (distance >= approachMetres) house.revealedFromInside = false;
           facadeDistance = Math.min(facadeDistance,distance);
           // Meet halfway at the surveyed wall. The approach starts from farther
           // away, while narrow homes and ground-level flights still reach full detail.
@@ -196,20 +207,46 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
             const vertical = 1-smooth(y-profile.top,-roofFadeMetres,roofFadeMetres);
             crossing = lateral*vertical*smooth(y,-roofFadeMetres,0);
           }
+          physicalFade = Math.max(physicalFade,crossing);
+          let interior = crossing*smooth(-distance,0,1.1);
+          const drawing = drawingHouse?.house === house;
+          // Keep the normal distance fade on the return from a revealed room.
+          const preview = !house.revealedFromInside && !reducedMotion?.matches;
+          house.entryDraw.value = preview ? 0 : 1;
+          if (preview) crossing *= entryPreview;
+          if (drawing) {
+            const progress = THREE.MathUtils.clamp(1-(holdUntil-timeSeconds)/entryWaveSeconds,0,1);
+            const depth = Number.isFinite(distance) ? Math.max(0,Math.min(-profile.horizontal,profile.top-y)) : 0;
+            drawingHouse.deepest = Math.max(drawingHouse.deepest,depth);
+            if (distance>0 || (progress>=1 && crossing>=.999 && interior>=.999)) {
+              drawingHouse=null;
+              holdUntil=-Infinity;
+            } else {
+              // Once drawn, keep the interior solid on the inbound leg. A
+              // shallow flight that turns back blends into the normal exit.
+              const weight = drawingHouse.deepest>0 ? smooth(depth/drawingHouse.deepest,0,1) : 1;
+              house.entryDraw.value = progress;
+              const fill = smooth(progress,0,1);
+              crossing = THREE.MathUtils.lerp(crossing,
+                THREE.MathUtils.lerp(crossing*entryPreview,1,fill),weight);
+              interior = Math.max(interior,weight);
+            }
+          }
           house.crossing = crossing;
-          house.gallery.material.depthWrite = crossing >= .999;
+          house.gallery.material.depthWrite = crossing >= .999 && house.entryDraw.value >= .98;
           house.gallery.material.uniforms.fade.value = house.crossing;
           house.gallery.visible = house.crossing > .001;
-          const interior = crossing*smooth(-distance,0,1.1);
           if (interior>sectionAlpha) { sectionAlpha=interior;sectionHouse=i; }
           roomFade = Math.max(roomFade,house.crossing);
           amount = Math.max(amount, house.crossing);
         }
-        updateSections(proxies[sectionHouse]?.gallery,layout.buildings[sectionHouse],x,y,z,sectionAlpha,clock.value);
+        const section = proxies[sectionHouse];
+        updateSections(section?.gallery,layout.buildings[sectionHouse],x,y,z,sectionAlpha,clock.value,section?.entryDraw.value);
       }
       // Ease the camera down on either side of a threshold and release it
       // again deep inside. The wall midpoint has a flat speed curve both ways.
-      passagePace = reducedMotion?.matches ? 1 : 1 - .53*Math.sin(Math.PI*roomFade)**2;
+      passagePace = drawingHouse && timeSeconds<=holdUntil ? drawingHouse.pace :
+        reducedMotion?.matches ? 1 : 1 - .53*Math.sin(Math.PI*physicalFade)**2;
       if (reducedMotion?.matches) pulseStarted = -Infinity;
       else if (sampled && entered) {
         entryPulse.value.set(x, y, z, 0);

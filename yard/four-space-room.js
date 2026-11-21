@@ -101,7 +101,7 @@ function chamberBlocks(chamber) {
   return blocks;
 }
 
-function layer(capacity,lines) {
+function layer(capacity,lines,entryDraw) {
   const geometry=new THREE.BufferGeometry();
   const position=new THREE.BufferAttribute(new Float32Array(capacity*3),3).setUsage(THREE.DynamicDrawUsage);
   const color=new THREE.BufferAttribute(new Float32Array(capacity*3),3).setUsage(THREE.DynamicDrawUsage);
@@ -110,6 +110,25 @@ function layer(capacity,lines) {
   const common={vertexColors:true,transparent:true,depthWrite:false};
   const material=lines ? new THREE.LineBasicMaterial(common) : new THREE.MeshBasicMaterial({
     ...common,side:THREE.DoubleSide,forceSinglePass:true,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});
+  // Reveal the existing cut polygons and perimeter segments at their actual
+  // scene positions. Moving the W plane still changes the underlying section.
+  material.onBeforeCompile=shader=>{
+    shader.uniforms.entryDraw=entryDraw;
+    shader.vertexShader='varying vec3 sectionWorld;\n'+shader.vertexShader.replace('#include <begin_vertex>',
+      '#include <begin_vertex>\nsectionWorld=(modelMatrix*vec4(transformed,1.)).xyz;');
+    shader.fragmentShader='varying vec3 sectionWorld; uniform float entryDraw;\n'+shader.fragmentShader.replace(
+      '#include <alphatest_fragment>',`#include <alphatest_fragment>
+      if(entryDraw < 1.){
+        float metres=distance(sectionWorld,cameraPosition);
+        float reach=metres/(metres+6.);
+        float start=${lines?'clamp(.88*reach-.26,0.,.43)':'.49+.16*reach'};
+        float amount=smoothstep(start,start+${lines?'.075':'.32'},entryDraw);
+        diffuseColor.a*=amount;
+        ${lines?'diffuseColor.rgb+=vec3(.065,.079,.081)*amount*(1.-smoothstep(start+.04,start+.15,entryDraw));':''}
+        if(diffuseColor.a<.002) discard;
+      }`);
+  };
+  material.customProgramCacheKey=()=>lines?'section-drawn-edge':'section-filled-face';
   const mesh=lines ? new THREE.LineSegments(geometry,material) : new THREE.Mesh(geometry,material);
   mesh.frustumCulled=false;
   mesh.name=lines?'four-space-section-rims':'four-space-section-walls';
@@ -131,16 +150,18 @@ export function createSectionRooms() {
   const blocks=chambers.flatMap(chamberBlocks);
   // A sliced cube has at most six vertices per facet. Scalars never allocate
   // geometry during a camera pass; all rooms share two draw calls.
-  const faces=layer(blocks.length*8*12,false), rims=layer(blocks.length*8*12,true);
+  const entryDraw={value:1};
+  const faces=layer(blocks.length*8*12,false,entryDraw), rims=layer(blocks.length*8*12,true,entryDraw);
   const group=new THREE.Group();
   group.name='four-space-section-rooms';group.visible=false;
   group.add(faces.mesh,rims.mesh);
   const vertices=new Float64Array(64), hits=new Float32Array(96);
   const shades=[.76,.93,.66,1,.82,.94,.74,1.09];
   let lastW=NaN,lastAngle=NaN;
-  function update(w,rotation,visibility) {
+  function update(w,rotation,visibility,draw=1) {
     group.visible=visibility>.001;
     if (!group.visible) return;
+    entryDraw.value=draw;
     faces.mesh.material.opacity=.82*visibility;
     rims.mesh.material.opacity=.78*visibility;
     if (Math.abs(w-lastW)<.0001 && Math.abs(rotation-lastAngle)<.0001) return;

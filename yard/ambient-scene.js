@@ -43,6 +43,7 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
   let renderer, yard, walk, flock, crowModels, camera, resizeObserver, ripplePuddles, solar, optics, graphicsLevel;
   let resident, crowAuthority;
   let frame = 0, lastDraw = null, nextDraw = 0, nextDetail = 0, ready = false;
+  let visibleSeconds = 0;
   let moreDetail = true;
 
   function dispose() {
@@ -118,10 +119,15 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
         const dt = lastDraw === null ? 0 : Math.min((now - lastDraw) / 1000, 0.15);
         lastDraw = now;
         nextDraw = now + frameMs - (nextDraw ? (now - nextDraw) % frameMs : 0);
-        const pose = walk.update(dt * yard.edgeEffect.passagePace);
+        // The entry wave and the camera stop share visible scene time. An
+        // inactive tab resumes at the same point in the wave and the route.
+        const holdUntil = yard.edgeEffect.cameraHoldUntil ?? -Infinity;
+        const held = Math.max(0, Math.min(dt, holdUntil - visibleSeconds));
+        visibleSeconds += dt;
+        const pose = walk.update((dt - held) * yard.edgeEffect.passagePace, held);
         camera.position.set(pose.x, pose.y, pose.z);
         camera.rotation.set(pose.pitch, -pose.yaw, reducedMotion.matches ? 0 : pose.roll, 'YXZ');
-        yard.edgeEffect.update(pose.x, pose.z, camera.position.y, now / 1000);
+        yard.edgeEffect.update(pose.x, pose.z, camera.position.y, visibleSeconds);
         // Keep the facade in view through the last ten centimetres of the crossing.
         const near = .025 + .075 * THREE.MathUtils.smootherstep(Math.abs(yard.edgeEffect.facadeDistance), .10, .65);
         if (camera.fov !== pose.fov || camera.near !== near) {
