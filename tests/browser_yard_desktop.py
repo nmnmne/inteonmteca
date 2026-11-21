@@ -19,6 +19,7 @@ def check(browser, url, width, height, touch):
     def launch(app):
         return page.locator(f'.yard-app-dock [data-launch="{app}"]')
 
+    blank_click = page.touchscreen.tap if touch else page.mouse.click
     compact = page.locator('#yard-dj-compact')
     restore = page.locator('.yard-restore')
     assert compact.is_visible() and page.locator('#studio').is_hidden()
@@ -35,7 +36,7 @@ def check(browser, url, width, height, touch):
         assert compact.is_visible() and page.locator('#studio').is_hidden()
         action('dj', 'minimize').click()
         assert page.evaluate('!!document.fullscreenElement') and restore.is_visible()
-        restore.click()
+        blank_click(width // 2, height // 4)
         assert compact.is_visible() and page.evaluate('!!document.fullscreenElement')
         fullscreen.click()
         page.wait_for_function('document.fullscreenElement === null')
@@ -88,10 +89,9 @@ def check(browser, url, width, height, touch):
     assert page.evaluate('DJEngine.snapshot().cross === .4')
 
     button_center = [round(rect['x'] + rect['width'] / 2), round(rect['y'] + rect['height'] / 2)]
-    interact = page.touchscreen.tap if touch else page.mouse.move
     page.clock.fast_forward(18000)
     assert restore.is_visible()
-    interact(width // 2, height // 2)
+    page.mouse.move(width // 2, height // 2)
     page.clock.fast_forward(19000)
     assert restore.evaluate("el => el.checkVisibility({opacityProperty: true, visibilityProperty: true})")
     page.clock.fast_forward(1200)
@@ -102,15 +102,8 @@ def check(browser, url, width, height, touch):
     if not touch:
         assert page.evaluate('DJEngine.snapshot().A.playing && DJEngine.snapshot().B.playing')
 
-    # The first touch, even over the old button position, reveals the button without opening the DJ.
-    interact(*button_center)
-    assert page.locator('body').get_attribute('data-yard-window') == 'desktop'
-    assert restore.evaluate("el => el.checkVisibility({opacityProperty: true, visibilityProperty: true})")
-    assert page.evaluate("([x,y]) => !!document.elementFromPoint(x,y)?.closest('.yard-restore')", button_center)
-    if touch:
-        page.touchscreen.tap(*button_center)
-    else:
-        restore.press('Enter')
+    # A single background click restores a manually minimized compact player in normal view.
+    blank_click(width // 2, height // 4)
     assert compact.is_visible()
     action('dj', 'close').click()
     launch('engrus').click()
@@ -118,6 +111,8 @@ def check(browser, url, width, height, touch):
     page.locator('.engrus-next').click()
     count = page.locator('.engrus-count').inner_text()
     action('engrus', 'minimize').click()
+    blank_click(width // 2, height // 4)
+    assert page.locator('body').get_attribute('data-yard-window') == 'desktop'
     restore.click()
     assert page.locator('.engrus-count').inner_text() == count
     action('engrus', 'close').click()
@@ -126,6 +121,8 @@ def check(browser, url, width, height, touch):
     assert compact.is_visible()
     compact.locator('[data-dj-mode=full]').click()
     action('dj', 'minimize').click()
+    blank_click(width // 2, height // 4)
+    assert page.locator('body').get_attribute('data-yard-window') == 'desktop'
     restore.click()
     assert page.locator('#studio').is_visible()
     assert page.evaluate('window.desktopSmokePage && DJEngine.snapshot().A.tempo === 2 && DJEngine.snapshot().cross === .4')

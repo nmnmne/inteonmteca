@@ -1,3 +1,4 @@
+body[data-dj-mode=compact]:is([data-yard-window=dj],[data-yard-window=desktop]) { touch-action: manipulation; }
 .yard-dj-compact {
   --compact-ink: #fbf6f1;
   --dd-accent: #ff6666;
@@ -143,7 +144,7 @@
 .compact-recall span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .compact-recall svg { flex: none; width: 13px; height: 13px; rotate: 180deg; }
 .yard-dj-compact[data-faded] .compact-mini {
-  inset: 0; translate: none; width: 100%; max-width: none; height: 100%; opacity: 0;
+  inset: 0; translate: none; width: 100%; max-width: none; height: 100%; opacity: 0; pointer-events: none;
 }
 .yard-dj-compact[data-faded] .compact-mini-fullscreen { display: none; }
 .yard-dj-compact[data-faded] .compact-recall { width: 100%; }

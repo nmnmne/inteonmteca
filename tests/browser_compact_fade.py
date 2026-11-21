@@ -48,40 +48,71 @@ def check(browser, url, width, height, touch):
         point(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
 
     recall = compact.get_by_role("button", name="Развернуть плеер")
+    blank = (width // 2, height // 4)
+    supports_fullscreen = page.evaluate("document.fullscreenEnabled")
+
+    def assert_fullscreen(expected):
+        page.wait_for_function("state => Boolean(document.fullscreenElement) === state", arg=expected)
+
+    def double_blank():
+        if touch:
+            point(*blank)
+            page.clock.run_for(75)
+            point(*blank)
+        else:
+            page.mouse.dblclick(*blank, delay=60)
+
     assert_level(a, 1)
     press(a)
     b_box = b.bounding_box()
-    advance(500)
+    advance(3_300)
     assert a.is_visible() and not recall.is_visible()
-    point(width / 2, height / 4)
+    advance(800)
     assert recall.is_visible() and not a.is_visible()
     assert_level(recall, 1)
     assert recall.bounding_box()["width"] < 245
     assert recall.locator("span").inner_text().strip()
+    advance(3_300)
+    assert_level(recall, 1)
+    advance(800)
+    assert_level(recall, 0)
+    assert_fullscreen(False)
+
+    # Empty space recalls even the completely invisible dock.
+    point(*blank)
+    assert a.is_visible()
+    assert_fullscreen(False)
+    advance(700)
+    point(*blank)
+    assert recall.is_visible() and not a.is_visible()
+    assert_level(recall, 1)
+    assert_fullscreen(supports_fullscreen)
     mini_fullscreen = compact.locator(".compact-mini-fullscreen")
     assert mini_fullscreen.bounding_box()["x"] >= recall.bounding_box()["x"] + recall.bounding_box()["width"] - 1
-    if page.evaluate("document.fullscreenEnabled"):
+    if supports_fullscreen:
         press(mini_fullscreen)
-        page.wait_for_function("!!document.fullscreenElement")
+        assert_fullscreen(False)
         assert recall.is_visible() and not a.is_visible()
         press(mini_fullscreen)
-        page.wait_for_function("!document.fullscreenElement")
-    advance(16_000)
-    point(width / 2, height / 4)
-    advance(3_000)
+        assert_fullscreen(True)
+    advance(700)
+    point(*blank)
+    assert a.is_visible()
+    assert_fullscreen(supports_fullscreen)
+
+    # A double click/tap returns to the normal screen and starts a new four seconds.
+    advance(700)
+    double_blank()
+    assert_fullscreen(False)
+    assert a.is_visible()
+    advance(3_300)
+    assert a.is_visible()
+    advance(800)
     assert_level(recall, 1)
-    advance(1_100)
-    assert_level(recall, 0)
-    press(recall)
-    assert a.is_visible() and a.get_attribute("aria-pressed") == "true"
-    advance(10_100)
-    assert_level(recall, 1)
-    advance(19_000)
-    assert_level(recall, 1)
-    advance(1_200)
+    advance(4_100)
     assert_level(recall, 0)
 
-    # The first tap in the original dock wakes it without activating deck B.
+    # A tap on the invisible dock wakes it without also activating deck B.
     point(b_box["x"] + b_box["width"] / 2, b_box["y"] + b_box["height"] / 2)
     assert b.is_visible()
     assert a.get_attribute("aria-pressed") == "true"
@@ -97,21 +128,21 @@ def check(browser, url, width, height, touch):
     assert b.is_visible() and not recall.is_visible()
     press(compact.locator("#compact-track-select"))
     picker.wait_for()
-    advance(31_000)
+    advance(8_250)
     assert_level(b, 1)
     assert picker.is_visible()
     picker.evaluate("""el => el.addEventListener('toggle', () => { window.qaPickerClosed = true; }, {once:true})""")
     page.keyboard.press("Escape")
     picker.wait_for(state="hidden")
     page.wait_for_function("window.qaPickerClosed === true")
-    advance(10_100)
+    advance(4_100)
     assert recall.is_visible() and not b.is_visible()
     press(recall)
 
     press(compact.get_by_role("button", name="Настройки звука"))
     dialog = page.locator("#dialog")
     dialog.wait_for()
-    advance(31_000)
+    advance(8_250)
     assert_level(b, 1)
     assert dialog.is_visible()
     press(dialog.locator("#dialog-close"))
@@ -120,13 +151,13 @@ def check(browser, url, width, height, touch):
     press(compact.locator("[data-dj-mode=full]"))
     studio = page.locator("#studio")
     studio.wait_for()
-    advance(31_000)
+    advance(8_250)
     assert_level(studio, 1)
     press(studio.locator("[data-dj-mode=compact]"))
     b.wait_for()
     assert_level(b, 1)
     assert b.get_attribute("aria-pressed") == "true"
-    advance(31_000)
+    advance(8_250)
     assert_level(recall, 0)
     recall.focus()
     assert compact.locator("#compact-track-select").evaluate("el => document.activeElement === el")
@@ -135,7 +166,7 @@ def check(browser, url, width, height, touch):
     page.keyboard.press("Enter")
     assert a.get_attribute("aria-pressed") == "true"
     page.close()
-    print(f"{width} × {height}: 10s ultra, 30s invisible, pointer and keyboard wake, open panels and Full mode passed", flush=True)
+    print(f"{width} × {height}: 4s mini, 8s invisible, fullscreen background gestures, keyboard, panels and Full mode passed", flush=True)
 
 
 if __name__ == "__main__":

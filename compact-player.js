@@ -81,7 +81,7 @@
   let side = 'A', importSide = 'A';
   const active = () => document.body.dataset.yardWindow === 'dj' && document.body.dataset.djMode === 'compact';
 
-  const ultraAfter = 10_000, hiddenAfter = ultraAfter + 20_000;
+  const ultraAfter = 4_000, hiddenAfter = ultraAfter + 4_000;
   const recall = find('.compact-recall'), recallTitle = recall.querySelector('span');
   const mini = find('.compact-mini'), miniFullscreen = find('.compact-mini-fullscreen');
   const settings = document.getElementById('dialog');
@@ -108,21 +108,65 @@
     drawIdle();
   }
   const isYardBackground = target => target === document.body || target === document.documentElement;
-  let yardPress = null;
+  const minimizedPlayer = () => document.querySelector(
+    'body[data-dj-mode="compact"][data-yard-window="desktop"] #yard-desktop-shell[data-minimized="dj"] .yard-restore'
+  );
+  let yardPress = null, previousTap = null, enteringFullscreen = null;
+
+  function openPlayer() {
+    if (!active()) minimizedPlayer()?.click();
+    wakeDisplay();
+  }
+  function exitYardFullscreen() {
+    if (document.fullscreenElement) return library.toggleFullscreen();
+    // A fast second tap can arrive while the browser is still entering fullscreen.
+    enteringFullscreen?.then(() => { if (document.fullscreenElement) void library.toggleFullscreen(); });
+  }
+  function sameTapSpot(x, y, type) {
+    return previousTap && previousTap.type === type &&
+      Math.hypot(x - previousTap.x, y - previousTap.y) <= 24;
+  }
   window.addEventListener('pointerdown', event => {
-    yardPress = active() && !openPanel && event.isPrimary && event.button === 0 && isYardBackground(event.target)
-      ? {id:event.pointerId, x:event.clientX, y:event.clientY} : null;
+    // The first tap can reveal a control directly underneath the second tap.
+    const overNewControl = root.contains(event.target) && sameTapSpot(event.clientX, event.clientY, event.pointerType) &&
+      performance.now() - previousTap.at <= 400;
+    if ((!active() && !minimizedPlayer()) || openPanel || !event.isPrimary || event.button !== 0 ||
+        (!isYardBackground(event.target) && !overNewControl)) {
+      yardPress = previousTap = null;
+      return;
+    }
+    yardPress = {id:event.pointerId, type:event.pointerType, x:event.clientX, y:event.clientY, overNewControl};
+    if (overNewControl) { event.preventDefault(); event.stopPropagation(); }
+  }, true);
+  window.addEventListener('pointermove', event => {
+    if (yardPress?.id === event.pointerId && Math.hypot(event.clientX-yardPress.x,event.clientY-yardPress.y)>12)
+      yardPress = previousTap = null;
   }, {capture:true, passive:true});
-  window.addEventListener('pointercancel', () => { yardPress = null; }, true);
+  window.addEventListener('pointercancel', () => { yardPress = previousTap = null; }, true);
   window.addEventListener('click', event => {
     const press = yardPress;
     yardPress = null;
-    if (!press || !active() || openPanel || heldPointer !== null || event.defaultPrevented || !event.detail ||
-        !isYardBackground(event.target) || root.hasAttribute('data-ultra')) return;
+    if (!press || (!active() && !minimizedPlayer()) || openPanel || heldPointer !== null ||
+        event.defaultPrevented || !event.detail || (!isYardBackground(event.target) && !press.overNewControl)) return;
     if ((event.pointerId > 0 && event.pointerId !== press.id) ||
         Math.hypot(event.clientX - press.x, event.clientY - press.y) > 12) return;
-    showUltra();
-  });
+    const now = performance.now();
+    const doubleTap = press.overNewControl || (sameTapSpot(press.x, press.y, press.type) &&
+      (event.detail === 2 || now - previousTap.at <= 400));
+    if (press.overNewControl) { event.preventDefault(); event.stopPropagation(); }
+    previousTap = doubleTap ? null : {...press, at:now};
+    if (doubleTap) {
+      exitYardFullscreen();
+      openPlayer();
+    } else if (!active() || root.hasAttribute('data-ultra')) {
+      openPlayer();
+    } else {
+      showUltra();
+      if (document.fullscreenEnabled && !document.fullscreenElement && !enteringFullscreen) {
+        enteringFullscreen = library.toggleFullscreen().finally(() => { enteringFullscreen = null; });
+      }
+    }
+  }, true);
   function holdFor(panel, opened) {
     if (opened && active()) openPanel = panel;
     else if (openPanel === panel) openPanel = null;
@@ -182,6 +226,14 @@
     onDeckChange: activate,
     onStatus(text) { mixStatus.textContent = text; }
   });
+  const autoKey = 'dj.studio.compactAuto';
+  let autoEnabled = true;
+  try { autoEnabled = localStorage.getItem(autoKey) !== 'false'; } catch {}
+
+  function applyAuto() {
+    for (const id of sides) mix.setAuto(id, autoEnabled);
+    auto.setAttribute('aria-pressed', String(autoEnabled));
+  }
 
   function update() {
     if (!active()) return;
@@ -210,7 +262,7 @@
     if (picker.matches(':popover-open')) picker.hidePopover();
     returnScope();
     side = id;
-    auto.setAttribute('aria-pressed', String(mix.isAuto(id)));
+    applyAuto();
     root.dataset.side = id;
     sideButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.compactSide === id)));
     document.querySelector('.controller-tabs [data-panel="' + id.toLowerCase() + '"]').click();
@@ -272,8 +324,9 @@
   library.setCompactControls({ choose, toggle });
   sideButtons.forEach(button => button.onclick = () => activate(button.dataset.compactSide));
   auto.onclick = () => {
-    mix.setAuto(side, !mix.isAuto(side));
-    auto.setAttribute('aria-pressed', String(mix.isAuto(side)));
+    autoEnabled = !autoEnabled;
+    try { localStorage.setItem(autoKey, String(autoEnabled)); } catch {}
+    applyAuto();
   };
   window.addEventListener('dj-ended', ({detail: {id, loadVersion}}) => {
     if (document.body.dataset.djMode === 'compact' && !pausedSkips.has(id)) void mix.ended(id, loadVersion);

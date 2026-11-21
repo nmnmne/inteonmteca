@@ -8,6 +8,33 @@ from urllib.parse import urlsplit
 from playwright.sync_api import sync_playwright
 
 
+def check_auto(browser, url):
+    page = browser.new_page()
+    page.goto(url, wait_until="domcontentloaded")
+    compact = page.locator("#yard-dj-compact")
+    auto = compact.get_by_role("button", name="Автовоспроизведение")
+    play = compact.locator(".compact-play")
+    auto.wait_for()
+    assert auto.get_attribute("aria-pressed") == "true"
+    assert page.evaluate("!DJEngine.snapshot().A.playing && !DJEngine.snapshot().B.playing")
+    play.click()
+    page.wait_for_function("DJEngine.snapshot().A.audioRunning")
+    page.evaluate("DJEngine.seek('A', DJEngine.snapshot().A.duration - 5)")
+    page.wait_for_function("DJEngine.snapshot().A.playing && DJEngine.snapshot().B.playing")
+    auto.click()
+    page.wait_for_function("DJEngine.snapshot().A.playing && !DJEngine.snapshot().B.playing")
+    page.reload(wait_until="domcontentloaded")
+    auto.wait_for()
+    assert auto.get_attribute("aria-pressed") == "false"
+    play.click()
+    page.wait_for_function("DJEngine.snapshot().A.audioRunning")
+    previous = page.evaluate("DJEngine.snapshot().A.track.id")
+    page.evaluate("DJEngine.seek('A', DJEngine.snapshot().A.duration - .5)")
+    page.wait_for_function("id => DJEngine.snapshot().A.track.id !== id", arg=previous)
+    assert page.evaluate("!DJEngine.snapshot().A.playing && !DJEngine.snapshot().B.playing")
+    page.close()
+
+
 def check(browser, url, width, height, touch):
     page = browser.new_page(viewport={"width": width, "height": height}, has_touch=touch, is_mobile=touch,
                             reduced_motion="reduce")
@@ -119,6 +146,7 @@ if __name__ == "__main__":
         raise SystemExit("Pass the local studio preview URL.")
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(channel="msedge", headless=True)
+        check_auto(browser, address)
         for viewport in ((1440, 900, False), (390, 844, True), (320, 640, True), (667, 375, True)):
             check(browser, address, *viewport)
         browser.close()
