@@ -61,23 +61,33 @@ test('a backdrop walk reveals the digital yard through both facades and restores
  assert.equal(gallery.visible,false);
  const approach=[-4,-.5,-.02].map(walkTo);
  assert.ok(approach.every((v,i)=>v>0 && v<.5 && (!i || v>approach[i-1])));
- const paceBefore=effect.passagePace;
- const atEntry=walkTo(.02), until=effect.cameraHoldUntil;
+ const entryTime=seconds;
+ const atEntry=walkTo(.02);
+ const expectedPace=() => {
+   const distance=effect.facadeDistance;
+   const street=1-distance/6, room=1+distance/3;
+   const physicalFade=THREE.MathUtils.smootherstep(street/(street+room),0,1);
+   return 1-.53*Math.sin(Math.PI*physicalFade)**2;
+ };
  const draw=gallery.material.uniforms.entryDraw;
- assert.ok(Math.abs(until-seconds-.2)<1e-8);
+ assert.ok(Math.abs(effect.passagePace-expectedPace())<1e-8);
  assert.ok(atEntry<.2 && draw.value<1e-8);
  seconds+=.1;
  const half=walkTo(.02);
  assert.ok(half>atEntry && half<1 && Math.abs(draw.value-.5)<1e-8);
- assert.equal(effect.passagePace,paceBefore);
+ assert.ok(Math.abs(effect.passagePace-expectedPace())<1e-8);
  assert.equal(gallery.material.depthWrite,false);
  assert.ok(gallery.children.some(room=>room.visible),'four-dimensional rooms are present at the stationary threshold');
- seconds=until;
- assert.equal(walkTo(.02),1);
+ seconds=entryTime+.15;
+ const moving=walkTo(.55);
+ assert.ok(moving>half && moving<1 && Math.abs(draw.value-.75)<1e-8);
+ assert.ok(Math.abs(effect.passagePace-expectedPace())<1e-8);
+ seconds=entryTime+.2;
+ assert.equal(walkTo(.55),1);
  assert.equal(draw.value,1);
- assert.equal(effect.passagePace,paceBefore);
+ assert.ok(Math.abs(effect.passagePace-expectedPace())<1e-8);
  seconds+=.04;
- assert.equal(walkTo(.12),1,'the finished room stays visible as the route resumes');
+ assert.equal(walkTo(.7),1,'the finished room stays visible as the camera flies deeper');
  for (const metre of [3.2, width/2, width-3.2]) {
    assert.equal(walkTo(metre),1);
    assert.equal(detail.visible,false);
@@ -99,7 +109,7 @@ test('a backdrop walk reveals the digital yard through both facades and restores
  const exitFade=walkTo(width+.5);
  const oldLateral=(1-.5/6)/((1-.5/6)+(1+.5/3));
  assert.ok(Math.abs(exitFade-THREE.MathUtils.smootherstep(oldLateral,0,1))<.005);
- assert.ok(effect.cameraHoldUntil<=seconds);
+ assert.ok(Math.abs(effect.passagePace-(1-.53*Math.sin(Math.PI*exitFade)**2))<1e-8);
  assert.equal(draw.value,1);
  assert.equal(walkTo(width+7),0);
  assert.equal(proxies.visible,false);
@@ -233,10 +243,11 @@ test('a flight above a roof does not trigger a facade crossing', async () => {
   effect.update(x,z,b.heightM+3,0);
   assert.equal(scene.userData.virtuality,0);
   effect.update(x,z,b.heightM+.5,1);
-  assert.equal(effect.cameraHoldUntil,-Infinity);
+  const pulse=scene.getObjectByName('city-signal-backbone').children.find(child=>child.isLineSegments).material.uniforms.entryPulse;
+  assert.equal(pulse.value.w,-1);
   const atRoof=b.heightM-.08;
   effect.update(x,z,atRoof,2);
-  assert.equal(effect.cameraHoldUntil,2.2,'only crossing the roof starts a hold');
+  assert.equal(pulse.value.w,0,'only crossing the roof starts the light wave');
   const initial=scene.userData.houseInterior;
   effect.update(x,z,atRoof,2.1);
   assert.ok(scene.userData.houseInterior>initial && scene.userData.houseInterior<1);
@@ -245,7 +256,7 @@ test('a flight above a roof does not trigger a facade crossing', async () => {
   effect.update(x,z,b.heightM-3.5,8);
   effect.update(x,z,b.heightM+.5,9);
   assert.ok(scene.userData.houseInterior>0 && scene.userData.houseInterior<.5);
-  assert.ok(effect.cameraHoldUntil<=9);
+  assert.equal(pulse.value.w,-1,'flying back out does not start a wave');
 });
 
 async function entryPulseScene() {
@@ -268,7 +279,6 @@ test('a house entry launches one light wave at the crossing and rearms outside',
   const roof = house.heightM;
   edge.update(x, z, roof - 1, 0);
   assert.equal(pulse.w, -1, 'restoring a position inside is not another entry');
-  assert.equal(edge.cameraHoldUntil,-Infinity);
   edge.update(x, z, roof + 2, 1);
   assert.equal(pulse.w, -1, 'leaving is silent');
   edge.update(x, z, roof - .2, 2);
@@ -304,7 +314,7 @@ test('backstage entry pulses once beyond the seam and honours reduced motion', a
   assert.equal(pulse.w, -1);
   at(19, 3);
   assert.deepEqual(pulse.toArray(), [west - 19, 1.35, 0, 0]);
-  assert.equal(edge.cameraHoldUntil,-Infinity,'the outer courtyard is not a house');
+  assert.equal(edge.passagePace,1,'the city wave leaves the outer flight at full speed');
   at(19, 5.4);
   assert.ok(Math.abs(pulse.w - .5) < 1e-8, 'the city seam keeps its own 4.8-second wave');
   at(17, 8);

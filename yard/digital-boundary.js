@@ -60,7 +60,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
   let sampled = false, inBackstage = false, pulseStarted = -Infinity, pulseSeconds = houseEntrySeconds;
   const wallContact = passThroughBuildings ? createCrowWallContact(layout) : null;
   let facadeDistance = Infinity, passagePace = 1;
-  let drawingHouse = null, holdUntil = -Infinity;
+  let drawingHouse = null;
   const profile = {horizontal:0,top:0};
   const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
   const clock = {value:0};
@@ -129,7 +129,6 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
     setNeighbours(mesh) { neighbours = mesh; },
     get facadeDistance() { return facadeDistance; },
     get passagePace() { return passagePace; },
-    get cameraHoldUntil() { return reducedMotion?.matches ? -Infinity : holdUntil; },
     setSky(skyColor, fogColor) {
       baseSky.set(skyColor);
       baseFog.set(fogColor);
@@ -179,7 +178,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
       if (sparse) inBackstage = true;
       else if (edge < 16) inBackstage = false;
       let roomFade = 0, physicalFade = 0;
-      if (reducedMotion?.matches) { drawingHouse=null;holdUntil=-Infinity; }
+      if (reducedMotion?.matches) drawingHouse = null;
       if (wallContact) {
         facadeDistance = Infinity;
         let sectionHouse=-1, sectionAlpha=0;
@@ -191,8 +190,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
             house.revealedFromInside = true;
             entered = true;
             if (sampled && !reducedMotion?.matches && !sparse) {
-              holdUntil = timeSeconds + houseEntrySeconds;
-              drawingHouse = {house, deepest:0, pace:passagePace};
+              drawingHouse = {house, started:timeSeconds, deepest:0};
             }
           } else if (distance > .15) house.inside = false;
           if (distance >= approachMetres) house.revealedFromInside = false;
@@ -215,12 +213,11 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
           house.entryDraw.value = preview ? 0 : 1;
           if (preview) crossing *= entryPreview;
           if (drawing) {
-            const progress = THREE.MathUtils.clamp(1-(holdUntil-timeSeconds)/houseEntrySeconds,0,1);
+            const progress = THREE.MathUtils.clamp((timeSeconds-drawingHouse.started)/houseEntrySeconds,0,1);
             const depth = Number.isFinite(distance) ? Math.max(0,Math.min(-profile.horizontal,profile.top-y)) : 0;
             drawingHouse.deepest = Math.max(drawingHouse.deepest,depth);
             if (distance>0 || (progress>=1 && crossing>=.999 && interior>=.999)) {
               drawingHouse=null;
-              holdUntil=-Infinity;
             } else {
               // Once drawn, keep the interior solid on the inbound leg. A
               // shallow flight that turns back blends into the normal exit.
@@ -245,8 +242,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
       }
       // Ease the camera down on either side of a threshold and release it
       // again deep inside. The wall midpoint has a flat speed curve both ways.
-      passagePace = drawingHouse && timeSeconds<=holdUntil ? drawingHouse.pace :
-        reducedMotion?.matches ? 1 : 1 - .53*Math.sin(Math.PI*physicalFade)**2;
+      passagePace = reducedMotion?.matches ? 1 : 1 - .53*Math.sin(Math.PI*physicalFade)**2;
       if (reducedMotion?.matches) pulseStarted = -Infinity;
       else if (sampled && entered) {
         entryPulse.value.set(x, y, z, 0);

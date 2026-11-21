@@ -33,6 +33,21 @@ function releaseScene(scene) {
   scene.clear();
 }
 
+export function advanceYardCamera(walk, edgeEffect, camera, dt, visibleSeconds, reducedMotion) {
+  const pose = walk.update(dt * edgeEffect.passagePace);
+  camera.position.set(pose.x, pose.y, pose.z);
+  camera.rotation.set(pose.pitch, -pose.yaw, reducedMotion ? 0 : pose.roll, 'YXZ');
+  edgeEffect.update(pose.x, pose.z, camera.position.y, visibleSeconds);
+  // Keep the facade in view through the last ten centimetres of the crossing.
+  const near = .025 + .075 * THREE.MathUtils.smootherstep(Math.abs(edgeEffect.facadeDistance), .10, .65);
+  if (camera.fov !== pose.fov || camera.near !== near) {
+    camera.fov = pose.fov;
+    camera.near = near;
+    camera.updateProjectionMatrix();
+  }
+  return pose;
+}
+
 export async function startAmbientScene(canvas, { signal, onReady, onError, onFrame, clearView = false } = {}) {
   const lifetime = new AbortController();
   const compact = matchMedia('(max-width: 800px), (pointer: coarse)');
@@ -128,24 +143,8 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
         const dt = Math.min(elapsed, .15);
         lastDraw = now;
         nextDraw = now + frameMs - (nextDraw ? (now - nextDraw) % frameMs : 0);
-        // The entry wave and the camera stop share visible scene time. An
-        // inactive tab resumes at the same point in the wave and the route.
-        const holdUntil = yard.edgeEffect.cameraHoldUntil ?? -Infinity;
         visibleSeconds += elapsed;
-        // Cap route integration after a missed frame, while the entry effect
-        // finishes on its visible-time deadline even on a slow display.
-        const moving = Math.min(dt, Math.max(0, visibleSeconds - holdUntil));
-        const pose = walk.update(moving * yard.edgeEffect.passagePace, dt - moving);
-        camera.position.set(pose.x, pose.y, pose.z);
-        camera.rotation.set(pose.pitch, -pose.yaw, reducedMotion.matches ? 0 : pose.roll, 'YXZ');
-        yard.edgeEffect.update(pose.x, pose.z, camera.position.y, visibleSeconds);
-        // Keep the facade in view through the last ten centimetres of the crossing.
-        const near = .025 + .075 * THREE.MathUtils.smootherstep(Math.abs(yard.edgeEffect.facadeDistance), .10, .65);
-        if (camera.fov !== pose.fov || camera.near !== near) {
-          camera.fov = pose.fov;
-          camera.near = near;
-          camera.updateProjectionMatrix();
-        }
+        const pose = advanceYardCamera(walk, yard.edgeEffect, camera, dt, visibleSeconds, reducedMotion.matches);
         const epoch = Date.now();
         const weatherSeconds = reducedMotion.matches ? 0 : courtyardEffectSeconds(epoch);
         solar.update(epoch, camera);
