@@ -4,7 +4,7 @@ import { createCrowKeyDoor } from './crow-key-door.js';
 import { createCrowBeaconPair } from './crow-beacon-pair.js';
 import { crowPersonality } from './crow-personalities.js';
 import { sampleCrowManner } from './crow-manners.js';
-import { crowAuthorityPulse } from './crow-authority.js';
+import { crowAuthorityLook, crowAuthorityPulse } from './crow-authority.js';
 
 const clamp = (n, low, high) => Math.max(low, Math.min(high, n));
 const marks = ['bib','nape','wing','tail','brow','shoulder'];
@@ -739,6 +739,7 @@ export function createCrowModels(wallContact = null, count = 12) {
       const laughAge=elapsed-(bird.laughAt ?? -Infinity);
       const chuckle=free && !reducedMotion && laughAge>=0 && laughAge<.64
         ? Math.sin(Math.PI*laughAge/.64)**2 * Math.sin(laughAge*Math.PI*10)**2 : 0;
+      if (free && !reducedMotion && !trick && !nod && !chuckle) glance+=crowAuthorityLook(bird,nowMs);
       dip+=manner.dip+(trick?.dip || 0)+.48*signalNod-.25*nod-.25*chuckle;
       const landing=bird.mode==='land';
       const fan=clamp(.20+(landing ? .56 : .04)*air+Math.abs(bird.bank)*.5+(pose?.tail || 0)

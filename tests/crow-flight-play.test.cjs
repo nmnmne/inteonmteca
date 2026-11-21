@@ -46,11 +46,11 @@ test('flying birds perform two different jokes; the partner answers after the cu
   assert.ok(birds.some(b=>b.laughAt>5));
 });
 
-test('turning out of view prevents a start, and a story role cancels a joke without laughter',async()=>{
+test('two off-camera neighbours can start a joke until one is needed in a story',async()=>{
   const {birds,play}=await fixture();
-  play.update(4,true,{...view,yaw:Math.PI});
-  assert.equal(play.state.kind,null);
-  play.update(6,true,view);
+  Object.assign(birds[0], {yaw:Math.PI, pitch:1.2});
+  play.update(4,true);
+  assert.ok(play.state.kind);
   const partner=birds[play.state.partnerId];
   assert.ok(partner.flightPose);
   partner.storyPose={dip:.3};
@@ -83,15 +83,25 @@ test('on the ground a successful decoy can draw a chuckle only after the partner
   assert.fail('the partner reacted but neither bird answered');
 });
 
-test('a scheduled reply or a teacher waiting for the listener has priority over a flight joke',async()=>{
+test('queued signals and crows watching each other have priority over a flight joke',async()=>{
   const {birds,play}=await fixture(), now=performance.now();
   birds[1].authoritySignal={start:now+100,count:1};
   play.update(4,true,view);
   assert.equal(play.state.kind,null);
   birds[1].authoritySignal={start:now-1500,count:2};
+  birds[1].authorityFocus={until:now+2400};
   play.update(6,true,view);
   assert.equal(play.state.kind,null);
-  birds[1].authoritySignal.start=now-20000;
+  delete birds[1].authorityFocus;
   play.update(8,true,view);
   assert.ok(play.state.kind);
+});
+
+test('a jump past the gesture cannot produce laughter without the partner answering',async()=>{
+  const {birds,play}=await fixture();
+  play.update(4,true);
+  play.update(4.5,true);
+  play.update(9,true);
+  assert.equal(play.state.count,0);
+  assert.ok(birds.every(b=>b.laughAt===undefined));
 });

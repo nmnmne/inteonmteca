@@ -114,7 +114,6 @@
       ? {id:event.pointerId, x:event.clientX, y:event.clientY} : null;
   }, {capture:true, passive:true});
   window.addEventListener('pointercancel', () => { yardPress = null; }, true);
-  // Crow picking handles a hit on the document before the click reaches the window.
   window.addEventListener('click', event => {
     const press = yardPress;
     yardPress = null;

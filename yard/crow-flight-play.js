@@ -1,4 +1,4 @@
-import { crowLessonAnswerMs, crowLessonDemoMs } from './crow-authority.js';
+import { crowAuthorityBusy } from './crow-authority.js';
 
 const angle = (yaw, target) => Math.atan2(Math.sin(target-yaw), Math.cos(target-yaw));
 const pulse = (age, start, duration) => {
@@ -6,35 +6,19 @@ const pulse = (age, start, duration) => {
   return part>0 && part<1 ? Math.sin(Math.PI*part)**2 : 0;
 };
 const resting = () => ({roll:0, glance:0, wings:0, tail:0, dip:0});
-function inLesson(bird) {
-  const signal=bird.authoritySignal;
-  if (!signal) return false;
-  // Reserve the teacher until the listener can answer. A flock member
-  // with one queued nod gets a single beat, including its delayed entrance.
-  const duration=signal.count===2 ? crowLessonDemoMs+crowLessonAnswerMs : crowLessonDemoMs/2;
-  return performance.now()<signal.start+duration;
-}
 export function createCrowFlightPlay(birds, reserved) {
   const state = {kind:null, actorId:null, partnerId:null, count:0};
-  let actor, partner, began=0, nextAt=3, side=1, started=0;
+  let actor, partner, began=0, nextAt=3, side=1, started=0, showedCue=false, answered=false;
   const flying = b => b.airborne>.68 && b.y>1.6 && !b.gazePose && !b.storyPose && !b.prankPose && !b.encounterPose
-    && !inLesson(b) && !reserved?.(b.id);
-  function start(time, view) {
-    const cy=Math.cos(view.yaw), sy=Math.sin(view.yaw), pitch=view.pitch || 0;
-    const cp=Math.cos(pitch), sp=Math.sin(pitch), cone=Math.tan((view.fov || 64)*Math.PI/360);
-    const visible=birds.slice(1).filter(b=>{
-      if (!flying(b)) return false;
-      const dx=b.x-view.x, dz=b.z-view.z, dy=b.y-view.y;
-      const forward=dx*sy-dz*cy, depth=forward*cp+dy*sp;
-      return depth>1.6 && depth<19 && Math.abs(dx*cy+dz*sy)<depth*cone*(view.aspect || 1.6)
-        && Math.abs(dy*cp-forward*sp)<depth*cone*.9;
-    });
+    && !crowAuthorityBusy(b) && !reserved?.(b.id);
+  function start(time) {
+    const flyers = birds.slice(1).filter(flying);
     let best=Infinity;
-    for (let i=0; i<visible.length; i++) for (let j=i+1; j<visible.length; j++) {
-      const a=visible[i], b=visible[j], gap=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
+    for (let i=0; i<flyers.length; i++) for (let j=i+1; j<flyers.length; j++) {
+      const a=flyers[i], b=flyers[j], gap=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
       // A pair flying together has time to watch a gesture and return it.
       if (gap<.85 || gap>6.5 || Math.abs(angle(a.yaw,b.yaw))>1.1) continue;
-      const score=gap+.3*Math.hypot(a.x-view.x,a.z-view.z);
+      const score=gap+.3*Math.hypot(a.x-birds[0].x,a.z-birds[0].z);
       if (score>=best) continue;
       best=score;
       if (started%2) { actor=b; partner=a; } else { actor=a; partner=b; }
@@ -45,7 +29,7 @@ export function createCrowFlightPlay(birds, reserved) {
     state.kind=started++%2 ? 'wing-mirror' : 'false-dive';
     state.actorId=actor.id; state.partnerId=partner.id;
     actor.flightPose=resting(); partner.flightPose=resting();
-    began=time;
+    began=time; showedCue=false; answered=false;
   }
   function finish(time, completed) {
     if (completed) {
@@ -61,10 +45,10 @@ export function createCrowFlightPlay(birds, reserved) {
     state.kind=state.actorId=state.partnerId=null;
     nextAt=time+(completed ? 14+(state.count*7)%11 : 2);
   }
-  function update(time, inFlight, view) {
+  function update(time, inFlight) {
     if (!actor) {
       if (!inFlight || time<nextAt) return;
-      nextAt=time+1.3; start(time,view);
+      nextAt=time+1.3; start(time);
       return;
     }
     if (!inFlight || !flying(actor) || !flying(partner)
@@ -87,7 +71,9 @@ export function createCrowFlightPlay(birds, reserved) {
       b.roll=side*.49*echo; b.glance=-side*.73*pulse(age,.16,.62);
       b.wings=.71*Math.abs(echo); b.tail=.29*Math.abs(echo);
     }
-    if (age>=2.28) finish(time,true);
+    if (age<.85 && Math.max(Math.abs(a.roll),Math.abs(a.dip))>.075) showedCue=true;
+    if (showedCue && age>.85 && Math.max(Math.abs(b.roll),Math.abs(b.dip))>.075) answered=true;
+    if (age>=2.28) finish(time,answered);
   }
   return {state,update};
 }
