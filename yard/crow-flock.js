@@ -2,6 +2,7 @@ import { isWalkable, pointInRing } from './navigation.js';
 import { createCrowVisits } from './crow-visits.js';
 import { createCrowPranks } from './crow-pranks.js';
 import { createCrowFlightPlay } from './crow-flight-play.js';
+import { createCrowFlightRouter } from './crow-flight-route.js';
 import { createCrowKeyStory } from './crow-key-story.js';
 import { createCrowDisputes } from './crow-disputes.js';
 import { createCrowRollCall } from './crow-roll-call.js';
@@ -23,6 +24,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
   const range = (a, b) => a + (b - a) * random();
   const integer = (a, b) => Math.min(b, Math.floor(range(a, b + 1)));
   const birds = [];
+  const flightRouter = createCrowFlightRouter(layout);
   const state = {phase: 'landing', targetSize: 1, partySize: 1, seniorCount: 1,
     landingCount: 0, missionCount: 0, searchYaw: null};
   let time = 0, callAt = 0, readySince = 0, splitAt = Infinity;
@@ -35,7 +37,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
       if (landings.size >= 4096) landings.clear();
       landings.set(key, isWalkable(layout, ix * .5 + .25, iz * .5 + .25, .59));
     }
-    return landings.get(key);
+    return landings.get(key) && flightRouter.clearStep(x,chest,z,x,chest,z);
   }
   function relative(origin, yaw, side, forward) {
     return {x: origin.x + forward * Math.sin(yaw) + side * Math.cos(yaw),
@@ -83,6 +85,16 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
   const allBirds = [...birds, ...disputes.guests];
   for (const bird of allBirds) bird.personality = crowPersonality(bird.id);
   for (const bird of allBirds.slice(1)) {
+    // A synthetic opening or a guest arriving at the edge of the courtyard
+    // can put the nominal spawn inside a real facade. Resolve it before frame one.
+    const start = flightRouter.safePoint(bird.x,bird.y,bird.z);
+    bird.x = start.x; bird.z = start.z;
+    const forageSpot = flightRouter.safePoint(bird.roamX,chest,bird.roamZ);
+    bird.roamX = forageSpot.x; bird.roamZ = forageSpot.z;
+    if (bird.slotX !== undefined) {
+      const slot = flightRouter.safePoint(bird.slotX,chest,bird.slotZ);
+      bird.slotX = slot.x; bird.slotZ = slot.z;
+    }
     bird.neighbourLook = 0;
     bird.ordinaryLandings = 0;
     bird.approachingGround = false;
@@ -99,7 +111,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
   const rollCall = createCrowRollCall(birds, () => nodDraw, cameraGreeting);
   const onStage = id => id === rollCall.state.targetId || keyStory?.targets.has(id) || disputes.reserved(birds[id]);
   const busyForPranks = {has: id => onStage(id) || beacons.current?.sender.id === id || beacons.current?.recipient.id === id};
-  const treePrank = createCrowTreePrank(birds, crowTrees);
+  const treePrank = createCrowTreePrank(birds, crowTrees, flightRouter.clearStep);
   const busyForTrees = {has: id => busyForPranks.has(id) || pranks.targets.has(id) || visits?.perches.has(id)};
   // A resting bird can signal with its ankle without leaving the resident's side.
   const beacons = createCrowBeaconExchange(birds,clearGround,{has:id=>onStage(id) || pranks.targets.has(id)
@@ -276,14 +288,18 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
 
   function steer(b, x, y, z, dt, escort, foraging = false) {
     const habits = b.personality.habits;
-    const dx = x - b.x, dz = z - b.z, d = Math.hypot(dx, dz);
+    const target = flightRouter.waypoint(b,x,y,z);
+    y = target.y ?? y;
+    const dx = target.x - b.x, dz = target.z - b.z, d = Math.hypot(dx, dz);
     const groundTrip = y <= chest + .03;
-    const lift = groundTrip ? Math.min(b.cruise || 4.6, Math.max(0, d - (b.airborne > .25 ? 1.4 : 3.3)) * .73) : 0;
+    const remaining = target.detour ? Math.hypot(x-b.x,z-b.z) : d;
+    const lift = groundTrip ? Math.min(b.cruise || 4.6, Math.max(0, remaining - (b.airborne > .25 ? 1.4 : 3.3)) * .73) : 0;
     let height = y + lift;
     const flying = height > chest + .38 || b.y > chest + .45;
     const limit = flying ? 13.6 : 1.75 * (foraging ? habits.pace : 1);
     const pursuit = Math.min(1.7, limit / Math.max(.01, d));
-    let vx = dx * pursuit + (escort ? leader.vx : 0), vz = dz * pursuit + (escort ? leader.vz : 0);
+    const followVelocity = escort && !target.detour;
+    let vx = dx * pursuit + (followVelocity ? leader.vx : 0), vz = dz * pursuit + (followVelocity ? leader.vz : 0);
     // At a feeding patch a wary bird yields first. Family members will feed
     // closer together than strangers, especially when a bird likes company.
     const social = foraging && !flying;
@@ -321,14 +337,39 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     if (!clearGround(b.x, b.z) && height < 1.9) height = 1.9;
     const desiredClimb = clamp((height - b.y) * 2.4, -4.2, 5.1);
     b.vy += (desiredClimb - b.vy) * Math.min(1, dt * 4.7);
-    b.y = Math.max(chest, b.y + b.vy * dt);
-    b.x = nextX; b.z = nextZ;
-    const cameraDistance = Math.hypot(b.x - leader.x, b.y - leader.y, b.z - leader.z);
-    if (cameraDistance < .85) {
-      const side = Math.atan2(b.x - leader.x, b.z - leader.z);
-      b.x = leader.x + Math.sin(side) * .86;
-      b.z = leader.z + Math.cos(side) * .86;
+    let nextY = Math.max(chest, b.y + b.vy * dt);
+    const fromX = b.x, fromY = b.y, fromZ = b.z;
+    if (!flightRouter.clearStep(fromX,fromY,fromZ,nextX,nextY,nextZ)) {
+      // Braking and the pull of a neighbour can carry a wing past an otherwise
+      // safe waypoint. Lose only the velocity that actually meets a facade.
+      if (flightRouter.clearStep(fromX,fromY,fromZ,nextX,fromY,nextZ)) {
+        nextY = fromY; b.vy = 0;
+      } else {
+        if (!flightRouter.clearStep(fromX,fromY,fromZ,fromX,nextY,fromZ)) {
+          nextY = fromY; b.vy = 0;
+        }
+        const slideX = flightRouter.clearStep(fromX,fromY,fromZ,nextX,nextY,fromZ);
+        const slideZ = flightRouter.clearStep(fromX,fromY,fromZ,fromX,nextY,nextZ);
+        if (slideX && (!slideZ || Math.abs(b.vx) >= Math.abs(b.vz))) {
+          nextZ = fromZ; b.vz = 0;
+        } else if (slideZ) {
+          nextX = fromX; b.vx = 0;
+        } else {
+          nextX = fromX; nextZ = fromZ; b.vx = b.vz = 0;
+        }
+      }
     }
+    const cameraDistance = Math.hypot(nextX - leader.x, nextY - leader.y, nextZ - leader.z);
+    if (cameraDistance < .85) {
+      const side = Math.atan2(nextX - leader.x, nextZ - leader.z);
+      // The observer can cross the wall behind a crow. Keep this final
+      // separation on the same side, including the path to the displaced point.
+      for (const turn of [0, .65, -.65, 1.25, -1.25]) {
+        const px = leader.x + Math.sin(side + turn) * .86, pz = leader.z + Math.cos(side + turn) * .86;
+        if (flightRouter.clearStep(fromX,fromY,fromZ,px,nextY,pz)) { nextX=px; nextZ=pz; break; }
+      }
+    }
+    b.x = nextX; b.y = nextY; b.z = nextZ;
     b.speed = Math.hypot(b.vx, b.vz);
     const yawStep = b.speed > .12 ? clamp(angleDelta(b.yaw, Math.atan2(b.vx, -b.vz)), -3.8*dt, 3.8*dt) : 0;
     b.yaw += yawStep;
@@ -422,7 +463,8 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
         if (visits.state.phase === 'sitting') {
           // A settled guest stays put. Passing neighbours still steer around it.
           b.vx = b.vz = b.vy = b.speed = b.airborne = b.bank = 0;
-          b.y += (chest - b.y) * Math.min(1, dt * 5);
+          const nextY = b.y + (chest - b.y) * Math.min(1, dt * 5);
+          if (flightRouter.clearStep(b.x,b.y,b.z,b.x,nextY,b.z)) b.y = nextY;
         } else steer(b, perch.x, chest, perch.z, dt, false);
         if (b.mode === 'perch') {
           b.yaw += clamp(angleDelta(b.yaw, bearing(b, visits.state)), -1.6*dt, 1.6*dt);
@@ -458,15 +500,18 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     state.partySize = assembled;
     flightPlay.update(time,state.phase==='mission' && leader.airborne>.6,pose);
     const previousExchange = beacons.current;
-    beacons.update(time, allowBeacons() && (!keyStory || keyStory.state.phase==='idle'), pose);
+    beacons.update(time, allowBeacons() && (!keyStory || keyStory.state.phase==='idle'), pose, !calling);
     // Give the story a turn to claim the landing after the final reply.
     if (previousExchange && !beacons.current && state.phase === 'ready') readySince = time;
-    if (gathering && disputes.state.phase === 'idle') rollCall.update(dt, pose, state.targetSize);
+    if (gathering && !beacons.current && disputes.state.phase === 'idle') rollCall.update(dt, pose, state.targetSize);
     if (gathering && assembled === state.targetSize && state.phase !== 'ready'
         && rollCall.state.phase === 'done' && Math.abs(angleDelta(leader.yaw, heading)) < .22) {
       state.phase = 'ready'; readySince = time; state.searchYaw = null;
     } else if (gathering && assembled < state.targetSize) state.phase = 'gather';
-    if (keyStory?.targets.size) state.searchYaw = bearing(leader,keyStory.state);
+    // The diverted flock can arrive at a different instant. Give the pair
+    // its full shot before the camera starts greeting the next arrival.
+    if (gathering && beacons.current) state.searchYaw = beacons.current.bearing;
+    else if (keyStory?.targets.size) state.searchYaw = bearing(leader,keyStory.state);
     else if (visits?.state.kind) state.searchYaw = bearing(leader, visits.state);
     else if (gathering && disputes.state.phase !== 'idle') state.searchYaw = bearing(leader, disputes.state);
     else if (gathering && rollCall.state.phase === 'done' && state.phase !== 'ready') state.searchYaw = heading;

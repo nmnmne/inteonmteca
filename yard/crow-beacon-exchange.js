@@ -44,21 +44,21 @@ export function createCrowBeaconExchange(birds, clearGround, occupied) {
     return pair;
   }
 
-  function update(time, enabled, view=leader) {
+  function update(time, enabled, view=leader, allowStart=true) {
     if (!enabled || leader.y > 3.5) {
       exchange = null;
       nextAt = Math.max(nextAt,time+2);
       return;
     }
     if (!exchange) {
-      if (time < nextAt) return;
+      if (!allowStart || time < nextAt) return;
       nextAt = time + 1.5;
       const pair = choose(view);
       if (!pair) return;
       [sender,recipient] = pair;
       began = time;
       const code = crowBeaconCode(sender.id,recipient.id,++episode);
-      exchange = {sender:{id:sender.id}, recipient:{id:recipient.id}, code};
+      exchange = {sender:{id:sender.id}, recipient:{id:recipient.id}, code, bearing:view.yaw};
     }
     const age = time-began;
     if (!visible(sender,view,.93) || !visible(recipient,view,.93)) {

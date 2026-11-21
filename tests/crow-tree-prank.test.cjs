@@ -49,3 +49,27 @@ test('a crow rides each moving birch, and recruitment releases its perch', async
     assert.equal(pivot.quaternion.angleTo(scene.quaternion),0);
   }
 });
+
+test('a moving perch releases its crow at its last safe position before a wall',async()=>{
+  const {createCrowTreePrank}=await import('../yard/crow-tree-prank.js');
+  const leader={id:0,x:0,y:2,z:0,yaw:Math.PI/2};
+  const bird={id:1,x:4,y:2,z:0,yaw:0,breakUntil:0,wingPhase:0};
+  const seat={treeId:'birch',x:4,y:2,z:0,local:{x:-1,z:0}};
+  const unsafe={...seat,x:6,treeId:'blocked'};
+  const rig={perches:[unsafe,seat],rock(){},update(){}};
+  const clearStep=(ax,ay,az,bx,by,bz)=>Math.max(ax,bx)<5;
+  const scene=createCrowTreePrank([leader,bird],()=>rig,clearStep);
+  scene.update(.05,1.3);
+  assert.equal(scene.state.treeId,'birch');
+  for(let i=1;i<5;i++) {
+    const target=scene.targets.get(1);
+    Object.assign(bird,{x:target.x,y:target.y,z:target.z});
+    scene.update(.05,1.3+i*.05);
+  }
+  assert.equal(scene.state.phase,'perched');
+  seat.x=5.1;
+  scene.update(.05,1.6);
+  assert.equal(scene.state.phase,'idle');
+  assert.equal(bird.x,4);
+  assert.equal(scene.targets.size,0);
+});

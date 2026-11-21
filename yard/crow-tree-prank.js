@@ -1,6 +1,6 @@
 // A free crow climbs above a real limb, lands, then bounces it with its feet.
 // The perch follows the same pivot as the wood so the toes ride the rebound.
-export function createCrowTreePrank(birds, getTrees) {
+export function createCrowTreePrank(birds, getTrees, clearStep = () => true) {
   const leader = birds[0], targets = new Map();
   const state = {phase:'idle', actorId:null, treeId:null, count:0};
   let trees, actor, perch, target, since=0, nextAt=1.2, playAt=null, beats=0;
@@ -13,6 +13,9 @@ export function createCrowTreePrank(birds, getTrees) {
       const ahead=dx*Math.sin(leader.yaw)-dz*Math.cos(leader.yaw);
       if (range>23 || ahead < range*.08 || Math.abs(seat.y-leader.y)>9) continue;
       const length=Math.hypot(seat.local.x,seat.local.z);
+      if (length<.01) continue;
+      const approachX=seat.x+seat.local.x/length*1.25, approachZ=seat.z+seat.local.z/length*1.25;
+      if (!clearStep(approachX,seat.y+1.05,approachZ,seat.x,seat.y+.20,seat.z)) continue;
       for (let i=1; i<birds.length; i++) {
         const b=birds[i];
         if (!free(b,time,occupied)) continue;
@@ -81,7 +84,11 @@ export function createCrowTreePrank(birds, getTrees) {
     const hop=hopping ? Math.sin(Math.PI*progress/.44) : 0;
     const landings=Math.min(3,Math.max(0,Math.floor(cycle+1-.44)));
     if (landings>beats) { beats=landings; trees.rock(perch,.87); }
-    actor.x=perch.x; actor.z=perch.z; actor.y=perch.y+.20+.26*hop;
+    const footY=perch.y+.20+.26*hop;
+    // The birch moves after the landing was planned. Release the branch before
+    // its sway carries the seated crow through a facade.
+    if (!clearStep(actor.x,actor.y,actor.z,perch.x,footY,perch.z)) { release(time); return; }
+    actor.x=perch.x; actor.z=perch.z; actor.y=footY;
     actor.vx=actor.vz=actor.vy=actor.speed=0;
     actor.bank=0;
     actor.airborne=Math.max(0,1-settled*4,.34*hop);
