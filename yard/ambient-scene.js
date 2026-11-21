@@ -86,6 +86,14 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     const mobile = compact.matches;
     const level = graphicsLevel = Math.max(1, Math.min(10, Math.round(Number(document.documentElement.dataset.graphicsLevel)) || (mobile ? 3 : 5)));
     solar?.setQuality(level, mobile);
+    // Render directly on modest phones. The lens otherwise stores color and
+    // depth offscreen and samples them again across the whole display.
+    if (mobile && level <= 3) {
+      optics?.dispose();
+      optics = null;
+    } else {
+      optics ??= createCameraOptics(renderer);
+    }
     // Share the existing quality meter with the mixer. Labels, hit targets and
     // waveforms keep their native resolution regardless of the 3D pixel budget.
     const budget = (mobile ? mobilePixels : desktopPixels)[level-1] * (clearView ? 1 : .37);
@@ -147,7 +155,8 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
         ripplePuddles(weatherSeconds);
         if (yard.scene.userData.grassWind) yard.scene.userData.grassWind.value = weatherSeconds;
         yard.scene.userData.updateLandscapingDetail?.(camera.position,graphicsLevel);
-        optics.render(yard.scene,camera,dt,graphicsLevel,reducedMotion.matches);
+        if (optics) optics.render(yard.scene,camera,dt,graphicsLevel,reducedMotion.matches);
+        else renderer.render(yard.scene,camera);
         onFrame?.(canvas, now, pose, flock);
         if (!ready) {
           ready = true;
@@ -175,7 +184,6 @@ export async function startAmbientScene(canvas, { signal, onReady, onError, onFr
     const layout = await response.json();
     lifetime.signal.throwIfAborted();
     renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'low-power' });
-    optics = createCameraOptics(renderer);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     camera = new THREE.PerspectiveCamera(64, 1, 0.1, 510);
     const aspect = canvas.clientWidth / Math.max(1, canvas.clientHeight);

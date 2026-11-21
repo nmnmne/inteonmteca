@@ -9,7 +9,7 @@ from playwright.sync_api import sync_playwright
 
 
 def check_auto(browser, url):
-    page = browser.new_page()
+    page = browser.new_page(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True)
     page.goto(url, wait_until="domcontentloaded")
     compact = page.locator("#yard-dj-compact")
     auto = compact.get_by_role("button", name="Автовоспроизведение")
@@ -19,6 +19,19 @@ def check_auto(browser, url):
     assert page.evaluate("!DJEngine.snapshot().A.playing && !DJEngine.snapshot().B.playing")
     play.click()
     page.wait_for_function("DJEngine.snapshot().A.audioRunning")
+    # Keep streaming while the waveform and mixer are hidden, then wake the live scope.
+    page.wait_for_function("document.querySelector('#yard-dj-compact').hasAttribute('data-ultra')")
+    page.evaluate("""() => {
+        const render = DJDecks.render;
+        window.paintedDecks = [];
+        DJDecks.render = (id, state) => { paintedDecks.push(id); render(id, state); };
+    }""")
+    position = page.evaluate("DJEngine.snapshot().A.time")
+    page.wait_for_function("start => DJEngine.snapshot().A.time > start + .65", arg=position)
+    assert page.evaluate("paintedDecks.length === 0")
+    page.touchscreen.tap(195, 180)
+    page.wait_for_function("paintedDecks.length >= 2")
+    assert page.evaluate("paintedDecks.every(id => id === 'A')")
     page.evaluate("DJEngine.seek('A', DJEngine.snapshot().A.duration - 5)")
     page.wait_for_function("DJEngine.snapshot().A.playing && DJEngine.snapshot().B.playing")
     auto.click()

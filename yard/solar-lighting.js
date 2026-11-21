@@ -53,6 +53,7 @@ export function createSolarLighting(renderer, yard, layout, {mapSize, sampleSun 
   const viewBounds = new THREE.Box3(), point = new THREE.Vector3();
   const lastDepthDirection = new THREE.Vector3();
   const projectionScale = {value:new THREE.Vector3(1,1,1)};
+  const compactFilter = {value:false};
   const patchedMaterials = new WeakSet();
   const state = scene.userData.solarLighting = {
     direction:new THREE.Vector3(), cloudColor:new THREE.Color(), reflectionTint:new THREE.Color(),
@@ -72,8 +73,11 @@ export function createSolarLighting(renderer, yard, layout, {mapSize, sampleSun 
   let geometryChanged = true, lastSample = NaN;
 
   function setQuality(level, compact) {
+    compactFilter.value = compact && level <= 3;
+    const mobileSize = level === 1 ? 768 : 1024;
+    const desktopSize = level <= 3 ? 1024 : level >= 7 ? 2048 : 1536;
     const size = Math.min(renderer.capabilities.maxTextureSize, mapSize ||
-      (compact || level <= 3 ? 1024 : level >= 7 ? 2048 : 1536));
+      (compact ? mobileSize : desktopSize));
     if (size === state.mapSize) return;
     state.mapSize = size;
     sun.shadow.mapSize.set(size, size);
@@ -93,7 +97,7 @@ export function createSolarLighting(renderer, yard, layout, {mapSize, sampleSun 
       for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
         if (patchedMaterials.has(material)) continue;
         patchedMaterials.add(material);
-        addSolarPenumbra(material, projectionScale);
+        addSolarPenumbra(material, projectionScale, compactFilter);
       }
       receivers++;
     });

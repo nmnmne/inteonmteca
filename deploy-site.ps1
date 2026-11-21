@@ -167,9 +167,16 @@ $syncArgs = @(
   "--include", "yard/*/*/*",
 
   "--exclude", "development-debug.js",
-  "--exclude", "yard/debug-pose.js",
-  "--exclude", "*.html"
+  "--exclude", "yard/debug-pose.js"
 )
+# These imports keep their public URLs. Only publish their encoded versions so
+# a sync cannot temporarily replace them with raw bodies or different ETags.
+$compressedYardAssets = [ordered]@{
+  "yard/vendor/three.module.js" = "application/javascript; charset=utf-8"
+  "yard/data/site-layout.json" = "application/json; charset=utf-8"
+}
+foreach ($key in $compressedYardAssets.Keys) { $syncArgs += @("--exclude", $key) }
+$syncArgs += @("--exclude", "*.html")
 if ($WebOnly) {
   $syncArgs += @("--exclude", "media/*", "--exclude", "assets/dj-audio/*", "--exclude", "assets/dj-spatial/*")
   $liveCatalog = @("playlist.json", "playlist-data.js", "dj-loudness.js", "dj-spatial-tracks.js", "dj-analysis.js")
@@ -295,6 +302,25 @@ if (Test-Path $yardCss) {
     --metadata-directive REPLACE | Out-Host
 }
 
+function Publish-GzipAsset([byte[]]$bytes, [string]$key, [string]$mime, [string]$cacheControl) {
+  $gzipPath = [System.IO.Path]::GetTempFileName()
+  try {
+    $outputStream = [System.IO.File]::Create($gzipPath)
+    try {
+      $gzipStream = [System.IO.Compression.GZipStream]::new($outputStream, [System.IO.Compression.CompressionLevel]::Optimal, $true)
+      try { $gzipStream.Write($bytes, 0, $bytes.Length) }
+      finally { $gzipStream.Dispose() }
+    } finally { $outputStream.Dispose() }
+    Invoke-Aws --endpoint-url $endpoint s3 cp $gzipPath "$bucketUrl/$key" `
+      --content-type $mime --content-encoding gzip --cache-control $cacheControl | Out-Host
+  } finally { Remove-Item -LiteralPath $gzipPath -Force }
+}
+
+foreach ($key in $compressedYardAssets.Keys) {
+  $bytes = [System.IO.File]::ReadAllBytes((Join-Path $root $key))
+  Publish-GzipAsset $bytes $key $compressedYardAssets[$key] "public, max-age=0, must-revalidate"
+}
+
 # Build immutable gzip representations of allowlisted homepage CSS/JS. Keep
 # objects at the bucket root so relative CSS image/font URLs retain their base.
 $publicRootAssets = for ($i = 0; $i -lt $syncArgs.Count - 1; $i += 2) {
@@ -309,18 +335,8 @@ foreach ($assetFile in $assetFiles) {
   try { $assetHash = ([BitConverter]::ToString($digest.ComputeHash($assetBytes))).Replace("-", "").Substring(0, 16).ToLowerInvariant() }
   finally { $digest.Dispose() }
   $assetName = "$($assetFile.BaseName).$assetHash$($assetFile.Extension)"
-  $gzipPath = Join-Path $env:TEMP "inteonmteca-$assetName.gz"
-  $outputStream = [System.IO.File]::Create($gzipPath)
-  try {
-    $gzipStream = [System.IO.Compression.GZipStream]::new($outputStream, [System.IO.Compression.CompressionLevel]::Optimal, $true)
-    try { $gzipStream.Write($assetBytes, 0, $assetBytes.Length) }
-    finally { $gzipStream.Dispose() }
-  } finally { $outputStream.Dispose() }
   $mime = if ($assetFile.Extension -eq ".css") { "text/css; charset=utf-8" } else { "application/javascript; charset=utf-8" }
-  try {
-    Invoke-Aws --endpoint-url $endpoint s3 cp $gzipPath "$bucketUrl/$assetName" `
-      --content-type $mime --content-encoding gzip --cache-control "public, max-age=31536000, immutable" | Out-Host
-  } finally { Remove-Item -LiteralPath $gzipPath -Force }
+  Publish-GzipAsset $assetBytes $assetName $mime "public, max-age=31536000, immutable"
   $aliases = @($assetFile.Name)
   if ($assetFile.Name -eq "styles.css") { $aliases += $versionedStylesName }
   if ($assetFile.Name -eq "script.js") { $aliases += $versionedScriptName }

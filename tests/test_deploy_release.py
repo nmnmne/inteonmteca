@@ -16,11 +16,15 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 POWERSHELL = shutil.which("pwsh") or shutil.which("powershell")
+YARD_ASSETS = {
+    "yard/vendor/three.module.js": ("export const REVISION='170';", "application/javascript; charset=utf-8"),
+    "yard/data/site-layout.json": ('{"buildings":[]}', "application/json; charset=utf-8"),
+}
 
 
 @unittest.skipUnless(POWERSHELL, "PowerShell is required for release execution tests")
 class DeployReleaseTests(unittest.TestCase):
-    def run_release(self, fail_at=0):
+    def run_release(self, fail_at=0, web_only=False):
         with tempfile.TemporaryDirectory(prefix="release-test-") as directory:
             root = Path(directory)
             shutil.copy2(ROOT / "deploy-site.ps1", root / "deploy-site.ps1")
@@ -32,6 +36,7 @@ class DeployReleaseTests(unittest.TestCase):
                 "playlist.json": "[]", "playlist-data.js": "window.playlist=[];",
                 "yard/index.html": '<link href="yard.css?v=old"><script data-development-only src="../development-debug.js"></script>',
                 "yard/yard.css": "body {}", "yard/main.js": "void 0;",
+                **{key: content for key, (content, _) in YARD_ASSETS.items()},
                 "tools/prepare_dj_library.py": "raise RuntimeError('must not execute')",
                 "styles.20000101-000000.css": "old local asset",
             }
@@ -40,7 +45,11 @@ class DeployReleaseTests(unittest.TestCase):
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text(content, encoding="utf-8")
             # Script resolves Python via Get-Command; this native shim does no work.
-            (root / "python.cmd").write_text("@exit /b 0\r\n", encoding="ascii")
+            if os.name == "nt":
+                (root / "python.cmd").write_text("@exit /b 0\r\n", encoding="ascii")
+            else:
+                (root / "python").write_text("#!/bin/sh\nexit 0\n", encoding="ascii")
+                (root / "python").chmod(0o755)
             log = root / "aws.jsonl"
             wrapper = root / "run.ps1"
             wrapper.write_text('''$ErrorActionPreference = "Stop"
@@ -58,10 +67,11 @@ function aws {
     $global:LASTEXITCODE = 0
     if ($global:calls -eq [int]$env:RELEASE_FAIL_AT) { $global:LASTEXITCODE = 23 }
 }
-try { & (Join-Path $PSScriptRoot "deploy-site.ps1") }
+try { & (Join-Path $PSScriptRoot "deploy-site.ps1") -WebOnly:($env:RELEASE_WEB_ONLY -eq "1") }
 catch { Write-Output $_; exit 1 }
 ''', encoding="utf-8")
-            env = dict(os.environ, RELEASE_LOG=str(log), RELEASE_FAIL_AT=str(fail_at), TEMP=str(root), TMP=str(root))
+            env = dict(os.environ, RELEASE_LOG=str(log), RELEASE_FAIL_AT=str(fail_at),
+                       RELEASE_WEB_ONLY=str(int(web_only)), TEMP=str(root), TMP=str(root))
             env["PATH"] = str(root) + os.pathsep + env["PATH"]
             result = subprocess.run(
                 [POWERSHELL, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", str(wrapper)],
@@ -105,7 +115,7 @@ catch { Write-Output $_; exit 1 }
     def test_compressed_assets_round_trip_and_match_content_names(self):
         result, calls, _ = self.run_release()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        compressed = [c for c in calls if 'gzip' in c]
+        compressed = [c for c in calls if 'gzip' in c and '/yard/' not in c['args'][c['args'].index('cp') + 2]]
         self.assertGreaterEqual(len(compressed), 3)
         for call in compressed:
             raw = gzip.decompress(base64.b64decode(call['gzip']))
@@ -115,6 +125,25 @@ catch { Write-Output $_; exit 1 }
         for call in calls:
             if 'cp' in call['args'] or 'sync' in call['args']:
                 self.assertFalse(any('track-covers' in a for a in call['args']))
+
+    def test_yard_imports_revalidate_and_round_trip_before_entries(self):
+        result, calls, _ = self.run_release(web_only=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        sync = next(c['args'] for c in calls if 'sync' in c['args'])
+        entry = next(i for i,c in enumerate(calls) if 'html' in c)
+        for key, (content, mime) in YARD_ASSETS.items():
+            with self.subTest(key=key):
+                self.assertEqual(sync[sync.index(key)-1], '--exclude')
+                self.assertGreater(sync.index(key), sync.index('yard/*'))
+                uploads = [(i,c) for i,c in enumerate(calls) if 's3://inteonmteca.online/' + key in c['args']]
+                self.assertEqual(len(uploads), 1)
+                i, call = uploads[0]
+                self.assertLess(i, entry)
+                args = call['args']
+                self.assertEqual(args[args.index('--content-type') + 1], mime)
+                self.assertEqual(args[args.index('--content-encoding') + 1], 'gzip')
+                self.assertEqual(args[args.index('--cache-control') + 1], 'public, max-age=0, must-revalidate')
+                self.assertEqual(gzip.decompress(base64.b64decode(call['gzip'])), content.encode())
 
     def test_release_retains_remote_assets_and_local_inputs(self):
         result, calls, preserved = self.run_release()

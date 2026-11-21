@@ -47,3 +47,37 @@ test('eight seated copies repeat the surveyed roofs and go away on every side of
     edge.update(...inside); assert.equal(mesh.visible,true);
   }
 });
+
+test('one instance batch follows the visible tiles when turning and includes both stereo eyes',async()=>{
+  const T=await import('../yard/vendor/three.module.js');
+  const {addNeighbourCourtyards}=await import('../yard/neighbour-courtyards.js');
+  const scene=new T.Scene();
+  const ground=new T.Mesh(new T.PlaneGeometry(250,295));
+  ground.rotation.x=-Math.PI/2;
+  ground.position.set(39,0,-2.5);
+  scene.add(ground);
+  const mesh=addNeighbourCourtyards(scene,layout,ground);
+  const view=(dx,far)=>{
+    const camera=new T.PerspectiveCamera(42,390/844,.1,far);
+    camera.position.set(39,2,-2.5);
+    camera.lookAt(39+dx,2,-2.5);
+    camera.updateMatrixWorld();
+    return camera;
+  };
+  function offsets(camera) {
+    scene.onBeforeRender(null,scene,camera,null);
+    const matrix=new T.Matrix4();
+    return Array.from({length:mesh.count},(_,i)=>{
+      mesh.getMatrixAt(i,matrix);
+      return [matrix.elements[12],matrix.elements[14]];
+    });
+  }
+  const east=view(1,155), west=view(-1,155);
+  assert.deepEqual(offsets(east),[[250,0]]);
+  const version=mesh.instanceMatrix.version;
+  assert.deepEqual(offsets(east),[[250,0]]);
+  assert.equal(mesh.instanceMatrix.version,version);
+  assert.deepEqual(offsets(view(1,80)),[]);
+  assert.deepEqual(offsets(west),[[-250,0]]);
+  assert.deepEqual(offsets(new T.ArrayCamera([west,east])),[[-250,0],[250,0]]);
+});

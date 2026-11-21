@@ -624,6 +624,26 @@ export function createCrowModels(wallContact = null, count = 12) {
   const birds=new THREE.InstancedMesh(geometry,plumage,count);
   birds.name='crow-plumage';
   birds.receiveShadow=true;
+  const viewFrustum=new THREE.Frustum(), clipFromFlock=new THREE.Matrix4();
+  const instance=new THREE.Matrix4(), birdBounds=new THREE.Sphere();
+  let totalBirds=0;
+  birds.onBeforeRender=(_renderer,_scene,camera)=>{
+    // The wing, beak and raised tail fit within 1.2 local metres of the
+    // animated body origin. Keep intersecting birds, including partial silhouettes.
+    totalBirds=birds.count;
+    clipFromFlock.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse).multiply(birds.matrixWorld);
+    viewFrustum.setFromProjectionMatrix(clipFromFlock,camera.coordinateSystem);
+    while (birds.count>0) {
+      birds.getMatrixAt(birds.count-1,instance);
+      birdBounds.center.setFromMatrixPosition(instance);
+      birdBounds.radius=1.2*instance.getMaxScaleOnAxis();
+      if (viewFrustum.intersectsSphere(birdBounds)) break;
+      birds.count--;
+    }
+  };
+  // Preserve stable flock/instance IDs. The next eye, shadow pass or hit
+  // test starts with the complete flock, even if this view saw no birds.
+  birds.onAfterRender=()=>{birds.count=totalBirds;};
   const shadowGeometry=new THREE.PlaneGeometry(1,1);
   shadowGeometry.rotateX(-Math.PI/2);
   const shadowsMaterial=new THREE.ShaderMaterial({

@@ -451,17 +451,17 @@
       engine.setMonitor(id, !s[id].monitor);
     });
   }
-  function schedulePaint() {
-    if (!paintTimer && !document.hidden && (!document.body.dataset.yardWindow || document.body.dataset.yardWindow === 'dj'))
-      paintTimer = requestAnimationFrame(render);
+  function canPaint() {
+    const view = document.body.dataset.yardWindow;
+    return !document.hidden && (!view || view === 'dj') &&
+      (!compactActive() || Boolean(compactControls?.waveformDeck));
   }
-  function render() {
-    paintTimer = 0;
-    if (document.body.dataset.yardWindow && document.body.dataset.yardWindow !== 'dj') return;
-    const s = engine.snapshot();
+  function schedulePaint() {
+    if (!paintTimer && canPaint()) paintTimer = requestAnimationFrame(render);
+  }
+  function renderMixer(s) {
     mixerDisplays.forEach((update) => update(s));
     channels.forEach((id) => window.DJDecks.render(id, s[id]));
-    if (channels.map((id) => s[id].track?.id).join('|') !== loadedTracks) refreshPlaylists(s);
     channels.forEach((id) =>
       $('#channel-' + id.toLowerCase() + ' .monitor-btn').setAttribute('aria-pressed', String(s[id].monitor)),
     );
@@ -496,6 +496,15 @@
       $('#audio-status').textContent = audioStatus;
       lastAudioStatus = audioStatus;
     }
+  }
+  function render() {
+    paintTimer = 0;
+    if (!canPaint()) return;
+    const compactDeck = compactActive() && compactControls.waveformDeck;
+    const s = engine.snapshot({meters: !compactDeck});
+    if (compactDeck) window.DJDecks.render(compactDeck, s[compactDeck]);
+    else renderMixer(s);
+    if (channels.map((id) => s[id].track?.id).join('|') !== loadedTracks) refreshPlaylists(s);
     if (s.recording && !lastRecording) notice('Запись мастер-выхода началась');
     lastRecording = s.recording;
     if (s.A.playing || s.B.playing || s.A.scratching || s.B.scratching || s.recording)
@@ -796,6 +805,7 @@
     list: side => (deckBrowsers.get(side)?.rows ?? orderedTracks()).map(({id, title, artist}) => ({id, title, artist})),
     get activeDeck() { return focusedDeck; },
     setCompactControls(controls) { compactControls = controls; },
+    schedulePaint,
     revealSelection: side => deckBrowsers.get(side).revealSelection(),
     load: (side, key, isCurrent) => loadDeck(side, tracks.find(track => track.id === key), isCurrent),
     importFiles: (side, files) => importFiles(files, deckBrowsers.get(side)),
@@ -825,6 +835,7 @@
   });
   window.addEventListener('dj-change', schedulePaint);
   window.addEventListener('yard-app-visibility', schedulePaint);
+  window.addEventListener('yard-dj-mode', schedulePaint);
   window.addEventListener('dj-error', (e) => notice(e.detail.message));
   window.addEventListener('dj-recorded', (e) => notice('Микс сохранён · ' + e.detail.filename));
   window.addEventListener('hashchange', resolveLegacyView);

@@ -134,7 +134,22 @@
         retryTimer = setTimeout(start, 2200);
       }
     };
+    let pendingContext;
+    const releasePendingContext = () => {
+      if (pendingContext && !pendingContext.isContextLost()) {
+        pendingContext.getExtension('WEBGL_lose_context')?.loseContext();
+      }
+      pendingContext = null;
+    };
     try {
+      // Probe the actual canvas before importing the courtyard. Three reuses
+      // this context on the same canvas, including its low-power attributes.
+      pendingContext = canvas.getContext('webgl2', {alpha:true, antialias:false, powerPreference:'low-power'});
+      if (!pendingContext) {
+        fallback(new Error('Error creating WebGL context.'));
+        return;
+      }
+      run.signal.addEventListener('abort', releasePendingContext, {once:true});
       const { startAmbientScene } = await import('./yard/ambient-scene.js?v=crow-flock-1');
       if (run.signal.aborted) return;
       await startAmbientScene(canvas, {
@@ -152,7 +167,12 @@
         onReady() { if (!run.signal.aborted) document.body.dataset.yardBackdrop = 'live'; },
         onError: fallback,
       });
+      pendingContext = null; // The running scene now owns its disposal.
     } catch (error) { fallback(error); }
+    finally {
+      run.signal.removeEventListener('abort', releasePendingContext);
+      releasePendingContext();
+    }
   }
 
   document.body.dataset.yardBackdrop = 'still';

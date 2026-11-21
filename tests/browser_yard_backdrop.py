@@ -37,8 +37,10 @@ def exercise(browser, route, mobile=False, fallback=False):
         is_mobile=mobile, has_touch=mobile, device_scale_factor=1,
     )
     page = context.new_page()
-    errors, scene_failures = [], []
+    errors, scene_failures, renderer_requests = [], [], []
     page.on("pageerror", lambda error: errors.append(error.stack))
+    page.on("request", lambda req: renderer_requests.append(req.url)
+            if urlsplit(req.url).path in {"/yard/ambient-scene.js", "/yard/vendor/three.module.js"} else None)
     page.on("response", lambda res: scene_failures.append((res.status, res.url))
             if "/yard/" in res.url and res.status >= 400 else None)
     instrument_renderer(page, fallback)
@@ -84,6 +86,7 @@ def exercise(browser, route, mobile=False, fallback=False):
     state = "fallback" if fallback else "live"
     page.wait_for_selector(f'body[data-yard-backdrop="{state}"]', timeout=45000)
     if fallback:
+        assert not renderer_requests, renderer_requests
         page.wait_for_function("""() => {
           const img = document.querySelector('[data-yard-layer] img');
           return img && img.complete && img.naturalWidth > 0;
@@ -99,6 +102,7 @@ def exercise(browser, route, mobile=False, fallback=False):
               const {mapSize, receivers} = this.userData.solarLighting;
               qaYard.shadows = {mapSize, receivers, autoUpdate:renderer.shadowMap.autoUpdate,
                                 detail:this.userData.detailLoading.status};
+              if (qaYard.paths) qaYard.paths[renderer.getRenderTarget() ? 'offscreen' : 'direct']++;
             }
             return renderScene.call(this, renderer, ...args);
           };
@@ -114,6 +118,17 @@ def exercise(browser, route, mobile=False, fallback=False):
           };
         }""")
         page.wait_for_function("qaYard.matrices >= 3", timeout=25000)
+        if mobile and studio:
+            for level in (3, 5, 1):
+                page.evaluate("""level => {
+                  inteonGraphicsQuality.setManualLevel(level);
+                  qaYard.paths = {offscreen:0,direct:0};
+                }""", level)
+                if level == 5:
+                    page.wait_for_function("qaYard.paths.offscreen > 0")
+                else:
+                    page.wait_for_function("qaYard.paths.direct >= 5")
+                    assert page.evaluate("qaYard.paths.offscreen") == 0
         if studio:
             assert page.locator('#studio > .console-reflection').count() == 0
             page.locator('#deck-a .dd-jog').scroll_into_view_if_needed()
@@ -164,7 +179,7 @@ def exercise(browser, route, mobile=False, fallback=False):
     if not fallback:
         page.wait_for_function("qaYard.shadows?.detail === 'ready'", timeout=45000)
         shadows = page.evaluate("qaYard.shadows")
-        sizes = {1024} if mobile else {1024, 1536, 2048}
+        sizes = {768, 1024} if mobile else {1024, 1536, 2048}
         assert shadows["mapSize"] in sizes and shadows["receivers"] > 150 and not shadows["autoUpdate"], shadows
         before = page.evaluate("qaYard.matrices")
         page.wait_for_function("n => qaYard.matrices > n", arg=before)

@@ -93,7 +93,9 @@
     const held = openPanel || heldPointer !== null;
     const elapsed = held ? 0 : performance.now() - lastActivity;
     const ultra = elapsed >= ultraAfter, invisible = elapsed >= hiddenAfter;
+    const wasUltra = root.hasAttribute('data-ultra');
     root.toggleAttribute('data-ultra', ultra);
+    if (wasUltra && !ultra) library.schedulePaint();
     root.toggleAttribute('data-faded', invisible);
     display.toggleAttribute('data-resident-obstacle', !ultra);
     mini.toggleAttribute('data-resident-obstacle', ultra && !invisible);
@@ -237,7 +239,7 @@
 
   function update() {
     if (!active()) return;
-    const state = engine.snapshot()[side];
+    const state = engine.snapshot({meters:false})[side];
     const song = state.track?.title || 'Выбрать трек';
     const performer = state.track?.artist || '';
     if (title.textContent !== song) {
@@ -321,7 +323,10 @@
     }
     mix.cancel();
   }
-  library.setCompactControls({ choose, toggle });
+  library.setCompactControls({
+    choose, toggle,
+    get waveformDeck() { return root.hasAttribute('data-ultra') ? null : side; },
+  });
   sideButtons.forEach(button => button.onclick = () => activate(button.dataset.compactSide));
   auto.onclick = () => {
     autoEnabled = !autoEnabled;

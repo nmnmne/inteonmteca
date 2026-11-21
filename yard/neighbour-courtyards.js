@@ -98,11 +98,47 @@ export function addNeighbourCourtyards(scene, layout, ground) {
   };
   material.customProgramCacheKey=()=>'neighbour-courtyards';
   const mesh = new THREE.InstancedMesh(geometry,material,8);
-  const translation = new THREE.Matrix4();
-  let index=0;
+  geometry.computeBoundingBox();
+  // The shader clips at the surveyed block boundary, including any roofs
+  // extending past the seam. Use that same boundary for each tile's bounds.
+  const tileBox = new THREE.Box3(new THREE.Vector3(west,geometry.boundingBox.min.y,north),
+    new THREE.Vector3(east,geometry.boundingBox.max.y,south));
+  const tiles=[];
   for (let z=-1; z<=1; z++) for (let x=-1; x<=1; x++) {
-    if (x || z) mesh.setMatrixAt(index++,translation.makeTranslation(x*(east-west),0,z*(south-north)));
+    if (!x && !z) continue;
+    const offset=new THREE.Vector3(x*(east-west),0,z*(south-north));
+    const matrix=new THREE.Matrix4().makeTranslation(offset.x,0,offset.z);
+    mesh.setMatrixAt(tiles.length,matrix);
+    tiles.push({matrix,box:tileBox.clone().translate(offset)});
   }
+  mesh.computeBoundingSphere(); // Keep the raycast broad phase valid as the submitted subset changes.
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  mesh.frustumCulled=false; // The eight tighter boxes replace one large sphere.
+  const frustum=new THREE.Frustum(), projection=new THREE.Matrix4();
+  let lastMask=(1<<tiles.length)-1;
+  function visibleTiles(view) {
+    projection.multiplyMatrices(view.projectionMatrix,view.matrixWorldInverse).multiply(mesh.matrixWorld);
+    frustum.setFromProjectionMatrix(projection);
+    let mask=0;
+    for (let i=0;i<tiles.length;i++) if (frustum.intersectsBox(tiles[i].box)) mask|=1<<i;
+    return mask;
+  }
+  const previous=Object.hasOwn(scene,'onBeforeRender') ? scene.onBeforeRender : null;
+  scene.onBeforeRender=function(renderer,renderScene,camera,target) {
+    (previous || THREE.Scene.prototype.onBeforeRender).call(this,renderer,renderScene,camera,target);
+    if (!mesh.visible) return;
+    let mask=0;
+    if (camera.isArrayCamera && camera.cameras.length) {
+      for (const eye of camera.cameras) mask |= visibleTiles(eye);
+    } else {
+      mask = visibleTiles(camera);
+    }
+    if (mask===lastMask) return;
+    lastMask=mask;
+    mesh.count=0;
+    for (let i=0;i<tiles.length;i++) if (mask&(1<<i)) mesh.setMatrixAt(mesh.count++,tiles[i].matrix);
+    mesh.instanceMatrix.needsUpdate=true;
+  };
   mesh.name='neighbour-courtyards';
   mesh.userData.bakedShadowCaster=false; mesh.userData.bakedShadowReceiver=false;
   scene.add(mesh);

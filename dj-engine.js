@@ -839,7 +839,7 @@
     change();
   }
 
-  function deckSnapshot(deck) {
+  function deckSnapshot(deck, meters) {
     return {
       track: deck.track, loadVersion: deck.loadVersion, playing: deck.scratch ? deck.scratch.resume : !deck.audio.paused && !deck.audio.ended,
       audioRunning: context?.state === 'running' && !deck.audio.paused && !deck.audio.seeking
@@ -850,14 +850,14 @@
       tempo: deck.tempo, bend: deck.bend, baseBPM: deck.baseBPM, keyLock: deck.keyLock,
       cue: deck.cue, hotCues: deck.hotCues.slice(), loopBeats: deck.loopBeats,
       loopStart: deck.loopStart, loopEnd: deck.loopEnd, eq: { ...deck.eq },
-      filter: deck.filter, channel: deck.channel, echo: deck.echo, monitor: deck.monitor, level: readMeter(deck.nodes?.meter)
+      filter: deck.filter, channel: deck.channel, echo: deck.echo, monitor: deck.monitor, level: meters ? readMeter(deck.nodes?.meter) : 0
     };
   }
 
-  function snapshot() {
+  function snapshot({meters = true} = {}) {
     const recording = recorder?.state === 'recording';
     return {
-      A: deckSnapshot(decks.A), B: deckSnapshot(decks.B), master, cross, sharpCross, recording,
+      A: deckSnapshot(decks.A, meters), B: deckSnapshot(decks.B, meters), master, cross, sharpCross, recording,
       recordingSeconds: recording ? (performance.now() - recordStart) / 1000 : 0,
       canRecord: supportedRecorder(), canMonitor: supportedMonitor(), monitorDevice, sampleRate: context?.sampleRate || 0,
       outputLayout: speakerOutput?.layout || 'stereo',
@@ -865,7 +865,7 @@
       maxOutputChannels: context?.destination.maxChannelCount || context?.destination.channelCount || 0,
       activeOutputChannels: speakerOutput?.channelCount || context?.destination.channelCount || 0,
       canSpatial: Boolean(context && window.DJSpatial?.createOutput),
-      meters: { left: readMeter(stereoMeters?.[0]), right: readMeter(stereoMeters?.[1]) }
+      meters: { left: meters ? readMeter(stereoMeters?.[0]) : 0, right: meters ? readMeter(stereoMeters?.[1]) : 0 }
     };
   }
 
