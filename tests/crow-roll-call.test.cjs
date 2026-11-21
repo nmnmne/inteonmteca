@@ -31,3 +31,33 @@ test('an unanswered look holds the turn, including when the leader looks away mi
   assert.deepEqual(s.answered,[]);
   assert.equal(s.targetId,null);
 });
+
+test('only one randomly selected partner gets one camera nod across multiple gatherings', async () => {
+  const {createCrowRollCall} = await import('../yard/crow-roll-call.js');
+  const recipients = new Set();
+  for (const draw of [.01,.51,.99]) {
+    const leader = {id:0,x:0,y:.42,z:0,yaw:0,pitch:0};
+    const birds = [leader,...[-1,0,1].map((x,i)=>({id:i+1,x,y:.2,z:-4,slot:i,
+      yaw:0,airborne:0,called:true,inParty:true}))];
+    const call=createCrowRollCall(birds,()=>draw);
+    let pulses=0, previous=false;
+    for (let meeting=0;meeting<3;meeting++) {
+      call.reset();
+      for (let i=0;i<3000 && call.state.phase!=='done';i++) {
+        const s=call.state;
+        leader.yaw=s.yaw; leader.pitch=s.pitch+s.nodOffset;
+        call.update(1/60,leader,birds.length);
+        const active=s.nodOffset<-.001;
+        if (active) {
+          assert.equal(meeting,0);
+          assert.equal(s.targetId,s.nodRecipientId);
+          if (!previous) pulses++;
+        }
+        previous=active;
+      }
+      assert.equal(call.state.phase,'done');
+    }
+    assert.equal(pulses,1); recipients.add(call.state.nodRecipientId);
+  }
+  assert.equal(recipients.size,3);
+});

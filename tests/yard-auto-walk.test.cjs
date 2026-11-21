@@ -89,6 +89,7 @@ test('the crow walks on open ground, climbs, alternates wingbeats and glides, an
   for (let i=0; i<3600; i++) {
     const pose = walk.update(.05);
     phases.add(pose.mode);
+    assert.equal(pose.eyeOffset,0,'footfalls and wingbeats leave the camera steady');
     if (previous.mode === 'land' && pose.mode === 'walk') {
       assert.ok(isWalkable(layout, pose.x, pose.z, .3), 'touchdown needs clear ground');
       touchdowns++;
@@ -96,7 +97,7 @@ test('the crow walks on open ground, climbs, alternates wingbeats and glides, an
     if (pose.mode === 'walk') {
       assert.ok(pose.y > .38 && pose.y < .46, 'head stays at crow height while walking');
     } else if (pose.mode === 'flap') {
-      wingbeat = Math.max(wingbeat,Math.abs(pose.eyeOffset));
+      wingbeat = Math.max(wingbeat,Math.abs(pose.wingPhase - previous.wingPhase));
     } else if (pose.mode === 'glide') {
       assert.equal(pose.eyeOffset,0,'head settles in the glide');
     }

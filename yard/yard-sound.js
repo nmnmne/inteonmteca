@@ -212,6 +212,23 @@ function makeAmbience(context) {
       windGain.gain.setTargetAtTime(.0035 + gust * (.032 + .019 * weather.autumn + .01 * weather.snow), t, .18);
       rainGain.gain.setTargetAtTime(.001 + .035 * weather.rain + .004 * weather.summer, t, .5);
     },
+    chuckle(bird, listener) {
+      const natural = voiceClip(bird), clips = voices.get(bird.id);
+      if (!clips.chuckle) {
+        // Keep this particular throat and break its call into three breathy syllables.
+        const take = natural.getChannelData(0);
+        clips.chuckle = context.createBuffer(1, natural.length, natural.sampleRate);
+        const samples = clips.chuckle.getChannelData(0);
+        for (let i = 0; i < samples.length; i++) {
+          const beat = 3 * i / samples.length, syllable = Math.floor(beat);
+          const within = Math.min(1, (beat - syllable) / .72);
+          const pulse = Math.sin(Math.PI * within) ** 2;
+          const rasp = .78 + .22 * Math.sin(2 * Math.PI * 53 * i / natural.sampleRate);
+          samples[i] = take[i] * pulse * rasp * (1 - .12 * syllable);
+        }
+      }
+      call(clips.chuckle, context.currentTime + .012, 1.06, bird, .49 * crowPersonality(bird.id).voice.volume, listener);
+    },
     flockCall(bird, reply, listener, delay, beat, magical) {
       const t = context.currentTime + delay + .015, clip = voiceClip(bird);
       const voice = crowPersonality(bird.id).voice;
@@ -262,6 +279,7 @@ export function createYardSound(view = () => initialView) {
   const media = document.querySelector('#album-player'), masterControl = document.querySelector('#master');
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let context, graph, timer, away = false, disposed = false, resuming = false;
+  const heardLaugh = new WeakMap();
   let nextCall = 0, callNumber = 0, lastBass = 0, lastCaller;
   function update() {
     if (!graph || context.state !== 'running' || document.hidden || away) return;
@@ -273,6 +291,15 @@ export function createYardSound(view = () => initialView) {
     const weather = sampleWeather(location.x, location.z, motion.matches ? 0 : phase);
     const bass = bands?.bass || 0, now = context.currentTime;
     graph.update(weather, clamp(master, 0, 1), playing, bass, location, phase);
+    for (const bird of location.birds || []) {
+      const at = bird.laughAt;
+      if (!Number.isFinite(at) || at < 0 || location.elapsed < at || heardLaugh.get(bird) === at) continue;
+      heardLaugh.set(bird, at);
+      if (master && location.elapsed - at < .65 && Math.hypot(bird.x - location.x, bird.z - location.z) < 42) {
+        graph.chuckle(bird, location);
+        nextCall = Math.max(nextCall, now + .75);
+      }
+    }
     const accent = bass > .42 && bass - lastBass > .12;
     lastBass = bass;
     if (!master || now < nextCall || (playing && !accent && now < nextCall + 1.1)) return;

@@ -40,7 +40,7 @@ body.room-console-home:is([data-yard-window=desktop],[data-yard-window=engrus]) 
 body.room-console-home:is([data-yard-window=desktop],[data-yard-window=engrus])::before,
 body.room-console-home:is([data-yard-window=desktop],[data-yard-window=engrus])::after { content: none; }
 body.room-console-home[data-yard-window=dj][data-dj-mode=compact] > :not(
-  [data-yard-layer], .yard-crow-name, #yard-dj-compact, dialog[open], [popover]:popover-open, #notice,
+  [data-yard-layer], .yard-crow-name, .yard-crow-lesson, #yard-dj-compact, dialog[open], [popover]:popover-open, #notice,
   .room-resident, .resident-speech, .pointer-fluid, .pointer-ring, script, style, link
 ) { display: none !important; }
 body.room-console-home[data-yard-window=dj][data-dj-mode=compact]::before,
@@ -51,6 +51,21 @@ body.room-console-home[data-yard-window=dj][data-dj-mode=compact]::after { conte
   padding: 3px 8px; border-radius: 3px; background: #172021e6;
   color: #f4f3eb; font: 500 14px/1.35 system-ui, sans-serif;
 }
+.yard-crow-lesson { display: none; }
+body[data-yard-window=dj][data-dj-mode=compact] .yard-crow-lesson:not([hidden]) {
+  position: fixed; z-index: 28; top: max(12px, env(safe-area-inset-top)); left: 50%;
+  transform: translateX(-50%); box-sizing: border-box; width: min(352px, calc(100% - 20px));
+  display: flex; align-items: center; gap: 8px; padding: 5px 7px 5px 12px;
+  border: 1px solid #cad5d13d; border-radius: 10px; background: #172021ed;
+  color: #f4f3eb; font: 500 15px/1.3 system-ui, sans-serif;
+}
+.yard-crow-lesson [role=status] { flex: 1; }
+.yard-crow-lesson button:not([hidden]) {
+  flex: none; align-self: flex-start; min-height: 44px; padding: 0 10px; cursor: pointer; touch-action: manipulation;
+  color: #fff7e4; background: #384849; border: 1px solid #90a5a0; border-radius: 6px; font: inherit;
+}
+.yard-crow-lesson button:disabled { opacity: .55; cursor: default; }
+.yard-crow-lesson button:focus-visible { outline: 2px solid #ffe2ae; }
 
 #yard-desktop-shell { --shell-ink: #f6f4f1; color: var(--shell-ink); }
 #yard-desktop-shell[hidden], #yard-engrus-window[hidden] { display: none; }

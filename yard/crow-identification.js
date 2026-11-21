@@ -1,4 +1,5 @@
 import { Raycaster, Vector3 } from './vendor/three.module.js';
+import { createCrowAuthority, crowLessonDemoMs, crowLessonAnswerMs } from './crow-authority.js';
 
 // Test a visible bird's centre against the courtyard walls only when someone taps.
 export function crowAtPoint(birds, camera, solids, rect, x, y) {
@@ -32,7 +33,57 @@ export function enableCrowNames(canvas, camera, yard, flock, signal) {
   const caption = document.createElement('output');
   caption.className = 'yard-crow-name';
   caption.hidden = true;
-  document.body.append(caption);
+  const lesson = document.createElement('div');
+  lesson.className = 'yard-crow-lesson';
+  lesson.hidden = true;
+  const cue = document.createElement('span');
+  cue.setAttribute('role', 'status');
+  const reply = document.createElement('button');
+  reply.type = 'button';
+  reply.textContent = 'Ответить';
+  lesson.append(cue, reply);
+  document.body.append(caption, lesson);
+  const game = createCrowAuthority(flock);
+  const compact = () => document.body.dataset.yardWindow === 'dj' && document.body.dataset.djMode === 'compact';
+  let readyTimer, endTimer;
+  function closeLesson() {
+    clearTimeout(readyTimer);
+    clearTimeout(endTimer);
+    game.cancel();
+    lesson.hidden = true;
+  }
+  function teach(bird) {
+    closeLesson();
+    if (!compact() || yard.scene.userData.virtuality > .15 || !game.teach(bird, performance.now())) return;
+    lesson.hidden = false;
+    cue.textContent = bird.personality.name + ' показывает два кивка, чтобы передать энергетический авторитет.';
+    reply.hidden = false;
+    reply.disabled = true;
+    readyTimer = setTimeout(() => {
+      cue.textContent = 'Повтори ритм двумя нажатиями.';
+      reply.disabled = false;
+    }, crowLessonDemoMs);
+    endTimer = setTimeout(closeLesson, crowLessonDemoMs + crowLessonAnswerMs);
+  }
+  reply.addEventListener('keydown', event => {
+    if (event.repeat && (event.key === 'Enter' || event.key === ' ')) event.preventDefault();
+  }, {signal});
+  reply.addEventListener('click', event => {
+    if (!compact() || yard.scene.userData.virtuality > .15) { closeLesson(); return; }
+    const now = performance.now();
+    const answer = game.answer(event.timeStamp > 0 && event.timeStamp <= now ? event.timeStamp : now, now);
+    if (answer === 'expired') { closeLesson(); return; }
+    if (answer === 'once') { cue.textContent = 'Ещё одно нажатие.'; return; }
+    if (answer === 'watch') return;
+    cue.textContent = answer === 'flock' ? 'Энергетический авторитет активирован. Стая ответила.'
+      : 'Энергетический авторитет активирован. Ворона ответила.';
+    reply.hidden = true;
+    clearTimeout(endTimer);
+    endTimer = setTimeout(closeLesson, 3400);
+  }, {signal});
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) closeLesson();
+  }, {signal});
   let timer;
   document.addEventListener('click', event => {
     const body = document.body;
@@ -41,12 +92,18 @@ export function enableCrowNames(canvas, camera, yard, flock, signal) {
     const bird = crowAtPoint(flock.allBirds, camera, yard.solids, canvas.getBoundingClientRect(), event.clientX, event.clientY);
     clearTimeout(timer);
     caption.hidden = !bird;
-    if (!bird) return;
+    if (!bird) { closeLesson(); return; }
     event.preventDefault(); // This courtyard tap selected a bird.
     caption.textContent = bird.personality.name;
     caption.style.left = Math.max(60, Math.min(innerWidth - 60, event.clientX)) + 'px';
     caption.style.top = Math.max(42, event.clientY - 12) + 'px';
     timer = setTimeout(() => { caption.hidden = true; }, 2300);
+    teach(bird);
   }, {signal});
-  signal.addEventListener('abort', () => { clearTimeout(timer); caption.remove(); }, {once: true});
+  signal.addEventListener('abort', () => {
+    clearTimeout(timer);
+    closeLesson();
+    caption.remove();
+    lesson.remove();
+  }, {once: true});
 }

@@ -1,6 +1,7 @@
 import { isWalkable, pointInRing } from './navigation.js';
 import { createCrowVisits } from './crow-visits.js';
 import { createCrowPranks } from './crow-pranks.js';
+import { createCrowFlightPlay } from './crow-flight-play.js';
 import { createCrowKeyStory } from './crow-key-story.js';
 import { createCrowDisputes } from './crow-disputes.js';
 import { createCrowRollCall } from './crow-roll-call.js';
@@ -92,7 +93,10 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
   const landingDraw = () => ((landingSeed = (Math.imul(landingSeed,1664525) + 1013904223) >>> 0) / 4294967296);
   const xs = layout.walkable.map(p => p[0]), zs = layout.walkable.map(p => p[1]);
   const west = Math.min(...xs), east = Math.max(...xs), north = Math.min(...zs), south = Math.max(...zs);
-  const rollCall = createCrowRollCall(birds);
+  // A bird's starting wing phase varies uniformly on every visit. This draw
+  // uses it without consuming the random sequence that drives flock missions.
+  const nodDraw = birds[2].wingPhase / turn;
+  const rollCall = createCrowRollCall(birds, () => nodDraw);
   const onStage = id => id === rollCall.state.targetId || keyStory?.targets.has(id) || disputes.reserved(birds[id]);
   const busyForPranks = {has: id => onStage(id) || beacons.current?.sender.id === id || beacons.current?.recipient.id === id};
   const treePrank = createCrowTreePrank(birds, crowTrees);
@@ -100,6 +104,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
   // A resting bird can signal with its ankle without leaving the resident's side.
   const beacons = createCrowBeaconExchange(birds,clearGround,{has:id=>onStage(id) || pranks.targets.has(id)
     || treePrank.targets.has(id) || (visits?.state.phase !== 'sitting' && visits?.perches.has(id))});
+  const flightPlay = createCrowFlightPlay(allBirds, id => busyForTrees.has(id) || treePrank.targets.has(id) || disputes.targets.has(id));
 
   function shuffle(list) {
     for (let i = list.length - 1; i > 0; i--) {
@@ -451,6 +456,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
       if (b.inParty) assembled++;
     }
     state.partySize = assembled;
+    flightPlay.update(time,state.phase==='mission' && leader.airborne>.6,pose);
     const previousExchange = beacons.current;
     beacons.update(time, allowBeacons() && (!keyStory || keyStory.state.phase==='idle'), pose);
     // Give the story a turn to claim the landing after the final reply.
@@ -470,7 +476,7 @@ export function createCrowFlock(layout, openingView, { random = Math.random, res
     }
   }
 
-  return {birds, allBirds, state, rollCall:rollCall.state, treePrank:treePrank.state, visit:visits?.state, prank:pranks.state, keyStory:keyStory?.state, dispute:disputes.state, update,
+  return {birds, allBirds, state, rollCall:rollCall.state, flightPlay:flightPlay.state, treePrank:treePrank.state, visit:visits?.state, prank:pranks.state, keyStory:keyStory?.state, dispute:disputes.state, update,
     get beacons() { return beacons.current; },
     canTakeOff: () => state.phase === 'ready' && !visits?.holdLeader() && !keyStory?.targets.size && !beacons.current
       && disputes.state.phase === 'idle' && time - readySince >= .7};

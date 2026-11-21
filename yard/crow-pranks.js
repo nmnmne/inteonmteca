@@ -98,6 +98,12 @@ export function createCrowPranks(birds, clearGround, random) {
       const recoil=pulse(age,reaction,.53);
       b.hop=recoil*.24; b.wings=recoil*.79;
       if (age>reaction+.65) {
+        // The other bird has hopped back or checked the empty patch. A friendly
+        // partner sometimes answers with a chuckle; a failed setup stays quiet.
+        if ((state.count+actor.id+partner.id)%3!==0) {
+          const amused=partner.personality?.habits.sociability>.55 ? partner : actor;
+          amused.laughAt=time;
+        }
         targets.set(actor.id,exit);
         state.phase='retreat'; since=time;
         a.dip=b.dip=b.hop=b.wings=0;

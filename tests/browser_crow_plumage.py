@@ -59,22 +59,57 @@ def check(browser, base, width, height):
       const first=new Map(glyphs[0].map(([pixel,...rgb])=>[pixel,rgb]));
       const lighter=glyphs[1].filter(([p,...rgb])=>
         first.has(p) && first.get(p).reduce((sum,c,i)=>sum+Math.abs(c-rgb[i]),0)>24).length;
-      function wingPixels(reduced) {
-        models.update([{...leader,mode:'flap',wingPhase:Math.PI/2,airborne:1}],.1,0,1,null,null,reduced);
+      function wingPixels(reduced,phase=Math.PI/2) {
+        models.update([{...leader,mode:'flap',wingPhase:phase,airborne:1}],.1,0,1,null,null,reduced);
         draw();
-        let count=0,center=0,left=0,right=0;
+        let count=0,center=0,left=0,right=0,edgeMoment=0;
         for(let i=3;i<pixels.length;i+=4) {
           if(pixels[i]<250)continue;
           count++;
           const x=(i>>2)%width/width;
           if(x>.17 && x<.83) center++;
           if(x<.2)left++; else if(x>.8)right++;
+          edgeMoment+=Math.floor((i>>2)/width);
         }
-        return {count,center,left,right};
+        return {count,center,left,right,edgeMoment};
       }
       const wings=wingPixels(false), resting=wingPixels(true);
+      const rising=wingPixels(false,1.0), falling=wingPixels(false,Math.PI-1.0);
+      // Inspect the wing from above. Real gaps between the splayed tips split
+      // its outer silhouette into several separate runs on a single pixel column.
+      camera.up.set(0,0,-1);camera.position.set(at.x,2.62,at.z);camera.lookAt(at.x,.2,at.z);
+      const detail=mesh.geometry.getAttribute('crowDetail');
+      const rows={primary:new Set(),secondary:new Set(),greater:new Set()};
+      for(let i=0;i<detail.count;i++) {
+        if(detail.getW(i)!==2)continue;
+        const layer=detail.getZ(i);
+        if(layer>=1 && layer<1.4)rows.primary.add(layer);
+        if(layer>=.64 && layer<.75)rows.secondary.add(layer);
+        if(layer>=.80 && layer<.9)rows.greater.add(layer);
+      }
+      function spread(mode,phase) {
+        models.update([leader,{...bird,id:2,mode,airborne:1,wingPhase:phase}],5,0,1);
+        models.group.getObjectByName('crow-contact-shadows').visible=false;
+        draw();
+        const mask=new Uint8Array(width*height);
+        for(let i=0;i<mask.length;i++)mask[i]=Number(pixels[4*i+3]>245);
+        let fingers=0;
+        for(let x=Math.ceil(width/2+6);x<width;x++) {
+          let runs=0,length=0;
+          for(let y=0;y<height;y++) {
+            if(mask[y*width+x])length++;
+            else {if(length>=2)runs++;length=0;}
+          }
+          fingers=Math.max(fingers,runs);
+        }
+        return {mask,fingers};
+      }
+      const glide=spread('glide',0), up=spread('flap',.8), down=spread('flap',3.95);
+      const changed=up.mask.reduce((sum,n,i)=>sum+(n!==down.mask[i]),0);
+      const layers=Object.values(rows).map(row=>row.size);
       const attributes=renderer.getContext().getParameter(renderer.getContext().MAX_VERTEX_ATTRIBS);
-      const result={ink,signatures:signatures.size,lighter,wings,resting,attributes};
+      const result={ink,signatures:signatures.size,lighter,wings,resting,attributes,layers,
+        fingers:glide.fingers,strokeChange:changed,flexed:rising.count>0 && falling.count>0 && rising.edgeMoment!==falling.edgeMoment};
       target.dispose();models.dispose();renderer.dispose();
       return result;
     }""")
@@ -83,6 +118,8 @@ def check(browser, base, width, height):
     assert result["lighter"] >= 6, result
     assert result["wings"]["center"] == 0 and min(result["wings"]["left"], result["wings"]["right"]) > 5, result
     assert result["resting"]["count"] == 0, result
+    assert result["layers"] == [10, 8, 10] and result["fingers"] >= 3, result
+    assert result["strokeChange"] > 200 and result["flexed"], result
     print(f"{width}×{height}", result, flush=True)
     page.close()
 

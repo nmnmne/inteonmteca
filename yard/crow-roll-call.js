@@ -4,22 +4,25 @@ const bearing = (a, b) => Math.atan2(b.x - a.x, a.z - b.z);
 const pulse = (age, start, length) => Math.sin(Math.PI * clamp((age - start) / length, 0, 1)) ** 2;
 
 // The leader is the camera. A wingmate must see that camera turn towards it,
-// catch its eye, and answer the leader's nod before another bird is addressed.
-export function createCrowRollCall(birds) {
+// catch its eye, and answer the steady gaze before another bird is addressed.
+export function createCrowRollCall(birds, random = Math.random) {
   const leader = birds[0];
-  const state = {phase:'idle', targetId:null, answered:[], held:0, yaw:0, pitch:0, tilt:0};
+  const state = {phase:'idle', targetId:null, answered:[], held:0, yaw:0, pitch:0, nodOffset:0, nodRecipientId:null};
   let target = null, age = 0, landing = 0;
+  let chosenTurn = null, nodding = false;
 
   function release() {
     if (target) target.gazePose = null;
     target = null;
     state.targetId = null;
-    state.held = state.tilt = age = 0;
+    state.held = state.nodOffset = age = 0;
+    nodding = false;
   }
   function reset() {
     release();
     state.phase = 'idle';
     state.answered.length = 0;
+    chosenTurn = null;
     landing++;
   }
   function select() {
@@ -53,7 +56,7 @@ export function createCrowRollCall(birds) {
     const face = bird.yaw + gesture.glance;
     const eyeX = bird.x + .20*Math.sin(face) + eyeSide*.063*Math.cos(face);
     const eyeZ = bird.z - .20*Math.cos(face) + eyeSide*.063*Math.sin(face);
-    const eyeY = bird.y + .12 + gesture.hop;
+    const eyeY = bird.y + .12;
     const dx = eyeX - leader.x, dz = eyeZ - leader.z;
     state.yaw = Math.atan2(dx, -dz);
     const pitch = Math.atan2(eyeY - leader.y, Math.hypot(dx, dz));
@@ -63,17 +66,28 @@ export function createCrowRollCall(birds) {
     gesture.dip = pitch; // The receiver raises its beak towards the higher camera eye.
     state.held = aligned ? state.held + dt : 0;
     age += dt;
+    state.nodOffset = 0;
 
     if (state.phase === 'look') {
-      if (state.held >= .32) { state.phase = 'signal'; age = 0; }
+      if (state.held >= .32) {
+        if (state.nodRecipientId === null) {
+          // Draw a slot among actual responders once. Only a mutual look spends the nod.
+          chosenTurn ??= Math.floor(random() * Math.max(1,targetSize-1));
+          if (state.answered.length === chosenTurn) {
+            state.nodRecipientId = bird.id;
+            nodding = true;
+          }
+        }
+        state.phase = 'signal'; age = 0;
+      }
       return;
     }
-    // Once per gathering the leader fakes a second bow with a cocked head.
+    // The addressed bird gives a small acknowledgement while the observer holds still.
     const feint = state.answered.length === (landing - 1) % (targetSize - 1);
     if (state.phase === 'signal') {
-      state.pitch -= .103*pulse(age, 0, .4) + (feint ? .066*pulse(age, .39, .30) : 0);
-      state.tilt = (bird.slot % 2 ? -1 : 1) * (feint ? .083 : .038) * pulse(age, .04, feint ? .65 : .39);
-      if (age >= (feint ? .73 : .48)) { state.phase = 'reply'; age = state.tilt = 0; }
+      gesture.wingTip = eyeSide * (.22*pulse(age, 0, .4) + (feint ? .15*pulse(age, .39, .30) : 0));
+      if (nodding) state.nodOffset = -.086 * pulse(age, .025, .41);
+      if (age >= (feint ? .73 : .48)) { state.phase = 'reply'; age = 0; }
       return;
     }
     const beat = pulse(age, .03, .45), answer = (bird.id + landing) % 3;
