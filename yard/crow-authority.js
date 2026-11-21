@@ -26,7 +26,7 @@ export function crowAuthorityPulse(bird, now = performance.now()) {
 
 export function crowAuthorityLook(bird, now) {
   const focus = bird.authorityFocus;
-  if (!focus || now < focus.since || now >= focus.until) return 0;
+  if (!focus || now <= focus.since || now >= focus.until) return 0;
   const bearing = Math.atan2(focus.x - bird.x, bird.z - focus.z) - bird.yaw;
   const angle = Math.atan2(Math.sin(bearing), Math.cos(bearing));
   const weight = Math.min(1, (now - focus.since) / 450, (focus.until - now) / 450);
@@ -49,6 +49,17 @@ export function createCrowAuthority(flock, random = Math.random) {
     nextAt = now + delay;
   }
 
+  function lookAt(bird, peer, now, duration) {
+    bird.authorityFocus = {peerId:peer.id, x:peer.x, z:peer.z, since:now, until:now + duration};
+  }
+
+  function facePartner(now) {
+    lookAt(caller, partner, now, 3400);
+    lookAt(partner, caller, now, 3400);
+    phase = 'notice';
+    nextAt = now + 820;
+  }
+
   function notice(now) {
     const free = birds.filter(bird => available(bird, flock));
     const pairs = free.filter(bird => bird.id !== lastCaller && free.some(other => other !== bird && distance(bird, other) < 17))
@@ -59,11 +70,13 @@ export function createCrowAuthority(flock, random = Math.random) {
       .sort((a, b) => distance(a, caller) - distance(b, caller));
     partner = neighbours[Math.floor(random() * Math.min(3, neighbours.length))];
     lastCaller = caller.id;
-    const until = now + 3400;
-    caller.authorityFocus = {peerId:partner.id, x:partner.x, z:partner.z, since:now, until};
-    partner.authorityFocus = {peerId:caller.id, x:caller.x, z:caller.z, since:now, until};
-    phase = 'notice';
-    nextAt = now + 820;
+    // Sometimes the bird seems to have heard a thought before talking to its
+    // neighbour. Only the bird turns; the viewer's bearing is never consulted.
+    if (random() > .62) {
+      lookAt(caller, birds[0], now, 1250);
+      phase = 'observer';
+      nextAt = now + 1250;
+    } else facePartner(now);
     return true;
   }
 
@@ -81,12 +94,17 @@ export function createCrowAuthority(flock, random = Math.random) {
         rest(now, range(2800, 6500));
         return;
       }
-      caller.authorityFocus.x = partner.x; caller.authorityFocus.z = partner.z;
-      partner.authorityFocus.x = caller.x; partner.authorityFocus.z = caller.z;
+      const peer = phase === 'observer' ? birds[0] : partner;
+      caller.authorityFocus.x = peer.x; caller.authorityFocus.z = peer.z;
+      if (phase !== 'observer') {
+        partner.authorityFocus.x = caller.x; partner.authorityFocus.z = caller.z;
+      }
     }
     if (now < nextAt) return;
     if (phase === 'rest') {
       if (!notice(now)) nextAt = now + range(2400, 5200);
+    } else if (phase === 'observer') {
+      facePartner(now);
     } else if (phase === 'notice') {
       caller.authoritySignal = {start:now, count:2};
       phase = 'call';

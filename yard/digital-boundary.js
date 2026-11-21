@@ -3,6 +3,7 @@ import { pointInRing, distanceToSegment } from './navigation.js';
 import { createCityHologram } from './city-hologram.js';
 import { createCrowWallContact } from './crow-wall-contact.js';
 import { entryPulseShader } from './entry-pulse.js';
+import { createHouseSections } from './house-sections.js';
 import { createHouseBackstage } from './house-backstage.js';
 
 const approachMetres = 6, interiorMetres = 3, roofFadeMetres = 1.25;
@@ -74,6 +75,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
   for (const dome of domes) animateDigitalMaterial(dome.material, clock, entryPulse, pulseStrength, true);
   const galleries = new THREE.Group(); galleries.name='house-backstages';
   if (wallContact) scene.add(galleries);
+  const updateSections = wallContact && createHouseSections();
   const mix={value:0}, proxies=[];let detailed=[];
   const attached=new WeakSet(), clones=new Map();
   const patch=(material,uniform,inverse)=>{
@@ -175,6 +177,7 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
       let roomFade = 0;
       if (wallContact) {
         facadeDistance = Infinity;
+        let sectionHouse=-1, sectionAlpha=0;
         for (let i=0; i<proxies.length; i++) {
           const house = proxies[i];
           const distance = wallContact.distanceToHouse(i,x,y,z,approachMetres,profile);
@@ -197,9 +200,12 @@ export function createDigitalBoundary(scene,layout,sun,outside,groundMaterials,{
           house.gallery.material.depthWrite = crossing >= .999;
           house.gallery.material.uniforms.fade.value = house.crossing;
           house.gallery.visible = house.crossing > .001;
+          const interior = crossing*smooth(-distance,0,1.1);
+          if (interior>sectionAlpha) { sectionAlpha=interior;sectionHouse=i; }
           roomFade = Math.max(roomFade,house.crossing);
           amount = Math.max(amount, house.crossing);
         }
+        updateSections(proxies[sectionHouse]?.gallery,layout.buildings[sectionHouse],x,y,z,sectionAlpha,clock.value);
       }
       // Ease the camera down on either side of a threshold and release it
       // again deep inside. The wall midpoint has a flat speed curve both ways.

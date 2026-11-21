@@ -127,6 +127,8 @@ export function createHouseBackstage(house, clock, entryPulse) {
   });
   const mesh=new THREE.Mesh(galleryGeometry(house),material);
   mesh.name='backstage-'+house.id;
+  // Lay down the gallery and its depth before translucent sections and the orb.
+  mesh.renderOrder=-2;
   mesh.visible=false;
   mesh.userData.bakedShadowCaster=false;
   mesh.userData.bakedShadowReceiver=false;
